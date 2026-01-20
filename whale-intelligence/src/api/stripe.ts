@@ -5,7 +5,9 @@ import { env } from '../config/env';
 
 export const stripeRouter = Router();
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY || '');
+const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'dummy_key', {
+  apiVersion: '2025-12-15.clover' as any
+});
 
 // Map Stripe price IDs to internal plans
 function mapPriceToPlan(priceId?: string): 'free' | 'pro' | 'elite' | null {
