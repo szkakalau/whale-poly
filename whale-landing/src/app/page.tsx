@@ -53,15 +53,25 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="animate-fade-in opacity-0 mt-10 flex flex-wrap justify-center gap-6 text-sm text-gray-500 font-medium" style={{ animationDelay: '0.5s' }}>
-            <Link href="/backtesting" className="flex items-center gap-1 hover:text-violet-400 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              View Backtesting Results
+          <div className="animate-fade-in opacity-0 mt-12 flex flex-wrap justify-center gap-4" style={{ animationDelay: '0.6s' }}>
+            <Link href="/backtesting" className="group flex items-center gap-3 px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/30 transition-all duration-300">
+              <div className="p-2 rounded-lg bg-violet-500/20 text-violet-300 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              </div>
+              <div className="text-left">
+                <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Performance</div>
+                <div className="text-sm text-gray-200 font-semibold group-hover:text-white">Backtesting Results</div>
+              </div>
             </Link>
-            <span className="hidden sm:inline text-gray-700">•</span>
-            <Link href="/conviction" className="flex items-center gap-1 hover:text-cyan-400 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              View Conviction Case Studies
+
+            <Link href="/conviction" className="group flex items-center gap-3 px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all duration-300">
+              <div className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <div className="text-left">
+                <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Deep Dive</div>
+                <div className="text-sm text-gray-200 font-semibold group-hover:text-white">Conviction Cases</div>
+              </div>
             </Link>
           </div>
         </section>
