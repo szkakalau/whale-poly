@@ -4,7 +4,7 @@ dotenv.config();
 export const env = {
   DATABASE_URL: process.env.DATABASE_URL || '',
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
-  PORT: Number(process.env.PORT || 3000),
+  PORT: Number(process.env.PORT || 4000),
   ACCESS_TOKEN_TTL_MINUTES: Number(process.env.ACCESS_TOKEN_TTL_MINUTES || 15),
   POLYMARKET_TRADES_URL: process.env.POLYMARKET_TRADES_URL || 'https://clob.polymarket.com/trades',
   POLYMARKET_MARKETS_URL: process.env.POLYMARKET_MARKETS_URL || 'https://clob.polymarket.com/markets',
