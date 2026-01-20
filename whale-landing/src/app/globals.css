@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Section rhythm & typography */
+.section-title {
+  @apply text-2xl font-semibold tracking-tight;
+}
+.section-subtitle {
+  @apply text-zinc-700;
+}
+
+/* Cards */
+.card {
+  @apply rounded-xl border border-zinc-200 p-6 bg-white shadow-sm;
+}
+
+/* Variant B Cards */
+.card-b {
+  @apply rounded-xl p-6 bg-indigo-50 border border-indigo-200 shadow-sm hover:shadow-md transition-shadow;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply bg-black text-white hover:bg-zinc-800;
+}
+.btn-primary-b {
+  @apply bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg hover:from-indigo-700 hover:to-violet-700 motion-safe:transition motion-safe:transform motion-safe:hover:scale-[1.01];
+}
+.btn-secondary {
+  @apply border border-zinc-300 hover:bg-zinc-100;
+}
