@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  plan        String   // free | pro | elite
+  status      String   // active | expired
+  expires_at  DateTime
+  telegram_bindings telegram_bindings?
+  access_tokens     access_tokens[]
+}
+
+model telegram_bindings {
+  user_id           String   @unique
+  users             users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  telegram_user_id  BigInt   @unique
+  telegram_username String?
+  bound_at          DateTime
+
+  @@map("telegram_bindings")
+}
+
+model access_tokens {
+  token      String  @id
+  user_id    String
+  users      users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  expires_at DateTime
+  used       Boolean
+
+  @@map("access_tokens")
+}
+
+model trades_raw {
+  trade_id   String  @unique
+  market_id  String
+  wallet     String
+  side       String  // buy | sell
+  amount     Decimal
+  price      Decimal
+  timestamp  DateTime
+
+  @@map("trades_raw")
+}
+
+model whale_profiles {
+  wallet        String  @id
+  total_volume  Decimal
+  win_rate      Decimal
+  avg_size      Decimal
+  markets_count Int
+
+  @@map("whale_profiles")
+}
+
+model whale_scores {
+  wallet        String
+  market_id     String
+  score         Int
+  calculated_at DateTime
+
+  @@id([wallet, market_id, calculated_at])
+  @@map("whale_scores")
+}
+
+model alerts {
+  id         String   @id @default(uuid())
+  wallet     String
+  market_id  String
+  alert_type String   // build | exit | spike
+  score      Int
+  amount     Decimal?
+  price      Decimal?
+  side       String?
+  tx_count   Int?
+  created_at DateTime
+
+  @@map("alerts")
+}
+
+// PRD: Market metadata
+model markets {
+  id          String   @id
+  title       String
+  category    String?
+  status      String   // open | resolved
+  created_at  DateTime
+  resolved_at DateTime?
+
+  @@map("markets")
+}
+
+// PRD: Outcomes per market (e.g., YES/NO)
+model market_outcomes {
+  id         String   @id @default(uuid())
+  market_id  String
+  label      String
+
+  @@map("market_outcomes")
+}
+
+// PRD: Orderbook depth snapshots for depth-shock calculation
+model orderbook_snapshots {
+  id              String   @id @default(uuid())
+  market_id       String
+  outcome_label   String
+  timestamp       DateTime
+  bid_depth_usd   Decimal
+  ask_depth_usd   Decimal
+  total_depth_usd Decimal
+
+  @@index([market_id, outcome_label, timestamp])
+  @@map("orderbook_snapshots")
+}
+
+// PRD: Settlements for historical accuracy
+model market_settlements {
+  market_id       String   @id
+  settled_outcome String
+  settled_at      DateTime
+
+  @@map("market_settlements")
+}
+
+// PRD: Extended whale score subdimensions (0–100 internal scale)
+model whale_scores_ext {
+  wallet              String
+  market_id           String
+  calculated_at       DateTime
+  capital_impact      Int
+  timing_advantage    Int
+  historical_accuracy Int
+  market_impact       Int
+
+  @@id([wallet, market_id, calculated_at])
+  @@map("whale_scores_ext")
+}
