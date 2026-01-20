@@ -57,22 +57,35 @@ async function main() {
 
   // Telegram bot
   if (env.TELEGRAM_BOT_TOKEN) {
-    try {
-      const bot = createBot();
-      // Use polling with deleteWebhook to resolve conflict
-      await bot.launch({
-        dropPendingUpdates: true,
-        allowedUpdates: ['message', 'callback_query'],
-      });
-      console.log('Telegram bot launched');
-      startJobs(bot);
+    const bot = createBot();
+    let launched = false;
+    let retries = 5;
 
-      // Graceful stop
-      process.once('SIGINT', () => bot.stop('SIGINT'));
-      process.once('SIGTERM', () => bot.stop('SIGTERM'));
-    } catch (err) {
-      console.error('Telegram bot launch failed, continuing without bot', err);
-      startJobs();
+    // Retry logic for bot launch
+    while (!launched && retries > 0) {
+      try {
+        // Use polling with deleteWebhook to resolve conflict
+        await bot.launch({
+          dropPendingUpdates: true,
+          allowedUpdates: ['message', 'callback_query'],
+        });
+        console.log('Telegram bot launched');
+        startJobs(bot);
+        launched = true;
+
+        // Graceful stop
+        process.once('SIGINT', () => bot.stop('SIGINT'));
+        process.once('SIGTERM', () => bot.stop('SIGTERM'));
+      } catch (err) {
+        console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
+        retries--;
+        if (retries > 0) {
+          await new Promise(res => setTimeout(res, 5000)); // Wait 5s before retry
+        } else {
+          console.error('Continuing without bot after max retries');
+          startJobs();
+        }
+      }
     }
   } else {
     console.warn('Telegram bot not launched; token missing');

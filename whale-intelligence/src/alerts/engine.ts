@@ -127,7 +127,7 @@ export async function createConvictionSignals(prisma: PrismaClient) {
   const byMarket = new Map<string, { alerts: typeof alerts; addresses: Set<string> }>();
   for (const a of alerts) {
     const g = byMarket.get(a.market_id) || { alerts: [], addresses: new Set<string>() };
-    g.alerts.push(a as any);
+    g.alerts.push(a);
     g.addresses.add(a.wallet);
     byMarket.set(a.market_id, g);
   }
@@ -151,7 +151,7 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
   const recipients = eliteUsers.filter(u => !!u.telegram_bindings?.telegram_user_id);
   for (const a of recent) {
     for (const user of recipients) {
-      const text = `🔥 Conviction Signal\n\nMarket: ${a.market_id}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${(a as any).id}`;
+      const text = `🔥 Conviction Signal\n\nMarket: ${a.market_id}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${a.id}`;
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
         await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);

@@ -31,7 +31,7 @@ function parseTrade(t: RawTrade) {
 
 export async function ingestTrades(prisma: PrismaClient) {
   try {
-    const res = await axios.get(env.POLYMARKET_TRADES_URL, { timeout: 10000 });
+    const res = await axios.get(env.POLYMARKET_TRADES_URL, { timeout: 30000 });
     const data = Array.isArray(res.data) ? res.data : (res.data?.trades || []);
     if (!Array.isArray(data)) {
       console.warn('Trades API returned unexpected payload shape');

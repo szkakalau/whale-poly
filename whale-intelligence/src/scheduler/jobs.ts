@@ -41,7 +41,7 @@ export function startJobs(bot?: Telegraf) {
 
   // Alert creation & dispatch: every 1 minute
   cron.schedule('* * * * *', async () => {
-    await createAlerts(prisma, 80);
+    await createAlerts(prisma, 10);
     if (bot) {
       await dispatchAlerts(prisma, bot);
     }
