@@ -14,11 +14,29 @@ async function main() {
   
   // CORS configuration
   app.use((req, res, next) => {
-    const allowedOrigins = ['https://sightwhale.com', 'http://localhost:3000', 'http://localhost:3001'];
+    const allowedOrigins = [
+      'https://sightwhale.com', 
+      'http://localhost:3000', 
+      'http://localhost:3001'
+    ];
+    
+    // Allow origins defined in environment variables (comma-separated)
+    if (process.env.ALLOWED_ORIGINS) {
+      allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()));
+    }
+
     const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
+    
+    // Check if origin is allowed
+    const isAllowed = origin && (
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.vercel.app') // Allow Vercel preview deployments
+    );
+
+    if (isAllowed) {
       res.header('Access-Control-Allow-Origin', origin);
     }
+    
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') {
