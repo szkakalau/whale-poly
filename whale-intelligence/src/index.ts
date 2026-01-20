@@ -59,7 +59,11 @@ async function main() {
   if (env.TELEGRAM_BOT_TOKEN) {
     try {
       const bot = createBot();
-      await bot.launch();
+      // Use polling with deleteWebhook to resolve conflict
+      await bot.launch({
+        dropPendingUpdates: true,
+        allowedUpdates: ['message', 'callback_query'],
+      });
       console.log('Telegram bot launched');
       startJobs(bot);
 
