@@ -55,7 +55,12 @@ async function main() {
   // Health
   app.get('/health', (_, res) => res.json({ ok: true }));
 
-  // Telegram bot
+  // Start HTTP server immediately for Render health checks
+  const server = app.listen(env.PORT, () => {
+    console.log(`Server listening on port ${env.PORT}`);
+  });
+
+  // Telegram bot (runs in background)
   if (env.TELEGRAM_BOT_TOKEN) {
     const bot = createBot();
     let launched = false;
@@ -74,8 +79,9 @@ async function main() {
         launched = true;
 
         // Graceful stop
-        process.once('SIGINT', () => bot.stop('SIGINT'));
-        process.once('SIGTERM', () => bot.stop('SIGTERM'));
+        const stopBot = () => bot.stop('SIGINT');
+        process.once('SIGINT', stopBot);
+        process.once('SIGTERM', stopBot);
       } catch (err) {
         console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
         retries--;
@@ -91,10 +97,6 @@ async function main() {
     console.warn('Telegram bot not launched; token missing');
     startJobs();
   }
-
-  app.listen(env.PORT, () => {
-    console.log(`Server listening on port ${env.PORT}`);
-  });
 }
 
 main().catch(err => {
