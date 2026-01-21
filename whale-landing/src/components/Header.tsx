@@ -12,6 +12,19 @@ export default function Header() {
           </div>
           <span className="font-bold tracking-tight text-xl text-white">Whale Intelligence</span>
         </Link>
+        
+        <nav className="hidden md:flex items-center gap-8">
+          <Link href="/backtesting" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Performance
+          </Link>
+          <Link href="/conviction" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Conviction
+          </Link>
+          <Link href="/blog" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Blog
+          </Link>
+        </nav>
+
         <a href={CTA_URL} className="btn-primary text-sm px-5 py-2 shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]">
           Get Alerts
         </a>
