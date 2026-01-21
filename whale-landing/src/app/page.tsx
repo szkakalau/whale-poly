@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const CTA_URL = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || "#pricing";
+const FREE_CTA_URL = process.env.NEXT_PUBLIC_FREE_SUBSCRIPTION_URL || "#pricing";
 
 export default function Home() {
   return (
