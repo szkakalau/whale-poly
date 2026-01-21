@@ -12,6 +12,7 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'dummy_key', {
 // Map Stripe price IDs to internal plans
 function mapPriceToPlan(priceId?: string): 'free' | 'pro' | 'elite' | null {
   if (!priceId) return null;
+  if (env.STRIPE_PRICE_FREE && priceId === env.STRIPE_PRICE_FREE) return 'free';
   if (priceId === env.STRIPE_PRICE_PRO) return 'pro';
   if (priceId === env.STRIPE_PRICE_ELITE) return 'elite';
   return null;

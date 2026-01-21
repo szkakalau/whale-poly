@@ -31,12 +31,21 @@ function parseTrade(t: RawTrade) {
 
 export async function ingestTrades(prisma: PrismaClient) {
   try {
-    const res = await axios.get(env.POLYMARKET_TRADES_URL, { timeout: 30000 });
+    console.log(`[Ingestion] Fetching trades from ${env.POLYMARKET_TRADES_URL}...`);
+    const res = await axios.get(env.POLYMARKET_TRADES_URL, { timeout: 30000, validateStatus: () => true });
+    
+    if (res.status !== 200) {
+        console.error(`[Ingestion] API Error: ${res.status} ${res.statusText}`, res.data);
+        return;
+    }
+
     const data = Array.isArray(res.data) ? res.data : (res.data?.trades || []);
     if (!Array.isArray(data)) {
-      console.warn('Trades API returned unexpected payload shape');
+      console.warn('[Ingestion] Trades API returned unexpected payload shape:', typeof res.data, Object.keys(res.data || {}));
       return;
     }
+    
+    console.log(`[Ingestion] Received ${data.length} trades`);
 
     const batch = [] as any[];
     for (const raw of data as RawTrade[]) {

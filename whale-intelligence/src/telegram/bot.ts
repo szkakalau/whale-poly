@@ -1,9 +1,16 @@
 import { Telegraf } from 'telegraf';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { env } from '../config/env';
 import { prisma } from '../db/prisma';
 
 export function createBot() {
-  const bot = new Telegraf(env.TELEGRAM_BOT_TOKEN);
+  const options: any = {};
+  if (env.HTTPS_PROXY) {
+    options.telegram = { agent: new HttpsProxyAgent(env.HTTPS_PROXY) };
+    console.log(`[Telegram] Using proxy: ${env.HTTPS_PROXY}`);
+  }
+
+  const bot = new Telegraf(env.TELEGRAM_BOT_TOKEN, options);
 
   // Anti-abuse: detect forwarded messages
   bot.on('message', async (ctx, next) => {

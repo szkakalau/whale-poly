@@ -370,7 +370,7 @@ export default function Home() {
                 <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Market heatmap (limited)</li>
                 <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Sample signal history</li>
               </ul>
-              <a href={CTA_URL} className="btn-secondary w-full">Get started free</a>
+              <a href={FREE_CTA_URL} className="btn-secondary w-full">Get started free</a>
             </div>
 
             {/* Pro - Highlighted */}

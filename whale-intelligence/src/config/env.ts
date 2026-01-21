@@ -6,18 +6,21 @@ export const env = {
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
   PORT: Number(process.env.PORT || 4000),
   ACCESS_TOKEN_TTL_MINUTES: Number(process.env.ACCESS_TOKEN_TTL_MINUTES || 15),
-  POLYMARKET_TRADES_URL: process.env.POLYMARKET_TRADES_URL || 'https://clob.polymarket.com/trades',
+  POLYMARKET_TRADES_URL: process.env.POLYMARKET_TRADES_URL || 'https://data-api.polymarket.com/trades',
   POLYMARKET_MARKETS_URL: process.env.POLYMARKET_MARKETS_URL || 'https://clob.polymarket.com/markets',
   POLYMARKET_ORDERBOOK_URL: process.env.POLYMARKET_ORDERBOOK_URL || 'https://clob.polymarket.com/orderbook',
   POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_SETTLEMENTS_URL || 'https://clob.polymarket.com/settlements',
   // Stripe
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+  STRIPE_PRICE_FREE: process.env.STRIPE_PRICE_FREE || '',
   STRIPE_PRICE_PRO: process.env.STRIPE_PRICE_PRO || '',
   STRIPE_PRICE_ELITE: process.env.STRIPE_PRICE_ELITE || '',
   // Alert delivery controls
   FREE_ALERT_DELAY_MINUTES: Number(process.env.FREE_ALERT_DELAY_MINUTES || 90),
-  MARKET_ALERT_RATE_LIMIT_MINUTES: Number(process.env.MARKET_ALERT_RATE_LIMIT_MINUTES || 15)
+  MARKET_ALERT_RATE_LIMIT_MINUTES: Number(process.env.MARKET_ALERT_RATE_LIMIT_MINUTES || 15),
+  // Proxy
+  HTTPS_PROXY: process.env.HTTPS_PROXY || ''
 };
 
 if (!env.DATABASE_URL) {

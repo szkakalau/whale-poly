@@ -33,6 +33,7 @@ npm run dev
 - `POLYMARKET_SETTLEMENTS_URL`: Polymarket settlements endpoint
 - `STRIPE_SECRET_KEY`: Stripe secret key for webhook signature verification
 - `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret
+- `STRIPE_PRICE_FREE`: Stripe Price ID for Free tier (optional, if using Stripe for free plan)
 - `STRIPE_PRICE_PRO`: Stripe Price ID for Pro ($39/month)
 - `STRIPE_PRICE_ELITE`: Stripe Price ID for Elite ($129/month)
 - `FREE_ALERT_DELAY_MINUTES`: Delay window for Free tier alerts (default 90)
