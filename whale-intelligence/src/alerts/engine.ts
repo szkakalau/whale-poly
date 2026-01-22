@@ -75,6 +75,16 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
     const marketTitle = market?.title || alert.market_id;
 
     const context: string[] = [];
+    
+    // Add type-specific context
+    if (alert.alert_type === 'build') {
+        context.push('Whale is building a position (multiple trades)');
+    } else if (alert.alert_type === 'exit') {
+        context.push('Whale is exiting/reducing position');
+    } else if (alert.alert_type === 'spike') {
+        context.push('Sudden volume spike detected');
+    }
+
     if (Number(alert.amount) > 50000) {
       context.push('Large size relative to typical flow');
     }

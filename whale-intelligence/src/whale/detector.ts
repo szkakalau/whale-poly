@@ -86,5 +86,33 @@ export async function detectWhales(prisma: PrismaClient) {
     }
   }
 
+  // Persist alerts to database
+  for (const alert of alerts) {
+    // Deduplication: Check if similar alert exists in last 30 mins
+    const existing = await prisma.alerts.findFirst({
+      where: {
+        wallet: alert.wallet,
+        market_id: alert.market_id,
+        alert_type: alert.type,
+        created_at: { gte: new Date(Date.now() - 30 * 60 * 1000) }
+      }
+    });
+
+    if (!existing) {
+      await prisma.alerts.create({
+        data: {
+          wallet: alert.wallet,
+          market_id: alert.market_id,
+          alert_type: alert.type,
+          score: alert.scoreHint,
+          amount: alert.amount,
+          side: alert.side,
+          created_at: new Date()
+        }
+      });
+      console.log(`Generated alert: ${alert.type} for ${alert.wallet} on ${alert.market_id}`);
+    }
+  }
+
   return alerts;
 }
