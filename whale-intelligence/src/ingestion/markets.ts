@@ -9,6 +9,7 @@ async function retryFetch(url: string, opts: any = {}, retries = 3, delayMs = 50
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, opts);
+      // Gamma API returns { data: [...] } or just [...]
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res;
     } catch (err) {
@@ -27,7 +28,8 @@ export async function ingestMarkets() {
   try {
     const res = await retryFetch(env.POLYMARKET_MARKETS_URL);
     const data = await res.json();
-    const markets = Array.isArray(data) ? data : (data?.markets || []);
+    // Gamma API for /markets usually returns array directly or { markets: [...] } or { data: [...] }
+    const markets = Array.isArray(data) ? data : (data?.markets || data?.data || []);
     const now = new Date();
     for (const m of markets) {
       const id = String(m.id || m.market_id || m.slug || m.ticker || '').trim();

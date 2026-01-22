@@ -20,17 +20,27 @@ type RawTrade = {
   price?: number | string;
   timestamp?: string | number;
   created_at?: string;
+  // New keys from Data API
+  proxyWallet?: string;
+  conditionId?: string;
+  asset?: string;
+  transactionHash?: string;
 };
 
 function parseTrade(t: RawTrade) {
-  const tradeId = t.trade_id || t.id;
-  const marketId = t.market_id || 'unknown';
-  const wallet = t.wallet || t.maker || t.taker || 'unknown';
+  // Use transactionHash as fallback ID if trade_id/id missing.
+  // Note: This might skip multiple trades in same tx if no index provided, 
+  // but it's better than skipping all.
+  const tradeId = t.trade_id || t.id || t.transactionHash;
+  const marketId = t.market_id || t.conditionId || t.asset || 'unknown';
+  const wallet = t.wallet || t.maker || t.taker || t.proxyWallet || 'unknown';
   const side = (t.side || '').toLowerCase() === 'sell' ? 'sell' : 'buy';
   const amount = (t.amount ?? t.size ?? 0) as number | string;
   const price = (t.price ?? 0) as number | string;
   const tsStr = (t.timestamp ?? t.created_at ?? Date.now()) as string | number;
-  const timestamp = new Date(typeof tsStr === 'number' ? tsStr : tsStr);
+  // Handle timestamp in seconds (10 digits) vs ms
+  const tsNum = typeof tsStr === 'number' ? tsStr : Number(tsStr);
+  const timestamp = new Date(tsNum < 10000000000 ? tsNum * 1000 : tsNum);
   return { tradeId, marketId, wallet, side, amount: Number(amount), price: Number(price), timestamp };
 }
 
