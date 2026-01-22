@@ -201,10 +201,20 @@ export async function createConvictionSignals(prisma: PrismaClient) {
 export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Telegraf) {
   const recent = await prisma.alerts.findMany({ where: { alert_type: 'conviction', created_at: { gte: new Date(Date.now() - 10 * 60 * 1000) } } });
   if (!recent.length) return;
+  
+  // Apply startup deduplication to conviction signals as well
+  const alertsToProcess = recent.filter(a => a.created_at >= BOOT_TIME);
+  
   const eliteUsers = await prisma.users.findMany({ where: { status: 'active', plan: 'elite' }, include: { telegram_bindings: true } });
   const recipients = eliteUsers.filter(u => !!u.telegram_bindings?.telegram_user_id);
-  for (const a of recent) {
+  
+  for (const a of alertsToProcess) {
+    if (sentAlertIds.has(a.id)) continue;
+
     for (const user of recipients) {
+      // Add delay between sends to prevent rate limit
+      await new Promise(r => setTimeout(r, 1000));
+
       const text = `🔥 Conviction Signal\n\nMarket: ${a.market_id}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${a.id}`;
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
@@ -213,5 +223,6 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
         console.error('Failed to send conviction to', chatId, err);
       }
     }
+    sentAlertIds.add(a.id);
   }
 }
