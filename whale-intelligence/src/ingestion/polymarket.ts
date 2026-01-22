@@ -1,6 +1,11 @@
 import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { PrismaClient } from '@prisma/client';
 import { env } from '../config/env';
+
+// Create agent instance outside the function to reuse it, or inside if you prefer.
+// Since this is a module, creating it once is fine if env doesn't change.
+const agent = env.HTTPS_PROXY ? new HttpsProxyAgent(env.HTTPS_PROXY) : undefined;
 
 type RawTrade = {
   id?: string;
@@ -32,7 +37,12 @@ function parseTrade(t: RawTrade) {
 export async function ingestTrades(prisma: PrismaClient) {
   try {
     console.log(`[Ingestion] Fetching trades from ${env.POLYMARKET_TRADES_URL}...`);
-    const res = await axios.get(env.POLYMARKET_TRADES_URL, { timeout: 30000, validateStatus: () => true });
+    const res = await axios.get(env.POLYMARKET_TRADES_URL, { 
+      timeout: 30000, 
+      validateStatus: () => true,
+      httpsAgent: agent,
+      proxy: false // prevent axios from using its own proxy logic which might conflict with https-proxy-agent
+    });
     
     if (res.status !== 200) {
         console.error(`[Ingestion] API Error: ${res.status} ${res.statusText}`, res.data);
