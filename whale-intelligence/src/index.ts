@@ -89,8 +89,10 @@ async function main() {
         } catch (err: any) {
           // Check for 409 Conflict: another instance is running
           if (err?.response?.error_code === 409) {
-            console.warn('Telegram Bot Conflict (409): Another instance is running. Stopping this bot instance to avoid conflict.');
-            return; // Exit loop, do not retry
+            console.warn('Telegram Bot Conflict (409): Another instance is running. Retrying in 10s...');
+            await new Promise(res => setTimeout(res, 10000));
+            // Do NOT decrement retries heavily for 409, or just continue loop
+            continue; 
           }
 
           console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);

@@ -29,6 +29,13 @@ export async function ingestOrderbookSnapshots() {
     const markets = await db.markets.findMany({ where: { status: 'open' }, take: 100 });
     const now = new Date();
     for (const m of markets) {
+      // Validate ID: CLOB IDs are typically long hashes/UUIDs. 
+      // Skip short numeric legacy IDs (e.g. "12", "44") which cause 404s.
+      // This also helps clean up the loop from legacy data.
+      if (!m.id || m.id.length < 10) {
+        continue;
+      }
+
       // CLOB API uses `token_id` instead of `market_id` for orderbooks in some endpoints, 
       // but standard /book endpoint uses `token_id` which corresponds to our market.id (condition ID or token ID).
       // Let's try `token_id` parameter.
