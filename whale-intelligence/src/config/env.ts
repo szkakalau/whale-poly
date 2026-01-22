@@ -6,10 +6,12 @@ export const env = {
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
   PORT: Number(process.env.PORT || 4000),
   ACCESS_TOKEN_TTL_MINUTES: Number(process.env.ACCESS_TOKEN_TTL_MINUTES || 15),
-  POLYMARKET_TRADES_URL: process.env.POLYMARKET_TRADES_URL || 'https://data-api.polymarket.com/trades',
-  POLYMARKET_MARKETS_URL: process.env.POLYMARKET_MARKETS_URL || 'https://data-api.polymarket.com/markets',
+  // Enforce Data API for trades/markets/settlements to avoid CLOB auth issues
+  // We use new env vars POLYMARKET_DATA_API_* to allow override if needed, but ignore the potentially polluted POLYMARKET_TRADES_URL
+  POLYMARKET_TRADES_URL: process.env.POLYMARKET_DATA_API_TRADES_URL || 'https://data-api.polymarket.com/trades',
+  POLYMARKET_MARKETS_URL: process.env.POLYMARKET_DATA_API_MARKETS_URL || 'https://data-api.polymarket.com/markets',
   POLYMARKET_ORDERBOOK_URL: process.env.POLYMARKET_ORDERBOOK_URL || 'https://clob.polymarket.com/orderbook',
-  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_SETTLEMENTS_URL || 'https://data-api.polymarket.com/settlements',
+  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_DATA_API_SETTLEMENTS_URL || 'https://data-api.polymarket.com/settlements',
   // Stripe
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
