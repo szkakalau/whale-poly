@@ -56,6 +56,9 @@ export async function ingestTrades(prisma: PrismaClient) {
     }
     
     console.log(`[Ingestion] Received ${data.length} trades`);
+    if (data.length > 0) {
+      console.log('[Ingestion] Sample trade keys:', Object.keys(data[0]));
+    }
 
     const batch = [] as any[];
     for (const raw of data as RawTrade[]) {
