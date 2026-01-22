@@ -150,6 +150,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
         await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);
+        console.log(`[Alert] Sent alert ${alert.alert_type} (${alert.market_id.slice(0, 6)}...) to ${chatId}`);
       } catch (err: any) {
         // Handle 429 Too Many Requests
         if (err?.response?.error_code === 429) {
@@ -219,6 +220,7 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
         await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);
+        console.log(`[Conviction] Sent signal ${a.market_id.slice(0, 6)}... to ${chatId}`);
       } catch (err) {
         console.error('Failed to send conviction to', chatId, err);
       }
