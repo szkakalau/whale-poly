@@ -13,7 +13,7 @@ export async function detectWhales(prisma: PrismaClient) {
     byWalletMarket.set(key, arr);
   }
 
-  const alerts: { wallet: string; market_id: string; type: BehaviorType; scoreHint: number; amount: number; side: 'buy' | 'sell' }[] = [];
+  const alerts: { wallet: string; market_id: string; type: BehaviorType; scoreHint: number; amount: number; price?: number; side: 'buy' | 'sell' }[] = [];
 
   // Spike detection requires market-level volume context
   const byMarket = new Map<string, typeof trades>();
@@ -28,9 +28,21 @@ export async function detectWhales(prisma: PrismaClient) {
     const [wallet, market_id] = key.split('|');
 
     // Whale identification conditions (Revised for Noise Reduction)
-    // 1. Single Large Trade: Value ≥ $10,000 (was 50k shares)
+    // 1. Single Large Trade: Value ≥ $10,000
     const singleLarge = arr.some(t => (Number(t.amount) * Number(t.price)) >= 10000);
-    
+    if (singleLarge) {
+      const bigTrade = arr.find(t => (Number(t.amount) * Number(t.price)) >= 10000);
+      if (bigTrade) alerts.push({ 
+        wallet, 
+        market_id, 
+        type: 'spike', 
+        scoreHint: 80, 
+        amount: Number(bigTrade.amount), 
+        price: Number(bigTrade.price),
+        side: bigTrade.side as 'buy' | 'sell' 
+      });
+    }
+
     // 2. Split Build/Sell: ≥ 3 trades in 10m AND Total Value ≥ $5,000
     const within10m = arr.filter(t => t.timestamp.getTime() >= Date.now() - 10 * 60 * 1000);
     const buys10m = within10m.filter(t => t.side === 'buy');
@@ -39,30 +51,36 @@ export async function detectWhales(prisma: PrismaClient) {
     const buyVal10m = buys10m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
     const sellVal10m = sells10m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
 
-    const splitBuild = (buys10m.length >= 3 && buyVal10m >= 5000) || 
-                       (sells10m.length >= 3 && sellVal10m >= 5000);
-
-    const whale = singleLarge || splitBuild;
-    if (!whale) continue;
-
-    // Behavior: Position Build (10m window >=3 trades + >$5k vol)
     if (buys10m.length >= 3 && buyVal10m >= 5000) {
-      const last = buys10m[buys10m.length - 1];
-      alerts.push({ wallet, market_id, type: 'build', scoreHint: 80, amount: Number(last.amount), side: 'buy' });
-    }
-    if (sells10m.length >= 3 && sellVal10m >= 5000) {
-      const last = sells10m[sells10m.length - 1];
-      alerts.push({ wallet, market_id, type: 'build', scoreHint: 80, amount: Number(last.amount), side: 'sell' });
+      const lastBuy = buys10m[buys10m.length - 1];
+      if (lastBuy) alerts.push({ 
+        wallet, 
+        market_id, 
+        type: 'build', 
+        scoreHint: 75, 
+        amount: Number(lastBuy.amount), 
+        price: Number(lastBuy.price),
+        side: 'buy' 
+      });
     }
 
-    // Behavior: Exit (significant position reduction > 50% of recent buy vol)
-    // Constraint: Exit volume must be meaningful (e.g. > $1000) to avoid noise
+    // Exit logic
+    // PRD: "Exit" if sell volume > 50% of buy volume in window
+    // We check relative volume, but also enforce a min USD value to avoid noise.
     const buyVol = buys10m.reduce((s, t) => s + Number(t.amount), 0); // Share volume for ratio
     const recentSellVol = sells10m.reduce((s, t) => s + Number(t.amount), 0);
     
     if (buyVol > 0 && recentSellVol >= 0.5 * buyVol && sellVal10m >= 1000) {
       const lastSell = sells10m[sells10m.length - 1];
-      if (lastSell) alerts.push({ wallet, market_id, type: 'exit', scoreHint: 85, amount: Number(lastSell.amount), side: 'sell' });
+      if (lastSell) alerts.push({ 
+        wallet, 
+        market_id, 
+        type: 'exit', 
+        scoreHint: 85, 
+        amount: Number(lastSell.amount), 
+        price: Number(lastSell.price),
+        side: 'sell' 
+      });
     }
 
     // Behavior: Spike (abnormal volume in short window)
@@ -84,7 +102,15 @@ export async function detectWhales(prisma: PrismaClient) {
 
     if (vol5mUsd > 3 * avg5mUsd && vol5mUsd >= 5000 && window5m.some(t => t.wallet === wallet)) {
       const last = window5m.filter(t => t.wallet === wallet).pop();
-      if (last) alerts.push({ wallet, market_id, type: 'spike', scoreHint: 82, amount: Number(last.amount), side: last.side as 'buy' | 'sell' });
+      if (last) alerts.push({ 
+        wallet, 
+        market_id, 
+        type: 'spike', 
+        scoreHint: 82, 
+        amount: Number(last.amount), 
+        price: Number(last.price),
+        side: last.side as 'buy' | 'sell' 
+      });
     }
 
     // Behavior: Depth shock (PRD: consume ≥25% orderbook depth)
@@ -99,7 +125,15 @@ export async function detectWhales(prisma: PrismaClient) {
       const lastTrade = arr[arr.length - 1];
       const amt = Number(lastTrade?.amount || 0);
       if (depth > 0 && amt >= 0.25 * depth) {
-        alerts.push({ wallet, market_id, type: 'spike', scoreHint: 88, amount: amt, side: lastTrade?.side as 'buy' | 'sell' });
+        alerts.push({ 
+          wallet, 
+          market_id, 
+          type: 'spike', 
+          scoreHint: 88, 
+          amount: amt, 
+          price: Number(lastTrade?.price || 0),
+          side: lastTrade?.side as 'buy' | 'sell' 
+        });
       }
     }
   }
@@ -124,6 +158,7 @@ export async function detectWhales(prisma: PrismaClient) {
           alert_type: alert.type,
           score: alert.scoreHint,
           amount: alert.amount,
+          price: alert.price,
           side: alert.side,
           created_at: new Date()
         }

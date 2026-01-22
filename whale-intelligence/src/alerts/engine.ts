@@ -134,10 +134,15 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       // But 429 indicates we are sending too fast. Add a small delay between users.
       await new Promise(r => setTimeout(r, 1000)); 
 
+      // Calculate total USD value
+      const shareAmount = Number(alert.amount || 0);
+      const priceVal = Number(alert.price || 0);
+      const totalValue = shareAmount * priceVal;
+
       const text = renderAlertMessage({
         market: marketTitle,
-        amount: Number(alert.amount || 0),
-        price: Number(alert.price || 0).toFixed(2) as any,
+        amount: totalValue, // Show USD value in message
+        price: priceVal > 0 ? priceVal.toFixed(2) : 'N/A',
         side: alert.side || 'buy',
         trades_count: alert.tx_count || 0,
         time_ago: Math.floor(ageMs / 60000) + 'm ago',
