@@ -7,6 +7,8 @@ import { stripeRouter } from './api/stripe';
 import { createBot } from './telegram/bot';
 import { startJobs } from './scheduler/jobs';
 
+import axios from 'axios';
+
 async function main() {
   await connectPrisma();
 
@@ -58,6 +60,15 @@ async function main() {
   // Start HTTP server immediately for Render health checks
   const server = app.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);
+    
+    // Self-ping to keep Render Free instance awake
+    if (process.env.RENDER_EXTERNAL_URL) {
+        console.log(`Setting up self-ping for ${process.env.RENDER_EXTERNAL_URL}`);
+        setInterval(() => {
+            axios.get(`${process.env.RENDER_EXTERNAL_URL}/health`)
+                .catch(err => console.error('Self-ping failed', err.message));
+        }, 10 * 60 * 1000); // Ping every 10 minutes
+    }
   });
 
   // Telegram bot (runs in background)
