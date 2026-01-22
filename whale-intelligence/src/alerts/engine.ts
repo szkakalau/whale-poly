@@ -61,12 +61,23 @@ export async function createAlerts(prisma: PrismaClient, threshold = 80) {
 }
 
 const sentAlertIds = new Set<string>();
+const BOOT_TIME = new Date();
 
 export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
+  // Only process alerts created AFTER this instance started to prevent:
+  // 1. Resending old alerts on restart
+  // 2. Conflict/Duplication with the previous instance during rolling updates
   const recentAlerts = await prisma.alerts.findMany({
-    where: { created_at: { gte: new Date(Date.now() - 10 * 60 * 1000) } }
+    where: { 
+      created_at: { 
+        gte: new Date(Date.now() - 10 * 60 * 1000), // Safety window
+      } 
+    }
   });
   if (!recentAlerts.length) return;
+
+  // Filter out alerts older than boot time (strict deduplication for rolling deploys)
+  const alertsToProcess = recentAlerts.filter(a => a.created_at >= BOOT_TIME);
 
   // Cleanup old IDs from memory to prevent leak
   if (sentAlertIds.size > 10000) {
@@ -76,7 +87,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
   const activeUsers = await prisma.users.findMany({ where: { status: 'active' }, include: { telegram_bindings: true } });
   const recipients = activeUsers.filter(u => !!u.telegram_bindings?.telegram_user_id);
   
-  for (const alert of recentAlerts) {
+  for (const alert of alertsToProcess) {
     if (sentAlertIds.has(alert.id)) continue;
 
     // Fetch market metadata
@@ -121,7 +132,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       // In a real system, we'd track sent_alerts table. For now, rely on `dispatchAlerts` only fetching recent alerts
       // and maybe relying on rate limits.
       // But 429 indicates we are sending too fast. Add a small delay between users.
-      await new Promise(r => setTimeout(r, 200)); 
+      await new Promise(r => setTimeout(r, 1000)); 
 
       const text = renderAlertMessage({
         market: marketTitle,
