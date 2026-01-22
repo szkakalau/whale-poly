@@ -94,9 +94,28 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
     // Fetch market metadata
     let marketTitle = marketMap.get(alert.market_id);
     
+    // Fallback: If no title found, try to find by searching all keys in marketMap 
+    // (This handles cases where alert.market_id is a Token ID but we need the Market ID's title)
+    // Note: marketMap already stores TokenID -> Title mapping if ingested correctly.
+    
     if (!marketTitle) {
-      const market = await (prisma as any).markets.findUnique({ where: { id: alert.market_id } });
-      marketTitle = market?.title || alert.market_id;
+      // Direct DB fallback
+      const market = await (prisma as any).markets.findFirst({
+         where: { 
+             OR: [
+                 { id: alert.market_id },
+                 // Check if it's a token ID by joining (simplified for now as markets table stores IDs)
+             ]
+         } 
+      });
+      // If still not found, it might be a raw Token ID. We should trust the ingestor has mapped it.
+      // But if it's a fresh token ID not yet in map, we display it as is.
+      marketTitle = market?.title;
+    }
+
+    // FINAL FALLBACK: If still no title, display "Unknown Market (ID: ...)"
+    if (!marketTitle) {
+         marketTitle = `Unknown Market (${alert.market_id.slice(0, 8)}...)`;
     }
 
     const context: string[] = [];

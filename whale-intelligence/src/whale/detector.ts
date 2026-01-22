@@ -93,11 +93,6 @@ export async function detectWhales(prisma: PrismaClient) {
     
     // Calculate USD Volume for spike threshold
     const vol5mUsd = window5m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
-    const avgVolUsd = marketTrades.length ? marketTrades.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0) / (marketTrades.length / 50) : 0; // Rough avg per batch? 
-    // Better avg: total volume / (time range in minutes / 5) -> 5m avg. 
-    // Simplified: compare to average of last hour? 
-    // Let's stick to relative volume but enforce a USD floor.
-    
     const marketTotalUsd = marketTrades.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
     // Average 5m volume = Total Volume / (Duration / 5m)
     const durationMs = marketTrades.length > 1 ? (marketTrades[marketTrades.length - 1].timestamp.getTime() - marketTrades[0].timestamp.getTime()) : 1;
@@ -133,7 +128,8 @@ export async function detectWhales(prisma: PrismaClient) {
       const depth = Number(latestSnap.total_depth_usd);
       const lastTrade = arr[arr.length - 1];
       const amt = Number(lastTrade?.amount || 0);
-      if (depth > 0 && amt >= 0.25 * depth) {
+      // Ensure depth shock is also significant in USD value (e.g. > $1000)
+      if (depth > 0 && amt >= 0.25 * depth && (amt * Number(lastTrade?.price || 0) > 1000)) {
         alerts.push({ 
           wallet, 
           market_id, 
