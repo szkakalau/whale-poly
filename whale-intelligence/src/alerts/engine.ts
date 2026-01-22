@@ -97,6 +97,13 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
         // Skip for free users until the delay window passes
         continue;
       }
+      
+      // Check if we already sent this alert to this user to avoid duplicates/spamming in this loop run
+      // In a real system, we'd track sent_alerts table. For now, rely on `dispatchAlerts` only fetching recent alerts
+      // and maybe relying on rate limits.
+      // But 429 indicates we are sending too fast. Add a small delay between users.
+      await new Promise(r => setTimeout(r, 200)); 
+
       const text = renderAlertMessage({
         market: marketTitle,
         amount: Number(alert.amount || 0),
@@ -107,13 +114,29 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
         score: Math.round(alert.score) / 10,
         alertId: (alert as any).id,
         hideScore: isFree,
-        context: isElite ? context : undefined // Only show context to Elite? Or everyone? Mock didn't specify, but it adds value. Let's show to everyone for now or maybe just Pro/Elite.
+        context: isElite ? context : undefined 
       }) + variation;
+      
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
         await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);
-      } catch (err) {
-        console.error('Failed to send alert to', chatId, err);
+      } catch (err: any) {
+        // Handle 429 Too Many Requests
+        if (err?.response?.error_code === 429) {
+           const retryAfter = err.response.parameters?.retry_after || 10;
+           console.warn(`Rate limit hit for ${chatId}, retrying after ${retryAfter}s`);
+           // For simplicity in this loop, we might just skip or wait. 
+           // Waiting blocks other users. Better to log and maybe retry later or skip.
+           // Let's wait a bit and retry once.
+           await new Promise(r => setTimeout(r, (retryAfter + 1) * 1000));
+           try {
+             await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);
+           } catch (retryErr) {
+             console.error('Retry failed for', chatId, retryErr);
+           }
+        } else {
+           console.error('Failed to send alert to', chatId, err);
+        }
       }
     }
   }
