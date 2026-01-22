@@ -32,7 +32,15 @@ export async function ingestMarkets() {
     const markets = Array.isArray(data) ? data : (data?.markets || data?.data || []);
     const now = new Date();
     for (const m of markets) {
-      const id = String(m.id || m.market_id || m.slug || m.ticker || '').trim();
+      // Try to find CLOB Token ID first to match Orderbook/Trade APIs
+      let token_id = '';
+      if (Array.isArray(m.clobTokenIds) && m.clobTokenIds.length > 0) {
+        token_id = m.clobTokenIds[0];
+      } else if (Array.isArray(m.tokens) && m.tokens.length > 0 && m.tokens[0].token_id) {
+        token_id = m.tokens[0].token_id;
+      }
+
+      const id = String(token_id || m.id || m.market_id || m.slug || m.ticker || '').trim();
       if (!id) continue;
       const title = String(m.title || m.question || m.name || id);
       const category = m.category ? String(m.category) : null;
