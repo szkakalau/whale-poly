@@ -10,8 +10,8 @@ export const env = {
   // We use new env vars POLYMARKET_DATA_API_* to allow override if needed, but ignore the potentially polluted POLYMARKET_TRADES_URL
   POLYMARKET_TRADES_URL: process.env.POLYMARKET_DATA_API_TRADES_URL || 'https://data-api.polymarket.com/trades',
   POLYMARKET_MARKETS_URL: process.env.POLYMARKET_DATA_API_MARKETS_URL || 'https://gamma-api.polymarket.com/markets',
-  POLYMARKET_ORDERBOOK_URL: process.env.POLYMARKET_ORDERBOOK_URL || 'https://clob.polymarket.com/orderbook',
-  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_DATA_API_SETTLEMENTS_URL || 'https://data-api.polymarket.com/settlements',
+  POLYMARKET_ORDERBOOK_URL: process.env.POLYMARKET_ORDERBOOK_URL || 'https://clob.polymarket.com/book',
+  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_SETTLEMENTS_URL || 'https://gamma-api.polymarket.com/events?closed=true',
   // Stripe
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',

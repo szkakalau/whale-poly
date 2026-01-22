@@ -29,8 +29,10 @@ export async function ingestOrderbookSnapshots() {
     const markets = await db.markets.findMany({ where: { status: 'open' }, take: 100 });
     const now = new Date();
     for (const m of markets) {
-      // Assume endpoint supports query by market_id
-      const url = `${env.POLYMARKET_ORDERBOOK_URL}?market_id=${encodeURIComponent(m.id)}`;
+      // CLOB API uses `token_id` instead of `market_id` for orderbooks in some endpoints, 
+      // but standard /book endpoint uses `token_id` which corresponds to our market.id (condition ID or token ID).
+      // Let's try `token_id` parameter.
+      const url = `${env.POLYMARKET_ORDERBOOK_URL}?token_id=${encodeURIComponent(m.id)}`;
       let data: any;
       try {
         const res = await retryFetch(url);
