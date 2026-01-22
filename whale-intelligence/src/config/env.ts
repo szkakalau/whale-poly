@@ -7,9 +7,9 @@ export const env = {
   PORT: Number(process.env.PORT || 4000),
   ACCESS_TOKEN_TTL_MINUTES: Number(process.env.ACCESS_TOKEN_TTL_MINUTES || 15),
   POLYMARKET_TRADES_URL: process.env.POLYMARKET_TRADES_URL || 'https://data-api.polymarket.com/trades',
-  POLYMARKET_MARKETS_URL: process.env.POLYMARKET_MARKETS_URL || 'https://clob.polymarket.com/markets',
+  POLYMARKET_MARKETS_URL: process.env.POLYMARKET_MARKETS_URL || 'https://data-api.polymarket.com/markets',
   POLYMARKET_ORDERBOOK_URL: process.env.POLYMARKET_ORDERBOOK_URL || 'https://clob.polymarket.com/orderbook',
-  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_SETTLEMENTS_URL || 'https://clob.polymarket.com/settlements',
+  POLYMARKET_SETTLEMENTS_URL: process.env.POLYMARKET_SETTLEMENTS_URL || 'https://data-api.polymarket.com/settlements',
   // Stripe
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
