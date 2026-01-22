@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Telegraf } from 'telegraf';
 import { renderAlertMessage } from '../telegram/templates';
 import { env } from '../config/env';
-import { marketMap } from '../ingestion/markets';
+import { marketMap, fetchMarketDetails } from '../ingestion/markets';
 
 export async function createAlerts(prisma: PrismaClient, threshold = 80) {
   const since = new Date(Date.now() - 10 * 60 * 1000); // recent scores
@@ -111,6 +111,15 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       // If still not found, it might be a raw Token ID. We should trust the ingestor has mapped it.
       // But if it's a fresh token ID not yet in map, we display it as is.
       marketTitle = market?.title;
+    }
+
+    // ON-DEMAND FETCH FALLBACK
+    if (!marketTitle) {
+         // Try to fetch from API in real-time if we missed it during ingestion
+         const fetchedTitle = await fetchMarketDetails(alert.market_id);
+         if (fetchedTitle) {
+             marketTitle = fetchedTitle;
+         }
     }
 
     // FINAL FALLBACK: If still no title, display "Unknown Market (ID: ...)"
