@@ -60,16 +60,25 @@ export async function createAlerts(prisma: PrismaClient, threshold = 80) {
   }
 }
 
+const sentAlertIds = new Set<string>();
+
 export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
   const recentAlerts = await prisma.alerts.findMany({
     where: { created_at: { gte: new Date(Date.now() - 10 * 60 * 1000) } }
   });
   if (!recentAlerts.length) return;
 
+  // Cleanup old IDs from memory to prevent leak
+  if (sentAlertIds.size > 10000) {
+      sentAlertIds.clear(); // Simple purge strategy
+  }
+
   const activeUsers = await prisma.users.findMany({ where: { status: 'active' }, include: { telegram_bindings: true } });
   const recipients = activeUsers.filter(u => !!u.telegram_bindings?.telegram_user_id);
   
   for (const alert of recentAlerts) {
+    if (sentAlertIds.has(alert.id)) continue;
+
     // Fetch market metadata
     const market = await (prisma as any).markets.findUnique({ where: { id: alert.market_id } });
     const marketTitle = market?.title || alert.market_id;
@@ -149,6 +158,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
         }
       }
     }
+    sentAlertIds.add(alert.id);
   }
 }
 
