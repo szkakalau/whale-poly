@@ -86,7 +86,13 @@ async function main() {
           process.once('SIGINT', stopBot);
           process.once('SIGTERM', stopBot);
           return;
-        } catch (err) {
+        } catch (err: any) {
+          // Check for 409 Conflict: another instance is running
+          if (err?.response?.error_code === 409) {
+            console.warn('Telegram Bot Conflict (409): Another instance is running. Stopping this bot instance to avoid conflict.');
+            return; // Exit loop, do not retry
+          }
+
           console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
           retries--;
           if (retries > 0) {
