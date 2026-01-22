@@ -63,36 +63,40 @@ async function main() {
   // Telegram bot (runs in background)
   if (env.TELEGRAM_BOT_TOKEN) {
     const bot = createBot();
-    let launched = false;
-    let retries = 5;
+    
+    // Start jobs immediately, passing the bot instance.
+    // Even if bot launch (polling) fails or hangs, we want ingestion to run.
+    console.log('Starting scheduled jobs...');
+    startJobs(bot);
 
-    // Retry logic for bot launch
-    while (!launched && retries > 0) {
-      try {
-        // Use polling with deleteWebhook to resolve conflict
-        await bot.launch({
-          dropPendingUpdates: true,
-          allowedUpdates: ['message', 'callback_query'],
-        });
-        console.log('Telegram bot launched');
-        startJobs(bot);
-        launched = true;
-
-        // Graceful stop
-        const stopBot = () => bot.stop('SIGINT');
-        process.once('SIGINT', stopBot);
-        process.once('SIGTERM', stopBot);
-      } catch (err) {
-        console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
-        retries--;
-        if (retries > 0) {
-          await new Promise(res => setTimeout(res, 5000)); // Wait 5s before retry
-        } else {
-          console.error('Continuing without bot after max retries');
-          startJobs();
+    console.log('Launching Telegram bot...');
+    // Launch in background with retry logic
+    (async () => {
+      let retries = 5;
+      while (retries > 0) {
+        try {
+          await bot.launch({
+            dropPendingUpdates: true,
+            allowedUpdates: ['message', 'callback_query'],
+          });
+          console.log('Telegram bot launched successfully');
+          
+          // Graceful stop
+          const stopBot = () => bot.stop('SIGINT');
+          process.once('SIGINT', stopBot);
+          process.once('SIGTERM', stopBot);
+          return;
+        } catch (err) {
+          console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
+          retries--;
+          if (retries > 0) {
+            await new Promise(res => setTimeout(res, 5000));
+          } else {
+            console.error('Telegram bot failed to launch after max retries. Alerts may not work, but ingestion will continue.');
+          }
         }
       }
-    }
+    })();
   } else {
     console.warn('Telegram bot not launched; token missing');
     startJobs();
