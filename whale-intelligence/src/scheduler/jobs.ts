@@ -9,6 +9,9 @@ import { createAlerts, dispatchAlerts, createConvictionSignals, dispatchConvicti
 import { Telegraf } from 'telegraf';
 
 export function startJobs(bot?: Telegraf) {
+  // Run critical ingestions immediately on startup to populate caches (e.g. marketMap)
+  ingestMarkets().catch(err => console.error('Initial market ingestion failed', err));
+
   // Market metadata refresh: every 10 minutes
   cron.schedule('*/10 * * * *', async () => {
     await ingestMarkets();

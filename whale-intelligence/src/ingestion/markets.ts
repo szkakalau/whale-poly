@@ -16,6 +16,9 @@ const apiClient = axios.create({
   timeout: 30000
 });
 
+// Global map to store Market ID / Token ID -> Market Title mapping
+export const marketMap = new Map<string, string>();
+
 async function retryFetch(url: string, retries = 3, delayMs = 500): Promise<any> {
   let lastErr: any;
   for (let i = 0; i < retries; i++) {
@@ -73,6 +76,7 @@ export async function ingestMarkets() {
 
       for (const id of idsToStore) {
         if (!id) continue;
+        marketMap.set(id, title);
         await db.markets.upsert({
           where: { id },
           update: { title, category, status, resolved_at },

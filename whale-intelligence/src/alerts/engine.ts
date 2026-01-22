@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Telegraf } from 'telegraf';
 import { renderAlertMessage } from '../telegram/templates';
 import { env } from '../config/env';
+import { marketMap } from '../ingestion/markets';
 
 export async function createAlerts(prisma: PrismaClient, threshold = 80) {
   const since = new Date(Date.now() - 10 * 60 * 1000); // recent scores
@@ -91,8 +92,12 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
     if (sentAlertIds.has(alert.id)) continue;
 
     // Fetch market metadata
-    const market = await (prisma as any).markets.findUnique({ where: { id: alert.market_id } });
-    const marketTitle = market?.title || alert.market_id;
+    let marketTitle = marketMap.get(alert.market_id);
+    
+    if (!marketTitle) {
+      const market = await (prisma as any).markets.findUnique({ where: { id: alert.market_id } });
+      marketTitle = market?.title || alert.market_id;
+    }
 
     const context: string[] = [];
     
@@ -140,7 +145,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       const totalValue = shareAmount * priceVal;
 
       const text = renderAlertMessage({
-        market: marketTitle,
+        market: marketTitle || alert.market_id,
         amount: totalValue, // Show USD value in message
         price: priceVal > 0 ? priceVal.toFixed(2) : 'N/A',
         side: alert.side || 'buy',

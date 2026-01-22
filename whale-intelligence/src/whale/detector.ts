@@ -52,14 +52,16 @@ export async function detectWhales(prisma: PrismaClient) {
     const sellVal10m = sells10m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
 
     if (buys10m.length >= 3 && buyVal10m >= 5000) {
-      const lastBuy = buys10m[buys10m.length - 1];
-      if (lastBuy) alerts.push({ 
+      const totalAmount = buys10m.reduce((s, t) => s + Number(t.amount), 0);
+      const avgPrice = totalAmount > 0 ? buyVal10m / totalAmount : 0;
+      
+      alerts.push({ 
         wallet, 
         market_id, 
         type: 'build', 
         scoreHint: 75, 
-        amount: Number(lastBuy.amount), 
-        price: Number(lastBuy.price),
+        amount: totalAmount, 
+        price: avgPrice,
         side: 'buy' 
       });
     }
@@ -71,14 +73,16 @@ export async function detectWhales(prisma: PrismaClient) {
     const recentSellVol = sells10m.reduce((s, t) => s + Number(t.amount), 0);
     
     if (buyVol > 0 && recentSellVol >= 0.5 * buyVol && sellVal10m >= 1000) {
-      const lastSell = sells10m[sells10m.length - 1];
-      if (lastSell) alerts.push({ 
+      const totalAmount = sells10m.reduce((s, t) => s + Number(t.amount), 0);
+      const avgPrice = totalAmount > 0 ? sellVal10m / totalAmount : 0;
+
+      alerts.push({ 
         wallet, 
         market_id, 
         type: 'exit', 
         scoreHint: 85, 
-        amount: Number(lastSell.amount), 
-        price: Number(lastSell.price),
+        amount: totalAmount, 
+        price: avgPrice,
         side: 'sell' 
       });
     }
@@ -101,15 +105,20 @@ export async function detectWhales(prisma: PrismaClient) {
     const avg5mUsd = marketTotalUsd / duration5mChunks;
 
     if (vol5mUsd > 3 * avg5mUsd && vol5mUsd >= 5000 && window5m.some(t => t.wallet === wallet)) {
-      const last = window5m.filter(t => t.wallet === wallet).pop();
-      if (last) alerts.push({ 
+      const userTrades = window5m.filter(t => t.wallet === wallet);
+      const userVolUsd = userTrades.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
+      const userAmount = userTrades.reduce((s, t) => s + Number(t.amount), 0);
+      const avgPrice = userAmount > 0 ? userVolUsd / userAmount : 0;
+      const lastSide = userTrades[userTrades.length - 1]?.side || 'buy';
+
+      if (userTrades.length > 0) alerts.push({ 
         wallet, 
         market_id, 
         type: 'spike', 
         scoreHint: 82, 
-        amount: Number(last.amount), 
-        price: Number(last.price),
-        side: last.side as 'buy' | 'sell' 
+        amount: userAmount, 
+        price: avgPrice,
+        side: lastSide as 'buy' | 'sell' 
       });
     }
 
