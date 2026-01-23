@@ -100,12 +100,12 @@ export async function detectWhales(prisma: PrismaClient) {
     const duration5mChunks = Math.max(1, durationMs / (5 * 60 * 1000));
     const avg5mUsd = marketTotalUsd / duration5mChunks;
 
-    if (vol5mUsd > 3 * avg5mUsd && vol5mUsd >= 5000 && window5m.some(t => t.wallet === wallet)) {
+    if (vol5mUsd > 3 * avg5mUsd && vol5mUsd >= 10000 && window5m.some(t => t.wallet === wallet)) {
       const userTrades = window5m.filter(t => t.wallet === wallet);
       const userVolUsd = userTrades.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
       
       // Ensure the user themselves has significant volume, not just the market
-      if (userVolUsd >= 5000) {
+      if (userVolUsd >= 10000) {
         const userAmount = userTrades.reduce((s, t) => s + Number(t.amount), 0);
         const avgPrice = userAmount > 0 ? userVolUsd / userAmount : 0;
         const lastSide = userTrades[userTrades.length - 1]?.side || 'buy';
