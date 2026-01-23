@@ -51,7 +51,7 @@ export async function detectWhales(prisma: PrismaClient) {
     const buyVal10m = buys10m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
     const sellVal10m = sells10m.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
 
-    if (buys10m.length >= 3 && buyVal10m >= 5000) {
+    if (buys10m.length >= 3 && buyVal10m >= 10000) {
       const totalAmount = buys10m.reduce((s, t) => s + Number(t.amount), 0);
       const avgPrice = totalAmount > 0 ? buyVal10m / totalAmount : 0;
       
@@ -133,8 +133,8 @@ export async function detectWhales(prisma: PrismaClient) {
       const depth = Number(latestSnap.total_depth_usd);
       const lastTrade = arr[arr.length - 1];
       const amt = Number(lastTrade?.amount || 0);
-      // Ensure depth shock is also significant in USD value (e.g. > $5000)
-      if (depth > 0 && amt >= 0.25 * depth && (amt * Number(lastTrade?.price || 0) > 5000)) {
+      // Ensure depth shock is also significant in USD value (e.g. > $10000)
+      if (depth > 0 && amt >= 0.25 * depth && (amt * Number(lastTrade?.price || 0) > 10000)) {
         alerts.push({ 
           wallet, 
           market_id, 
