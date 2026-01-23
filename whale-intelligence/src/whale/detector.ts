@@ -4,7 +4,17 @@ export type BehaviorType = 'build' | 'spike' | 'exit';
 
 export async function detectWhales(prisma: PrismaClient) {
   const since = new Date(Date.now() - 60 * 60 * 1000); // last 1h window for detection
-  const trades = await prisma.trades_raw.findMany({ where: { timestamp: { gte: since } } });
+  const trades = await prisma.trades_raw.findMany({ 
+    where: { timestamp: { gte: since } },
+    select: {
+      wallet: true,
+      market_id: true,
+      amount: true,
+      price: true,
+      side: true,
+      timestamp: true
+    }
+  });
   const byWalletMarket = new Map<string, typeof trades>();
   for (const t of trades) {
     const key = `${t.wallet}|${t.market_id}`;
