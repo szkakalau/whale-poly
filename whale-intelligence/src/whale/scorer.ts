@@ -29,7 +29,16 @@ function stdDev(values: number[]): number {
 export async function calculateScores(prisma: PrismaClient) {
   // Use last 24h as scoring window
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const trades = await prisma.trades_raw.findMany({ where: { timestamp: { gte: since } } });
+  const trades = await prisma.trades_raw.findMany({ 
+    where: { timestamp: { gte: since } },
+    select: {
+      wallet: true,
+      market_id: true,
+      amount: true,
+      price: true,
+      timestamp: true
+    }
+  });
   const byMarket = new Map<string, typeof trades>();
   for (const t of trades) {
     const arr = byMarket.get(t.market_id) || [];
