@@ -88,9 +88,16 @@ export async function ingestTrades(prisma: PrismaClient) {
     }
 
     const batch = [] as any[];
+    const seenIds = new Set<string>();
+
     for (const raw of data as RawTrade[]) {
       const p = parseTrade(raw);
       if (!p || !p.tradeId) continue;
+      
+      // Deduplicate: If duplicate IDs exist in the same API response, only process the first one
+      if (seenIds.has(p.tradeId)) continue;
+      seenIds.add(p.tradeId);
+
       batch.push(
         prisma.trades_raw.upsert({
           where: { trade_id: p.tradeId },
