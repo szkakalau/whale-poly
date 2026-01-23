@@ -72,7 +72,8 @@ export async function detectWhales(prisma: PrismaClient) {
     const buyVol = buys10m.reduce((s, t) => s + Number(t.amount), 0); // Share volume for ratio
     const recentSellVol = sells10m.reduce((s, t) => s + Number(t.amount), 0);
     
-    if (buyVol > 0 && recentSellVol >= 0.5 * buyVol && sellVal10m >= 1000) {
+    // Increased threshold to $5,000 to match Build/Spike thresholds
+    if (buyVol > 0 && recentSellVol >= 0.5 * buyVol && sellVal10m >= 5000) {
       const totalAmount = sells10m.reduce((s, t) => s + Number(t.amount), 0);
       const avgPrice = totalAmount > 0 ? sellVal10m / totalAmount : 0;
 
@@ -132,8 +133,8 @@ export async function detectWhales(prisma: PrismaClient) {
       const depth = Number(latestSnap.total_depth_usd);
       const lastTrade = arr[arr.length - 1];
       const amt = Number(lastTrade?.amount || 0);
-      // Ensure depth shock is also significant in USD value (e.g. > $1000)
-      if (depth > 0 && amt >= 0.25 * depth && (amt * Number(lastTrade?.price || 0) > 1000)) {
+      // Ensure depth shock is also significant in USD value (e.g. > $5000)
+      if (depth > 0 && amt >= 0.25 * depth && (amt * Number(lastTrade?.price || 0) > 5000)) {
         alerts.push({ 
           wallet, 
           market_id, 

@@ -167,7 +167,27 @@ export async function fetchMarketDetails(id: string): Promise<string | null> {
      }
 
      // 2. If it's a Token ID, we can't easily lookup unless there's a reverse lookup endpoint.
-     // But usually we rely on the bulk ingest.
+     // Try filtering by clob_token_id
+     try {
+       const url = `${env.POLYMARKET_MARKETS_URL}?clob_token_id=${id}`;
+       const data = await retryFetch(url, 1, 0);
+       const markets = Array.isArray(data) ? data : (data?.markets || data?.data || []);
+       if (markets.length > 0) {
+         const m = markets[0];
+         const title = m.title || m.question || m.name;
+         if (title) {
+            marketMap.set(id, title);
+            // We can also store the actual market ID if we wanted, but for now just mapping the Token ID to Title is enough for alerts
+            db.markets.create({
+                data: { id, title, status: 'fetched_ondemand_token', created_at: new Date() }
+            }).catch(() => {});
+            return title;
+         }
+       }
+     } catch (e) {
+        // Ignore
+     }
+
      return null;
   } catch (e) {
     return null;
