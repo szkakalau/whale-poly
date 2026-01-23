@@ -39,11 +39,12 @@ export async function ingestMarkets() {
     return;
   }
 
-  const BATCH_SIZE = 100;
+  const BATCH_SIZE = 50; // Reduced from 100 to save memory
   let offset = 0;
   let totalIngested = 0;
   // Limit to prevent infinite loops, but high enough to cover active markets
-  const MAX_MARKETS = 5000; 
+  // Reduced from 5000 to 1000 for low-memory environment stability
+  const MAX_MARKETS = 1000; 
   
   const baseUrl = env.POLYMARKET_MARKETS_URL;
   // Handle existing query params in URL

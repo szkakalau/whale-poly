@@ -11,10 +11,11 @@ import { Telegraf } from 'telegraf';
 export function startJobs(bot?: Telegraf) {
   // Run critical ingestions immediately on startup to populate caches (e.g. marketMap)
   // Use a slight delay to allow server to bind port first and not compete for CPU during startup
+  // Increased delay to 15s to prevent boot-time crash
   setTimeout(() => {
     console.log('Running initial market ingestion...');
     ingestMarkets().catch(err => console.error('Initial market ingestion failed', err));
-  }, 5000);
+  }, 15000);
 
   // Market metadata refresh: every 10 minutes
   cron.schedule('*/10 * * * *', async () => {
