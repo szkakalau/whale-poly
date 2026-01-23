@@ -5,7 +5,7 @@ import { ingestMarkets, ingestSettlements } from '../ingestion/markets';
 import { ingestOrderbookSnapshots } from '../ingestion/orderbook';
 import { detectWhales } from '../whale/detector';
 import { calculateScores } from '../whale/scorer';
-import { createAlerts, dispatchAlerts, createConvictionSignals, dispatchConvictionSignals } from '../alerts/engine';
+import { dispatchAlerts, createConvictionSignals, dispatchConvictionSignals } from '../alerts/engine';
 import { Telegraf } from 'telegraf';
 
 export function startJobs(bot?: Telegraf) {
@@ -48,7 +48,7 @@ export function startJobs(bot?: Telegraf) {
 
   // Alert creation & dispatch: every 1 minute
   cron.schedule('* * * * *', async () => {
-    // await createAlerts(prisma, 10); // Deprecated: Detector handles alert creation now
+    // Note: createAlerts is deprecated; Detector handles alert creation now
     if (bot) {
       await dispatchAlerts(prisma, bot);
     }

@@ -45,6 +45,9 @@ export async function createAlerts(prisma: PrismaClient, threshold = 80) {
       tx_count = trades.length;
     }
 
+    // Safety: Skip invalid alerts with no volume
+    if (amount <= 0 || price <= 0) continue;
+
     await prisma.alerts.create({
       data: {
         wallet: s.wallet,
@@ -171,6 +174,9 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
       const shareAmount = Number(alert.amount || 0);
       const priceVal = Number(alert.price || 0);
       const totalValue = shareAmount * priceVal;
+
+      // Skip invalid zero-value alerts
+      if (totalValue <= 0) continue;
 
       const text = renderAlertMessage({
         market: marketTitle || alert.market_id,
