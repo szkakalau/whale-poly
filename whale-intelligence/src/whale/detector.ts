@@ -3,8 +3,8 @@ import { PrismaClient } from '@prisma/client';
 export type BehaviorType = 'build' | 'spike' | 'exit';
 
 export async function detectWhales(prisma: PrismaClient) {
-  const since = new Date(Date.now() - 60 * 60 * 1000); // last 1h window for detection
-  const trades = await prisma.trades_raw.findMany({ 
+  const since = new Date(Date.now() - 20 * 60 * 1000); // last 20m window for detection
+  const trades = await prisma.trades_raw.findMany({  
     where: { timestamp: { gte: since } },
     select: {
       wallet: true,

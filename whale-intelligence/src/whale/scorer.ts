@@ -27,8 +27,8 @@ function stdDev(values: number[]): number {
 }
 
 export async function calculateScores(prisma: PrismaClient) {
-  // Use last 24h as scoring window
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // Use last 6h as scoring window to save memory (was 24h)
+  const since = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const trades = await prisma.trades_raw.findMany({ 
     where: { timestamp: { gte: since } },
     select: {

@@ -27,8 +27,18 @@ export function startJobs(bot?: Telegraf) {
   });
 
   // Trade ingestion: every 1 minute
+  let isIngestingTrades = false;
   cron.schedule('* * * * *', async () => {
-    await ingestTrades(prisma);
+    if (isIngestingTrades) {
+      console.log('Skipping trade ingestion (overlap)');
+      return;
+    }
+    isIngestingTrades = true;
+    try {
+      await ingestTrades(prisma);
+    } finally {
+      isIngestingTrades = false;
+    }
   });
 
   // Orderbook snapshots: every 1 minute
@@ -37,13 +47,33 @@ export function startJobs(bot?: Telegraf) {
   });
 
   // Whale detection: every 1 minute
+  let isDetecting = false;
   cron.schedule('* * * * *', async () => {
-    await detectWhales(prisma);
+    if (isDetecting) {
+      console.log('Skipping whale detection (overlap)');
+      return;
+    }
+    isDetecting = true;
+    try {
+      await detectWhales(prisma);
+    } finally {
+      isDetecting = false;
+    }
   });
 
   // Score recalculation: every 2 minutes
+  let isScoring = false;
   cron.schedule('*/2 * * * *', async () => {
-    await calculateScores(prisma);
+    if (isScoring) {
+      console.log('Skipping score recalculation (overlap)');
+      return;
+    }
+    isScoring = true;
+    try {
+      await calculateScores(prisma);
+    } finally {
+      isScoring = false;
+    }
   });
 
   // Alert creation & dispatch: every 1 minute
