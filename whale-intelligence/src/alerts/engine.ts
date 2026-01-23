@@ -214,26 +214,59 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
 
 // Conviction signals: elite-only
 export async function createConvictionSignals(prisma: PrismaClient) {
-  // Approximate using alerts: group per market in 48h, require score>=75 and >=2 supporting addresses
+  // 1. Fetch recent conviction alerts (last 24h) to prevent duplicates by TITLE
+  const recentConvictions = await prisma.alerts.findMany({ 
+    where: { 
+      alert_type: 'conviction', 
+      created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } 
+    } 
+  });
+  
+  const recentTitles = new Set<string>();
+  for (const a of recentConvictions) {
+    const title = marketMap.get(a.market_id) || a.market_id;
+    recentTitles.add(title);
+  }
+
+  // 2. Fetch high-scoring alerts (last 48h)
   const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
   const alerts = await prisma.alerts.findMany({ where: { created_at: { gte: since }, score: { gte: 75 } } });
-  const byMarket = new Map<string, { alerts: typeof alerts; addresses: Set<string> }>();
+  
+  // 3. Group by TITLE (normalizing multiple market IDs for same event)
+  const byTitle = new Map<string, { market_id: string; alerts: typeof alerts; addresses: Set<string> }>();
+  
   for (const a of alerts) {
-    const g = byMarket.get(a.market_id) || { alerts: [], addresses: new Set<string>() };
+    const title = marketMap.get(a.market_id) || a.market_id;
+    const g = byTitle.get(title) || { market_id: a.market_id, alerts: [], addresses: new Set<string>() };
     g.alerts.push(a);
     g.addresses.add(a.wallet);
-    byMarket.set(a.market_id, g);
+    // Keep the first market_id we encounter as representative
+    if (!g.market_id) g.market_id = a.market_id;
+    byTitle.set(title, g);
   }
-  // Create a synthetic "conviction" alert per market if rule satisfied, rate-limited to 1 per 24h
-  for (const [market_id, g] of byMarket) {
+
+  // 4. Create synthetic "conviction" alert per TITLE if rule satisfied
+  for (const [title, g] of byTitle) {
     if (g.addresses.size < 2) continue;
-    const recentConviction = await prisma.alerts.findFirst({ where: { market_id, alert_type: 'conviction', created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } });
-    if (recentConviction) continue;
+    
+    // Check if we already have a conviction for this Title in last 24h
+    if (recentTitles.has(title)) continue;
+    
     const avgScore = Math.round(g.alerts.reduce((sum, a) => sum + (a.score || 0), 0) / Math.max(1, g.alerts.length));
     if (avgScore < 75) continue;
+    
     await prisma.alerts.create({
-      data: { wallet: 'group', market_id, alert_type: 'conviction', score: avgScore, created_at: new Date() }
+      data: { 
+        wallet: 'group', 
+        market_id: g.market_id, // Use representative ID
+        alert_type: 'conviction', 
+        score: avgScore, 
+        created_at: new Date() 
+      }
     });
+    
+    // Mark as created so we don't create another one if loop continues (though map keys are unique)
+    recentTitles.add(title);
   }
 }
 
@@ -247,34 +280,37 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
   const eliteUsers = await prisma.users.findMany({ where: { status: 'active', plan: 'elite' }, include: { telegram_bindings: true } });
   const recipients = eliteUsers.filter(u => !!u.telegram_bindings?.telegram_user_id);
   
+  // Deduplicate by Title for dispatch as well (safety net)
+  const sentTitles = new Set<string>();
+
   for (const a of alertsToProcess) {
     if (sentAlertIds.has(a.id)) continue;
 
-    for (const user of recipients) {
-      // Add delay between sends to prevent rate limit
-      await new Promise(r => setTimeout(r, 1000));
+    // Resolve Title
+    let marketTitle = marketMap.get(a.market_id);
+    if (!marketTitle) {
+       // Direct DB fallback
+       const market = await (prisma as any).markets.findFirst({
+          where: { OR: [{ id: a.market_id }] } 
+       });
+       marketTitle = market?.title;
+    }
+    // On-demand fetch fallback
+    if (!marketTitle) {
+        const fetchedTitle = await fetchMarketDetails(a.market_id);
+        if (fetchedTitle) marketTitle = fetchedTitle;
+    }
+    if (!marketTitle) {
+         marketTitle = a.market_id; 
+    }
 
-      // Fetch market metadata (similar to dispatchAlerts)
-      let marketTitle = marketMap.get(a.market_id);
-      if (!marketTitle) {
-         // Direct DB fallback
-         const market = await (prisma as any).markets.findFirst({
-            where: { 
-                OR: [
-                    { id: a.market_id },
-                ]
-            } 
-         });
-         marketTitle = market?.title;
-      }
-      // On-demand fetch fallback
-      if (!marketTitle) {
-          const fetchedTitle = await fetchMarketDetails(a.market_id);
-          if (fetchedTitle) marketTitle = fetchedTitle;
-      }
-      if (!marketTitle) {
-           marketTitle = a.market_id; // Fallback to ID if all else fails, but formatted
-      }
+    // Safety check: if we already sent a conviction for this title in this batch (or recently)
+    // Note: sentAlertIds tracks IDs, but if we have duplicate IDs for same title, we need to track title.
+    if (sentTitles.has(marketTitle)) continue;
+    sentTitles.add(marketTitle);
+
+    for (const user of recipients) {
+
 
       const text = `🔥 Conviction Signal\n\nMarket: ${marketTitle}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${a.id}`;
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
