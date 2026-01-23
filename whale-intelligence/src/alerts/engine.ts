@@ -254,7 +254,29 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
       // Add delay between sends to prevent rate limit
       await new Promise(r => setTimeout(r, 1000));
 
-      const text = `🔥 Conviction Signal\n\nMarket: ${a.market_id}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${a.id}`;
+      // Fetch market metadata (similar to dispatchAlerts)
+      let marketTitle = marketMap.get(a.market_id);
+      if (!marketTitle) {
+         // Direct DB fallback
+         const market = await (prisma as any).markets.findFirst({
+            where: { 
+                OR: [
+                    { id: a.market_id },
+                ]
+            } 
+         });
+         marketTitle = market?.title;
+      }
+      // On-demand fetch fallback
+      if (!marketTitle) {
+          const fetchedTitle = await fetchMarketDetails(a.market_id);
+          if (fetchedTitle) marketTitle = fetchedTitle;
+      }
+      if (!marketTitle) {
+           marketTitle = a.market_id; // Fallback to ID if all else fails, but formatted
+      }
+
+      const text = `🔥 Conviction Signal\n\nMarket: ${marketTitle}\nConviction Score: ${Math.round(a.score) / 10} / 10\nSupporting Addresses: ≥2\nHolding Duration: ≥48h\nAlert ID: ${a.id}`;
       const chatId = Number(user.telegram_bindings!.telegram_user_id);
       try {
         await bot.telegram.sendMessage(chatId, text, { disable_web_page_preview: true } as any);

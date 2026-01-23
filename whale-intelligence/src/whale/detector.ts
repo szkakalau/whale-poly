@@ -102,19 +102,23 @@ export async function detectWhales(prisma: PrismaClient) {
     if (vol5mUsd > 3 * avg5mUsd && vol5mUsd >= 5000 && window5m.some(t => t.wallet === wallet)) {
       const userTrades = window5m.filter(t => t.wallet === wallet);
       const userVolUsd = userTrades.reduce((s, t) => s + (Number(t.amount) * Number(t.price)), 0);
-      const userAmount = userTrades.reduce((s, t) => s + Number(t.amount), 0);
-      const avgPrice = userAmount > 0 ? userVolUsd / userAmount : 0;
-      const lastSide = userTrades[userTrades.length - 1]?.side || 'buy';
+      
+      // Ensure the user themselves has significant volume, not just the market
+      if (userVolUsd >= 5000) {
+        const userAmount = userTrades.reduce((s, t) => s + Number(t.amount), 0);
+        const avgPrice = userAmount > 0 ? userVolUsd / userAmount : 0;
+        const lastSide = userTrades[userTrades.length - 1]?.side || 'buy';
 
-      if (userTrades.length > 0) alerts.push({ 
-        wallet, 
-        market_id, 
-        type: 'spike', 
-        scoreHint: 82, 
-        amount: userAmount, 
-        price: avgPrice,
-        side: lastSide as 'buy' | 'sell' 
-      });
+        if (userTrades.length > 0) alerts.push({ 
+          wallet, 
+          market_id, 
+          type: 'spike', 
+          scoreHint: 82, 
+          amount: userAmount, 
+          price: avgPrice,
+          side: lastSide as 'buy' | 'sell' 
+        });
+      }
     }
 
     // Behavior: Depth shock (PRD: consume ≥25% orderbook depth)
