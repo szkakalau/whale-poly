@@ -25,6 +25,8 @@ type RawTrade = {
   conditionId?: string;
   asset?: string;
   transactionHash?: string;
+  time?: string | number;
+  match_time?: string | number;
 };
 
 function parseTrade(t: RawTrade) {
@@ -32,15 +34,30 @@ function parseTrade(t: RawTrade) {
   // Note: This might skip multiple trades in same tx if no index provided, 
   // but it's better than skipping all.
   const tradeId = t.trade_id || t.id || t.transactionHash;
+  if (!tradeId) return null;
+
   const marketId = t.market_id || t.conditionId || t.asset || 'unknown';
   const wallet = t.wallet || t.maker || t.taker || t.proxyWallet || 'unknown';
   const side = (t.side || '').toLowerCase() === 'sell' ? 'sell' : 'buy';
   const amount = (t.amount ?? t.size ?? 0) as number | string;
   const price = (t.price ?? 0) as number | string;
-  const tsStr = (t.timestamp ?? t.created_at ?? Date.now()) as string | number;
+  
+  // Strict timestamp parsing: DO NOT default to Date.now() as it causes old trades to look new
+  const tsStr = (t.timestamp ?? t.created_at ?? t.time ?? t.match_time) as string | number;
+  if (!tsStr) {
+    // console.warn(`[Ingestion] Skipping trade ${tradeId} due to missing timestamp`);
+    return null;
+  }
+
   // Handle timestamp in seconds (10 digits) vs ms
   const tsNum = typeof tsStr === 'number' ? tsStr : Number(tsStr);
   const timestamp = new Date(tsNum < 10000000000 ? tsNum * 1000 : tsNum);
+  
+  // Safety check: Ignore trades older than 7 days to prevent polluting DB with historical data during live ingestion
+  if (Date.now() - timestamp.getTime() > 7 * 24 * 60 * 60 * 1000) {
+    return null;
+  }
+
   return { tradeId, marketId, wallet, side, amount: Number(amount), price: Number(price), timestamp };
 }
 
@@ -73,7 +90,7 @@ export async function ingestTrades(prisma: PrismaClient) {
     const batch = [] as any[];
     for (const raw of data as RawTrade[]) {
       const p = parseTrade(raw);
-      if (!p.tradeId) continue;
+      if (!p || !p.tradeId) continue;
       batch.push(
         prisma.trades_raw.upsert({
           where: { trade_id: p.tradeId },
