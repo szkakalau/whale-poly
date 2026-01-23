@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "prisma generate && tsc -p .",
+    "build": "prisma generate && NODE_OPTIONS='--max-old-space-size=4096' tsc -p .",
     "start": "node dist/src/index.js",
     "start:prod": "prisma migrate deploy && node dist/src/index.js",
     "prisma:generate": "prisma generate",
