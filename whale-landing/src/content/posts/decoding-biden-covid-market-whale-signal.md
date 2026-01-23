@@ -16,7 +16,7 @@ A massive sell order was executed:
 - **Average Price**: $0.42 (42¢)
 - **Whale Score**: 8/10
 
-![Whale Alert](/file.svg)
+![Whale Alert - Biden Market Sell](/images/whale-alert-biden.svg)
 
 *Note: The alerts we track are purely based on on-chain capital flow.*
 
