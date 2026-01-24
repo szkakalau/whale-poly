@@ -51,7 +51,10 @@ function parseTrade(t: RawTrade) {
 
   // Handle timestamp in seconds (10 digits) vs ms
   const tsNum = typeof tsStr === 'number' ? tsStr : Number(tsStr);
+  if (isNaN(tsNum)) return null;
+
   const timestamp = new Date(tsNum < 10000000000 ? tsNum * 1000 : tsNum);
+  if (isNaN(timestamp.getTime())) return null;
   
   // Safety check: Ignore trades older than 7 days to prevent polluting DB with historical data during live ingestion
   if (Date.now() - timestamp.getTime() > 7 * 24 * 60 * 60 * 1000) {
