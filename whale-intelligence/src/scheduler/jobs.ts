@@ -6,6 +6,7 @@ import { ingestOrderbookSnapshots } from '../ingestion/orderbook';
 import { detectWhales } from '../whale/detector';
 import { calculateScores } from '../whale/scorer';
 import { dispatchAlerts, createConvictionSignals, dispatchConvictionSignals } from '../alerts/engine';
+import { cleanupOldData } from '../scripts/cleanup';
 import { Telegraf } from 'telegraf';
 
 export function startJobs(bot?: Telegraf) {
@@ -91,6 +92,12 @@ export function startJobs(bot?: Telegraf) {
     if (bot) {
       await dispatchConvictionSignals(prisma, bot);
     }
+  });
+
+  // Database Cleanup: Daily at 02:00 UTC
+  // Removes old snapshots (>24h) and raw trades (>7d) to save disk space
+  cron.schedule('0 2 * * *', async () => {
+    await cleanupOldData();
   });
 
   // Subscription expiry check: every 10 minutes
