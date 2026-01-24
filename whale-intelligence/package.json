@@ -10,6 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",
+    "cleanup": "ts-node src/scripts/cleanup.ts",
+    "nuke": "ts-node src/scripts/nuke_snapshots.ts",
     "backtest": "ts-node src/backtest/whale_score_v1.ts"
   },
   "dependencies": {
