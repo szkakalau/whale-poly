@@ -319,6 +319,15 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
          marketTitle = a.market_id; 
     }
 
+    // Emergency filter for "Zombie" markets
+    if (marketTitle && (
+      marketTitle.includes('Will Joe Biden get Coronavirus') || 
+      marketTitle.includes('Biden') && marketTitle.includes('Coronavirus')
+    )) {
+       console.warn(`[Conviction] Skipping zombie market signal: ${marketTitle}`);
+       continue;
+    }
+
     // Safety check: if we already sent a conviction for this title in this batch (or recently)
     // Note: sentAlertIds tracks IDs, but if we have duplicate IDs for same title, we need to track title.
     if (sentTitles.has(marketTitle)) continue;
