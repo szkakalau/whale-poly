@@ -42,8 +42,8 @@ export function startJobs(bot?: Telegraf) {
     }
   });
 
-  // Orderbook snapshots: every 1 minute
-  cron.schedule('* * * * *', async () => {
+  // Orderbook snapshots: every 5 minutes (reduced from 1m to save space)
+  cron.schedule('*/5 * * * *', async () => {
     await ingestOrderbookSnapshots();
   });
 

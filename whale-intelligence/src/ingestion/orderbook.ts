@@ -26,7 +26,19 @@ export async function ingestOrderbookSnapshots() {
   }
   try {
     // Fetch recent markets to limit snapshot volume
-    const markets = await db.markets.findMany({ where: { status: 'open' }, take: 100 });
+    // Only fetch markets that had trade activity recently to save space
+    const activeMarketIds = await db.trades_raw.findMany({
+       where: { timestamp: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
+       select: { market_id: true },
+       distinct: ['market_id']
+    });
+    const activeIds = activeMarketIds.map((r: any) => r.market_id);
+
+    const markets = await db.markets.findMany({ 
+       where: { id: { in: activeIds } }, 
+       take: 50 
+    });
+
     const now = new Date();
     for (const m of markets) {
       // Validate ID: CLOB IDs are typically long hashes/UUIDs. 
