@@ -34,7 +34,15 @@ v1Router.get('/alerts/whale', async (req, res) => {
   try {
     const ctx = await getApiContext(req);
     const delayMs = ctx.delayMinutes * 60 * 1000;
-    const baseSince = req.query.since ? new Date(String(req.query.since)) : new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    // History limits: Free=7d, Pro=30d, Elite=Unlimited
+    const maxHistoryDays = ctx.tier === 'elite' ? 36500 : (ctx.tier === 'pro' ? 30 : 7);
+    const minDate = new Date(Date.now() - maxHistoryDays * 24 * 60 * 60 * 1000);
+
+    const requestedSince = req.query.since ? new Date(String(req.query.since)) : new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // Ensure user doesn't go back further than plan allows
+    const baseSince = requestedSince < minDate ? minDate : requestedSince;
+
     const sinceParam = new Date(baseSince.getTime() - delayMs);
     const minScoreTen = numParam(req.query.min_score, 0); // 0–10
     const minScoreHundred = Math.round(minScoreTen * 10);
@@ -74,6 +82,9 @@ v1Router.get('/alerts/whale', async (req, res) => {
 v1Router.get('/smart-money/addresses', async (req, res) => {
   try {
     const ctx = await getApiContext(req);
+    if (ctx.tier === 'free') {
+      return res.status(403).json({ error: 'Upgrade to Pro to access Smart Money Profiles' });
+    }
     const minWinRate = numParam(req.query.min_win_rate, 0);
     const minVolume = numParam(req.query.min_volume, 0);
     const limit = numParam(req.query.limit, ctx.resultLimit);
@@ -214,9 +225,18 @@ v1Router.get('/markets/whale-heatmap', async (req, res) => {
       const trend = whale_net_flow > total_volume_usd * 0.02 ? 'UP' : (whale_net_flow < -total_volume_usd * 0.02 ? 'DOWN' : 'FLAT');
       results.push({ market_id, whale_volume_usd, total_volume_usd, whale_ratio, whale_net_flow, trend });
     }
+    
+    // Sort by volume descending
+    results.sort((a, b) => b.total_volume_usd - a.total_volume_usd);
+
+    let finalResults = results;
+    if (ctx.tier === 'free') {
+      finalResults = results.slice(0, 10);
+    }
+
     const limit = numParam(req.query.limit, ctx.resultLimit);
     const offset = numParam(req.query.offset, 0);
-    res.json(paginate(results, limit, offset));
+    res.json(paginate(finalResults, limit, offset));
   } catch (err) {
     console.error('markets/whale-heatmap failed', err);
     res.status(500).json({ error: 'Server error' });

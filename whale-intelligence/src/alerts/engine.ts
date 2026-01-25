@@ -130,14 +130,15 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
          marketTitle = `Unknown Market (${alert.market_id.slice(0, 8)}...)`;
     }
 
-    // Emergency filter for "Zombie" markets (historical markets resurfacing due to bad data)
-    if (marketTitle && (
-      marketTitle.includes('Will Joe Biden get Coronavirus') || 
-      marketTitle.includes('Biden') && marketTitle.includes('Coronavirus')
-    )) {
-       console.warn(`[Alerts] Skipping zombie market alert: ${marketTitle}`);
-       continue;
-    }
+    // Zombie market filter removed to allow potentially active markets with recycled IDs
+    // if (marketTitle && (
+    //   marketTitle.includes('Will Joe Biden get Coronavirus') || 
+    //   marketTitle.includes('Biden') && marketTitle.includes('Coronavirus')
+    // )) {
+    //    // Silently skip known zombie markets to avoid log spam
+    //    // console.warn(`[Alerts] Skipping zombie market alert: ${marketTitle}`);
+    //    continue;
+    // }
 
     const context: string[] = [];
     

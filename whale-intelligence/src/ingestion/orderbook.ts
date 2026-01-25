@@ -9,11 +9,23 @@ async function retryFetch(url: string, opts: any = {}, retries = 3, delayMs = 50
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, opts);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Don't retry on 404 or 400 (Client Errors)
+        if (res.status === 404 || res.status === 400) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
       return res;
-    } catch (err) {
+    } catch (err: any) {
       lastErr = err;
-      await new Promise(r => setTimeout(r, delayMs));
+      // Stop retrying for 404/400
+      if (err.message === 'HTTP 404' || err.message === 'HTTP 400') {
+        throw err;
+      }
+      if (i < retries - 1) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
     }
   }
   throw lastErr;
@@ -56,7 +68,12 @@ export async function ingestOrderbookSnapshots() {
       try {
         const res = await retryFetch(url);
         data = await res.json();
-      } catch (err) {
+      } catch (err: any) {
+        if (err.message === 'HTTP 404') {
+          // 404 is expected for some markets (e.g. resolved/merged). 
+          // Suppress the warning to keep logs clean.
+          continue;
+        }
         console.warn('Orderbook fetch failed for', m.id, err);
         continue;
       }
