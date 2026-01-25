@@ -106,6 +106,11 @@ async function main() {
             continue; 
           }
 
+          // Check for Network Connection Error (likely proxy needed)
+          if (err?.code === 'ECONNRESET' || err?.code === 'ETIMEDOUT') {
+             console.warn('Telegram Connection Failed (Network/Proxy Issue). If you are in China, ensure HTTPS_PROXY is set in .env');
+          }
+
           console.error(`Telegram bot launch failed (retries left: ${retries - 1})`, err);
           retries--;
           if (retries > 0) {

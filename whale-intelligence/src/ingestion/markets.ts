@@ -19,6 +19,32 @@ const apiClient = axios.create({
 // Global map to store Market ID / Token ID -> Market Title mapping
 export const marketMap = new Map<string, string>();
 
+function isZombieTitle(title?: string | null) {
+  if (!title) return false;
+  return title.includes('Will Joe Biden get Coronavirus') || (title.includes('Biden') && title.includes('Coronavirus'));
+}
+
+function hasIdMatch(data: any, id: string) {
+  if (!data || !id) return false;
+  const idStr = String(id);
+  const ids = new Set<string>();
+  if (data.id) ids.add(String(data.id));
+  if (data.market_id) ids.add(String(data.market_id));
+  if (data.conditionId) ids.add(String(data.conditionId));
+  if (data.condition_id) ids.add(String(data.condition_id));
+  if (data.slug) ids.add(String(data.slug));
+  if (data.ticker) ids.add(String(data.ticker));
+  if (Array.isArray(data.clobTokenIds)) {
+    data.clobTokenIds.forEach((tid: any) => ids.add(String(tid)));
+  }
+  if (Array.isArray(data.tokens)) {
+    data.tokens.forEach((t: any) => {
+      if (t?.token_id) ids.add(String(t.token_id));
+    });
+  }
+  return ids.has(idStr);
+}
+
 async function retryFetch(url: string, retries = 3, delayMs = 500): Promise<any> {
   let lastErr: any;
   for (let i = 0; i < retries; i++) {
@@ -95,6 +121,13 @@ export async function ingestMarkets() {
         }
 
         const title = String(m.title || m.question || m.name || 'Unknown Market');
+        
+        // GLOBAL BLACKLIST: Reject known zombie markets
+        if (isZombieTitle(title)) {
+           console.warn(`[ingestMarkets] Skipped zombie market: ${title}`);
+           continue;
+        }
+
         const category = m.category ? String(m.category) : null;
         const status = String(m.status || (m.resolved ? 'resolved' : 'open'));
         const created_at = m.created_at ? new Date(m.created_at) : now;
@@ -153,9 +186,25 @@ export async function fetchMarketDetails(id: string): Promise<string | null> {
      // 1. Assume it might be a Market ID
      let url = `${env.POLYMARKET_MARKETS_URL}/${id}`;
      try {
-       const data = await retryFetch(url, 1, 0); // 1 retry
-       if (data && (data.title || data.question)) {
-          const title = data.title || data.question;
+      const data = await retryFetch(url, 1, 0); // 1 retry
+      if (data && (data.title || data.question)) {
+        if (!hasIdMatch(data, id)) {
+          return null;
+        }
+          let title = data.title || data.question;
+          
+          // GLOBAL BLACKLIST: Reject known zombie markets
+          if (isZombieTitle(title)) {
+             console.warn(`[MarketFetch] Rejected suspicious market mapping for ID ${id}: ${title}`);
+             return null;
+          }
+
+          // FORCE OVERRIDE: Manually map known bad/zombie hash to a safe placeholder if API is unreachable
+          if (id === '0x9f3ed5c36408a83d4c7dd219cfdb1f47c2754eaa8e1b3736cb78c38516fd9660') {
+             console.warn(`[MarketFetch] Force-overriding known zombie ID ${id}`);
+             title = 'Suspicious Market (Under Investigation)';
+          }
+
           marketMap.set(id, title);
           // Async save to DB
           db.markets.create({
@@ -173,12 +222,33 @@ export async function fetchMarketDetails(id: string): Promise<string | null> {
        const url = `${env.POLYMARKET_MARKETS_URL}?clob_token_id=${id}`;
        const data = await retryFetch(url, 1, 0);
        const markets = Array.isArray(data) ? data : (data?.markets || data?.data || []);
-       if (markets.length > 0) {
-         const m = markets[0];
-         const title = m.title || m.question || m.name;
+       
+       // STRICT VALIDATION: Ensure the returned market actually contains the token ID we asked for.
+       // The API might ignore the param and return default/featured markets (e.g. Biden).
+       const match = markets.find((m: any) => {
+          const tokens = new Set<string>();
+          if (Array.isArray(m.clobTokenIds)) m.clobTokenIds.forEach((t: any) => tokens.add(String(t)));
+          if (Array.isArray(m.tokens)) m.tokens.forEach((t: any) => { if(t.token_id) tokens.add(String(t.token_id)); });
+          return tokens.has(id);
+       });
+
+       if (match) {
+         let title = match.title || match.question || match.name;
+         
+         // SANITY CHECK: Explicitly reject known "default/zombie" markets that API might return erroneously
+         if (isZombieTitle(title)) {
+            console.warn(`[MarketFetch] Rejected suspicious market mapping for ID ${id}: ${title}`);
+            return null;
+         }
+
+         // FORCE OVERRIDE: Manually map known bad/zombie hash to a safe placeholder if API is unreachable
+         if (id === '0x9f3ed5c36408a83d4c7dd219cfdb1f47c2754eaa8e1b3736cb78c38516fd9660') {
+            console.warn(`[MarketFetch] Force-overriding known zombie ID ${id}`);
+            title = 'Suspicious Market (Under Investigation)';
+         }
+
          if (title) {
             marketMap.set(id, title);
-            // We can also store the actual market ID if we wanted, but for now just mapping the Token ID to Title is enough for alerts
             db.markets.create({
                 data: { id, title, status: 'fetched_ondemand_token', created_at: new Date() }
             }).catch(() => {});

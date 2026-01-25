@@ -4,6 +4,42 @@ import { renderAlertMessage } from '../telegram/templates';
 import { env } from '../config/env';
 import { marketMap, fetchMarketDetails } from '../ingestion/markets';
 
+function isZombieTitle(title?: string | null) {
+  if (!title) return false;
+  return title.includes('Will Joe Biden get Coronavirus') || (title.includes('Biden') && title.includes('Coronavirus'));
+}
+
+async function resolveMarketTitle(prisma: PrismaClient, marketId: string) {
+  let marketTitle = marketMap.get(marketId);
+  if (isZombieTitle(marketTitle)) {
+    marketMap.delete(marketId);
+    marketTitle = undefined;
+  }
+  if (!marketTitle) {
+    const market = await (prisma as any).markets.findFirst({
+      where: { 
+        OR: [
+          { id: marketId },
+        ]
+      } 
+    });
+    marketTitle = market?.title;
+  }
+  if (isZombieTitle(marketTitle)) {
+    marketTitle = undefined;
+  }
+  if (!marketTitle) {
+    const fetchedTitle = await fetchMarketDetails(marketId);
+    if (fetchedTitle && !isZombieTitle(fetchedTitle)) {
+      marketTitle = fetchedTitle;
+    }
+  }
+  if (!marketTitle) {
+    marketTitle = `Unknown Market (${marketId.slice(0, 8)}...)`;
+  }
+  return marketTitle;
+}
+
 export async function createAlerts(prisma: PrismaClient, threshold = 80) {
   const since = new Date(Date.now() - 10 * 60 * 1000); // recent scores
   const recentScores = await prisma.whale_scores.findMany({ where: { calculated_at: { gte: since } } });
@@ -94,51 +130,7 @@ export async function dispatchAlerts(prisma: PrismaClient, bot: Telegraf) {
   for (const alert of alertsToProcess) {
     if (sentAlertIds.has(alert.id)) continue;
 
-    // Fetch market metadata
-    let marketTitle = marketMap.get(alert.market_id);
-    
-    // Fallback: If no title found, try to find by searching all keys in marketMap 
-    // (This handles cases where alert.market_id is a Token ID but we need the Market ID's title)
-    // Note: marketMap already stores TokenID -> Title mapping if ingested correctly.
-    
-    if (!marketTitle) {
-      // Direct DB fallback
-      const market = await (prisma as any).markets.findFirst({
-         where: { 
-             OR: [
-                 { id: alert.market_id },
-                 // Check if it's a token ID by joining (simplified for now as markets table stores IDs)
-             ]
-         } 
-      });
-      // If still not found, it might be a raw Token ID. We should trust the ingestor has mapped it.
-      // But if it's a fresh token ID not yet in map, we display it as is.
-      marketTitle = market?.title;
-    }
-
-    // ON-DEMAND FETCH FALLBACK
-    if (!marketTitle) {
-         // Try to fetch from API in real-time if we missed it during ingestion
-         const fetchedTitle = await fetchMarketDetails(alert.market_id);
-         if (fetchedTitle) {
-             marketTitle = fetchedTitle;
-         }
-    }
-
-    // FINAL FALLBACK: If still no title, display "Unknown Market (ID: ...)"
-    if (!marketTitle) {
-         marketTitle = `Unknown Market (${alert.market_id.slice(0, 8)}...)`;
-    }
-
-    // Zombie market filter removed to allow potentially active markets with recycled IDs
-    // if (marketTitle && (
-    //   marketTitle.includes('Will Joe Biden get Coronavirus') || 
-    //   marketTitle.includes('Biden') && marketTitle.includes('Coronavirus')
-    // )) {
-    //    // Silently skip known zombie markets to avoid log spam
-    //    // console.warn(`[Alerts] Skipping zombie market alert: ${marketTitle}`);
-    //    continue;
-    // }
+    const marketTitle = await resolveMarketTitle(prisma, alert.market_id);
 
     const context: string[] = [];
     
@@ -240,8 +232,9 @@ export async function createConvictionSignals(prisma: PrismaClient) {
   
   const recentTitles = new Set<string>();
   for (const a of recentConvictions) {
-    const title = marketMap.get(a.market_id) || a.market_id;
-    recentTitles.add(title);
+    const title = marketMap.get(a.market_id);
+    const normalized = isZombieTitle(title) ? undefined : title;
+    recentTitles.add(normalized || a.market_id);
   }
 
   // 2. Fetch high-scoring alerts (last 48h)
@@ -252,13 +245,15 @@ export async function createConvictionSignals(prisma: PrismaClient) {
   const byTitle = new Map<string, { market_id: string; alerts: typeof alerts; addresses: Set<string> }>();
   
   for (const a of alerts) {
-    const title = marketMap.get(a.market_id) || a.market_id;
-    const g = byTitle.get(title) || { market_id: a.market_id, alerts: [], addresses: new Set<string>() };
+    const title = marketMap.get(a.market_id);
+    const normalized = isZombieTitle(title) ? undefined : title;
+    const key = normalized || a.market_id;
+    const g = byTitle.get(key) || { market_id: a.market_id, alerts: [], addresses: new Set<string>() };
     g.alerts.push(a);
     g.addresses.add(a.wallet);
     // Keep the first market_id we encounter as representative
     if (!g.market_id) g.market_id = a.market_id;
-    byTitle.set(title, g);
+    byTitle.set(key, g);
   }
 
   // 4. Create synthetic "conviction" alert per TITLE if rule satisfied
@@ -302,32 +297,7 @@ export async function dispatchConvictionSignals(prisma: PrismaClient, bot: Teleg
   for (const a of alertsToProcess) {
     if (sentAlertIds.has(a.id)) continue;
 
-    // Resolve Title
-    let marketTitle = marketMap.get(a.market_id);
-    if (!marketTitle) {
-       // Direct DB fallback
-       const market = await (prisma as any).markets.findFirst({
-          where: { OR: [{ id: a.market_id }] } 
-       });
-       marketTitle = market?.title;
-    }
-    // On-demand fetch fallback
-    if (!marketTitle) {
-        const fetchedTitle = await fetchMarketDetails(a.market_id);
-        if (fetchedTitle) marketTitle = fetchedTitle;
-    }
-    if (!marketTitle) {
-         marketTitle = a.market_id; 
-    }
-
-    // Emergency filter for "Zombie" markets
-    if (marketTitle && (
-      marketTitle.includes('Will Joe Biden get Coronavirus') || 
-      marketTitle.includes('Biden') && marketTitle.includes('Coronavirus')
-    )) {
-       console.warn(`[Conviction] Skipping zombie market signal: ${marketTitle}`);
-       continue;
-    }
+    const marketTitle = await resolveMarketTitle(prisma, a.market_id);
 
     // Safety check: if we already sent a conviction for this title in this batch (or recently)
     // Note: sentAlertIds tracks IDs, but if we have duplicate IDs for same title, we need to track title.
