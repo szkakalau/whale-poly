@@ -1,7 +1,7 @@
 ---
 title: "The Shutdown Clock: Whales Bet on Congressional Gridlock"
-description: "With the January 31 deadline looming, Polymarket traders are pricing in the risk of a government funding failure. We analyze the whale signals behind the gridlock."
-pubDate: "2026-01-25"
+excerpt: "With the January 31 deadline looming, Polymarket traders are pricing in the risk of a government funding failure. We analyze the whale signals behind the gridlock."
+date: "2026-01-25"
 heroImage: "/images/blog/capitol-shutdown-risk.jpg"
 tags: ["Polymarket", "Politics", "Congress", "Whale Signals", "Government Funding"]
 ---

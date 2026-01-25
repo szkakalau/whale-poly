@@ -1,7 +1,7 @@
 ---
 title: "The Vertical Gamble: Analyzing the Alex Honnold Taipei 101 Prediction Market"
-description: "An in-depth look at the Polymarket odds for Alex Honnold's historic free solo of Taipei 101. We analyze whale sentiments, risk factors, and the 1h 30m - 1h 45m time window."
-pubDate: "2026-01-25"
+excerpt: "An in-depth look at the Polymarket odds for Alex Honnold's historic free solo of Taipei 101. We analyze whale sentiments, risk factors, and the 1h 30m - 1h 45m time window."
+date: "2026-01-25"
 heroImage: "/images/blog/alex-honnold-taipei.jpg"
 tags: ["Polymarket", "Case Study", "Whale Signals", "Alex Honnold", "Prediction Markets"]
 ---

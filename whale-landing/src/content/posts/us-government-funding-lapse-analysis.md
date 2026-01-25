@@ -1,7 +1,7 @@
 ---
 title: "Funding Lapse or False Alarm? What the Whales Know About Jan 31"
-description: "The retail crowd fears a government shutdown. Smart money sees an opportunity. We analyze the Jan 31 funding lapse market through the lens of capital flow."
-pubDate: "2026-01-25"
+excerpt: "The retail crowd fears a government shutdown. Smart money sees an opportunity. We analyze the Jan 31 funding lapse market through the lens of capital flow."
+date: "2026-01-25"
 heroImage: "/images/blog/white-house-night.jpg"
 tags: ["Polymarket", "US Politics", "Whale Signals", "Smart Money", "Shutdown"]
 ---
