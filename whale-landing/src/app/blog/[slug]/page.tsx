@@ -29,6 +29,10 @@ export async function generateMetadata({ params }: Props) {
       type: 'article',
       publishedTime: post.date,
       tags: post.tags,
+      url: `https://sightwhale.com/blog/${slug}`,
+    },
+    alternates: {
+      canonical: `/blog/${slug}`,
     },
   };
 }
