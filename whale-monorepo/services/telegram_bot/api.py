@@ -68,6 +68,15 @@ async def lifespan(_: FastAPI):
   stop = asyncio.Event()
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   await redis.ping()
+  tasks: list[asyncio.Task] = []
+  if not settings.telegram_bot_token:
+    logger.warning("telegram_bot_token_missing")
+    try:
+      yield
+    finally:
+      await redis.aclose()
+    return
+
   application = await build_application()
 
   tasks = [
