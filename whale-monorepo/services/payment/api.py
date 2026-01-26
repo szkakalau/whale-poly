@@ -1,7 +1,8 @@
 import asyncio
+import hashlib
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
@@ -23,6 +24,57 @@ logger = logging.getLogger("payment.api")
 class CheckoutIn(BaseModel):
   telegram_activation_code: str
   plan: str
+
+
+def _sub_id(code: str, plan: str) -> str:
+  return hashlib.sha1(f"sub:{code}:{plan}".encode("utf-8")).hexdigest()[:64]
+
+
+def _period_end(plan_name: str) -> datetime:
+  now = datetime.now(timezone.utc)
+  p = (plan_name or "").lower()
+  if p == "yearly":
+    return now + timedelta(days=365)
+  return now + timedelta(days=30)
+
+
+async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan) -> str:
+  ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == code))).scalars().first()
+  if not ac or ac.used:
+    raise HTTPException(status_code=404, detail="activation code not found")
+
+  telegram_id = ac.telegram_id
+  now = datetime.now(timezone.utc)
+  current_period_end = _period_end(plan.name)
+
+  sub_id = _sub_id(code, plan.name)
+  stripe_subscription_id = f"mock_{sub_id}"
+  stripe_customer_id = f"mock_{telegram_id}"
+
+  await session.execute(
+    insert(Subscription)
+    .values(
+      id=sub_id,
+      telegram_id=telegram_id,
+      stripe_customer_id=stripe_customer_id,
+      stripe_subscription_id=stripe_subscription_id,
+      status="active",
+      current_period_end=current_period_end,
+    )
+    .on_conflict_do_update(
+      index_elements=[Subscription.stripe_subscription_id],
+      set_={
+        "status": "active",
+        "current_period_end": current_period_end,
+        "telegram_id": telegram_id,
+        "stripe_customer_id": stripe_customer_id,
+      },
+    )
+  )
+  await session.execute(update(ActivationCode).where(ActivationCode.code == code).values(used=True))
+  await session.commit()
+
+  return settings.landing_success_url or "/"
 
 
 async def _mark_expired_forever(stop: asyncio.Event) -> None:
@@ -76,16 +128,18 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
   if not plan:
     raise HTTPException(status_code=404, detail="plan not found")
 
-  ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == code))).scalars().first()
-  if not ac or ac.used:
-    raise HTTPException(status_code=404, detail="activation code not found")
+  if settings.payment_mode == "mock" or not settings.stripe_secret_key:
+    url = await _activate_subscription(session, code=code, plan=plan)
+    return {"checkout_url": url, "mode": "mock"}
 
   url = create_checkout_session(stripe_price_id=plan.stripe_price_id, activation_code=code, plan=plan.name)
-  return {"checkout_url": url}
+  return {"checkout_url": url, "mode": "stripe"}
 
 
 @app.post("/webhook")
 async def webhook(request: Request, stripe_signature: str | None = Header(None, alias="Stripe-Signature")):
+  if settings.payment_mode == "mock":
+    return {"ok": True, "mode": "mock"}
   if not stripe_signature:
     raise HTTPException(status_code=400, detail="missing signature")
   payload = await request.body()
@@ -147,4 +201,3 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
 
     await session.commit()
   return {"ok": True}
-

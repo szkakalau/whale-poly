@@ -32,6 +32,10 @@ INSERT INTO plans (id, name, price_usd, stripe_price_id) VALUES
 ON CONFLICT (name) DO UPDATE SET price_usd = EXCLUDED.price_usd, stripe_price_id = EXCLUDED.stripe_price_id;
 ```
 
+## No Stripe yet (mock mode)
+
+Set `PAYMENT_MODE=mock` to bypass Stripe and activate subscriptions immediately on `/checkout`.
+
 ## End-to-end test (local)
 
 1) Start Telegram bot and generate activation code in chat

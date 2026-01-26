@@ -64,6 +64,15 @@ This repo includes a Render Blueprint file at [render.yaml](file:///Users/castro
    - Render → Shell (any python web service) → `cd /app && alembic upgrade head`
 6) Seed plans (monthly/yearly) in Postgres
 
+### No Stripe yet (mock mode)
+
+If you don't have Stripe set up yet, you can still test the full Telegram subscription + alert flow.
+
+1) Set `PAYMENT_MODE=mock` on the `payment-api` service (and redeploy)
+2) Leave `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` empty
+3) Seed `plans` with any placeholder `stripe_price_id` values
+4) When a user submits activation code + plan, `POST /checkout` activates the subscription immediately and returns `LANDING_SUCCESS_URL`
+
 After `payment-api` is live, configure Stripe webhook endpoint to:
 
 - `https://<payment-api-domain>/webhook`
