@@ -23,7 +23,7 @@ export default function SubscribePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(String(data?.detail || 'checkout failed'));
+        setError(String(data?.detail || `checkout failed (${res.status})`));
         return;
       }
       const url = String(data?.checkout_url || '');
@@ -32,6 +32,8 @@ export default function SubscribePage() {
         return;
       }
       window.location.href = url;
+    } catch (e: any) {
+      setError(String(e?.message || e || 'checkout failed'));
     } finally {
       setLoading(false);
     }
@@ -97,4 +99,3 @@ export default function SubscribePage() {
     </div>
   );
 }
-

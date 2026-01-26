@@ -19,14 +19,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
 
-  const upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ telegram_activation_code, plan }),
-    cache: 'no-store'
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ telegram_activation_code, plan }),
+      cache: 'no-store'
+    });
+  } catch (e: any) {
+    return NextResponse.json({ detail: 'payment api unreachable', error: String(e?.message || e) }, { status: 502 });
+  }
 
-  const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+  const ct = upstream.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    const data = await upstream.json().catch(() => ({}));
+    return NextResponse.json(data, { status: upstream.status });
+  }
+
+  const text = await upstream.text().catch(() => '');
+  return NextResponse.json({ detail: 'payment api returned non-json', status: upstream.status, body: text.slice(0, 500) }, { status: 502 });
 }
-
