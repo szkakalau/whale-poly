@@ -1,0 +1,151 @@
+databases:
+  - name: whale-postgres
+    plan: starter
+    databaseName: whale
+    user: whale
+
+services:
+  - type: keyvalue
+    name: whale-redis
+    plan: starter
+
+  - type: web
+    name: trade-ingest-api
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    healthCheckPath: /health
+    startCommand: uvicorn services.trade_ingest.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: trade-ingest-worker
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    startCommand: celery -A services.trade_ingest.worker.celery_app worker -B -l INFO
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: whale-engine-api
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    healthCheckPath: /health
+    startCommand: uvicorn services.whale_engine.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: whale-engine-worker
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    startCommand: celery -A services.whale_engine.worker.celery_app worker -B -l INFO
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: alert-engine-api
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    healthCheckPath: /health
+    startCommand: uvicorn services.alert_engine.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: alert-engine-worker
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    startCommand: celery -A services.alert_engine.worker.celery_app worker -B -l INFO
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: telegram-bot
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    healthCheckPath: /health
+    startCommand: uvicorn services.telegram_bot.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: payment-api
+    env: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    healthCheckPath: /health
+    startCommand: uvicorn services.payment.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: whale-redis
+          type: keyvalue
+          property: connectionString

@@ -1,0 +1,145 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: whale
+      POSTGRES_USER: whale
+      POSTGRES_PASSWORD: whale
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whale -d whale"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    ports:
+      - "6382:6379"
+
+  landing:
+    build:
+      context: ../services/landing
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      payment-api:
+        condition: service_started
+    ports:
+      - "3000:3000"
+
+  trade-ingest-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8010:8010"
+    command: ["uvicorn", "services.trade_ingest.api:app", "--host", "0.0.0.0", "--port", "8010"]
+
+  trade-ingest-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "services.trade_ingest.worker.celery_app", "worker", "-B", "-l", "INFO"]
+
+  whale-engine-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8011:8011"
+    command: ["uvicorn", "services.whale_engine.api:app", "--host", "0.0.0.0", "--port", "8011"]
+
+  whale-engine-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "services.whale_engine.worker.celery_app", "worker", "-B", "-l", "INFO"]
+
+  alert-engine-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8012:8012"
+    command: ["uvicorn", "services.alert_engine.api:app", "--host", "0.0.0.0", "--port", "8012"]
+
+  alert-engine-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "services.alert_engine.worker.celery_app", "worker", "-B", "-l", "INFO"]
+
+  telegram-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8013:8013"
+    command: ["uvicorn", "services.telegram_bot.api:app", "--host", "0.0.0.0", "--port", "8013"]
+
+  payment-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8014:8014"
+    command: ["uvicorn", "services.payment.api:app", "--host", "0.0.0.0", "--port", "8014"]

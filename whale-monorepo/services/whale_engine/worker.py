@@ -1,0 +1,47 @@
+import asyncio
+import json
+import logging
+
+from celery import Celery
+from redis.asyncio import Redis
+
+from services.whale_engine.engine import process_trade_id
+from shared.config import settings
+from shared.db import SessionLocal
+from shared.logging import configure_logging
+
+
+configure_logging(settings.log_level)
+logger = logging.getLogger("whale_engine.worker")
+
+
+celery_app = Celery("whale_engine", broker=settings.redis_url, backend=settings.redis_url)
+celery_app.conf.timezone = "UTC"
+celery_app.conf.beat_schedule = {
+  "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": 1.0}
+}
+
+
+async def _consume_once() -> int:
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    item = await redis.blpop(settings.trade_created_queue, timeout=1)
+    if not item:
+      return 0
+    _, raw = item
+    msg = json.loads(raw)
+    trade_id = str(msg.get("trade_id") or "")
+    if not trade_id:
+      return 0
+    async with SessionLocal() as session:
+      created = await process_trade_id(session, redis, trade_id)
+      await session.commit()
+    return 1 if created else 0
+  finally:
+    await redis.aclose()
+
+
+@celery_app.task(name="services.whale_engine.consume_trade_created")
+def consume_trade_created() -> int:
+  return asyncio.run(_consume_once())
+

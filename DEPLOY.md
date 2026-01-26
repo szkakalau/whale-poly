@@ -1,85 +1,84 @@
-# Deployment Guide for Sight Whale
+# Deployment Guide (whale-monorepo)
 
-This guide will walk you through deploying the **Whale Intelligence** (Backend) and **Whale Landing** (Frontend) to Render and Vercel respectively.
+This repository has been consolidated into a Docker Compose–based monorepo.
 
-## Prerequisites
+Core paths:
 
-- A GitHub repository with this project code.
-- Accounts on [Render](https://render.com/) and [Vercel](https://vercel.com/).
-- Your Telegram Bot Token.
+- Backend services: [services](file:///Users/castroliu/poly/whale-monorepo/services)
+- Shared config/db/models: [shared](file:///Users/castroliu/poly/whale-monorepo/shared)
+- Alembic migrations: [alembic](file:///Users/castroliu/poly/whale-monorepo/alembic)
+- Compose: [docker-compose.yml](file:///Users/castroliu/poly/whale-monorepo/docker/docker-compose.yml)
 
----
+## Local
 
-## Part 1: Database (PostgreSQL on Render)
+```bash
+cd whale-monorepo
+cp .env.example .env
+make up
+make migrate
+```
 
-1. Log in to **Render Dashboard**.
-2. Click **New +** -> **PostgreSQL**.
-3. **Name**: `whale-db` (or any name).
-4. **Database**: `whale_intelligence` (optional, can leave default).
-5. **User**: (leave default).
-6. **Region**: Choose one close to you (e.g., Singapore, Frankfurt, Oregon).
-7. **Instance Type**: **Free** (for testing) or **Starter** (recommended for production).
-8. Click **Create Database**.
-9. Wait for it to become "Available".
-10. Copy the **Internal Database URL** (for backend on Render) and **External Database URL** (for local access if needed).
+## Production (high level)
 
----
+Recommended deployment shape:
 
-## Part 2: Backend (whale-intelligence on Render)
+- Postgres: managed DB (Render/Supabase/RDS)
+- Redis: managed Redis (Render/Upstash)
+- One container per service (web services) + workers for Celery consumers
 
-1. On Render Dashboard, click **New +** -> **Web Service**.
-2. Connect your GitHub repository.
-3. **Name**: `whale-api`
-4. **Root Directory**: `whale-intelligence` (Important!)
-5. **Environment**: `Node`
-6. **Region**: Same as your database.
-7. **Branch**: `main` (or your working branch).
-8. **Build Command**: `npm install && npm run build`
-   - *Note: We updated package.json to generate Prisma client during build.*
-9. **Start Command**: `npm run start:prod`
-   - *Note: This runs database migrations and then starts the server.*
-10. **Environment Variables** (Add these):
-    - `DATABASE_URL`: Paste the **Internal Database URL** from Part 1.
-    - `TELEGRAM_BOT_TOKEN`: Your Telegram Bot Token.
-    - `POLYMARKET_TRADES_URL`: `https://clob.polymarket.com/trades`
-    - `POLYMARKET_MARKETS_URL`: `https://clob.polymarket.com/markets`
-    - `POLYMARKET_ORDERBOOK_URL`: `https://clob.polymarket.com/orderbook`
-    - `NODE_ENV`: `production`
-    - (Optional) Stripe keys if you have them.
-11. Click **Create Web Service**.
-12. Wait for the deployment to finish. Render will verify the service is live.
-13. **Copy the Service URL** (e.g., `https://whale-api.onrender.com`). You will need this for the frontend if you add API calls later.
+Secrets and required env:
 
----
+- `DATABASE_URL`, `REDIS_URL`
+- `TELEGRAM_BOT_TOKEN`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 
-## Part 3: Frontend (whale-landing on Vercel)
+Ingestion env:
 
-1. Log in to **Vercel Dashboard**.
-2. Click **Add New ...** -> **Project**.
-3. Import your GitHub repository.
-4. **Framework Preset**: Next.js (should be auto-detected).
-5. **Root Directory**: Click "Edit" and select `whale-landing`.
-6. **Build and Output Settings**: Default is usually fine (`next build`).
-7. **Environment Variables**:
-   - If your frontend needs to talk to the backend (currently it's mostly static), add:
-   - `NEXT_PUBLIC_API_URL`: The Backend Service URL from Part 2 (e.g., `https://whale-api.onrender.com`).
-8. Click **Deploy**.
-9. Once deployed, Vercel will give you a domain (e.g., `whale-landing.vercel.app`).
+- `POLYMARKET_DATA_API_TRADES_URL`
+- `POLYMARKET_DATA_API_MARKETS_URL`
+- `HTTPS_PROXY` (optional)
 
-## Part 4: Domain Configuration (sightwhale.com)
+Migrations:
 
-1. Go to your Vercel Project Settings -> **Domains**.
-2. Add `sightwhale.com`.
-3. Follow the instructions to configure your DNS (A Record or CNAME) at your domain registrar.
-4. Once verified, your frontend will be live at `https://sightwhale.com`.
+- Run `alembic upgrade head` using the monorepo Python image (same dependency set as the APIs/workers).
 
-## Part 5: Final Check
+## Render (backend)
 
-1. Update your Backend's CORS configuration if needed.
-   - We already added `https://sightwhale.com` to the allowed origins in `src/index.ts`.
-   - If you use the Render URL directly or Vercel default domain, you might need to add them too, but for `sightwhale.com` it is already set.
+This repo includes a Render Blueprint file at [render.yaml](file:///Users/castroliu/poly/render.yaml).
 
-## Troubleshooting
+1) Push the repo to GitHub
+2) In Render dashboard: New → Blueprint → select the repo
+3) Render will provision:
+   - Postgres (`whale-postgres`)
+   - Key Value (Redis-compatible) (`whale-redis`)
+   - Web services: `trade-ingest-api`, `whale-engine-api`, `alert-engine-api`, `telegram-bot`, `payment-api`
+   - Workers: `trade-ingest-worker`, `whale-engine-worker`, `alert-engine-worker`
+4) In Render, set required environment variables on these services:
+   - `TELEGRAM_BOT_TOKEN`
+   - `BOT_USER_HASH_SECRET`
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+   - `POLYMARKET_DATA_API_TRADES_URL` (optional; defaults exist in `.env.example`)
+   - `POLYMARKET_DATA_API_MARKETS_URL` (optional; defaults exist in `.env.example`)
+5) Run migrations once:
+   - Render → Shell (any python web service) → `cd /app && alembic upgrade head`
+6) Seed plans (monthly/yearly) in Postgres
 
-- **Database Connection Error**: Ensure `DATABASE_URL` is correct and the Render Web Service is in the same region as the Database (for Internal URL).
-- **Prisma Error**: Check logs. `npm run start:prod` runs migrations. If it fails, you might need to drop the database tables and restart if there's a schema conflict, or check the migration files.
+After `payment-api` is live, configure Stripe webhook endpoint to:
+
+- `https://<payment-api-domain>/webhook`
+
+## Vercel (landing)
+
+Landing lives at [services/landing](file:///Users/castroliu/poly/whale-monorepo/services/landing).
+
+1) Create a new Vercel project from the same GitHub repo
+2) Set Root Directory to `whale-monorepo/services/landing`
+3) Add environment variable:
+   - `PAYMENT_API_BASE_URL=https://<payment-api-domain>`
+4) Deploy
+
+Stripe redirect URLs:
+
+- Set Render `LANDING_SUCCESS_URL` to `https://<vercel-domain>/success`
+- Set Render `LANDING_CANCEL_URL` to `https://<vercel-domain>/cancel`
