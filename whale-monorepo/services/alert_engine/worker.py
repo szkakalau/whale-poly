@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import ssl
 
 from celery import Celery
 from redis.asyncio import Redis
@@ -16,6 +17,9 @@ logger = logging.getLogger("alert_engine.worker")
 
 
 celery_app = Celery("alert_engine", broker=settings.redis_url, backend=settings.redis_url)
+if settings.redis_url.startswith("rediss://"):
+  celery_app.conf.broker_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
+  celery_app.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
 celery_app.conf.timezone = "UTC"
 celery_app.conf.beat_schedule = {
   "consume-whale-trade-created": {"task": "services.alert_engine.consume_whale_trade_created", "schedule": 1.0}
@@ -45,4 +49,3 @@ def consume_whale_trade_created() -> int:
   except Exception:
     logger.exception("consume_failed")
     return 0
-
