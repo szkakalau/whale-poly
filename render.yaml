@@ -1,6 +1,6 @@
 databases:
   - name: whale-postgres
-    plan: starter
+    plan: basic-1gb
     databaseName: whale
     user: whale
     ipAllowList: []
