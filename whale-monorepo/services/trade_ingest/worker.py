@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import ssl
 
 from celery import Celery
@@ -20,6 +21,8 @@ celery_app = Celery("trade_ingest", broker=settings.redis_url, backend=settings.
 if settings.redis_url.startswith("rediss://"):
   celery_app.conf.broker_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
   celery_app.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
+celery_app.conf.worker_concurrency = int(os.getenv("CELERY_CONCURRENCY", "1"))
+celery_app.conf.worker_pool = os.getenv("CELERY_POOL", "solo")
 celery_app.conf.timezone = "UTC"
 celery_app.conf.beat_schedule = {
   "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 600.0},

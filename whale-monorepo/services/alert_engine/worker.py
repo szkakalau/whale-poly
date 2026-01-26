@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import ssl
 
 from celery import Celery
@@ -20,6 +21,8 @@ celery_app = Celery("alert_engine", broker=settings.redis_url, backend=settings.
 if settings.redis_url.startswith("rediss://"):
   celery_app.conf.broker_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
   celery_app.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
+celery_app.conf.worker_concurrency = int(os.getenv("CELERY_CONCURRENCY", "1"))
+celery_app.conf.worker_pool = os.getenv("CELERY_POOL", "solo")
 celery_app.conf.timezone = "UTC"
 celery_app.conf.beat_schedule = {
   "consume-whale-trade-created": {"task": "services.alert_engine.consume_whale_trade_created", "schedule": 1.0}
