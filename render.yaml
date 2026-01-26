@@ -3,19 +3,21 @@ databases:
     plan: starter
     databaseName: whale
     user: whale
+    ipAllowList: []
 
 services:
   - type: keyvalue
     name: whale-redis
     plan: starter
+    ipAllowList: []
 
   - type: web
     name: trade-ingest-api
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    startCommand: uvicorn services.trade_ingest.api:app --host 0.0.0.0 --port $PORT
+    dockerCommand: uvicorn services.trade_ingest.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -29,10 +31,10 @@ services:
 
   - type: worker
     name: trade-ingest-worker
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    startCommand: celery -A services.trade_ingest.worker.celery_app worker -B -l INFO
+    dockerCommand: celery -A services.trade_ingest.worker.celery_app worker -B -l INFO
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -46,11 +48,11 @@ services:
 
   - type: web
     name: whale-engine-api
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    startCommand: uvicorn services.whale_engine.api:app --host 0.0.0.0 --port $PORT
+    dockerCommand: uvicorn services.whale_engine.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -64,10 +66,10 @@ services:
 
   - type: worker
     name: whale-engine-worker
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    startCommand: celery -A services.whale_engine.worker.celery_app worker -B -l INFO
+    dockerCommand: celery -A services.whale_engine.worker.celery_app worker -B -l INFO
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -81,11 +83,11 @@ services:
 
   - type: web
     name: alert-engine-api
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    startCommand: uvicorn services.alert_engine.api:app --host 0.0.0.0 --port $PORT
+    dockerCommand: uvicorn services.alert_engine.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -99,10 +101,10 @@ services:
 
   - type: worker
     name: alert-engine-worker
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    startCommand: celery -A services.alert_engine.worker.celery_app worker -B -l INFO
+    dockerCommand: celery -A services.alert_engine.worker.celery_app worker -B -l INFO
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -116,11 +118,11 @@ services:
 
   - type: web
     name: telegram-bot
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    startCommand: uvicorn services.telegram_bot.api:app --host 0.0.0.0 --port $PORT
+    dockerCommand: uvicorn services.telegram_bot.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -134,11 +136,11 @@ services:
 
   - type: web
     name: payment-api
-    env: docker
+    runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    startCommand: uvicorn services.payment.api:app --host 0.0.0.0 --port $PORT
+    dockerCommand: uvicorn services.payment.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
