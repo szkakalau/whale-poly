@@ -28,6 +28,8 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: TRADE_CREATED_QUEUE
+        value: trade_created
       - key: POLYMARKET_DATA_API_TRADES_URL
         value: https://data-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_MARKETS_URL
@@ -51,6 +53,8 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: TRADE_CREATED_QUEUE
+        value: trade_created
       - key: POLYMARKET_DATA_API_TRADES_URL
         value: https://data-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_MARKETS_URL
@@ -75,6 +79,10 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: TRADE_CREATED_QUEUE
+        value: trade_created
+      - key: WHALE_TRADE_CREATED_QUEUE
+        value: whale_trade_created
 
   - type: worker
     name: whale-engine-worker
@@ -92,6 +100,10 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: TRADE_CREATED_QUEUE
+        value: trade_created
+      - key: WHALE_TRADE_CREATED_QUEUE
+        value: whale_trade_created
 
   - type: web
     name: alert-engine-api
@@ -110,6 +122,10 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: WHALE_TRADE_CREATED_QUEUE
+        value: whale_trade_created
+      - key: ALERT_CREATED_QUEUE
+        value: alert_created
 
   - type: worker
     name: alert-engine-worker
@@ -127,6 +143,10 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: WHALE_TRADE_CREATED_QUEUE
+        value: whale_trade_created
+      - key: ALERT_CREATED_QUEUE
+        value: alert_created
 
   - type: worker
     name: telegram-bot
@@ -146,6 +166,8 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: ALERT_CREATED_QUEUE
+        value: alert_created
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: BOT_USER_HASH_SECRET
