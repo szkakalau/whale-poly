@@ -20,6 +20,30 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   if isinstance(wallet, str) and wallet.startswith("0x") and len(wallet) > 10:
     wallet = wallet[:6] + "..." + wallet[-4:]
 
+  def _fmt_usd(x) -> str:
+    try:
+      v = float(x)
+    except Exception:
+      return str(x)
+    s = f"{v:,.2f}"
+    if s.endswith(".00"):
+      s = s[:-3]
+    return s
+
+  def _fmt_price(x) -> str:
+    try:
+      v = float(x)
+    except Exception:
+      return str(x)
+    s = f"{v:.4f}".rstrip("0").rstrip(".")
+    return s
+
+  def _fmt_score(x) -> str:
+    try:
+      return str(int(float(x)))
+    except Exception:
+      return str(x)
+
   type_line = f"Type:\n{alert_type}\n\n" if alert_type else ""
   wm = user_hash(telegram_id)
   return (
@@ -27,9 +51,9 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     f"Market:\n{market}\n\n"
     f"{type_line}"
     f"Side:\n{side}\n\n"
-    f"Size:\n${size}\n\n"
-    f"Price:\n{price}\n\n"
-    f"Whale Score:\n{score}\n\n"
+    f"Size:\n${_fmt_usd(size)}\n\n"
+    f"Price:\n{_fmt_price(price)}\n\n"
+    f"Whale Score:\n{_fmt_score(score)}\n\n"
     f"Wallet:\n{wallet}\n\n"
     f"#{wm}"
   )

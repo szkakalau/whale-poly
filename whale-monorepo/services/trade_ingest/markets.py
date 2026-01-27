@@ -82,7 +82,7 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
 
   target = normalize_key(str(target_id))
   batch_size = 50
-  max_scan = 500
+  max_scan = 1000
   sep = "&" if "?" in url else "?"
 
   proxies = settings.https_proxy or None
