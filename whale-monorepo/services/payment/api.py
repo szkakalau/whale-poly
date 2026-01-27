@@ -109,8 +109,18 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="payment", lifespan=lifespan)
 
 
+@app.get("/")
+async def root():
+  return {"status": "ok"}
+
+
 @app.get("/health")
 async def health():
+  return {"status": "ok"}
+
+
+@app.get("/healthz")
+async def healthz():
   return {"status": "ok"}
 
 
