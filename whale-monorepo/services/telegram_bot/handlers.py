@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from redis.asyncio import Redis
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
@@ -90,6 +91,36 @@ async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -
     await session.commit()
 
   await update.callback_query.edit_message_text(f"Your activation code: {code}")
+
+
+async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+  if not await _ensure_private(update):
+    return
+
+  telegram_id = str(update.effective_user.id)
+  now = datetime.now(timezone.utc)
+  end_date = now + timedelta(days=7)
+
+  async with SessionLocal() as session:
+    sub_id = f"manual_promo_{telegram_id}"
+    await session.execute(
+      insert(Subscription)
+      .values(
+        id=sub_id,
+        telegram_id=telegram_id,
+        stripe_customer_id=f"promo_{telegram_id}",
+        stripe_subscription_id=f"promo_sub_{telegram_id}",
+        status="active",
+        current_period_end=end_date,
+      )
+      .on_conflict_do_update(
+        index_elements=[Subscription.id],
+        set_={"status": "active", "current_period_end": end_date, "telegram_id": telegram_id},
+      )
+    )
+    await session.commit()
+
+  await update.effective_message.reply_text(f"✅ Access granted for 7 days.\nExpires: {end_date.isoformat()}")
 
 
 async def send_alert_to_subscribers(payload: dict) -> int:

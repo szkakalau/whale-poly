@@ -3,7 +3,7 @@ import logging
 
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler
 
-from services.telegram_bot.handlers import generate_code_callback, start, status
+from services.telegram_bot.handlers import generate_code_callback, promote, start, status
 from shared.config import settings
 
 
@@ -14,6 +14,7 @@ async def build_application():
   application = ApplicationBuilder().token(settings.telegram_bot_token).build()
   application.add_handler(CommandHandler("start", start))
   application.add_handler(CommandHandler("status", status))
+  application.add_handler(CommandHandler("promote", promote))
   application.add_handler(CallbackQueryHandler(generate_code_callback, pattern="^generate_code$"))
   return application
 
