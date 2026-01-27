@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 
 from redis.asyncio import Redis
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
@@ -95,6 +94,8 @@ async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -
 
 async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
   if not await _ensure_private(update):
+    if update.effective_message:
+      await update.effective_message.reply_text("This bot only works in private chats.")
     return
 
   telegram_id = str(update.effective_user.id)
@@ -103,9 +104,14 @@ async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
   async with SessionLocal() as session:
     sub_id = f"manual_promo_{telegram_id}"
-    await session.execute(
-      insert(Subscription)
-      .values(
+
+    sub = await session.get(Subscription, sub_id)
+    if sub:
+      sub.status = "active"
+      sub.current_period_end = end_date
+      sub.telegram_id = telegram_id
+    else:
+      sub = Subscription(
         id=sub_id,
         telegram_id=telegram_id,
         stripe_customer_id=f"promo_{telegram_id}",
@@ -113,11 +119,8 @@ async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         status="active",
         current_period_end=end_date,
       )
-      .on_conflict_do_update(
-        index_elements=[Subscription.id],
-        set_={"status": "active", "current_period_end": end_date, "telegram_id": telegram_id},
-      )
-    )
+      session.add(sub)
+
     await session.commit()
 
   await update.effective_message.reply_text(f"✅ Access granted for 7 days.\nExpires: {end_date.isoformat()}")
