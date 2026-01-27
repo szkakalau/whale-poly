@@ -126,6 +126,8 @@ services:
         value: whale_trade_created
       - key: ALERT_CREATED_QUEUE
         value: alert_created
+      - key: ALERT_MIN_TRADE_USD
+        value: "10000"
 
   - type: worker
     name: alert-engine-worker
@@ -147,6 +149,8 @@ services:
         value: whale_trade_created
       - key: ALERT_CREATED_QUEUE
         value: alert_created
+      - key: ALERT_MIN_TRADE_USD
+        value: "10000"
 
   - type: worker
     name: telegram-bot

@@ -28,7 +28,7 @@ celery_app.conf.task_default_queue = "trade_ingest"
 celery_app.conf.task_default_exchange = "trade_ingest"
 celery_app.conf.task_default_routing_key = "trade_ingest"
 celery_app.conf.beat_schedule = {
-  "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 600.0},
+  "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 120.0},
   "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": 30.0},
 }
 
