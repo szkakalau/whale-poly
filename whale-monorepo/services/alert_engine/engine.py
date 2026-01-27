@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.alert_engine.rules import should_alert
+from services.trade_ingest.markets import resolve_market_title
 from shared.config import settings
 from shared.models import Alert, Market, MarketAlertState
 
@@ -91,6 +92,10 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   if created:
     await _touch_market(session, market_id, now)
     market = (await session.execute(select(Market).where(Market.id == market_id))).scalars().first()
+    if not market:
+      title = await resolve_market_title(session, market_id)
+      if title:
+        market = Market(id=market_id, title=title, status="active", created_at=now)
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
@@ -106,4 +111,3 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     }
     await redis.rpush(settings.alert_created_queue, json.dumps(payload))
   return created
-
