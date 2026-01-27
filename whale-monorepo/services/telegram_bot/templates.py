@@ -1,4 +1,5 @@
 import hashlib
+from urllib.parse import quote_plus
 
 from shared.config import settings
 
@@ -46,9 +47,11 @@ def format_alert(payload: dict, telegram_id: str) -> str:
 
   type_line = f"Type:\n{alert_type}\n\n" if alert_type else ""
   wm = user_hash(telegram_id)
+  search_url = "https://polymarket.com/search?query=" + quote_plus(str(market))
   return (
     "🐋 Whale Trade Detected\n\n"
     f"Market:\n{market}\n\n"
+    f"Link:\n{search_url}\n\n"
     f"{type_line}"
     f"Side:\n{side}\n\n"
     f"Size:\n${_fmt_usd(size)}\n\n"
