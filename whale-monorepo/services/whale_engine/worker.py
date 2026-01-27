@@ -32,6 +32,18 @@ celery_app.conf.beat_schedule = {
 }
 
 
+def _run(coro):
+  try:
+    loop = asyncio.get_event_loop()
+  except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+  if loop.is_closed():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+  return loop.run_until_complete(coro)
+
+
 async def _consume_once() -> int:
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
@@ -53,4 +65,4 @@ async def _consume_once() -> int:
 
 @celery_app.task(name="services.whale_engine.consume_trade_created")
 def consume_trade_created() -> int:
-  return asyncio.run(_consume_once())
+  return _run(_consume_once())

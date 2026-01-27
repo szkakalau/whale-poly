@@ -33,6 +33,18 @@ celery_app.conf.beat_schedule = {
 }
 
 
+def _run(coro):
+  try:
+    loop = asyncio.get_event_loop()
+  except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+  if loop.is_closed():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+  return loop.run_until_complete(coro)
+
+
 @celery_app.task(name="services.trade_ingest.ingest_markets")
 def ingest_markets_task() -> int:
   async def runner():
@@ -41,7 +53,7 @@ def ingest_markets_task() -> int:
       await session.commit()
     return n
 
-  return asyncio.run(runner())
+  return _run(runner())
 
 
 @celery_app.task(name="services.trade_ingest.ingest_trades")
@@ -57,7 +69,7 @@ def ingest_trades_task() -> int:
       await redis.aclose()
 
   try:
-    return asyncio.run(runner())
+    return _run(runner())
   except Exception:
     logger.exception("ingest_trades_failed")
     return 0
