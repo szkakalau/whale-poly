@@ -2,6 +2,18 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+export const metadata = {
+  title: 'Payment Successful - Sight Whale',
+  description: 'Your payment was received. Subscription will activate after processing.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: '/success',
+  },
+};
+
 export default function SuccessPage() {
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -25,4 +37,3 @@ export default function SuccessPage() {
     </div>
   );
 }
-

@@ -24,6 +24,9 @@ if settings.redis_url.startswith("rediss://"):
 celery_app.conf.worker_concurrency = int(os.getenv("CELERY_CONCURRENCY", "1"))
 celery_app.conf.worker_pool = os.getenv("CELERY_POOL", "solo")
 celery_app.conf.timezone = "UTC"
+celery_app.conf.task_default_queue = "alert_engine"
+celery_app.conf.task_default_exchange = "alert_engine"
+celery_app.conf.task_default_routing_key = "alert_engine"
 celery_app.conf.beat_schedule = {
   "consume-whale-trade-created": {"task": "services.alert_engine.consume_whale_trade_created", "schedule": 1.0}
 }

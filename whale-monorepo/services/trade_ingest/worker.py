@@ -24,6 +24,9 @@ if settings.redis_url.startswith("rediss://"):
 celery_app.conf.worker_concurrency = int(os.getenv("CELERY_CONCURRENCY", "1"))
 celery_app.conf.worker_pool = os.getenv("CELERY_POOL", "solo")
 celery_app.conf.timezone = "UTC"
+celery_app.conf.task_default_queue = "trade_ingest"
+celery_app.conf.task_default_exchange = "trade_ingest"
+celery_app.conf.task_default_routing_key = "trade_ingest"
 celery_app.conf.beat_schedule = {
   "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 600.0},
   "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": 30.0},

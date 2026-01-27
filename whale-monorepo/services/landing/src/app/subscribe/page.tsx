@@ -32,8 +32,9 @@ export default function SubscribePage() {
         return;
       }
       window.location.href = url;
-    } catch (e: any) {
-      setError(String(e?.message || e || 'checkout failed'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'checkout failed');
     } finally {
       setLoading(false);
     }

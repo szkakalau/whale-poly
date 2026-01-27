@@ -2,6 +2,18 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+export const metadata = {
+  title: 'Checkout Canceled - Sight Whale',
+  description: 'Your checkout was canceled. You can try again anytime.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: '/cancel',
+  },
+};
+
 export default function CancelPage() {
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -22,4 +34,3 @@ export default function CancelPage() {
     </div>
   );
 }
-

@@ -6,15 +6,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: 'PAYMENT_API_BASE_URL is required' }, { status: 500 });
   }
 
-  let payload: any;
+  let payload: unknown;
   try {
     payload = await req.json();
   } catch {
     return NextResponse.json({ detail: 'invalid json' }, { status: 400 });
   }
 
-  const telegram_activation_code = String(payload?.telegram_activation_code || '').trim();
-  const plan = String(payload?.plan || '').trim();
+  const data = typeof payload === 'object' && payload !== null ? (payload as Record<string, unknown>) : {};
+  const telegram_activation_code = String(data.telegram_activation_code ?? '').trim();
+  const plan = String(data.plan ?? '').trim();
   if (!telegram_activation_code || !plan) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
@@ -27,8 +28,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({ telegram_activation_code, plan }),
       cache: 'no-store'
     });
-  } catch (e: any) {
-    return NextResponse.json({ detail: 'payment api unreachable', error: String(e?.message || e) }, { status: 502 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ detail: 'payment api unreachable', error: message }, { status: 502 });
   }
 
   const ct = upstream.headers.get('content-type') || '';

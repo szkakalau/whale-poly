@@ -28,13 +28,19 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: POLYMARKET_DATA_API_TRADES_URL
+        value: https://data-api.polymarket.com/trades
+      - key: POLYMARKET_DATA_API_MARKETS_URL
+        value: https://gamma-api.polymarket.com/markets
+      - key: HTTPS_PROXY
+        sync: false
 
   - type: worker
     name: trade-ingest-worker
     runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.trade_ingest.worker:celery_app worker -B -l INFO
+    dockerCommand: celery -A services.trade_ingest.worker:celery_app worker -B -l INFO -Q trade_ingest
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -45,6 +51,12 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: POLYMARKET_DATA_API_TRADES_URL
+        value: https://data-api.polymarket.com/trades
+      - key: POLYMARKET_DATA_API_MARKETS_URL
+        value: https://gamma-api.polymarket.com/markets
+      - key: HTTPS_PROXY
+        sync: false
 
   - type: web
     name: whale-engine-api
@@ -69,7 +81,7 @@ services:
     runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.whale_engine.worker:celery_app worker -B -l INFO
+    dockerCommand: celery -A services.whale_engine.worker:celery_app worker -B -l INFO -Q whale_engine
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -104,7 +116,7 @@ services:
     runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.alert_engine.worker:celery_app worker -B -l INFO
+    dockerCommand: celery -A services.alert_engine.worker:celery_app worker -B -l INFO -Q alert_engine
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -116,12 +128,11 @@ services:
           type: keyvalue
           property: connectionString
 
-  - type: web
+  - type: worker
     name: telegram-bot
     runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
-    healthCheckPath: /health
     dockerCommand: uvicorn services.telegram_bot.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
@@ -133,6 +144,10 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: BOT_USER_HASH_SECRET
+        sync: false
 
   - type: web
     name: payment-api

@@ -23,6 +23,8 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: `${post.title} - Whale Intelligence`,
     description: post.excerpt,
+    keywords: post.tags,
+    authors: [{ name: post.author || 'Whale Team' }],
     openGraph: {
       title: post.title,
       description: post.excerpt,
@@ -30,6 +32,20 @@ export async function generateMetadata({ params }: Props) {
       publishedTime: post.date,
       tags: post.tags,
       url: `https://sightwhale.com/blog/${slug}`,
+      images: [
+        {
+          url: '/images/whale-alert-biden.svg',
+          width: 1200,
+          height: 630,
+          alt: post.title
+        }
+      ]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: ['/images/whale-alert-biden.svg']
     },
     alternates: {
       canonical: `/blog/${slug}`,
@@ -52,6 +68,36 @@ export default async function BlogPostPage({ params }: Props) {
     notFound();
   }
 
+  const safePost = post as NonNullable<typeof post>;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: safePost.title,
+    description: safePost.excerpt,
+    datePublished: safePost.date,
+    dateModified: safePost.date,
+    author: [
+      {
+        "@type": "Organization",
+        name: safePost.author || "Whale Team"
+      }
+    ],
+    publisher: {
+      "@type": "Organization",
+      name: "Sight Whale",
+      url: "https://sightwhale.com"
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://sightwhale.com/blog/${slug}`
+    },
+    image: [
+      "https://sightwhale.com/images/whale-alert-biden.svg"
+    ],
+    keywords: safePost.tags?.join(", ")
+  };
+
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       {/* Background Effects */}
@@ -68,12 +114,16 @@ export default async function BlogPostPage({ params }: Props) {
         </Link>
 
         <article>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          />
           <header className="mb-12 text-center">
             <div className="flex flex-wrap justify-center items-center gap-3 text-sm text-gray-400 mb-6">
-              <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
+              <time dateTime={safePost.date}>{new Date(safePost.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
               <span>•</span>
               <div className="flex gap-2">
-                {post.tags?.map(tag => (
+                {safePost.tags?.map(tag => (
                   <span key={tag} className="px-3 py-1 rounded-full bg-white/5 text-sm text-gray-300 border border-white/10">
                     #{tag}
                   </span>
@@ -82,17 +132,17 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
             
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              {post.title}
+              {safePost.title}
             </h1>
             
             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
-              {post.excerpt}
+              {safePost.excerpt}
             </p>
           </header>
 
           <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-violet-200 prose-code:bg-violet-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:pr-4 prose-li:marker:text-violet-500">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {post.content}
+              {safePost.content}
             </ReactMarkdown>
           </div>
         </article>

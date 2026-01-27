@@ -2,10 +2,35 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-export default function BacktestingPage() {
-  const primaryBtnClass = "btn-primary";
-  const secondaryBtnClass = "btn-secondary";
+export const metadata = {
+  title: 'Backtesting Results - Whale Intelligence',
+  description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
+  openGraph: {
+    title: 'Backtesting Results - Whale Intelligence',
+    description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
+    type: 'website',
+    url: 'https://sightwhale.com/backtesting',
+    images: [
+      {
+        url: '/images/whale-alert-biden.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Backtesting Results'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Backtesting Results - Whale Intelligence',
+    description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
+    images: ['/images/whale-alert-biden.svg']
+  },
+  alternates: {
+    canonical: '/backtesting',
+  },
+};
 
+export default function BacktestingPage() {
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       {/* Background Effects */}

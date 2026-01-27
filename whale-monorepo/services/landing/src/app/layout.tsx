@@ -21,11 +21,20 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://sightwhale.com/",
     siteName: "Sight Whale",
+    images: [
+      {
+        url: "/images/whale-alert-biden.svg",
+        width: 1200,
+        height: 630,
+        alt: "Sight Whale — Polymarket Whale Intelligence"
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title: "Sight Whale — Polymarket Whale Intelligence",
     description: "Private intelligence alerts delivered to your Telegram via Sight Whale.",
+    images: ["/images/whale-alert-biden.svg"]
   },
   robots: {
     index: true,

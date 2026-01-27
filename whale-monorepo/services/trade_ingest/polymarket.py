@@ -1,4 +1,6 @@
+import asyncio
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -9,6 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
 from shared.models import TradeRaw
+
+
+logger = logging.getLogger("trade_ingest.polymarket")
 
 
 def normalize_key(value: str) -> str:
@@ -77,19 +82,41 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
 async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
   url = settings.polymarket_trades_url
   if not url:
+    logger.warning("polymarket_trades_url_missing")
     return []
-  resp = await client.get(url, timeout=30)
-  if resp.status_code != 200:
-    return []
-  data = resp.json()
-  if isinstance(data, list):
-    return data
-  trades = data.get("trades") if isinstance(data, dict) else None
-  return trades if isinstance(trades, list) else []
+  last_error = ""
+  for attempt in range(1, 4):
+    try:
+      resp = await client.get(url, timeout=30)
+      if resp.status_code != 200:
+        last_error = f"status={resp.status_code} body={resp.text[:200]}"
+      else:
+        try:
+          data = resp.json()
+        except Exception as e:
+          last_error = f"invalid_json error={e}"
+        else:
+          if isinstance(data, list):
+            logger.info(f"polymarket_trades_fetched count={len(data)}")
+            return data
+          trades = data.get("trades") if isinstance(data, dict) else None
+          if isinstance(trades, list):
+            logger.info(f"polymarket_trades_fetched count={len(trades)}")
+            return trades
+          last_error = "unexpected_payload"
+    except Exception as e:
+      last_error = f"request_failed error={e}"
+    logger.warning(f"polymarket_fetch_retry attempt={attempt} {last_error}")
+    if attempt < 3:
+      await asyncio.sleep(2 * attempt)
+  logger.error(f"polymarket_fetch_failed {last_error}")
+  return []
 
 
 async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
   proxies = settings.https_proxy or None
+  if proxies:
+    logger.info("polymarket_fetch_proxy_enabled")
   async with httpx.AsyncClient(proxies=proxies) as client:
     raw_trades = await fetch_trades(client)
 
@@ -120,4 +147,3 @@ async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
   if inserted:
     await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in inserted])
   return len(inserted)
-

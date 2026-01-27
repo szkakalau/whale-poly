@@ -6,6 +6,29 @@ import { getAllPosts } from '@/lib/blog';
 export const metadata = {
   title: 'Blog - Whale Intelligence',
   description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
+  openGraph: {
+    title: 'Blog - Whale Intelligence',
+    description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
+    type: 'website',
+    url: 'https://sightwhale.com/blog',
+    images: [
+      {
+        url: '/images/whale-alert-biden.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Whale Intelligence Blog'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Blog - Whale Intelligence',
+    description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
+    images: ['/images/whale-alert-biden.svg']
+  },
+  alternates: {
+    canonical: '/blog',
+  },
 };
 
 export default function BlogIndexPage() {
