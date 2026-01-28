@@ -128,6 +128,10 @@ services:
         value: alert_created
       - key: ALERT_MIN_TRADE_USD
         value: "10000"
+      - key: POLYMARKET_DATA_API_MARKETS_URL
+        value: https://gamma-api.polymarket.com/markets
+      - key: HTTPS_PROXY
+        sync: false
 
   - type: worker
     name: alert-engine-worker
@@ -151,6 +155,10 @@ services:
         value: alert_created
       - key: ALERT_MIN_TRADE_USD
         value: "10000"
+      - key: POLYMARKET_DATA_API_MARKETS_URL
+        value: https://gamma-api.polymarket.com/markets
+      - key: HTTPS_PROXY
+        sync: false
 
   - type: worker
     name: telegram-bot

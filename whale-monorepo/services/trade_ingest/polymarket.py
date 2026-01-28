@@ -45,7 +45,20 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   if not trade_id:
     return None
 
-  market_raw = str(t.get("market_id") or t.get("conditionId") or t.get("asset") or "unknown")
+  market_raw = (
+    t.get("market_id")
+    or t.get("marketId")
+    or t.get("conditionId")
+    or t.get("condition_id")
+    or t.get("condition")
+  )
+  if not market_raw:
+    market = t.get("market")
+    if isinstance(market, dict):
+      market_raw = market.get("id") or market.get("market_id") or market.get("conditionId") or market.get("condition_id")
+  if not market_raw:
+    market_raw = t.get("asset") or "unknown"
+  market_raw = str(market_raw)
   market_id = normalize_key(market_raw)
   wallet = t.get("wallet") or t.get("maker") or t.get("taker") or t.get("proxyWallet") or "unknown"
   wallet = normalize_key(str(wallet))

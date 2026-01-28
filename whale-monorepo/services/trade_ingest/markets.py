@@ -16,33 +16,78 @@ def normalize_key(value: str) -> str:
 
 def _collect_ids(m: dict[str, Any]) -> set[str]:
   ids: set[str] = set()
-  for k in ("id", "market_id", "slug", "ticker", "conditionId", "condition_id"):
-    if m.get(k):
-      ids.add(str(m.get(k)))
-  clob = m.get("clobTokenIds")
-  if isinstance(clob, list):
-    for t in clob:
-      if t:
-        ids.add(str(t))
-  tokens = m.get("tokens")
-  if isinstance(tokens, list):
-    for t in tokens:
-      if isinstance(t, dict) and t.get("token_id"):
-        ids.add(str(t.get("token_id")))
+  id_keys = {
+    "id",
+    "market_id",
+    "marketId",
+    "slug",
+    "ticker",
+    "conditionId",
+    "condition_id",
+    "token_id",
+    "tokenId",
+    "clobTokenId",
+    "clobTokenIds",
+    "asset",
+  }
+
+  def _walk(obj: Any) -> None:
+    if obj is None:
+      return
+    if isinstance(obj, dict):
+      for k, v in obj.items():
+        if k in id_keys:
+          if isinstance(v, list):
+            for x in v:
+              if x is not None and x != "":
+                ids.add(str(x))
+          elif v is not None and v != "":
+            ids.add(str(v))
+        _walk(v)
+      return
+    if isinstance(obj, list):
+      for x in obj:
+        _walk(x)
+      return
+
+  _walk(m)
   return ids
 
 
-def _extract_markets(data: Any) -> list[dict[str, Any]]:
+def _extract_market_records(data: Any) -> list[dict[str, Any]]:
   if isinstance(data, list):
-    return [m for m in data if isinstance(m, dict)]
-  if isinstance(data, dict):
-    markets = data.get("markets") or data.get("data") or data.get("market")
-    if isinstance(markets, list):
-      return [m for m in markets if isinstance(m, dict)]
-    if isinstance(markets, dict):
-      return [markets]
-    return [data]
-  return []
+    items = [x for x in data if isinstance(x, dict)]
+  elif isinstance(data, dict):
+    maybe = data.get("markets") or data.get("data") or data.get("market")
+    if isinstance(maybe, list):
+      items = [x for x in maybe if isinstance(x, dict)]
+    elif isinstance(maybe, dict):
+      items = [maybe]
+    else:
+      items = [data]
+  else:
+    items = []
+
+  out: list[dict[str, Any]] = []
+  for item in items:
+    parent_title = item.get("title") or item.get("question") or ""
+    parent_status = str(item.get("status") or ("active" if item.get("active") is True else "active"))
+    parent_ids = {normalize_key(x) for x in _collect_ids(item)}
+
+    nested = item.get("markets")
+    if isinstance(nested, list) and any(isinstance(x, dict) for x in nested):
+      for child in nested:
+        if not isinstance(child, dict):
+          continue
+        title = child.get("title") or child.get("question") or parent_title or ""
+        status = str(child.get("status") or parent_status or "active")
+        ids = parent_ids | {normalize_key(x) for x in _collect_ids(child)}
+        out.append({"title": str(title), "status": status, "ids": ids})
+      continue
+
+    out.append({"title": str(parent_title), "status": parent_status, "ids": parent_ids})
+
+  return out
 
 
 async def _upsert_market(session: AsyncSession, title: str, status: str, ids: set[str]) -> None:
@@ -73,9 +118,9 @@ async def _fetch_market_by_id(client: httpx.AsyncClient, url: str, target_id: st
     resp = await client.get(candidate, timeout=30)
     if resp.status_code != 200:
       continue
-    markets = _extract_markets(resp.json())
-    if markets:
-      return markets
+    records = _extract_market_records(resp.json())
+    if records:
+      return records
   return []
 
 
@@ -96,27 +141,22 @@ async def ingest_markets(session: AsyncSession) -> int:
       resp = await client.get(f"{url}{sep}limit={batch_size}&offset={offset}&active=true", timeout=30)
       if resp.status_code != 200:
         break
-      data = resp.json()
-      markets = data if isinstance(data, list) else (data.get("markets") or data.get("data") or [])
-      if not isinstance(markets, list) or not markets:
+      records = _extract_market_records(resp.json())
+      if not records:
         break
 
-      for m in markets:
-        if not isinstance(m, dict):
+      for r in records:
+        if not isinstance(r, dict):
           continue
-        title = m.get("title") or m.get("question") or ""
+        title = str(r.get("title") or "")
         if not title:
           continue
-        status = str(m.get("status") or "active")
-        ids = _collect_ids(m)
-        for raw_id in ids:
-          key = normalize_key(str(raw_id))
-          await session.execute(
-            insert(Market)
-            .values(id=key, title=str(title), status=status, created_at=datetime.now(timezone.utc))
-            .on_conflict_do_update(index_elements=[Market.id], set_={"title": str(title), "status": status})
-          )
-          total_upserts += 1
+        status = str(r.get("status") or "active")
+        ids = r.get("ids") or set()
+        if not isinstance(ids, set) or not ids:
+          continue
+        await _upsert_market(session, str(title), status, ids)
+        total_upserts += len(ids)
 
       offset += batch_size
   return total_upserts
@@ -136,14 +176,16 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
   async with httpx.AsyncClient(proxies=proxies) as client:
     direct = await _fetch_market_by_id(client, url, target_id)
     if direct:
-      for m in direct:
-        if not isinstance(m, dict):
+      for r in direct:
+        if not isinstance(r, dict):
           continue
-        title = m.get("title") or m.get("question") or ""
+        title = str(r.get("title") or "")
         if not title:
           continue
-        status = str(m.get("status") or "active")
-        ids = {normalize_key(x) for x in _collect_ids(m)}
+        status = str(r.get("status") or "active")
+        ids = r.get("ids") or set()
+        if not isinstance(ids, set):
+          continue
         ids.add(target)
         await _upsert_market(session, str(title), status, ids)
         return str(title)
@@ -153,17 +195,19 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
       resp = await client.get(f"{url}{sep}limit={batch_size}&offset={offset}&active=true", timeout=30)
       if resp.status_code != 200:
         break
-      markets = _extract_markets(resp.json())
-      if not markets:
+      records = _extract_market_records(resp.json())
+      if not records:
         break
-      for m in markets:
-        if not isinstance(m, dict):
+      for r in records:
+        if not isinstance(r, dict):
           continue
-        title = m.get("title") or m.get("question") or ""
+        title = str(r.get("title") or "")
         if not title:
           continue
-        status = str(m.get("status") or "active")
-        ids = {normalize_key(x) for x in _collect_ids(m)}
+        status = str(r.get("status") or "active")
+        ids = r.get("ids") or set()
+        if not isinstance(ids, set):
+          continue
         if target in ids:
           await _upsert_market(session, str(title), status, ids)
           return str(title)
