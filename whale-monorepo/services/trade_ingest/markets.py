@@ -32,6 +32,53 @@ def _collect_ids(m: dict[str, Any]) -> set[str]:
   return ids
 
 
+def _extract_markets(data: Any) -> list[dict[str, Any]]:
+  if isinstance(data, list):
+    return [m for m in data if isinstance(m, dict)]
+  if isinstance(data, dict):
+    markets = data.get("markets") or data.get("data") or data.get("market")
+    if isinstance(markets, list):
+      return [m for m in markets if isinstance(m, dict)]
+    if isinstance(markets, dict):
+      return [markets]
+    return [data]
+  return []
+
+
+async def _upsert_market(session: AsyncSession, title: str, status: str, ids: set[str]) -> None:
+  for raw_id in ids:
+    key = normalize_key(str(raw_id))
+    await session.execute(
+      insert(Market)
+      .values(id=key, title=str(title), status=status, created_at=datetime.now(timezone.utc))
+      .on_conflict_do_update(index_elements=[Market.id], set_={"title": str(title), "status": status})
+    )
+
+
+async def _fetch_market_by_id(client: httpx.AsyncClient, url: str, target_id: str) -> list[dict[str, Any]]:
+  raw_target = str(target_id).strip()
+  targets: list[str] = []
+  for t in (raw_target, normalize_key(raw_target)):
+    if t and t not in targets:
+      targets.append(t)
+
+  urls: list[str] = []
+  for t in targets:
+    sep = "&" if "?" in url else "?"
+    for param in ("id", "market_id", "conditionId", "condition_id", "slug", "ticker", "token_id", "clobTokenId", "clobTokenIds"):
+      urls.append(f"{url}{sep}{param}={t}")
+    urls.append(f"{url.rstrip('/')}/{t}")
+
+  for candidate in urls:
+    resp = await client.get(candidate, timeout=30)
+    if resp.status_code != 200:
+      continue
+    markets = _extract_markets(resp.json())
+    if markets:
+      return markets
+  return []
+
+
 async def ingest_markets(session: AsyncSession) -> int:
   url = settings.polymarket_markets_url
   if not url:
@@ -87,29 +134,38 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
 
   proxies = settings.https_proxy or None
   async with httpx.AsyncClient(proxies=proxies) as client:
+    direct = await _fetch_market_by_id(client, url, target_id)
+    if direct:
+      for m in direct:
+        if not isinstance(m, dict):
+          continue
+        title = m.get("title") or m.get("question") or ""
+        if not title:
+          continue
+        status = str(m.get("status") or "active")
+        ids = {normalize_key(x) for x in _collect_ids(m)}
+        ids.add(target)
+        await _upsert_market(session, str(title), status, ids)
+        return str(title)
+
     offset = 0
     while offset < max_scan:
       resp = await client.get(f"{url}{sep}limit={batch_size}&offset={offset}&active=true", timeout=30)
       if resp.status_code != 200:
         break
-      data = resp.json()
-      markets = data if isinstance(data, list) else (data.get("markets") or data.get("data") or [])
-      if not isinstance(markets, list) or not markets:
+      markets = _extract_markets(resp.json())
+      if not markets:
         break
       for m in markets:
         if not isinstance(m, dict):
           continue
         title = m.get("title") or m.get("question") or ""
+        if not title:
+          continue
         status = str(m.get("status") or "active")
         ids = {normalize_key(x) for x in _collect_ids(m)}
-        if target in ids and title:
-          # Upsert all related ids so future lookups succeed fast
-          for raw_id in ids:
-            await session.execute(
-              insert(Market)
-              .values(id=str(raw_id), title=str(title), status=status, created_at=datetime.now(timezone.utc))
-              .on_conflict_do_update(index_elements=[Market.id], set_={"title": str(title), "status": status})
-            )
+        if target in ids:
+          await _upsert_market(session, str(title), status, ids)
           return str(title)
       offset += batch_size
   return None
