@@ -2,6 +2,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import Depends, FastAPI, Query
 from redis.asyncio import Redis
 from sqlalchemy import select
@@ -59,6 +60,21 @@ async def recent_alerts(minutes: int = Query(60, ge=1, le=1440), session: AsyncS
   ]
 
 
+@app.get("/debug/queues")
+async def debug_queues():
+  names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    queues = []
+    for name in names:
+      size = await redis.llen(name)
+      last = await redis.lrange(name, -1, -1)
+      queues.append({"name": name, "len": size, "last": last[0] if last else None})
+    return {"queues": queues}
+  finally:
+    await redis.aclose()
+
+
 @app.post("/alerts/force")
 async def force_alert(
   market_question: str = Query("Test Market Alert"),
@@ -108,4 +124,27 @@ async def force_alert(
   finally:
     await redis.aclose()
 
-  return {"ok": True, "alert_id": alert_id, "whale_trade_id": whale_trade_id}
+  direct = {"ok": False}
+  if settings.telegram_bot_token and settings.telegram_alert_chat_id:
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    text = (
+      "Forced Alert Test\n\n"
+      f"Market:\n{market_question}\n\n"
+      f"Side:\n{side}\n\n"
+      f"Size:\n${size}\n\n"
+      f"Price:\n{price}\n\n"
+      f"Whale Score:\n{whale_score}\n\n"
+      f"Alert ID:\n{alert_id}"
+    )
+    async with httpx.AsyncClient() as client:
+      resp = await client.post(
+        url,
+        json={"chat_id": settings.telegram_alert_chat_id, "text": text, "disable_web_page_preview": True},
+        timeout=10,
+      )
+    if 200 <= resp.status_code < 300:
+      direct = {"ok": True}
+    else:
+      direct = {"ok": False, "status": resp.status_code, "body": resp.text[:200]}
+
+  return {"ok": True, "alert_id": alert_id, "whale_trade_id": whale_trade_id, "direct": direct}

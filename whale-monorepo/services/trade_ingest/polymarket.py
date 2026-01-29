@@ -21,6 +21,30 @@ def normalize_key(value: str) -> str:
   return v.lower() if v.startswith("0x") else v
 
 
+def _normalize_market_id(raw: Any) -> str | None:
+  if raw is None:
+    return None
+  if isinstance(raw, (list, tuple, set)):
+    for x in raw:
+      if x is not None and x != "":
+        return normalize_key(str(x))
+    return None
+  if isinstance(raw, str):
+    trimmed = raw.strip()
+    if trimmed.startswith("[") and trimmed.endswith("]"):
+      try:
+        parsed = json.loads(trimmed)
+      except Exception:
+        parsed = None
+      if isinstance(parsed, list):
+        for x in parsed:
+          if x is not None and x != "":
+            return normalize_key(str(x))
+        return None
+    return normalize_key(trimmed) if trimmed else None
+  return normalize_key(str(raw))
+
+
 def _parse_ts(raw: Any) -> datetime | None:
   if raw is None:
     return None
@@ -58,8 +82,7 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
       market_raw = market.get("id") or market.get("market_id") or market.get("conditionId") or market.get("condition_id")
   if not market_raw:
     market_raw = t.get("asset") or "unknown"
-  market_raw = str(market_raw)
-  market_id = normalize_key(market_raw)
+  market_id = _normalize_market_id(market_raw) or "unknown"
   wallet = t.get("wallet") or t.get("maker") or t.get("taker") or t.get("proxyWallet") or "unknown"
   wallet = normalize_key(str(wallet))
   side = str(t.get("side") or "").lower()

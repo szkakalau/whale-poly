@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 from typing import Any
 
 import httpx
@@ -12,6 +13,24 @@ from shared.models import Market
 def normalize_key(value: str) -> str:
   v = value.strip()
   return v.lower() if v.startswith("0x") else v
+
+
+def _expand_id_values(value: Any) -> list[str]:
+  if value is None:
+    return []
+  if isinstance(value, (list, tuple, set)):
+    return [str(x) for x in value if x is not None and x != ""]
+  if isinstance(value, str):
+    trimmed = value.strip()
+    if trimmed.startswith("[") and trimmed.endswith("]"):
+      try:
+        parsed = json.loads(trimmed)
+      except Exception:
+        parsed = None
+      if isinstance(parsed, list):
+        return [str(x) for x in parsed if x is not None and x != ""]
+    return [trimmed] if trimmed else []
+  return [str(value)]
 
 
 def _collect_ids(m: dict[str, Any]) -> set[str]:
@@ -37,12 +56,9 @@ def _collect_ids(m: dict[str, Any]) -> set[str]:
     if isinstance(obj, dict):
       for k, v in obj.items():
         if k in id_keys:
-          if isinstance(v, list):
-            for x in v:
-              if x is not None and x != "":
-                ids.add(str(x))
-          elif v is not None and v != "":
-            ids.add(str(v))
+          for x in _expand_id_values(v):
+            if x is not None and x != "":
+              ids.add(str(x))
         _walk(v)
       return
     if isinstance(obj, list):
