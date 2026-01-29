@@ -206,6 +206,8 @@ services:
         sync: false
       - key: BOT_USER_HASH_SECRET
         sync: false
+      - key: TELEGRAM_ALERT_CHAT_ID
+        sync: false
 
   - type: web
     name: payment-api

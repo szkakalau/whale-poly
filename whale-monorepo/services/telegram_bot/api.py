@@ -4,7 +4,8 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Query
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
@@ -46,6 +47,8 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           .where(Subscription.current_period_end > now)
         )
       ).scalars().all()
+      if settings.telegram_alert_chat_id:
+        telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
 
       for tid in telegram_ids:
         if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
@@ -99,3 +102,20 @@ app = FastAPI(title="telegram-bot", lifespan=lifespan)
 @app.get("/health")
 async def health():
   return {"status": "ok"}
+
+
+@app.post("/alerts/test")
+async def test_alert(message: str = Query("Test alert from SightWhale")):
+  if not settings.telegram_bot_token or not settings.telegram_alert_chat_id:
+    return {"ok": False, "error": "telegram_alert_config_missing"}
+  url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+  payload = {
+    "chat_id": settings.telegram_alert_chat_id,
+    "text": message,
+    "disable_web_page_preview": True,
+  }
+  async with httpx.AsyncClient() as client:
+    resp = await client.post(url, json=payload, timeout=10)
+  if resp.status_code < 200 or resp.status_code >= 300:
+    return {"ok": False, "status": resp.status_code, "body": resp.text[:200]}
+  return {"ok": True}

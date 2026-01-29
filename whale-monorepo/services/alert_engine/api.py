@@ -1,7 +1,11 @@
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI, Query
+from redis.asyncio import Redis
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
@@ -53,3 +57,55 @@ async def recent_alerts(minutes: int = Query(60, ge=1, le=1440), session: AsyncS
     }
     for a in rows
   ]
+
+
+@app.post("/alerts/force")
+async def force_alert(
+  market_question: str = Query("Test Market Alert"),
+  side: str = Query("buy"),
+  size: float = Query(12345.67),
+  price: float = Query(0.42),
+  whale_score: int = Query(90),
+  session: AsyncSession = Depends(get_session),
+):
+  now = datetime.now(timezone.utc)
+  seed = f"{market_question}:{now.isoformat()}"
+  whale_trade_id = hashlib.sha1(f"wt:{seed}".encode("utf-8")).hexdigest()[:32]
+  alert_id = hashlib.sha1(f"al:{seed}".encode("utf-8")).hexdigest()[:32]
+  market_id = hashlib.sha1(f"mk:{market_question}".encode("utf-8")).hexdigest()[:32]
+
+  await session.execute(
+    insert(Alert)
+    .values(
+      id=alert_id,
+      whale_trade_id=whale_trade_id,
+      market_id=market_id,
+      wallet_address="0xabc1234567890defabc1234567890defabc12345",
+      whale_score=whale_score,
+      alert_type="test",
+      created_at=now,
+    )
+    .on_conflict_do_nothing(index_elements=[Alert.whale_trade_id])
+  )
+  await session.commit()
+
+  payload = {
+    "alert_id": alert_id,
+    "whale_trade_id": whale_trade_id,
+    "market_id": market_id,
+    "wallet_address": "0xabc1234567890defabc1234567890defabc12345",
+    "whale_score": whale_score,
+    "alert_type": "test",
+    "market_question": market_question,
+    "side": side,
+    "size": size,
+    "price": price,
+    "created_at": now.isoformat(),
+  }
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    await redis.rpush(settings.alert_created_queue, json.dumps(payload))
+  finally:
+    await redis.aclose()
+
+  return {"ok": True, "alert_id": alert_id, "whale_trade_id": whale_trade_id}
