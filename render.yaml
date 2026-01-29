@@ -83,6 +83,10 @@ services:
         value: trade_created
       - key: WHALE_TRADE_CREATED_QUEUE
         value: whale_trade_created
+      - key: WHALE_SINGLE_TRADE_USD_THRESHOLD
+        value: "5000"
+      - key: WHALE_BUILD_USD_THRESHOLD
+        value: "5000"
 
   - type: worker
     name: whale-engine-worker
@@ -104,6 +108,10 @@ services:
         value: trade_created
       - key: WHALE_TRADE_CREATED_QUEUE
         value: whale_trade_created
+      - key: WHALE_SINGLE_TRADE_USD_THRESHOLD
+        value: "5000"
+      - key: WHALE_BUILD_USD_THRESHOLD
+        value: "5000"
 
   - type: web
     name: alert-engine-api
@@ -127,7 +135,7 @@ services:
       - key: ALERT_CREATED_QUEUE
         value: alert_created
       - key: ALERT_MIN_TRADE_USD
-        value: "10000"
+        value: "5000"
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
@@ -154,7 +162,7 @@ services:
       - key: ALERT_CREATED_QUEUE
         value: alert_created
       - key: ALERT_MIN_TRADE_USD
-        value: "10000"
+        value: "5000"
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
