@@ -1,3 +1,4 @@
+---
 title: "Florida Democratic Senate Primary: Can Alexander Vindman win? Whale lens and market dynamics"
 excerpt: "Polymarket is trading on whether Vindman secures the Democratic Senate nomination in Florida. We synthesize bull/bear theses and whale flows to gauge realistic probabilities."
 date: "2026-01-28"
