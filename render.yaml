@@ -38,6 +38,8 @@ services:
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
         sync: false
+      - key: WECHAT_WEBHOOK_URL
+        sync: false
 
   - type: worker
     name: trade-ingest-worker
@@ -64,6 +66,12 @@ services:
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
+        sync: false
+      - key: TELEGRAM_HEALTH_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_HEALTH_CHAT_ID
+        sync: false
+      - key: TELEGRAM_HEALTH_USERNAME
         sync: false
 
   - type: web
