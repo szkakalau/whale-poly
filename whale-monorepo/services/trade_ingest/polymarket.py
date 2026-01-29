@@ -93,35 +93,36 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
 
 
 async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-  url = settings.polymarket_trades_url
-  if not url:
+  urls = [u for u in [settings.polymarket_trades_url, settings.polymarket_trades_url_fallback] if u]
+  if not urls:
     logger.warning("polymarket_trades_url_missing")
     return []
   last_error = ""
-  for attempt in range(1, 4):
-    try:
-      resp = await client.get(url, timeout=30)
-      if resp.status_code != 200:
-        last_error = f"status={resp.status_code} body={resp.text[:200]}"
-      else:
-        try:
-          data = resp.json()
-        except Exception as e:
-          last_error = f"invalid_json error={e}"
+  for url in urls:
+    for attempt in range(1, 4):
+      try:
+        resp = await client.get(url, timeout=30)
+        if resp.status_code != 200:
+          last_error = f"status={resp.status_code} body={resp.text[:200]}"
         else:
-          if isinstance(data, list):
-            logger.info(f"polymarket_trades_fetched count={len(data)}")
-            return data
-          trades = data.get("trades") if isinstance(data, dict) else None
-          if isinstance(trades, list):
-            logger.info(f"polymarket_trades_fetched count={len(trades)}")
-            return trades
-          last_error = "unexpected_payload"
-    except Exception as e:
-      last_error = f"request_failed error={e}"
-    logger.warning(f"polymarket_fetch_retry attempt={attempt} {last_error}")
-    if attempt < 3:
-      await asyncio.sleep(2 * attempt)
+          try:
+            data = resp.json()
+          except Exception as e:
+            last_error = f"invalid_json error={e}"
+          else:
+            if isinstance(data, list):
+              logger.info(f"polymarket_trades_fetched url={url} count={len(data)}")
+              return data
+            trades = data.get("trades") if isinstance(data, dict) else None
+            if isinstance(trades, list):
+              logger.info(f"polymarket_trades_fetched url={url} count={len(trades)}")
+              return trades
+            last_error = "unexpected_payload"
+      except Exception as e:
+        last_error = f"request_failed error={e}"
+      logger.warning(f"polymarket_fetch_retry url={url} attempt={attempt} {last_error}")
+      if attempt < 3:
+        await asyncio.sleep(2 * attempt)
   logger.error(f"polymarket_fetch_failed {last_error}")
   return []
 

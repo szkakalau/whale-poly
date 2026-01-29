@@ -33,6 +33,9 @@ class Settings:
     self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "20"))
 
     self.polymarket_trades_url = os.getenv("POLYMARKET_TRADES_URL") or os.getenv("POLYMARKET_DATA_API_TRADES_URL") or ""
+    self.polymarket_trades_url_fallback = (
+      os.getenv("POLYMARKET_TRADES_URL_FALLBACK") or os.getenv("POLYMARKET_DATA_API_TRADES_URL_FALLBACK") or ""
+    )
     self.polymarket_markets_url = os.getenv("POLYMARKET_MARKETS_URL") or os.getenv("POLYMARKET_DATA_API_MARKETS_URL") or ""
     self.https_proxy = os.getenv("HTTPS_PROXY", "")
 
