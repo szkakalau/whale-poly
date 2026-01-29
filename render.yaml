@@ -32,6 +32,8 @@ services:
         value: trade_created
       - key: POLYMARKET_DATA_API_TRADES_URL
         value: https://data-api.polymarket.com/trades
+      - key: POLYMARKET_DATA_API_TRADES_URL_FALLBACK
+        value: https://backup-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
@@ -57,6 +59,8 @@ services:
         value: trade_created
       - key: POLYMARKET_DATA_API_TRADES_URL
         value: https://data-api.polymarket.com/trades
+      - key: POLYMARKET_DATA_API_TRADES_URL_FALLBACK
+        value: https://backup-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
@@ -188,6 +192,8 @@ services:
           property: connectionString
       - key: ALERT_CREATED_QUEUE
         value: alert_created
+      - key: ALERT_FANOUT_RATE_LIMIT_PER_MINUTE
+        value: "50"
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: BOT_USER_HASH_SECRET
