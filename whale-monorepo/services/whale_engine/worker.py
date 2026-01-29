@@ -47,18 +47,29 @@ def _run(coro):
 async def _consume_once() -> int:
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
+    batch_size = int(os.getenv("TRADE_CONSUME_BATCH", "50"))
     item = await redis.blpop(settings.trade_created_queue, timeout=1)
     if not item:
       return 0
     _, raw = item
-    msg = json.loads(raw)
-    trade_id = str(msg.get("trade_id") or "")
-    if not trade_id:
-      return 0
+    raws = [raw]
+    for _ in range(batch_size - 1):
+      nxt = await redis.lpop(settings.trade_created_queue)
+      if not nxt:
+        break
+      raws.append(nxt)
+    created_count = 0
     async with SessionLocal() as session:
-      created = await process_trade_id(session, redis, trade_id)
-      await session.commit()
-    return 1 if created else 0
+      for payload in raws:
+        msg = json.loads(payload)
+        trade_id = str(msg.get("trade_id") or "")
+        if not trade_id:
+          continue
+        created = await process_trade_id(session, redis, trade_id)
+        if created:
+          created_count += 1
+        await session.commit()
+    return created_count
   finally:
     await redis.aclose()
 
