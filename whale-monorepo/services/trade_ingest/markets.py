@@ -47,7 +47,6 @@ def _collect_ids(m: dict[str, Any]) -> set[str]:
     "tokenId",
     "clobTokenId",
     "clobTokenIds",
-    "asset",
   }
 
   def _walk(obj: Any) -> None:

@@ -92,10 +92,9 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   if created:
     await _touch_market(session, market_id, now)
     market = (await session.execute(select(Market).where(Market.id == market_id))).scalars().first()
-    if not market:
-      title = await resolve_market_title(session, market_id)
-      if title:
-        market = Market(id=market_id, title=title, status="active", created_at=now)
+    title = await resolve_market_title(session, market_id)
+    if title and (not market or market.title != title):
+      market = Market(id=market_id, title=title, status="active", created_at=now)
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
@@ -103,7 +102,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "wallet_address": wallet,
       "whale_score": score,
       "alert_type": a_type,
-      "market_question": market.title if market else market_id,
+      "market_question": (market.title if market else title) or market_id,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),

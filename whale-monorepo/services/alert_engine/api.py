@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
-from shared.models import Alert
+from shared.models import Alert, Market
 
 
 configure_logging(settings.log_level)
@@ -148,3 +148,11 @@ async def force_alert(
       direct = {"ok": False, "status": resp.status_code, "body": resp.text[:200]}
 
   return {"ok": True, "alert_id": alert_id, "whale_trade_id": whale_trade_id, "direct": direct}
+
+
+@app.get("/markets/title")
+async def market_title(id: str, session: AsyncSession = Depends(get_session)):
+  row = (await session.execute(select(Market).where(Market.id == id))).scalars().first()
+  if not row:
+    return {"ok": False, "id": id, "title": None}
+  return {"ok": True, "id": id, "title": row.title}
