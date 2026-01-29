@@ -201,7 +201,12 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
         ids = r.get("ids") or set()
         if not isinstance(ids, set):
           continue
-        ids.add(target)
+        
+        # Verify the returned record actually matches the requested target ID.
+        # The API might return a default list (ignoring the filter) if the ID is not found.
+        if target not in ids:
+          continue
+
         await _upsert_market(session, str(title), status, ids)
         return str(title)
 
