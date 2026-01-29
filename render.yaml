@@ -38,6 +38,10 @@ services:
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ALERT_CHAT_ID
+        sync: false
       - key: WECHAT_WEBHOOK_URL
         sync: false
 
