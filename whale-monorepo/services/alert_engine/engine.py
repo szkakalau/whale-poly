@@ -46,7 +46,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   whale_trade_id = str(event.get("whale_trade_id") or "")
   if not whale_trade_id:
     return False
-  market_id = str(event.get("market_id") or "")
+  raw_token_id = str(event.get("market_id") or "")
   wallet = str(event.get("wallet_address") or "")
   score = int(event.get("whale_score") or 0)
   usd = float(event.get("trade_usd") or 0)
@@ -62,14 +62,14 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     return False
 
   now = datetime.now(timezone.utc)
-  if not await _can_alert_market(session, market_id, now):
+  if not await _can_alert_market(session, raw_token_id, now):
     return False
 
   a_type = infer_alert_type(str(event.get("side") or ""))
   alert = Alert(
     id=_id(whale_trade_id),
     whale_trade_id=whale_trade_id,
-    market_id=market_id,
+    market_id=raw_token_id,
     wallet_address=wallet,
     whale_score=score,
     alert_type=a_type,
@@ -90,19 +90,19 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   )
   created = result.rowcount == 1
   if created:
-    await _touch_market(session, market_id, now)
-    market = (await session.execute(select(Market).where(Market.id == market_id))).scalars().first()
-    title = await resolve_market_title(session, market_id)
+    await _touch_market(session, raw_token_id, now)
+    market = (await session.execute(select(Market).where(Market.id == raw_token_id))).scalars().first()
+    title = await resolve_market_title(session, raw_token_id)
     if title and (not market or market.title != title):
-      market = Market(id=market_id, title=title, status="active", created_at=now)
+      market = Market(id=raw_token_id, title=title, status="active", created_at=now)
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
-      "market_id": market_id,
+      "raw_token_id": raw_token_id,
       "wallet_address": wallet,
       "whale_score": score,
       "alert_type": a_type,
-      "market_question": (market.title if market else title) or market_id,
+      "market_question": (market.title if market else title) or raw_token_id,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),

@@ -38,6 +38,7 @@ class Settings:
       os.getenv("POLYMARKET_TRADES_URL_FALLBACK") or os.getenv("POLYMARKET_DATA_API_TRADES_URL_FALLBACK") or ""
     )
     self.polymarket_markets_url = os.getenv("POLYMARKET_MARKETS_URL") or os.getenv("POLYMARKET_DATA_API_MARKETS_URL") or ""
+    self.polymarket_events_url = os.getenv("POLYMARKET_EVENTS_URL") or "https://gamma-api.polymarket.com/events"
     self.https_proxy = os.getenv("HTTPS_PROXY", "")
 
     self.whale_single_trade_usd_threshold = float(os.getenv("WHALE_SINGLE_TRADE_USD_THRESHOLD", "10000"))

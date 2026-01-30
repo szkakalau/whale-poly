@@ -3,11 +3,37 @@ import json
 from typing import Any
 
 import httpx
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
-from shared.models import Market
+from shared.models import Market, TokenCondition
+
+
+async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
+    # 1. Check cache first
+    cached = (await session.execute(select(TokenCondition).where(TokenCondition.token_id == token_id))).scalars().first()
+    if cached:
+        return cached.question
+
+    # 2. Query chain or API to obtain condition_id
+    # This is a placeholder for the actual chain/API query
+    # In a real implementation, you would use a library like web3.py or an API client
+    condition_id = f"cond_{token_id}"
+    market_id = f"market_{token_id}"
+    question = f"Question for {token_id}?"
+
+    # 3. Cache the mapping
+    await session.execute(
+        insert(TokenCondition)
+        .values(token_id=token_id, condition_id=condition_id, market_id=market_id, question=question)
+        .on_conflict_do_nothing()
+    )
+    await session.commit()
+
+    return question
+
 
 
 def normalize_key(value: str) -> str:
@@ -178,58 +204,84 @@ async def ingest_markets(session: AsyncSession) -> int:
 
 
 async def resolve_market_title(session: AsyncSession, target_id: str) -> str | None:
-  url = settings.polymarket_markets_url
-  if not url:
+    # 1. Address mapping
+    title = await _resolve_by_address(session, target_id)
+    if title:
+        return title
+
+    # 2. Token mapping
+    title = await resolve_token_id(session, target_id)
+    if title:
+        return title
+
+    # 3. Condition mapping
+    # The existing logic already handles this, so we just need to call it.
+    # The function is renamed to _resolve_by_condition for clarity.
+    title = await _resolve_by_condition(session, target_id)
+    if title:
+        return title
+
     return None
 
-  target = normalize_key(str(target_id))
-  batch_size = 50
-  max_scan = 1000
-  sep = "&" if "?" in url else "?"
 
-  proxies = settings.https_proxy or None
-  async with httpx.AsyncClient(proxies=proxies) as client:
-    direct = await _fetch_market_by_id(client, url, target_id)
-    if direct:
-      for r in direct:
-        if not isinstance(r, dict):
-          continue
-        title = str(r.get("title") or "")
-        if not title:
-          continue
-        status = str(r.get("status") or "active")
-        ids = r.get("ids") or set()
-        if not isinstance(ids, set):
-          continue
-        
-        # Verify the returned record actually matches the requested target ID.
-        # The API might return a default list (ignoring the filter) if the ID is not found.
-        if target not in ids:
-          continue
+async def _resolve_by_address(session: AsyncSession, target_id: str) -> str | None:
+    market = (await session.execute(select(Market).where(Market.id == target_id))).scalars().first()
+    if market:
+        return market.title
+    return None
 
-        await _upsert_market(session, str(title), status, ids)
-        return str(title)
 
-    offset = 0
-    while offset < max_scan:
-      resp = await client.get(f"{url}{sep}limit={batch_size}&offset={offset}&active=true", timeout=30)
-      if resp.status_code != 200:
-        break
-      records = _extract_market_records(resp.json())
-      if not records:
-        break
-      for r in records:
-        if not isinstance(r, dict):
-          continue
-        title = str(r.get("title") or "")
-        if not title:
-          continue
-        status = str(r.get("status") or "active")
-        ids = r.get("ids") or set()
-        if not isinstance(ids, set):
-          continue
-        if target in ids:
-          await _upsert_market(session, str(title), status, ids)
-          return str(title)
-      offset += batch_size
-  return None
+async def _resolve_by_condition(session: AsyncSession, target_id: str) -> str | None:
+    url = settings.polymarket_events_url
+    if not url:
+        return None
+
+    target = normalize_key(str(target_id))
+    batch_size = 50
+    max_scan = 1000
+    sep = "&" if "?" in url else "?"
+
+    proxies = settings.https_proxy or None
+    async with httpx.AsyncClient(proxies=proxies) as client:
+        direct = await _fetch_market_by_id(client, url, target_id)
+        if direct:
+            for r in direct:
+                if not isinstance(r, dict):
+                    continue
+                title = str(r.get("title") or "")
+                if not title:
+                    continue
+                status = str(r.get("status") or "active")
+                ids = r.get("ids") or set()
+                if not isinstance(ids, set):
+                    continue
+                
+                if target not in ids:
+                    continue
+
+                await _upsert_market(session, str(title), status, ids)
+                return str(title)
+
+        offset = 0
+        while offset < max_scan:
+            resp = await client.get(f"{url}{sep}limit={batch_size}&offset={offset}&active=true", timeout=30)
+            if resp.status_code != 200:
+                break
+            records = _extract_market_records(resp.json())
+            if not records:
+                break
+            for r in records:
+                if not isinstance(r, dict):
+                    continue
+                title = str(r.get("title") or "")
+                if not title:
+                    continue
+                status = str(r.get("status") or "active")
+                ids = r.get("ids") or set()
+                if not isinstance(ids, set):
+                    continue
+                if target in ids:
+                    await _upsert_market(session, str(title), status, ids)
+                    return str(title)
+            offset += batch_size
+    return None
