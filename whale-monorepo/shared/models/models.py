@@ -42,3 +42,32 @@ class MarketAlertState(Base):
     __tablename__ = "market_alert_state"
     market_id = Column(String, primary_key=True, index=True)
     last_alert_at = Column(DateTime(timezone=True), index=True)
+
+class ActivationCode(Base):
+    __tablename__ = "activation_codes"
+    code = Column(String(16), primary_key=True)
+    telegram_id = Column(String(64), nullable=False, index=True)
+    used = Column(Boolean, default=False, server_default="false", nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Plan(Base):
+    __tablename__ = "plans"
+    id = Column(String(64), primary_key=True)
+    name = Column(String(16), nullable=False, unique=True, index=True)
+    price_usd = Column(Integer, nullable=False)
+    stripe_price_id = Column(String(128), nullable=False, unique=True)
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    id = Column(String(64), primary_key=True)
+    telegram_id = Column(String(64), nullable=False, index=True)
+    stripe_customer_id = Column(String(128), nullable=False, index=True)
+    stripe_subscription_id = Column(String(128), nullable=False, unique=True, index=True)
+    status = Column(String(16), nullable=False, index=True)
+    current_period_end = Column(DateTime(timezone=True), nullable=False, index=True)
+
+class StripeEvent(Base):
+    __tablename__ = "stripe_events"
+    id = Column(String(128), primary_key=True)
+    event_type = Column(String(128), nullable=False, index=True)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
