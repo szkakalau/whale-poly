@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric, UniqueConstraint
+from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric, UniqueConstraint, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -17,6 +17,21 @@ class Delivery(Base):
     telegram_id = Column(String(64), index=True)
     whale_trade_id = Column(String(64), index=True)
     delivered_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Wallet(Base):
+    __tablename__ = "wallets"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    address = Column(String(128), unique=True, index=True)
+    total_volume = Column(Numeric(38, 18), server_default="0")
+    total_trades = Column(BigInteger, server_default="0")
+    first_seen_at = Column(DateTime(timezone=True))
+    last_seen_at = Column(DateTime(timezone=True), index=True)
+
+class WhaleScore(Base):
+    __tablename__ = "whale_scores"
+    wallet_address = Column(String(128), primary_key=True)
+    final_score = Column(BigInteger, index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class TradeRaw(Base):
     __tablename__ = "trades_raw"
