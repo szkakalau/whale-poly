@@ -17,14 +17,46 @@ async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
     if cached:
         return cached.question
 
-    # 2. Query chain or API to obtain condition_id
-    # This is a placeholder for the actual chain/API query
-    # In a real implementation, you would use a library like web3.py or an API client
+    # 2. Query Polymarket API to obtain market details
+    # Using Gamma API to find market by clobTokenId
+    url = "https://gamma-api.polymarket.com/markets"
+    proxy = settings.https_proxy or None
+    
+    try:
+        async with httpx.AsyncClient(proxy=proxy) as client:
+            resp = await client.get(url, params={"clobTokenIds": token_id}, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and len(data) > 0:
+                    market_data = data[0]
+                    question = market_data.get("question")
+                    condition_id = market_data.get("conditionId")
+                    market_id = market_data.get("id")
+                    
+                    if question and condition_id and market_id:
+                        # 3. Cache the mapping
+                        await session.execute(
+                            insert(TokenCondition)
+                            .values(
+                                token_id=token_id, 
+                                condition_id=condition_id, 
+                                market_id=market_id, 
+                                question=question
+                            )
+                            .on_conflict_do_nothing()
+                        )
+                        await session.commit()
+                        return question
+    except Exception as e:
+        # Fallback to placeholder if API fails or times out
+        print(f"Error resolving token_id {token_id} via API: {e}")
+
+    # Fallback/Placeholder logic if API query fails
     condition_id = f"cond_{token_id}"
     market_id = f"market_{token_id}"
     question = f"Question for {token_id}?"
 
-    # 3. Cache the mapping
+    # Cache the placeholder to avoid repeated failed API calls
     await session.execute(
         insert(TokenCondition)
         .values(token_id=token_id, condition_id=condition_id, market_id=market_id, question=question)

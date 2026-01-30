@@ -37,3 +37,8 @@ class TokenCondition(Base):
     condition_id = Column(String, nullable=False, index=True)
     market_id = Column(String, nullable=False, index=True)
     question = Column(String, nullable=False)
+
+class MarketAlertState(Base):
+    __tablename__ = "market_alert_state"
+    market_id = Column(String, primary_key=True, index=True)
+    last_alert_at = Column(DateTime(timezone=True), index=True)

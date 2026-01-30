@@ -1,7 +1,7 @@
 """add_token_conditions_table
 
-Revision ID: 1
-Revises: 
+Revision ID: 0003
+Revises: 0002
 Create Date: 2026-01-30 12:00:00.000000
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '1'
-down_revision = None
+revision = '0003'
+down_revision = '0002'
 branch_labels = None
 depends_on = None
 
