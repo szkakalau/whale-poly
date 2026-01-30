@@ -1,8 +1,8 @@
-"""add_token_conditions_table
+"""add token conditions and normalize market id
 
 Revision ID: 0003
 Revises: 0002
-Create Date: 2026-01-30 12:00:00.000000
+Create Date: 2026-01-30 15:00:00.000000
 
 """
 from alembic import op
@@ -17,6 +17,7 @@ depends_on = None
 
 
 def upgrade():
+    # 1. Create token_conditions table if not exists
     op.create_table(
         'token_conditions',
         sa.Column('token_id', sa.String(), nullable=False),
