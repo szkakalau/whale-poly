@@ -1,8 +1,18 @@
-from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean
+from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 Base = declarative_base()
+
+class TradeRaw(Base):
+    __tablename__ = "trades_raw"
+    trade_id = Column(String(128), primary_key=True)
+    market_id = Column(String(512), nullable=False, index=True)
+    wallet = Column(String(128), nullable=False, index=True)
+    side = Column(String(16), nullable=False)
+    amount = Column(Numeric(38, 18), nullable=False)
+    price = Column(Numeric(38, 18), nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
 
 class WhaleTrade(Base):
     __tablename__ = "whale_trades"
