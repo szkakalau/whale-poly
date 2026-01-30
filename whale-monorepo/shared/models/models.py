@@ -1,8 +1,22 @@
-from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric
+from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 Base = declarative_base()
+
+class TgUser(Base):
+    __tablename__ = "tg_users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_id = Column(String(64), unique=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Delivery(Base):
+    __tablename__ = "deliveries"
+    __table_args__ = (UniqueConstraint("telegram_id", "whale_trade_id", name="uq_deliveries"),)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_id = Column(String(64), index=True)
+    whale_trade_id = Column(String(64), index=True)
+    delivered_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class TradeRaw(Base):
     __tablename__ = "trades_raw"
