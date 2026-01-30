@@ -12,6 +12,9 @@ from shared.models import Market, TokenCondition
 
 
 async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
+    # Normalize token_id
+    token_id = token_id.lower().strip()
+    
     # 1. Check cache first
     cached = (await session.execute(select(TokenCondition).where(TokenCondition.token_id == token_id))).scalars().first()
     if cached:
