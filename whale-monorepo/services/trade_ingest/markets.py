@@ -42,7 +42,6 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                     market_data = token_data.get("market")
                     if isinstance(market_data, dict):
                         question = market_data.get("question")
-                        print(f"DEBUG: Resolved via Tokens API: {question}")
                         cid = market_data.get("conditionId") or token_data.get("conditionId")
                         mid = market_data.get("id")
                         if question and mid:
@@ -71,7 +70,6 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                             
                             if isinstance(market_tokens, list) and token_id in [str(t).lower() for t in market_tokens]:
                                 question = market_data.get("question")
-                                print(f"DEBUG: Resolved via Markets API (clobTokenIds): {question}")
                                 cid = market_data.get("conditionId")
                                 mid = market_data.get("id")
                                 if question and mid:
