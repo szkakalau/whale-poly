@@ -179,13 +179,13 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
   return all_trades
 
 
-async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
+async def ingest_trades(session: AsyncSession) -> list[str]:
   proxies = settings.https_proxy or None
   async with httpx.AsyncClient(proxies=proxies) as client:
     raw_trades = await fetch_trades(client)
 
   if not raw_trades:
-    return 0
+    return []
 
   seen = set()
   rows: list[dict[str, Any]] = []
@@ -204,7 +204,7 @@ async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
   logger.info(f"polymarket_trades_parsed total_fetched={len(raw_trades)} unique_parsed={len(rows)}")
 
   if not rows:
-    return 0
+    return []
 
   stmt = (
     insert(TradeRaw)
@@ -213,6 +213,4 @@ async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
     .returning(TradeRaw.trade_id)
   )
   inserted = (await session.execute(stmt)).scalars().all()
-  if inserted:
-    await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in inserted])
-  return len(inserted)
+  return [str(tid) for tid in inserted]

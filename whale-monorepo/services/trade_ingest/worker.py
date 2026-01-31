@@ -210,9 +210,12 @@ def ingest_trades_task() -> int:
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
     try:
       async with SessionLocal() as session:
-        n = await ingest_trades(session, redis)
+        trade_ids = await ingest_trades(session)
         await session.commit()
-      return n
+      
+      if trade_ids:
+        await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in trade_ids])
+      return len(trade_ids)
     finally:
       await redis.aclose()
 

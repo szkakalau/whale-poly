@@ -61,14 +61,20 @@ async def _consume_once() -> int:
     created_count = 0
     async with SessionLocal() as session:
       for payload in raws:
-        msg = json.loads(payload)
-        trade_id = str(msg.get("trade_id") or "")
-        if not trade_id:
-          continue
-        created = await process_trade_id(session, redis, trade_id)
-        if created:
-          created_count += 1
-        await session.commit()
+        try:
+          msg = json.loads(payload)
+          trade_id = str(msg.get("trade_id") or "")
+          if not trade_id:
+            continue
+          created = await process_trade_id(session, redis, trade_id)
+          if created:
+            created_count += 1
+        except Exception:
+          logger.exception(f"failed_to_process_trade payload={payload}")
+      await session.commit()
+    
+    if len(raws) > 0:
+      logger.info(f"consumed_trades count={len(raws)} created_whales={created_count}")
     return created_count
   finally:
     await redis.aclose()

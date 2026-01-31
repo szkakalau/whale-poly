@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 
 from redis.asyncio import Redis
@@ -9,6 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
 from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade
+
+
+logger = logging.getLogger("whale_engine.engine")
 
 
 def _id(trade_id: str) -> str:
@@ -68,6 +72,7 @@ def detect_behavior(trades: list[TradeRaw], now: datetime) -> tuple[str | None, 
 async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -> bool:
   trade = (await session.execute(select(TradeRaw).where(TradeRaw.trade_id == trade_id))).scalars().first()
   if not trade:
+    logger.warning(f"trade_not_found trade_id={trade_id}")
     return False
 
   wallet = trade.wallet
