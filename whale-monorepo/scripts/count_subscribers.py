@@ -30,22 +30,28 @@ async def count_subscribers():
         # Count used activation codes (test users)
         ac_query = select(func.count()).select_from(ActivationCode).where(ActivationCode.used == True)
         
+        # Count total raw trades
+        tr_query = select(func.count()).select_from(TradeRaw)
+        
         res_total = await session.execute(sub_query)
         res_active = await session.execute(active_sub_query)
         res_tg = await session.execute(tg_query)
         res_ac = await session.execute(ac_query)
+        res_tr = await session.execute(tr_query)
         
         total_subs = res_total.scalar()
         active_subs = res_active.scalar()
         total_tg_users = res_tg.scalar()
         used_codes = res_ac.scalar()
+        total_trades = res_tr.scalar()
         
-        print(f"--- 订阅与用户统计 ---")
+        print(f"--- 订阅与系统状态统计 ---")
         print(f"Stripe 总订阅记录: {total_subs}")
         print(f"Stripe 激活中订阅: {active_subs}")
         print(f"已使用的激活码 (测试/内部用户): {used_codes}")
         print(f"系统总注册用户数 (TgUser): {total_tg_users}")
-        print(f"----------------------")
+        print(f"原始交易总数 (TradeRaw): {total_trades}")
+        print(f"--------------------------")
 
 if __name__ == "__main__":
     if not os.getenv("DATABASE_URL"):
