@@ -7,6 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import logging
+logger = logging.getLogger(__name__)
+
 from services.alert_engine.rules import should_alert
 from services.trade_ingest.markets import resolve_market_title
 from shared.config import settings
@@ -51,6 +54,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   score = int(event.get("whale_score") or 0)
   usd = float(event.get("trade_usd") or 0)
 
+  logger.info(f"DEBUG: process_whale_trade_event score={score}, usd={usd}")
   d = should_alert(
     whale_score=score,
     trade_usd=usd,
@@ -58,11 +62,14 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     min_usd=settings.alert_min_trade_usd,
     always_score=settings.alert_always_score,
   )
+  logger.info(f"DEBUG: should_alert decision={d}")
   if not d.should_alert:
     return False
 
   now = datetime.now(timezone.utc)
-  if not await _can_alert_market(session, raw_token_id, now):
+  can_alert = await _can_alert_market(session, raw_token_id, now)
+  logger.info(f"DEBUG: can_alert_market={can_alert}")
+  if not can_alert:
     return False
 
   a_type = infer_alert_type(str(event.get("side") or ""))
@@ -89,6 +96,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     .on_conflict_do_nothing(index_elements=[Alert.whale_trade_id])
   )
   created = result.rowcount == 1
+  logger.info(f"DEBUG: alert created={created}")
   if created:
     await _touch_market(session, raw_token_id, now)
     market = (await session.execute(select(Market).where(Market.id == raw_token_id))).scalars().first()

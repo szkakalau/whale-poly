@@ -13,8 +13,11 @@ from shared.db import SessionLocal
 from shared.logging import configure_logging
 
 
+from celery.utils.log import get_task_logger
+
 configure_logging(settings.log_level)
-logger = logging.getLogger("whale_engine.worker")
+logger = get_task_logger(__name__)
+logger.info(f"DEBUG: Worker configured to listen on queue: {settings.trade_created_queue}")
 
 
 celery_app = Celery("whale_engine", broker=settings.redis_url, backend=settings.redis_url)
@@ -45,25 +48,34 @@ def _run(coro):
 
 
 async def _consume_once() -> int:
+  logger.info(f"DEBUG: _consume_once started, redis={settings.redis_url}, queue={settings.trade_created_queue}")
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  redis_ping_result = await redis.ping()
+  logger.info(f"DEBUG: Redis connection ping result: {redis_ping_result}")
+  logger.info(f"DEBUG: Worker blpop from queue: {settings.trade_created_queue}")
   try:
     batch_size = int(os.getenv("TRADE_CONSUME_BATCH", "50"))
     item = await redis.blpop(settings.trade_created_queue, timeout=1)
+    logger.info(f"DEBUG: blpop result: {item}")
     if not item:
       return 0
     _, raw = item
+    logger.info(f"DEBUG: popped item: {raw}")
     raws = [raw]
     for _ in range(batch_size - 1):
       nxt = await redis.lpop(settings.trade_created_queue)
       if not nxt:
         break
       raws.append(nxt)
+    
     created_count = 0
     async with SessionLocal() as session:
       for payload in raws:
+        logger.info(f"DEBUG: processing payload: {payload}")
         try:
           msg = json.loads(payload)
           trade_id = str(msg.get("trade_id") or "")
+          logger.info(f"DEBUG: extracted trade_id: {trade_id}")
           if not trade_id:
             continue
           created = await process_trade_id(session, redis, trade_id)
