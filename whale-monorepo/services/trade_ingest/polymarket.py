@@ -117,7 +117,17 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   except Exception:
     return None
 
-  return {"trade_id": str(trade_id), "market_id": market_id, "wallet": wallet, "side": side, "amount": amount, "price": price, "timestamp": ts}
+  title = t.get("title") or t.get("question")
+  return {
+    "trade_id": str(trade_id), 
+    "market_id": market_id, 
+    "wallet": wallet, 
+    "side": side, 
+    "amount": amount, 
+    "price": price, 
+    "timestamp": ts,
+    "title": title
+  }
 
 
 async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:

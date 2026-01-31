@@ -11,21 +11,30 @@ from shared.config import settings
 from shared.models import Market, TokenCondition
 
 
-async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
+async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str | None = None) -> str | None:
     # Normalize token_id
     token_id = token_id.lower().strip()
     
     # 1. Check cache first
     cached = (await session.execute(select(TokenCondition).where(TokenCondition.token_id == token_id))).scalars().first()
     if cached:
+        # If we have a hint and the cached question is generic, update it
+        if title_hint and (cached.question.startswith("Market (") or cached.question == "unknown"):
+            cached.question = title_hint
+            await session.commit()
         return cached.question
+
+    # 1.5 Use title_hint if provided (this is a very strong signal from the trades API)
+    if title_hint:
+        await _save_token_condition(session, token_id, f"cond_{token_id}", f"market_{token_id}", title_hint)
+        return title_hint
 
     proxy = settings.https_proxy or None
     async with httpx.AsyncClient(proxy=proxy) as client:
         # 2. Try Tokens API (Layer 3 -> Layer 1)
-        # tokenId is the ERC1155 token ID
         try:
-            resp = await client.get("https://gamma-api.polymarket.com/tokens", params={"tokenId": token_id}, timeout=10)
+            url = "https://gamma-api.polymarket.com/tokens"
+            resp = await client.get(url, params={"tokenId": token_id}, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 token_data = data[0] if isinstance(data, list) and data else data
@@ -33,6 +42,7 @@ async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
                     market_data = token_data.get("market")
                     if isinstance(market_data, dict):
                         question = market_data.get("question")
+                        print(f"DEBUG: Resolved via Tokens API: {question}")
                         cid = market_data.get("conditionId") or token_data.get("conditionId")
                         mid = market_data.get("id")
                         if question and mid:
@@ -43,34 +53,49 @@ async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
 
         # 3. Try Markets API with clobTokenIds (Layer 3 -> Layer 1)
         try:
-            resp = await client.get("https://gamma-api.polymarket.com/markets", params={"clobTokenIds": token_id}, timeout=10)
+            url = "https://gamma-api.polymarket.com/markets"
+            resp = await client.get(url, params={"clobTokenIds": token_id}, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 if isinstance(data, list) and data:
-                    market_data = data[0]
-                    question = market_data.get("question")
-                    cid = market_data.get("conditionId")
-                    mid = market_data.get("id")
-                    if question and mid:
-                        await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
-                        return question
+                    # STRICT CHECK: Verify that the returned market actually contains this token_id
+                    for market_data in data:
+                        market_tokens = market_data.get("clobTokenIds")
+                        # clobTokenIds is usually a JSON string like '["id1", "id2"]'
+                        if market_tokens:
+                            if isinstance(market_tokens, str):
+                                try:
+                                    market_tokens = json.loads(market_tokens)
+                                except:
+                                    pass
+                            
+                            if isinstance(market_tokens, list) and token_id in [str(t).lower() for t in market_tokens]:
+                                question = market_data.get("question")
+                                print(f"DEBUG: Resolved via Markets API (clobTokenIds): {question}")
+                                cid = market_data.get("conditionId")
+                                mid = market_data.get("id")
+                                if question and mid:
+                                    await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
+                                    return question
         except Exception as e:
             print(f"Markets API (clobTokenIds) error for {token_id}: {e}")
 
         # 4. Try Markets API with conditionIds (Layer 2 -> Layer 1)
-        # In case token_id is actually a conditionId
         try:
-            resp = await client.get("https://gamma-api.polymarket.com/markets", params={"conditionIds": token_id}, timeout=10)
+            url = "https://gamma-api.polymarket.com/markets"
+            resp = await client.get(url, params={"conditionIds": token_id}, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 if isinstance(data, list) and data:
-                    market_data = data[0]
-                    question = market_data.get("question")
-                    cid = market_data.get("conditionId")
-                    mid = market_data.get("id")
-                    if question and mid:
-                        await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
-                        return question
+                    for market_data in data:
+                        cid = market_data.get("conditionId")
+                        if cid and cid.lower() == token_id:
+                            question = market_data.get("question")
+                            print(f"DEBUG: Resolved via Markets API (conditionIds): {question}")
+                            mid = market_data.get("id")
+                            if question and mid:
+                                await _save_token_condition(session, token_id, cid, str(mid), question)
+                                return question
         except Exception as e:
             print(f"Markets API (conditionIds) error for {token_id}: {e}")
 
