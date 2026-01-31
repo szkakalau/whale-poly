@@ -126,7 +126,7 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
     "amount": amount, 
     "price": price, 
     "timestamp": ts,
-    "title": title
+    "market_title": title
   }
 
 

@@ -37,6 +37,7 @@ class TradeRaw(Base):
     __tablename__ = "trades_raw"
     trade_id = Column(String(128), primary_key=True)
     market_id = Column(String(512), nullable=False, index=True)
+    market_title = Column(String(512), nullable=True)
     wallet = Column(String(128), nullable=False, index=True)
     side = Column(String(16), nullable=False)
     amount = Column(Numeric(38, 18), nullable=False)

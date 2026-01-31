@@ -57,6 +57,7 @@ async def ingest_trade(payload: TradeIn, session: AsyncSession = Depends(get_ses
       amount=payload.amount,
       price=payload.price,
       timestamp=ts,
+      market_title=payload.market_title,
     )
     .on_conflict_do_nothing(index_elements=[TradeRaw.trade_id])
   )
