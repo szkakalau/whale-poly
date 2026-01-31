@@ -70,7 +70,12 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
   market_raw = (
-    t.get("market_id")
+    t.get("asset_id")
+    or t.get("asset")
+    or t.get("tokenId")
+    or t.get("token_id")
+    or t.get("clobTokenId")
+    or t.get("market_id")
     or t.get("marketId")
     or t.get("conditionId")
     or t.get("condition_id")

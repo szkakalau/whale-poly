@@ -20,54 +20,99 @@ async def resolve_token_id(session: AsyncSession, token_id: str) -> str | None:
     if cached:
         return cached.question
 
-    # 2. Query Polymarket API to obtain market details
-    # Using Gamma API to find market by clobTokenId
-    url = "https://gamma-api.polymarket.com/markets"
     proxy = settings.https_proxy or None
-    
-    try:
-        async with httpx.AsyncClient(proxy=proxy) as client:
-            resp = await client.get(url, params={"clobTokenIds": token_id}, timeout=10)
+    async with httpx.AsyncClient(proxy=proxy) as client:
+        # 2. Try Tokens API (Layer 3 -> Layer 1)
+        # tokenId is the ERC1155 token ID
+        try:
+            resp = await client.get("https://gamma-api.polymarket.com/tokens", params={"tokenId": token_id}, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
-                if isinstance(data, list) and len(data) > 0:
+                token_data = data[0] if isinstance(data, list) and data else data
+                if isinstance(token_data, dict):
+                    market_data = token_data.get("market")
+                    if isinstance(market_data, dict):
+                        question = market_data.get("question")
+                        cid = market_data.get("conditionId") or token_data.get("conditionId")
+                        mid = market_data.get("id")
+                        if question and mid:
+                            await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
+                            return question
+        except Exception as e:
+            print(f"Tokens API error for {token_id}: {e}")
+
+        # 3. Try Markets API with clobTokenIds (Layer 3 -> Layer 1)
+        try:
+            resp = await client.get("https://gamma-api.polymarket.com/markets", params={"clobTokenIds": token_id}, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and data:
                     market_data = data[0]
                     question = market_data.get("question")
-                    condition_id = market_data.get("conditionId")
-                    market_id = market_data.get("id")
-                    
-                    if question and condition_id and market_id:
-                        # 3. Cache the mapping
-                        await session.execute(
-                            insert(TokenCondition)
-                            .values(
-                                token_id=token_id, 
-                                condition_id=condition_id, 
-                                market_id=market_id, 
-                                question=question
-                            )
-                            .on_conflict_do_nothing()
-                        )
-                        await session.commit()
+                    cid = market_data.get("conditionId")
+                    mid = market_data.get("id")
+                    if question and mid:
+                        await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
                         return question
-    except Exception as e:
-        # Fallback to placeholder if API fails or times out
-        print(f"Error resolving token_id {token_id} via API: {e}")
+        except Exception as e:
+            print(f"Markets API (clobTokenIds) error for {token_id}: {e}")
 
-    # Fallback/Placeholder logic if API query fails
-    condition_id = f"cond_{token_id}"
-    market_id = f"market_{token_id}"
-    question = f"Question for {token_id}?"
+        # 4. Try Markets API with conditionIds (Layer 2 -> Layer 1)
+        # In case token_id is actually a conditionId
+        try:
+            resp = await client.get("https://gamma-api.polymarket.com/markets", params={"conditionIds": token_id}, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and data:
+                    market_data = data[0]
+                    question = market_data.get("question")
+                    cid = market_data.get("conditionId")
+                    mid = market_data.get("id")
+                    if question and mid:
+                        await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
+                        return question
+        except Exception as e:
+            print(f"Markets API (conditionIds) error for {token_id}: {e}")
 
-    # Cache the placeholder to avoid repeated failed API calls
+        # 5. Try Markets API by slug/id (Layer 1 -> Layer 1)
+        try:
+            resp = await client.get(f"https://gamma-api.polymarket.com/markets/{token_id}", timeout=10)
+            if resp.status_code == 200:
+                market_data = resp.json()
+                if isinstance(market_data, dict):
+                    question = market_data.get("question")
+                    cid = market_data.get("conditionId")
+                    mid = market_data.get("id")
+                    if question and mid:
+                        await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
+                        return question
+        except Exception:
+            pass
+
+    # Final Fallback
+    question = f"Market ({token_id[:8]}...)"
+    await _save_token_condition(session, token_id, f"cond_{token_id}", f"market_{token_id}", question)
+    return question
+
+async def _save_token_condition(session: AsyncSession, token_id: str, condition_id: str, market_id: str, question: str):
     await session.execute(
         insert(TokenCondition)
-        .values(token_id=token_id, condition_id=condition_id, market_id=market_id, question=question)
-        .on_conflict_do_nothing()
+        .values(
+            token_id=token_id, 
+            condition_id=condition_id, 
+            market_id=market_id, 
+            question=question
+        )
+        .on_conflict_do_update(
+            index_elements=[TokenCondition.token_id],
+            set_={
+                "condition_id": condition_id,
+                "market_id": market_id,
+                "question": question
+            }
+        )
     )
     await session.commit()
-
-    return question
 
 
 
