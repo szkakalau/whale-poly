@@ -9,7 +9,7 @@ import sys
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
 
-from shared.models.models import Subscription, Base, TgUser, ActivationCode
+from shared.models.models import Subscription, Base, TgUser, ActivationCode, TradeRaw
 from shared.config import settings
 
 async def count_subscribers():
