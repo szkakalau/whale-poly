@@ -120,15 +120,21 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
   if not urls:
     logger.warning("polymarket_trades_url_missing")
     return []
-  last_error = ""
+
+  all_trades = []
+  now_ms = int(datetime.now().timestamp() * 1000)
+
   for url in urls:
+    # Add cache buster
+    sep = "&" if "?" in url else "?"
+    fetch_url = f"{url}{sep}_t={now_ms}"
+
     for attempt in range(1, 4):
       try:
-        resp = await client.get(url, timeout=30)
+        resp = await client.get(fetch_url, timeout=30)
         if resp.status_code == 401 or resp.status_code == 403:
-          last_error = f"status={resp.status_code} auth_failed"
-          logger.warning(f"polymarket_fetch_auth_error url={url} {last_error}")
-          break # Skip retries for this URL
+          logger.warning(f"polymarket_fetch_auth_error url={url} status={resp.status_code}")
+          break
         if resp.status_code != 200:
           last_error = f"status={resp.status_code} body={resp.text[:200]}"
         else:
@@ -137,29 +143,34 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
           except Exception as e:
             last_error = f"invalid_json error={e}"
           else:
+            trades = []
             if isinstance(data, list):
-              logger.info(f"polymarket_trades_fetched url={url} count={len(data)}")
-              return data
-            trades = data.get("trades") if isinstance(data, dict) else None
-            if isinstance(trades, list):
+              trades = data
+            elif isinstance(data, dict):
+              trades = data.get("trades") or data.get("data") or []
+
+            if isinstance(trades, list) and trades:
               logger.info(f"polymarket_trades_fetched url={url} count={len(trades)}")
-              return trades
-            last_error = "unexpected_payload"
+              all_trades.extend(trades)
+              break # Success for this URL
+            last_error = "empty_or_unexpected_payload"
       except Exception as e:
         last_error = f"request_failed error={e}"
+
       logger.warning(f"polymarket_fetch_retry url={url} attempt={attempt} {last_error}")
       if attempt < 3:
-        await asyncio.sleep(2 * attempt)
-  logger.error(f"polymarket_fetch_failed {last_error}")
-  return []
+        await asyncio.sleep(1 * attempt)
+
+  return all_trades
 
 
 async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
   proxies = settings.https_proxy or None
-  if proxies:
-    logger.info("polymarket_fetch_proxy_enabled")
   async with httpx.AsyncClient(proxies=proxies) as client:
     raw_trades = await fetch_trades(client)
+
+  if not raw_trades:
+    return 0
 
   seen = set()
   rows: list[dict[str, Any]] = []
@@ -174,6 +185,8 @@ async def ingest_trades(session: AsyncSession, redis: Redis) -> int:
       continue
     seen.add(tid)
     rows.append(parsed)
+
+  logger.info(f"polymarket_trades_parsed total_fetched={len(raw_trades)} unique_parsed={len(rows)}")
 
   if not rows:
     return 0

@@ -45,30 +45,29 @@ class TradeRaw(Base):
 
 class WhaleTrade(Base):
     __tablename__ = "whale_trades"
-    id = Column(String, primary_key=True, index=True)
-    market_id = Column(String, nullable=False, index=True)
-    wallet = Column(String, nullable=False)
-    side = Column(String, nullable=False)
-    amount = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
-    whale_score = Column(Integer, nullable=False)
+    id = Column(String(64), primary_key=True)
+    trade_id = Column(String(128), nullable=False, index=True)
+    wallet_address = Column(String(128), nullable=False, index=True)
+    whale_score = Column(BigInteger, nullable=False, index=True)
+    market_id = Column(String(512), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Alert(Base):
     __tablename__ = "alerts"
-    id = Column(String, primary_key=True, index=True)
-    whale_trade_id = Column(String, nullable=False, index=True)
-    status = Column(String, nullable=False, default="pending", server_default="pending")
+    id = Column(String(64), primary_key=True)
+    whale_trade_id = Column(String(64), nullable=False, index=True)
+    market_id = Column(String(512), nullable=False, index=True)
+    wallet_address = Column(String(128), nullable=False, index=True)
+    whale_score = Column(BigInteger, nullable=False, index=True)
+    alert_type = Column(String(32), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    sent_at = Column(DateTime(timezone=True))
 
 class Market(Base):
     __tablename__ = "markets"
-    id = Column(String, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    status = Column(String, nullable=False, default="active", server_default="active")
+    id = Column(String(512), primary_key=True)
+    title = Column(String(512), nullable=False)
+    status = Column(String(32), nullable=True, default="active", server_default="active")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_seen_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class TokenCondition(Base):
     __tablename__ = "token_conditions"
