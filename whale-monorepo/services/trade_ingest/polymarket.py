@@ -125,6 +125,10 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
     for attempt in range(1, 4):
       try:
         resp = await client.get(url, timeout=30)
+        if resp.status_code == 401 or resp.status_code == 403:
+          last_error = f"status={resp.status_code} auth_failed"
+          logger.warning(f"polymarket_fetch_auth_error url={url} {last_error}")
+          break # Skip retries for this URL
         if resp.status_code != 200:
           last_error = f"status={resp.status_code} body={resp.text[:200]}"
         else:

@@ -33,17 +33,17 @@ class Settings:
     self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "20"))
     self.telegram_alert_chat_id = os.getenv("TELEGRAM_ALERT_CHAT_ID", "")
 
-    self.polymarket_trades_url = os.getenv("POLYMARKET_TRADES_URL") or os.getenv("POLYMARKET_DATA_API_TRADES_URL") or ""
+    self.polymarket_trades_url = os.getenv("POLYMARKET_TRADES_URL") or os.getenv("POLYMARKET_DATA_API_TRADES_URL") or "https://data-api.polymarket.com/trades?limit=100"
     self.polymarket_trades_url_fallback = (
-      os.getenv("POLYMARKET_TRADES_URL_FALLBACK") or os.getenv("POLYMARKET_DATA_API_TRADES_URL_FALLBACK") or ""
+      os.getenv("POLYMARKET_TRADES_URL_FALLBACK") or os.getenv("POLYMARKET_DATA_API_TRADES_URL_FALLBACK") or "https://clob.polymarket.com/trades"
     )
     self.polymarket_markets_url = os.getenv("POLYMARKET_MARKETS_URL") or os.getenv("POLYMARKET_DATA_API_MARKETS_URL") or ""
     self.polymarket_events_url = os.getenv("POLYMARKET_EVENTS_URL") or "https://gamma-api.polymarket.com/events"
     self.https_proxy = os.getenv("HTTPS_PROXY", "")
 
-    self.whale_single_trade_usd_threshold = float(os.getenv("WHALE_SINGLE_TRADE_USD_THRESHOLD", "10000"))
-    self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "10000"))
-    self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "5000"))
+    self.whale_single_trade_usd_threshold = float(os.getenv("WHALE_SINGLE_TRADE_USD_THRESHOLD", "2000"))
+    self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "5000"))
+    self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "3000"))
 
     self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "")
     self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
