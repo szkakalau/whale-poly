@@ -27,6 +27,14 @@ class Wallet(Base):
     first_seen_at = Column(DateTime(timezone=True))
     last_seen_at = Column(DateTime(timezone=True), index=True)
 
+class WalletName(Base):
+    __tablename__ = "wallet_names"
+    wallet_address = Column(String(128), primary_key=True, index=True)
+    polymarket_username = Column(String(128), nullable=True)
+    ens_name = Column(String(256), nullable=True)
+    source = Column(String(32), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
 class WhaleScore(Base):
     __tablename__ = "whale_scores"
     wallet_address = Column(String(128), primary_key=True)

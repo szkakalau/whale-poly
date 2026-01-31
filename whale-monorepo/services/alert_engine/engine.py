@@ -11,6 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from services.alert_engine.rules import should_alert
+from services.alert_engine.wallet_names import resolve_wallet_name
 from services.trade_ingest.markets import resolve_market_title
 from shared.config import settings
 from shared.models import Alert, Market, MarketAlertState
@@ -77,6 +78,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     return False
 
   now = datetime.now(timezone.utc)
+  wallet_name = await resolve_wallet_name(session, wallet)
   can_alert = await _can_alert_market(session, raw_token_id, now)
   logger.info(f"DEBUG: can_alert_market={can_alert}")
   if not can_alert:
@@ -127,6 +129,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "market_id": raw_token_id,
       "raw_token_id": raw_token_id,
       "wallet_address": wallet,
+      "wallet_name": wallet_name,
       "whale_score": score,
       "alert_type": a_type,
       "market_question": market_question,

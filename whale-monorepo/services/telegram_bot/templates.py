@@ -22,10 +22,14 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   size = payload.get("size") or payload.get("amount") or ""
   price = payload.get("price") or ""
   score = payload.get("score") or payload.get("whale_score") or ""
-  wallet = payload.get("wallet") or payload.get("wallet_address") or ""
-
-  if isinstance(wallet, str) and wallet.startswith("0x") and len(wallet) > 10:
-    wallet = wallet[:6] + "..." + wallet[-4:]
+  wallet_name = payload.get("wallet_name") or ""
+  wallet_address = payload.get("wallet") or payload.get("wallet_address") or ""
+  if wallet_name:
+    wallet = wallet_name
+  else:
+    wallet = wallet_address
+    if isinstance(wallet, str) and wallet.startswith("0x") and len(wallet) > 10:
+      wallet = wallet[:6] + "..." + wallet[-4:]
 
   def _fmt_usd(x) -> str:
     try:
