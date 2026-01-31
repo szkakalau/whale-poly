@@ -328,7 +328,8 @@ async def resolve_market_title(session: AsyncSession, target_id: str) -> str | N
 
 
 async def _resolve_by_address(session: AsyncSession, target_id: str) -> str | None:
-    market = (await session.execute(select(Market).where(Market.id == target_id))).scalars().first()
+    key = normalize_key(str(target_id))
+    market = (await session.execute(select(Market).where(Market.id == key))).scalars().first()
     if market:
         return market.title
     return None

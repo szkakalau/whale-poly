@@ -20,6 +20,16 @@ def _id(whale_trade_id: str) -> str:
   return hashlib.sha1(f"al:{whale_trade_id}".encode("utf-8")).hexdigest()[:32]
 
 
+async def get_market_question(session: AsyncSession, market_id: str) -> str | None:
+  mid = str(market_id or "")
+  if not mid:
+    return None
+  row = (await session.execute(select(Market).where(Market.id == mid))).scalars().first()
+  if not row:
+    return None
+  return row.title
+
+
 async def _can_alert_market(session: AsyncSession, market_id: str, now: datetime) -> bool:
   row = (await session.execute(select(MarketAlertState).where(MarketAlertState.market_id == market_id))).scalars().first()
   if not row:
@@ -99,18 +109,27 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   logger.info(f"DEBUG: alert created={created}")
   if created:
     await _touch_market(session, raw_token_id, now)
-    market = (await session.execute(select(Market).where(Market.id == raw_token_id))).scalars().first()
-    title = await resolve_market_title(session, raw_token_id)
-    if title and (not market or market.title != title):
-      market = Market(id=raw_token_id, title=title, status="active", created_at=now)
+    market_question = await get_market_question(session, raw_token_id)
+    if not market_question:
+      title = await resolve_market_title(session, raw_token_id)
+      if title:
+        await session.execute(
+          insert(Market)
+          .values(id=raw_token_id, title=title, status="active", created_at=now)
+          .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+        )
+        market_question = title
+      else:
+        market_question = f"Market ({raw_token_id})"
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
+      "market_id": raw_token_id,
       "raw_token_id": raw_token_id,
       "wallet_address": wallet,
       "whale_score": score,
       "alert_type": a_type,
-      "market_question": (market.title if market else title) or raw_token_id,
+      "market_question": market_question,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),

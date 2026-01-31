@@ -5,12 +5,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
-from redis.asyncio import Redis
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
-from shared.models import TradeRaw
+from shared.models import Market, TradeRaw
 
 
 logger = logging.getLogger("trade_ingest.polymarket")
@@ -205,6 +204,16 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
 
   if not rows:
     return []
+
+  for r in rows:
+    title = r.get("market_title")
+    if not title:
+      continue
+    await session.execute(
+      insert(Market)
+      .values(id=r["market_id"], title=title, status=None)
+      .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+    )
 
   stmt = (
     insert(TradeRaw)

@@ -9,7 +9,14 @@ def user_hash(telegram_id: str) -> str:
 
 
 def format_alert(payload: dict, telegram_id: str) -> str:
-  market = payload.get("market_question") or payload.get("market") or "Unknown"
+  market_question = payload.get("market_question") or ""
+  market_id = payload.get("market_id") or payload.get("raw_token_id") or ""
+  if market_question:
+    market = market_question
+  elif market_id:
+    market = f"Market ({market_id})"
+  else:
+    market = "Unknown"
   alert_type = payload.get("alert_type") or ""
   side = payload.get("side") or "UNKNOWN"
   size = payload.get("size") or payload.get("amount") or ""
