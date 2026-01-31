@@ -45,9 +45,9 @@ class Settings:
     self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "5000"))
     self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "3000"))
 
-    self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "")
-    self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
-    self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "")
+    self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "8443902552:AAFcI90mdlQ0UOdtzlvAmb7i16ohaBV8fxA")
+    self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "879397306")
+    self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "@sightwhale_HealthBot")
     self.health_trade_ingest_api_url = os.getenv("HEALTH_TRADE_INGEST_API_URL", "https://trade-ingest-api.onrender.com")
     self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "https://whale-engine-api.onrender.com")
     self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
