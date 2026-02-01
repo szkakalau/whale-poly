@@ -17,6 +17,12 @@ from .models import (
     WalletName,
     WhaleScore,
     WhaleProfile,
+    WhalePosition,
+    Collection,
+    CollectionWhale,
+    SmartCollection,
+    SmartCollectionWhale,
+    SmartCollectionSubscription,
 )
 
 __all__ = [
@@ -37,4 +43,10 @@ __all__ = [
     "WalletName",
     "WhaleScore",
     "WhaleProfile",
+    "WhalePosition",
+    "Collection",
+    "CollectionWhale",
+    "SmartCollection",
+    "SmartCollectionWhale",
+    "SmartCollectionSubscription",
 ]

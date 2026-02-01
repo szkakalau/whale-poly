@@ -16,7 +16,16 @@ from services.telegram_bot.rate_limit import allow_send
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
-from shared.models import Delivery, Subscription
+from shared.models import (
+  Delivery,
+  Subscription,
+  Collection,
+  CollectionWhale,
+  SmartCollection,
+  SmartCollectionWhale,
+  SmartCollectionSubscription,
+  User,
+)
 
 
 configure_logging(settings.log_level)
@@ -40,13 +49,35 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
 
     now = datetime.now(timezone.utc)
     async with SessionLocal() as session:
-      telegram_ids = (
-        await session.execute(
-          select(Subscription.telegram_id)
-          .where(Subscription.status == "active")
-          .where(Subscription.current_period_end > now)
-        )
-      ).scalars().all()
+      wallet_address = str(payload.get("wallet_address") or "")
+
+      collection_query = (
+        select(Subscription.telegram_id)
+        .join(User, User.telegram_id == Subscription.telegram_id)
+        .join(Collection, Collection.user_id == User.id)
+        .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(Collection.enabled.is_(True))
+        .where(CollectionWhale.wallet == wallet_address.lower())
+      )
+      collection_ids = (await session.execute(collection_query)).scalars().all()
+
+      smart_query = (
+        select(Subscription.telegram_id)
+        .join(User, User.telegram_id == Subscription.telegram_id)
+        .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
+        .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
+        .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(SmartCollection.enabled.is_(True))
+        .where(SmartCollectionWhale.wallet == wallet_address.lower())
+      )
+      smart_ids = (await session.execute(smart_query)).scalars().all()
+
+      telegram_ids = list(dict.fromkeys([*collection_ids, *smart_ids]))
+
       if settings.telegram_alert_chat_id:
         telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
 

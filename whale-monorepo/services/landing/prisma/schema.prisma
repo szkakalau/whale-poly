@@ -1,0 +1,118 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         String        @id @default(cuid())
+  email      String        @unique
+  telegramId String?       @map("telegram_id")
+
+  follows    WhaleFollow[]
+
+  @@map("users")
+}
+
+model WhaleFollow {
+  id         String   @id @default(cuid())
+  userId     String
+  wallet     String
+  alertEntry Boolean  @default(true) @map("alert_entry")
+  alertExit  Boolean  @default(true) @map("alert_exit")
+  alertAdd   Boolean  @default(true) @map("alert_add")
+  minSize    Float    @default(0)
+  minScore   Float    @default(0)
+  enabled    Boolean  @default(true)
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wallet], name: "user_wallet_unique")
+  @@index([wallet], name: "idx_follow_wallet")
+  @@map("whale_follows")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?  @default("")
+  enabled     Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  whales      CollectionWhale[]
+
+  @@index([userId], name: "idx_collection_user")
+  @@map("collections")
+}
+
+model CollectionWhale {
+  id           String   @id @default(cuid())
+  collectionId String   @map("collection_id")
+  wallet       String
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt      @map("updated_at")
+
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, wallet], name: "collection_wallet_unique")
+  @@index([wallet], name: "idx_collectionwhale_wallet")
+  @@map("collection_whales")
+}
+
+model SmartCollection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @default("")
+  ruleJson    String   @map("rule_json")
+  enabled     Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  whales        SmartCollectionWhale[]
+  subscriptions SmartCollectionSubscription[]
+
+  @@map("smart_collections")
+}
+
+model SmartCollectionWhale {
+  id               String   @id @default(cuid())
+  smartCollectionId String   @map("smart_collection_id")
+  wallet           String
+  snapshotDate     DateTime @map("snapshot_date")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt      @map("updated_at")
+
+  smartCollection  SmartCollection @relation(fields: [smartCollectionId], references: [id], onDelete: Cascade)
+
+  @@unique([smartCollectionId, wallet], name: "smart_collection_wallet_unique")
+  @@index([wallet], name: "idx_smartcollectionwhale_wallet")
+  @@map("smart_collection_whales")
+}
+
+model SmartCollectionSubscription {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  smartCollectionId String   @map("smart_collection_id")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt      @map("updated_at")
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  smartCollection  SmartCollection @relation(fields: [smartCollectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, smartCollectionId], name: "user_smart_collection_unique")
+  @@map("smart_collection_subscriptions")
+}

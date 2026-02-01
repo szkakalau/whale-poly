@@ -17,6 +17,7 @@ from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
 from shared.models import Alert, WhaleTrade
+from services.trade_ingest.smart_collections import rebuild_smart_collections
 
 
 configure_logging(settings.log_level)
@@ -37,6 +38,7 @@ celery_app.conf.beat_schedule = {
   "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 120.0},
   "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": 30.0},
   "full-health-check": {"task": "services.trade_ingest.health_check", "schedule": 3600.0},
+  "rebuild-smart-collections": {"task": "services.trade_ingest.rebuild_smart_collections", "schedule": 86400.0},
 }
 
 
@@ -230,3 +232,18 @@ def ingest_trades_task() -> int:
 @celery_app.task(name="services.trade_ingest.health_check")
 def health_check_task() -> dict:
   return _run(run_full_health_check())
+
+
+@celery_app.task(name="services.trade_ingest.rebuild_smart_collections")
+def rebuild_smart_collections_task() -> int:
+  async def runner():
+    async with SessionLocal() as session:
+      n = await rebuild_smart_collections(session)
+      await session.commit()
+    return n
+
+  try:
+    return _run(runner())
+  except Exception:
+    logger.exception("rebuild_smart_collections_failed")
+    return 0

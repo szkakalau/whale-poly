@@ -16,7 +16,7 @@ from services.telegram_bot.rate_limit import allow_send
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
-from shared.models import Delivery, Subscription
+from shared.models import Delivery, Subscription, Collection, CollectionWhale, User
 
 
 configure_logging(settings.log_level)
@@ -40,13 +40,20 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
 
     now = datetime.now(timezone.utc)
     async with SessionLocal() as session:
-      telegram_ids = (
-        await session.execute(
-          select(Subscription.telegram_id)
-          .where(Subscription.status == "active")
-          .where(Subscription.current_period_end > now)
-        )
-      ).scalars().all()
+      wallet_address = str(payload.get("wallet_address") or "")
+
+      query = (
+        select(Subscription.telegram_id)
+        .join(User, User.telegram_id == Subscription.telegram_id)
+        .join(Collection, Collection.user_id == User.id)
+        .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(Collection.enabled.is_(True))
+        .where(CollectionWhale.wallet == wallet_address.lower())
+      )
+      telegram_ids = (await session.execute(query)).scalars().all()
+
       if settings.telegram_alert_chat_id:
         telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
 

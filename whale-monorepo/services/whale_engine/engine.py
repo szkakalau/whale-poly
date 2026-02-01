@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
-from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade, WhaleProfile
+from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade, WhaleProfile, WhalePosition
 
 
 logger = logging.getLogger("whale_engine.engine")
@@ -27,16 +27,68 @@ async def compute_whale_score(session: AsyncSession, wallet: str) -> int:
       select(func.coalesce(func.sum(TradeRaw.amount * TradeRaw.price), 0)).where(TradeRaw.wallet == wallet).where(TradeRaw.timestamp >= since)
     )
   ).scalar_one()
-  usd = float(total or 0)
-  if usd >= 50000:
-    return 95
-  if usd >= 20000:
-    return 88
-  if usd >= 10000:
-    return 80
-  if usd >= 5000:
-    return 70
-  return 50
+  usd_30d = float(total or 0)
+
+  base = 50
+  if usd_30d >= 50000:
+    base = 95
+  elif usd_30d >= 20000:
+    base = 88
+  elif usd_30d >= 10000:
+    base = 80
+  elif usd_30d >= 5000:
+    base = 70
+
+  profile = (
+    await session.execute(
+      select(WhaleProfile).where(WhaleProfile.wallet_address == wallet)
+    )
+  ).scalars().first()
+  if not profile:
+    return base
+
+  total_volume = float(profile.total_volume or 0)
+  total_trades = int(profile.total_trades or 0)
+  realized_pnl = float(profile.realized_pnl or 0)
+  wins = int(profile.wins or 0)
+  losses = int(profile.losses or 0)
+  attempts = wins + losses
+
+  score = float(base)
+
+  if attempts > 0 and total_volume > 0:
+    win_rate = wins / attempts
+    roi = realized_pnl / total_volume
+
+    if attempts >= 10:
+      if win_rate >= 0.65:
+        score += 7
+      elif win_rate >= 0.55:
+        score += 3
+      elif win_rate < 0.4:
+        score -= 5
+    else:
+      score -= 5
+
+    if roi >= 0.5:
+      score += 7
+    elif roi >= 0.2:
+      score += 3
+    elif roi <= -0.3:
+      score -= 7
+    elif roi <= -0.1:
+      score -= 3
+
+    if attempts < 10:
+      score -= 3
+    elif attempts < 30:
+      score -= 1
+
+  if score < 0:
+    return 0
+  if score > 100:
+    return 100
+  return int(round(score))
 
 
 def _usd(t: TradeRaw) -> float:
@@ -118,10 +170,70 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   event_price = agg_price if score_hint else float(trade.price)
   event_trade_usd = float(event_amount) * float(event_price)
 
+  pos = (await session.execute(
+    select(WhalePosition).where(WhalePosition.wallet_address == wallet).where(WhalePosition.market_id == trade.market_id)
+  )).scalars().first()
+  prev_size = float(pos.net_size) if pos and pos.net_size is not None else 0.0
+  prev_avg = float(pos.avg_price) if pos and pos.avg_price is not None else 0.0
+
+  side_norm = (event_side or "").lower()
+  if side_norm == "buy":
+    delta_size = event_amount
+  elif side_norm == "sell":
+    delta_size = -event_amount
+  else:
+    delta_size = 0.0
+
+  new_size = prev_size + delta_size
+  prev_notional = prev_size * prev_avg
+  trade_notional = delta_size * event_price
+  if abs(new_size) > 1e-9:
+    new_avg = (prev_notional + trade_notional) / new_size
+  else:
+    new_avg = 0.0
+
+  eps = 1e-9
+  action_type = None
+  if abs(prev_size) < eps and abs(new_size) > eps:
+    action_type = "entry"
+  elif abs(prev_size) > eps and abs(new_size) < eps:
+    action_type = "exit"
+  elif prev_size * new_size > 0 and abs(new_size) > abs(prev_size):
+    action_type = "add"
+  elif prev_size * new_size > 0 and abs(new_size) < abs(prev_size):
+    action_type = "reduce"
+  else:
+    if abs(new_size) > eps:
+      action_type = "entry"
+    else:
+      action_type = "exit"
+
+  if pos is None:
+    pos = WhalePosition(
+      wallet_address=wallet,
+      market_id=trade.market_id,
+      net_size=new_size,
+      avg_price=new_avg,
+      updated_at=now,
+    )
+    session.add(pos)
+  else:
+    pos.net_size = new_size
+    pos.avg_price = new_avg
+    pos.updated_at = now
+
   wt_id = _id(trade_id)
   result = await session.execute(
     insert(WhaleTrade)
-    .values(id=wt_id, trade_id=trade_id, wallet_address=wallet, whale_score=score, market_id=trade.market_id, created_at=now)
+    .values(
+      id=wt_id,
+      trade_id=trade_id,
+      wallet_address=wallet,
+      whale_score=score,
+      market_id=trade.market_id,
+      action_type=action_type,
+      created_at=now,
+    )
     .on_conflict_do_nothing(index_elements=[WhaleTrade.trade_id])
   )
   created = result.rowcount == 1

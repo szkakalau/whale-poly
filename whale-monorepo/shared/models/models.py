@@ -72,7 +72,17 @@ class WhaleTrade(Base):
     wallet_address = Column(String(128), nullable=False, index=True)
     whale_score = Column(BigInteger, nullable=False, index=True)
     market_id = Column(String(512), nullable=False, index=True)
+    action_type = Column(String(16), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class WhalePosition(Base):
+    __tablename__ = "whale_positions"
+    wallet_address = Column(String(128), primary_key=True)
+    market_id = Column(String(512), primary_key=True)
+    net_size = Column(Numeric(38, 18), server_default="0")
+    avg_price = Column(Numeric(38, 18), server_default="0")
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Alert(Base):
     __tablename__ = "alerts"
@@ -131,3 +141,60 @@ class StripeEvent(Base):
     id = Column(String(128), primary_key=True)
     event_type = Column(String(128), nullable=False, index=True)
     processed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String(64), primary_key=True)
+    email = Column(String(256), nullable=False, unique=True, index=True)
+    telegram_id = Column(String(64), nullable=True, index=True)
+
+class Collection(Base):
+    __tablename__ = "collections"
+    id = Column(String(64), primary_key=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    name = Column(String(256), nullable=False)
+    description = Column(String(512), nullable=True)
+    enabled = Column(Boolean, nullable=False, server_default="true")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class CollectionWhale(Base):
+    __tablename__ = "collection_whales"
+    __table_args__ = (UniqueConstraint("collection_id", "wallet", name="collection_wallet_unique"),)
+    id = Column(String(64), primary_key=True)
+    collection_id = Column(String(64), nullable=False, index=True)
+    wallet = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SmartCollection(Base):
+    __tablename__ = "smart_collections"
+    id = Column(String(64), primary_key=True)
+    name = Column(String(256), nullable=False)
+    description = Column(String(512), nullable=True)
+    rule_json = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, server_default="true")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SmartCollectionWhale(Base):
+    __tablename__ = "smart_collection_whales"
+    __table_args__ = (UniqueConstraint("smart_collection_id", "wallet", "snapshot_date", name="smart_collection_wallet_unique"),)
+    id = Column(String(64), primary_key=True)
+    smart_collection_id = Column(String(64), nullable=False, index=True)
+    wallet = Column(String(128), nullable=False, index=True)
+    snapshot_date = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SmartCollectionSubscription(Base):
+    __tablename__ = "smart_collection_subscriptions"
+    __table_args__ = (UniqueConstraint("user_id", "smart_collection_id", name="user_smart_collection_unique"),)
+    id = Column(String(64), primary_key=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    smart_collection_id = Column(String(64), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
