@@ -1,12 +1,40 @@
 
 from .models import (
-    Base, WhaleTrade, Alert, Market, TokenCondition, MarketAlertState,
-    ActivationCode, Plan, Subscription, StripeEvent, TradeRaw,
-    TgUser, Delivery, Wallet, WalletName, WhaleScore
+    Base,
+    WhaleTrade,
+    Alert,
+    Market,
+    TokenCondition,
+    MarketAlertState,
+    ActivationCode,
+    Plan,
+    Subscription,
+    StripeEvent,
+    TradeRaw,
+    TgUser,
+    Delivery,
+    Wallet,
+    WalletName,
+    WhaleScore,
+    WhaleProfile,
 )
 
 __all__ = [
-    "Base", "WhaleTrade", "Alert", "Market", "TokenCondition", "MarketAlertState",
-    "ActivationCode", "Plan", "Subscription", "StripeEvent", "TradeRaw",
-    "TgUser", "Delivery", "Wallet", "WalletName", "WhaleScore"
+    "Base",
+    "WhaleTrade",
+    "Alert",
+    "Market",
+    "TokenCondition",
+    "MarketAlertState",
+    "ActivationCode",
+    "Plan",
+    "Subscription",
+    "StripeEvent",
+    "TradeRaw",
+    "TgUser",
+    "Delivery",
+    "Wallet",
+    "WalletName",
+    "WhaleScore",
+    "WhaleProfile",
 ]

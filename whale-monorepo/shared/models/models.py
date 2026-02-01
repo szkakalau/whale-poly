@@ -27,6 +27,7 @@ class Wallet(Base):
     first_seen_at = Column(DateTime(timezone=True))
     last_seen_at = Column(DateTime(timezone=True), index=True)
 
+
 class WalletName(Base):
     __tablename__ = "wallet_names"
     wallet_address = Column(String(128), primary_key=True, index=True)
@@ -35,10 +36,22 @@ class WalletName(Base):
     source = Column(String(32), nullable=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
 class WhaleScore(Base):
     __tablename__ = "whale_scores"
     wallet_address = Column(String(128), primary_key=True)
     final_score = Column(BigInteger, index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class WhaleProfile(Base):
+    __tablename__ = "whale_profiles"
+    wallet_address = Column(String(128), primary_key=True)
+    total_volume = Column(Numeric(38, 18), server_default="0")
+    total_trades = Column(BigInteger, server_default="0")
+    realized_pnl = Column(Numeric(38, 18), server_default="0")
+    wins = Column(BigInteger, server_default="0")
+    losses = Column(BigInteger, server_default="0")
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class TradeRaw(Base):

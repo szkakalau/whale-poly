@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
-from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade
+from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade, WhaleProfile
 
 
 logger = logging.getLogger("whale_engine.engine")
@@ -126,6 +126,26 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   )
   created = result.rowcount == 1
   if created:
+    await session.execute(
+      insert(WhaleProfile)
+      .values(
+        wallet_address=wallet,
+        total_volume=event_trade_usd,
+        total_trades=1,
+        realized_pnl=0,
+        wins=0,
+        losses=0,
+        updated_at=now,
+      )
+      .on_conflict_do_update(
+        index_elements=[WhaleProfile.wallet_address],
+        set_={
+          "total_volume": WhaleProfile.total_volume + event_trade_usd,
+          "total_trades": WhaleProfile.total_trades + 1,
+          "updated_at": now,
+        },
+      )
+    )
     await redis.rpush(
       settings.whale_trade_created_queue,
       json.dumps(
