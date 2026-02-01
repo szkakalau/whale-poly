@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI
 from sqlalchemy import func, select
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
-from shared.models import Market, TradeRaw, WalletName, WhaleProfile, WhaleTrade
+from shared.models import Market, TradeRaw, WalletName, WhaleProfile, WhaleTrade, WhaleScore
 
 
 configure_logging(settings.log_level)
@@ -135,3 +135,57 @@ async def whale_profile(wallet: str, session: AsyncSession = Depends(get_session
     "top_markets": top_markets,
     "recent_trades": recent_trades,
   }
+
+
+@app.get("/whales/leaderboard")
+async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(get_session)):
+  now = datetime.now(timezone.utc)
+  since = now - timedelta(days=30)
+
+  rows = (
+    await session.execute(
+      select(
+        WhaleScore.wallet_address,
+        WhaleScore.final_score.label("whale_score"),
+        func.coalesce(func.sum(TradeRaw.amount * TradeRaw.price), 0).label("volume_30d"),
+      )
+      .join(WhaleTrade, WhaleTrade.wallet_address == WhaleScore.wallet_address)
+      .join(TradeRaw, TradeRaw.trade_id == WhaleTrade.trade_id)
+      .where(TradeRaw.timestamp >= since)
+      .group_by(WhaleScore.wallet_address, WhaleScore.final_score)
+      .order_by(WhaleScore.final_score.desc(), func.sum(TradeRaw.amount * TradeRaw.price).desc())
+      .limit(limit)
+    )
+  ).all()
+
+  addresses = [r.wallet_address for r in rows]
+  name_rows = []
+  if addresses:
+    name_rows = (
+      await session.execute(select(WalletName).where(WalletName.wallet_address.in_(addresses)))
+    ).scalars().all()
+  name_map = {n.wallet_address: n for n in name_rows}
+
+  items = []
+  for r in rows:
+    addr = r.wallet_address
+    score = int(r.whale_score or 0)
+    vol_30d = float(r.volume_30d or 0.0)
+    name_row = name_map.get(addr)
+    if name_row and (name_row.polymarket_username or name_row.ens_name):
+      display_name = name_row.polymarket_username or name_row.ens_name
+    else:
+      display_name = _shorten_wallet(addr)
+
+    items.append(
+      {
+        "wallet": addr,
+        "display_name": display_name,
+        "whale_score": score,
+        "volume_30d": vol_30d,
+        "pnl_30d": 0.0,
+        "win_rate_30d": 0.0,
+      }
+    )
+
+  return {"whales": items}
