@@ -11,6 +11,33 @@ export default function SubscribePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function mapCheckoutError(detail: unknown, status: number): string {
+    const raw = typeof detail === 'string' ? detail : '';
+    const code = raw.toLowerCase();
+    if (!code) {
+      if (status === 429) {
+        return 'Too many attempts. Please wait a moment before trying again.';
+      }
+      return 'Checkout failed. Please try again.';
+    }
+    if (code.includes('invalid json') || code === 'invalid_json') {
+      return 'Something went wrong with the request. Please refresh the page and try again.';
+    }
+    if (code.includes('telegram_activation_code and plan are required')) {
+      return 'Activation code and plan are required. Please fill both fields and submit again.';
+    }
+    if (code.includes('payment api unreachable') || code.includes('payment api returned non-json')) {
+      return 'Payment service is temporarily unavailable. Please try again in a few minutes.';
+    }
+    if (code.includes('activation') && code.includes('code')) {
+      return 'Activation code was not accepted. Double-check the code from the Telegram bot.';
+    }
+    if (code.includes('payment_api_base_url is required')) {
+      return 'Subscription service is not configured yet. Please try again later.';
+    }
+    return 'Checkout failed. Please try again or contact support if it persists.';
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -21,20 +48,24 @@ export default function SubscribePage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ telegram_activation_code: code, plan })
       });
-      const data = await res.json().catch(() => ({}));
+      const data = (await res.json().catch(() => ({}))) as {
+        detail?: string;
+        checkout_url?: string;
+      };
       if (!res.ok) {
-        setError(String(data?.detail || `checkout failed (${res.status})`));
+        setError(mapCheckoutError(data.detail, res.status));
         return;
       }
-      const url = String(data?.checkout_url || '');
+      const url = String(data.checkout_url || '');
       if (!url) {
-        setError('missing checkout_url');
+        setError('Checkout session could not be created. Please try again.');
         return;
       }
       window.location.href = url;
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message || 'checkout failed');
+    } catch {
+      setError(
+        'Network error while starting checkout. Please check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }

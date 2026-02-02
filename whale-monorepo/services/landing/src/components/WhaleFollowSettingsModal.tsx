@@ -17,6 +17,29 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  function mapError(detail?: string): string {
+    const code = String(detail || '').toLowerCase();
+    if (!code || code === 'validation_error') {
+      return 'Unable to save settings. Please double-check the fields and try again.';
+    }
+    if (code === 'invalid_body' || code === 'invalid json' || code === 'invalid_json') {
+      return 'Request was malformed. Please close and reopen this dialog, then try again.';
+    }
+    if (code === 'wallet_required') {
+      return 'Wallet address is required to follow a whale.';
+    }
+    if (code === 'min_size_invalid') {
+      return 'Min Size must be a non-negative number.';
+    }
+    if (code === 'min_score_invalid') {
+      return 'Min Whale Score must be a non-negative number.';
+    }
+    if (code === 'at_least_one_action') {
+      return 'Select at least one alert type (Entry, Exit, or Add).';
+    }
+    return 'Failed to save follow settings. Please try again.';
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
@@ -35,7 +58,7 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(data.detail || 'Failed to save follow settings');
+        setError(mapError(data.detail));
         return;
       }
       onSaved();
@@ -83,6 +106,9 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Min Size (USD)</label>
+              <div className="text-[10px] text-gray-500 mb-1">
+                Only alert when this whale&apos;s trade size is at least this amount.
+              </div>
               <input
                 type="number"
                 min={0}
@@ -93,6 +119,9 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Min Whale Score</label>
+              <div className="text-[10px] text-gray-500 mb-1">
+                Only alert when the whale score is at or above this value (0–100).
+              </div>
               <input
                 type="number"
                 min={0}
@@ -133,4 +162,3 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
     </div>
   );
 }
-

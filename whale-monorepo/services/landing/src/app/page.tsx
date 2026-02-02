@@ -19,7 +19,7 @@ export default function Home() {
       <Header />
 
       <main className="relative pt-32 pb-20">
-        
+
         {/* HERO SECTION */}
         <section className="relative px-6 max-w-7xl mx-auto text-center mb-40 pt-10">
           <div className="animate-fade-in opacity-0" style={{ animationDelay: '0.1s' }}>
@@ -74,6 +74,63 @@ export default function Home() {
                 <div className="text-sm text-gray-200 font-semibold group-hover:text-white">Conviction Cases</div>
               </div>
             </Link>
+          </div>
+        </section>
+
+        {/* ONBOARDING - 3 STEPS */}
+        <section className="max-w-5xl mx-auto px-6 mb-32">
+          <div className="text-center mb-10">
+            <h2 className="text-xl font-semibold text-gray-100 tracking-wide uppercase mb-2">
+              Getting started
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Go from zero to live whale alerts in three simple steps.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="glass rounded-2xl border border-white/10 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 flex items-center justify-center font-semibold">
+                  1
+                </div>
+                <div className="text-sm font-semibold text-white">
+                  Get activation code
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Open the Telegram bot and run <span className="font-mono text-gray-200">/start</span>{' '}
+                to generate your personal activation code.
+              </p>
+            </div>
+            <div className="glass rounded-2xl border border-white/10 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-semibold">
+                  2
+                </div>
+                <div className="text-sm font-semibold text-white">
+                  Activate your plan
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Go to <span className="font-mono text-gray-200">/subscribe</span>, paste the activation
+                code and complete checkout for the plan you want.
+              </p>
+            </div>
+            <div className="glass rounded-2xl border border-white/10 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-semibold">
+                  3
+                </div>
+                <div className="text-sm font-semibold text-white">
+                  Configure your signals
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                After activation, open <span className="font-mono text-gray-200">/follow</span>,{' '}
+                <span className="font-mono text-gray-200">/collections</span> and smart collections
+                to customize which whales and strategies you track.
+              </p>
+            </div>
           </div>
         </section>
 

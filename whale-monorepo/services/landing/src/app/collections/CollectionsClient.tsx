@@ -23,6 +23,20 @@ export default function CollectionsClient({ initialItems }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  function mapCollectionError(detail?: string): string {
+    const code = String(detail || '').toLowerCase();
+    if (!code || code === 'validation_error') {
+      return 'Unable to create collection. Please check the fields and try again.';
+    }
+    if (code === 'invalid_json' || code === 'invalid_body' || code.includes('invalid json')) {
+      return 'Request was malformed. Please refresh the page and try again.';
+    }
+    if (code === 'name_required') {
+      return 'Collection name is required.';
+    }
+    return 'Failed to create collection. Please try again.';
+  }
+
   function handleCreate() {
     if (!name.trim()) {
       setError('Name is required');
@@ -53,7 +67,7 @@ export default function CollectionsClient({ initialItems }: Props) {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(data.detail || 'Failed to create collection');
+        setError(mapCollectionError(data.detail));
         setItems((prev) => prev.filter((c) => c.id !== tempId));
         return;
       }
@@ -151,8 +165,26 @@ export default function CollectionsClient({ initialItems }: Props) {
       )}
 
       {items.length === 0 ? (
-        <div className="text-sm text-gray-400">
-          No collections yet. Create one to group whales by theme or strategy.
+        <div className="text-sm text-gray-400 space-y-3">
+          <p>
+            No collections yet. Collections let you group multiple whales into a single theme or
+            strategy so you can see their flows together.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-500/20"
+            >
+              Create your first collection
+            </button>
+            <Link
+              href="/blog"
+              className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-100 hover:bg-white/10"
+            >
+              See ideas for grouping whales
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -197,4 +229,3 @@ export default function CollectionsClient({ initialItems }: Props) {
     </div>
   );
 }
-

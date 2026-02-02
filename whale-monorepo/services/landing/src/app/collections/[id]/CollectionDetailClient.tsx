@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-
+import Link from 'next/link';
 type WhaleRow = {
   wallet: string;
 };
@@ -28,6 +28,23 @@ export default function CollectionDetailClient({
   const [newWallet, setNewWallet] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function mapCollectionWhaleError(detail?: string): string {
+    const code = String(detail || '').toLowerCase();
+    if (!code || code === 'validation_error') {
+      return 'Unable to add whale. Please double-check the wallet and try again.';
+    }
+    if (code === 'invalid_json' || code === 'invalid_body' || code.includes('invalid json')) {
+      return 'Request was malformed. Please refresh the page and try again.';
+    }
+    if (code === 'wallet_required') {
+      return 'Wallet address is required.';
+    }
+    if (code === 'not_found') {
+      return 'This collection is not available anymore.';
+    }
+    return 'Failed to add whale. Please try again.';
+  }
 
   function saveMeta(nextEnabled: boolean | null = null) {
     const payload = {
@@ -73,7 +90,7 @@ export default function CollectionDetailClient({
       if (!res.ok) {
         setWhales((prev) => prev.filter((w) => w.wallet !== normalized));
         const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(data.detail || 'Failed to add whale');
+        setError(mapCollectionWhaleError(data.detail));
       }
     });
   }
@@ -160,7 +177,16 @@ export default function CollectionDetailClient({
           <div className="text-xs text-gray-500">Total: {whales.length}</div>
         </div>
         {whales.length === 0 ? (
-          <div className="text-sm text-gray-400">No whales in this collection yet.</div>
+          <div className="text-sm text-gray-400">
+            No whales in this collection yet. Add a wallet above to start, or{' '}
+            <Link
+              href="/blog"
+              className="underline text-gray-300 hover:text-gray-100"
+            >
+              see ideas for building collections
+            </Link>
+            .
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-gray-300">
@@ -196,4 +222,3 @@ export default function CollectionDetailClient({
     </div>
   );
 }
-

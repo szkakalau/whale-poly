@@ -136,12 +136,25 @@ export default async function FollowPage() {
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           {rows.length === 0 ? (
-            <div className="text-sm text-gray-400">
-              You are not following any whales yet.{' '}
-              <Link href="/" className="text-violet-300 hover:text-violet-200 underline">
-                Browse whales from the landing page
-              </Link>{' '}
-              or open a whale profile to start following.
+            <div className="text-sm text-gray-400 space-y-3">
+              <p>
+                You are not following any whales yet. Once you follow a wallet, its high-conviction
+                trades will show up here with live scores and recent activity.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/"
+                  className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+                >
+                  Browse whales on the landing page
+                </Link>
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-100 hover:bg-white/10"
+                >
+                  Learn how to pick smart money wallets
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -215,4 +228,3 @@ export default async function FollowPage() {
     </div>
   );
 }
-

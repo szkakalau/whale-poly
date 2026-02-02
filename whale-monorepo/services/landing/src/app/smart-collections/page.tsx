@@ -9,53 +9,51 @@ import SmartCollectionsClient, {
 export const metadata = {
   title: 'Smart Collections - Sight Whale',
   description:
-    'System-generated whale groups based on rule-based criteria like win rate and volume.',
+    'System-generated groups of whales clustered by strategy, performance, and behavior.',
   alternates: {
     canonical: '/smart-collections',
   },
 };
 
-async function loadSmartCollections(): Promise<SmartCollectionItem[]> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return [];
-  }
-  const rows = await prisma.smartCollection.findMany({
-    where: {
-      enabled: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    include: {
-      _count: {
-        select: { whales: true },
+async function loadSmartCollections(userId: string | null): Promise<SmartCollectionItem[]> {
+  const [collections, subscriptions] = await Promise.all([
+    prisma.smartCollection.findMany({
+      where: {
+        enabled: true,
       },
-      subscriptions: {
-        where: {
-          userId: user.id,
-        },
-        select: {
-          id: true,
-        },
+      orderBy: {
+        createdAt: 'desc',
       },
-    },
-  });
-  return rows.map((c: (typeof rows)[number]) => {
+    }),
+    userId
+      ? prisma.smartCollectionSubscription.findMany({
+          where: {
+            userId,
+          },
+          select: {
+            smartCollectionId: true,
+          },
+        })
+      : [],
+  ]);
+
+  const subscribedSet = new Set(
+    subscriptions.map((s) => s.smartCollectionId),
+  );
+
+  return collections.map((c) => {
     return {
       id: c.id,
       name: c.name,
       description: c.description ?? '',
-      ruleJson: c.ruleJson,
-      enabled: c.enabled,
-      whaleCount: c._count.whales,
-      subscribed: c.subscriptions.length > 0,
+      subscribed: subscribedSet.has(c.id),
     };
   });
 }
 
 export default async function SmartCollectionsPage() {
-  const items = await loadSmartCollections();
+  const user = await getCurrentUser();
+  const items = await loadSmartCollections(user ? user.id : null);
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -72,13 +70,17 @@ export default async function SmartCollectionsPage() {
             Smart Collections
           </h1>
           <p className="text-gray-400 text-sm max-w-2xl">
-            System-generated cohorts of whales built from rules like minimum
-            score, volume, and trade frequency.
+            System-generated groups of whales, clustered by on-chain behavior, market focus, and
+            historical performance. Subscribe to follow whole strategies, not just individual
+            wallets.
           </p>
         </section>
 
         <section>
-          <SmartCollectionsClient initialItems={items} />
+          <SmartCollectionsClient
+            initialItems={items}
+            canManage={Boolean(user)}
+          />
         </section>
       </main>
 
