@@ -30,8 +30,9 @@ class Settings:
 
     self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     self.bot_user_hash_secret = os.getenv("BOT_USER_HASH_SECRET", "")
-    self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "20"))
-    self.telegram_alert_chat_id = os.getenv("TELEGRAM_ALERT_CHAT_ID", "")
+    self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "50"))
+    self.telegram_alert_chat_id = os.getenv("TELEGRAM_ALERT_CHAT_ID") or os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
+    self.admin_token = os.getenv("ADMIN_TOKEN", "")
 
     self.polymarket_trades_url = os.getenv("POLYMARKET_TRADES_URL") or os.getenv("POLYMARKET_DATA_API_TRADES_URL") or "https://data-api.polymarket.com/trades?limit=100"
     self.polymarket_trades_url_fallback = (

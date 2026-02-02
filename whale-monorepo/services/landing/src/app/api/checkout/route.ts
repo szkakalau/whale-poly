@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: Request) {
   const base = process.env.PAYMENT_API_BASE_URL;
   if (!base) {
     return NextResponse.json({ detail: 'PAYMENT_API_BASE_URL is required' }, { status: 500 });
   }
+
+  const user = await getCurrentUser();
 
   let payload: unknown;
   try {
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
     upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ telegram_activation_code, plan }),
+      body: JSON.stringify({ telegram_activation_code, plan, user_id: user?.id ?? null }),
       cache: 'no-store'
     });
   } catch (e: unknown) {

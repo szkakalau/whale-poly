@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,16 +14,17 @@ from services.payment.stripe_service import construct_event, create_checkout_ses
 from shared.config import settings
 from shared.db import SessionLocal, get_session
 from shared.logging import configure_logging
-from shared.models import ActivationCode, Plan, StripeEvent, Subscription
-
+from shared.models import ActivationCode, Plan, StripeEvent, Subscription, User
 
 configure_logging(settings.log_level)
 logger = logging.getLogger("payment.api")
 
 
+
 class CheckoutIn(BaseModel):
   telegram_activation_code: str
   plan: str
+  user_id: str | None = None
 
 
 def _sub_id(code: str, plan: str) -> str:
@@ -38,7 +39,7 @@ def _period_end(plan_name: str) -> datetime:
   return now + timedelta(days=30)
 
 
-async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan) -> str:
+async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan, user_id: str | None) -> str:
   ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == code))).scalars().first()
   if not ac or ac.used:
     raise HTTPException(status_code=404, detail="activation code not found")
@@ -71,6 +72,8 @@ async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan
       },
     )
   )
+  if user_id:
+    await session.execute(update(User).where(User.id == user_id).values(telegram_id=telegram_id))
   await session.execute(update(ActivationCode).where(ActivationCode.code == code).values(used=True))
   await session.commit()
 
@@ -109,6 +112,11 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="payment", lifespan=lifespan)
 
 
+def _require_admin(x_admin_token: str | None) -> None:
+  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
+    raise HTTPException(status_code=404, detail="not_found")
+
+
 @app.get("/")
 async def root():
   return {"status": "ok"}
@@ -130,6 +138,115 @@ async def plans(session: AsyncSession = Depends(get_session)):
   return [{"id": p.id, "name": p.name, "price_usd": p.price_usd, "stripe_price_id": p.stripe_price_id} for p in rows]
 
 
+@app.get("/admin/subscriptions/stats")
+async def subscription_stats(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  _require_admin(x_admin_token)
+  now = datetime.now(timezone.utc)
+  async with SessionLocal() as session:
+    total = (
+      await session.execute(select(func.count()).select_from(Subscription))
+    ).scalar_one()
+    active_now = (
+      await session.execute(
+        select(func.count())
+        .select_from(Subscription)
+        .where(Subscription.status.in_(["active", "trialing"]))
+        .where(Subscription.current_period_end > now)
+      )
+    ).scalar_one()
+    by_status = (
+      await session.execute(
+        select(Subscription.status, func.count())
+        .group_by(Subscription.status)
+        .order_by(func.count().desc())
+      )
+    ).all()
+    distinct_tg = (
+      await session.execute(
+        select(func.count(func.distinct(Subscription.telegram_id))).select_from(Subscription)
+      )
+    ).scalar_one()
+    users_total = (await session.execute(select(func.count()).select_from(User))).scalar_one()
+    users_with_tg = (
+      await session.execute(select(func.count()).select_from(User).where(User.telegram_id.is_not(None)))
+    ).scalar_one()
+    users_test_like = (
+      await session.execute(select(func.count()).select_from(User).where(User.email.ilike("%test%")))
+    ).scalar_one()
+    recent_active = (
+      await session.execute(
+        select(Subscription.telegram_id, Subscription.current_period_end, Subscription.status)
+        .where(Subscription.status.in_(["active", "trialing"]))
+        .where(Subscription.current_period_end > now)
+        .order_by(Subscription.current_period_end.desc())
+        .limit(20)
+      )
+    ).all()
+
+  recent_active_redacted = [
+    {
+      "telegram_hash": hashlib.sha1(f"admin:{tid}".encode("utf-8")).hexdigest()[:10],
+      "status": status,
+      "current_period_end": dt.isoformat() if dt else None,
+    }
+    for (tid, dt, status) in recent_active
+  ]
+
+  return {
+    "subscriptions_total": total,
+    "subscriptions_active_now": active_now,
+    "subscriptions_distinct_telegram_ids": distinct_tg,
+    "subscriptions_by_status": [{"status": s, "count": int(c)} for (s, c) in by_status],
+    "users_total": users_total,
+    "users_with_telegram_id": users_with_tg,
+    "users_email_like_test": users_test_like,
+    "recent_active_subscriptions": recent_active_redacted,
+  }
+
+
+@app.get("/admin/subscriptions/list")
+async def subscription_list(
+  active_only: bool = True,
+  limit: int = 200,
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  _require_admin(x_admin_token)
+  now = datetime.now(timezone.utc)
+  safe_limit = max(1, min(int(limit), 2000))
+
+  async with SessionLocal() as session:
+    query = (
+      select(
+        Subscription.telegram_id,
+        Subscription.status,
+        Subscription.current_period_end,
+        User.email,
+      )
+      .outerjoin(User, User.telegram_id == Subscription.telegram_id)
+      .order_by(Subscription.current_period_end.desc())
+      .limit(safe_limit)
+    )
+    if active_only:
+      query = query.where(Subscription.status.in_(["active", "trialing"])).where(Subscription.current_period_end > now)
+
+    rows = (await session.execute(query)).all()
+
+  items = []
+  for telegram_id, status, current_period_end, email in rows:
+    email_str = str(email or "")
+    items.append(
+      {
+        "telegram_id": str(telegram_id),
+        "status": str(status),
+        "current_period_end": current_period_end.isoformat() if current_period_end else None,
+        "email": email_str or None,
+        "is_test_user": bool(email_str and "test" in email_str.lower()),
+      }
+    )
+
+  return {"count": len(items), "active_only": active_only, "items": items}
+
+
 @app.post("/checkout")
 async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_session)):
   code = payload.telegram_activation_code.strip().upper()
@@ -139,10 +256,15 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
     raise HTTPException(status_code=404, detail="plan not found")
 
   if settings.payment_mode == "mock" or not settings.stripe_secret_key:
-    url = await _activate_subscription(session, code=code, plan=plan)
+    url = await _activate_subscription(session, code=code, plan=plan, user_id=payload.user_id)
     return {"checkout_url": url, "mode": "mock"}
 
-  url = create_checkout_session(stripe_price_id=plan.stripe_price_id, activation_code=code, plan=plan.name)
+  url = create_checkout_session(
+    stripe_price_id=plan.stripe_price_id,
+    activation_code=code,
+    plan=plan.name,
+    user_id=payload.user_id,
+  )
   return {"checkout_url": url, "mode": "stripe"}
 
 
@@ -176,6 +298,7 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
       obj = event["data"]["object"]
       metadata = obj.get("metadata") or {}
       activation_code = str(metadata.get("activation_code") or "").upper()
+      user_id = str(metadata.get("user_id") or "").strip() or None
       if activation_code:
         ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == activation_code))).scalars().first()
         if ac and not ac.used:
@@ -201,6 +324,8 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
                 set_={"status": "active", "current_period_end": current_period_end, "telegram_id": telegram_id, "stripe_customer_id": stripe_customer_id},
               )
             )
+            if user_id:
+              await session.execute(update(User).where(User.id == user_id).values(telegram_id=telegram_id))
             await session.execute(update(ActivationCode).where(ActivationCode.code == activation_code).values(used=True))
 
     if event_type in ("customer.subscription.deleted", "customer.subscription.canceled"):

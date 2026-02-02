@@ -13,6 +13,8 @@ model User {
   telegramId String?       @map("telegram_id")
 
   follows    WhaleFollow[]
+  collections Collection[]
+  smartCollectionSubscriptions SmartCollectionSubscription[]
 
   @@map("users")
 }

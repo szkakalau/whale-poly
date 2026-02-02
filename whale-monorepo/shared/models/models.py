@@ -148,6 +148,23 @@ class User(Base):
     email = Column(String(256), nullable=False, unique=True, index=True)
     telegram_id = Column(String(64), nullable=True, index=True)
 
+
+class WhaleFollow(Base):
+    __tablename__ = "whale_follows"
+    __table_args__ = (UniqueConstraint("user_id", "wallet", name="user_wallet_unique"),)
+    id = Column(String(64), primary_key=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    wallet = Column(String(128), nullable=False, index=True)
+    alert_entry = Column(Boolean, nullable=False, server_default="true")
+    alert_exit = Column(Boolean, nullable=False, server_default="true")
+    alert_add = Column(Boolean, nullable=False, server_default="true")
+    min_size = Column(Float, nullable=False, server_default="0")
+    min_score = Column(Float, nullable=False, server_default="0")
+    enabled = Column(Boolean, nullable=False, server_default="true")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class Collection(Base):
     __tablename__ = "collections"
     id = Column(String(64), primary_key=True)

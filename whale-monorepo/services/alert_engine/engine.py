@@ -85,6 +85,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     return False
 
   a_type = infer_alert_type(str(event.get("side") or ""))
+  action_type = str(event.get("action_type") or "")
   alert = Alert(
     id=_id(whale_trade_id),
     whale_trade_id=whale_trade_id,
@@ -132,6 +133,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "wallet_name": wallet_name,
       "whale_score": score,
       "alert_type": a_type,
+      "action_type": action_type,
       "market_question": market_question,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,

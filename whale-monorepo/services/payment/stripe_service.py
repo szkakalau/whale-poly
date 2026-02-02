@@ -12,14 +12,17 @@ def _stripe():
   return stripe
 
 
-def create_checkout_session(*, stripe_price_id: str, activation_code: str, plan: str) -> str:
+def create_checkout_session(*, stripe_price_id: str, activation_code: str, plan: str, user_id: str | None = None) -> str:
   stripe = _stripe()
+  metadata = {"activation_code": activation_code, "plan": plan}
+  if user_id:
+    metadata["user_id"] = user_id
   session = stripe.checkout.Session.create(
     mode="subscription",
     line_items=[{"price": stripe_price_id, "quantity": 1}],
     success_url=settings.landing_success_url,
     cancel_url=settings.landing_cancel_url,
-    metadata={"activation_code": activation_code, "plan": plan},
+    metadata=metadata,
   )
   return str(session.url)
 
@@ -34,4 +37,3 @@ def construct_event(payload: bytes, sig_header: str):
 def retrieve_subscription(subscription_id: str):
   stripe = _stripe()
   return stripe.Subscription.retrieve(subscription_id)
-
