@@ -307,7 +307,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   if score_hint:
     score = max(score, score_hint)
 
-  qualifies = (score >= 85) or (score >= 75 and trade_usd >= 1000) or bool(score_hint)
+  qualifies = (score >= 90 and trade_usd >= 500) or (score >= 75 and trade_usd >= 3000) or bool(score_hint)
   if not qualifies:
     return False
 

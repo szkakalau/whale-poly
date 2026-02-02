@@ -18,8 +18,8 @@ class Settings:
 
     self.alert_cooldown_seconds = int(os.getenv("ALERT_COOLDOWN_SECONDS", "600"))
     self.alert_min_score = int(os.getenv("ALERT_MIN_SCORE", "75"))
-    self.alert_min_trade_usd = float(os.getenv("ALERT_MIN_TRADE_USD", "1000"))
-    self.alert_always_score = int(os.getenv("ALERT_ALWAYS_SCORE", "85"))
+    self.alert_min_trade_usd = float(os.getenv("ALERT_MIN_TRADE_USD", "3000"))
+    self.alert_always_score = int(os.getenv("ALERT_ALWAYS_SCORE", "90"))
 
     self.stripe_secret_key = os.getenv("STRIPE_SECRET_KEY", "")
     self.stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET", "")
@@ -42,9 +42,9 @@ class Settings:
     self.polymarket_events_url = os.getenv("POLYMARKET_EVENTS_URL") or "https://gamma-api.polymarket.com/events"
     self.https_proxy = os.getenv("HTTPS_PROXY", "")
 
-    self.whale_single_trade_usd_threshold = float(os.getenv("WHALE_SINGLE_TRADE_USD_THRESHOLD", "2000"))
-    self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "5000"))
-    self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "3000"))
+    self.whale_single_trade_usd_threshold = float(os.getenv("WHALE_SINGLE_TRADE_USD_THRESHOLD", "3000"))
+    self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "10000"))
+    self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "5000"))
 
     self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "8443902552:AAFcI90mdlQ0UOdtzlvAmb7i16ohaBV8fxA")
     self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "879397306")
