@@ -7,7 +7,7 @@ import ssl
 from celery import Celery
 from redis.asyncio import Redis
 
-from services.whale_engine.engine import process_trade_id
+from services.whale_engine.engine import process_trade_id, recompute_whale_stats
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
@@ -31,7 +31,8 @@ celery_app.conf.task_default_queue = "whale_engine"
 celery_app.conf.task_default_exchange = "whale_engine"
 celery_app.conf.task_default_routing_key = "whale_engine"
 celery_app.conf.beat_schedule = {
-  "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": 1.0}
+  "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": 1.0},
+  "recompute-whale-stats": {"task": "services.whale_engine.recompute_whale_stats", "schedule": 900.0},
 }
 
 
@@ -95,3 +96,19 @@ async def _consume_once() -> int:
 @celery_app.task(name="services.whale_engine.consume_trade_created")
 def consume_trade_created() -> int:
   return _run(_consume_once())
+
+
+async def _recompute_stats_once() -> int:
+  async with SessionLocal() as session:
+    n = await recompute_whale_stats(session)
+    await session.commit()
+  return int(n)
+
+
+@celery_app.task(name="services.whale_engine.recompute_whale_stats")
+def recompute_whale_stats_task() -> int:
+  try:
+    return _run(_recompute_stats_once())
+  except Exception:
+    logger.exception("recompute_whale_stats_failed")
+    return 0

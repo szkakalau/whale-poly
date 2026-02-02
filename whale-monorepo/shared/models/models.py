@@ -43,6 +43,27 @@ class WhaleScore(Base):
     final_score = Column(BigInteger, index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
+class WhaleStats(Base):
+    __tablename__ = "whale_stats"
+    wallet_address = Column(String(128), primary_key=True)
+    whale_score = Column(BigInteger, index=True)
+    performance_score = Column(Float, server_default="0")
+    consistency_score = Column(Float, server_default="0")
+    timing_score = Column(Float, server_default="0")
+    risk_score = Column(Float, server_default="0")
+    impact_score = Column(Float, server_default="0")
+    win_rate = Column(Float, server_default="0")
+    roi = Column(Float, server_default="0")
+    total_pnl = Column(Numeric(38, 18), server_default="0")
+    avg_trade_size = Column(Numeric(38, 18), server_default="0")
+    max_drawdown = Column(Numeric(38, 18), server_default="0")
+    stddev_pnl = Column(Numeric(38, 18), server_default="0")
+    avg_entry_percentile = Column(Float, server_default="0.5")
+    avg_exit_percentile = Column(Float, server_default="0.5")
+    risk_reward_ratio = Column(Float, server_default="0")
+    market_liquidity_ratio = Column(Float, server_default="0")
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class WhaleProfile(Base):
     __tablename__ = "whale_profiles"
@@ -63,6 +84,18 @@ class TradeRaw(Base):
     side = Column(String(16), nullable=False)
     amount = Column(Numeric(38, 18), nullable=False)
     price = Column(Numeric(38, 18), nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
+
+class WhaleTradeHistory(Base):
+    __tablename__ = "whale_trade_history"
+    trade_id = Column(String(128), primary_key=True)
+    wallet_address = Column(String(128), nullable=False, index=True)
+    market_id = Column(String(512), nullable=False, index=True)
+    side = Column(String(16), nullable=False)
+    price = Column(Numeric(38, 18), nullable=False)
+    size = Column(Numeric(38, 18), nullable=False)
+    pnl = Column(Numeric(38, 18), server_default="0")
+    trade_usd = Column(Numeric(38, 18), server_default="0")
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
 
 class WhaleTrade(Base):
