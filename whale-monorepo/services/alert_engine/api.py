@@ -3,11 +3,12 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from urllib.parse import urlparse
 
 from shared.config import settings
 from shared.db import get_session
@@ -18,6 +19,27 @@ from shared.models import Alert, Market
 configure_logging(settings.log_level)
 
 app = FastAPI(title="alert-engine")
+
+
+def _redact_netloc(url: str) -> str:
+  try:
+    u = urlparse(url)
+    if not u.netloc:
+      return ""
+    if "@" in u.netloc:
+      return u.netloc.split("@", 1)[1]
+    return u.netloc
+  except Exception:
+    return ""
+
+
+def _require_admin(x_admin_token: str | None) -> None:
+  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
+    raise HTTPException(status_code=404, detail="not_found")
+
+
+def _hash_admin(value: str) -> str:
+  return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
 
 
 @app.get("/health")
@@ -73,6 +95,42 @@ async def debug_queues():
     return {"queues": queues}
   finally:
     await redis.aclose()
+
+
+@app.get("/admin/diag/config")
+async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  _require_admin(x_admin_token)
+
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    await redis.ping()
+    names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
+    queues = []
+    for name in names:
+      size = await redis.llen(name)
+      last = await redis.lrange(name, -1, -1)
+      queues.append({"name": name, "len": int(size), "last_preview": (last[0] or "")[:200] if last else None})
+  finally:
+    await redis.aclose()
+
+  bot_token_present = bool(settings.telegram_bot_token)
+  chat_id_present = bool(settings.telegram_alert_chat_id)
+  return {
+    "service": "alert-engine",
+    "redis": {"host": _redact_netloc(settings.redis_url), "queues": queues},
+    "rules": {
+      "alert_cooldown_seconds": int(settings.alert_cooldown_seconds),
+      "alert_min_score": int(settings.alert_min_score),
+      "alert_min_trade_usd": float(settings.alert_min_trade_usd),
+      "alert_always_score": int(settings.alert_always_score),
+    },
+    "telegram": {
+      "bot_token_present": bot_token_present,
+      "bot_token_hash": _hash_admin(settings.telegram_bot_token) if bot_token_present else None,
+      "alert_chat_id_present": chat_id_present,
+      "alert_chat_id_hash": _hash_admin(settings.telegram_alert_chat_id) if chat_id_present else None,
+    },
+  }
 
 
 @app.post("/alerts/force")

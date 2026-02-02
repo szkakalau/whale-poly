@@ -130,25 +130,27 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
 
 
 async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-  urls = [u for u in [settings.polymarket_trades_url, settings.polymarket_trades_url_fallback] if u]
+  primary_url = settings.polymarket_trades_url
+  fallback_url = settings.polymarket_trades_url_fallback
+  urls = [u for u in [primary_url, fallback_url] if u]
   if not urls:
     logger.warning("polymarket_trades_url_missing")
     return []
 
-  all_trades = []
   now_ms = int(datetime.now().timestamp() * 1000)
 
-  for url in urls:
-    # Add cache buster
+  async def _fetch_one(url: str) -> list[dict[str, Any]]:
     sep = "&" if "?" in url else "?"
     fetch_url = f"{url}{sep}_t={now_ms}"
 
+    last_error = "unknown_error"
     for attempt in range(1, 4):
       try:
         resp = await client.get(fetch_url, timeout=30)
-        if resp.status_code == 401 or resp.status_code == 403:
+        if resp.status_code in (401, 403):
           logger.warning(f"polymarket_fetch_auth_error url={url} status={resp.status_code}")
-          break
+          return []
+
         if resp.status_code != 200:
           last_error = f"status={resp.status_code} body={resp.text[:200]}"
         else:
@@ -157,7 +159,7 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
           except Exception as e:
             last_error = f"invalid_json error={e}"
           else:
-            trades = []
+            trades: Any = []
             if isinstance(data, list):
               trades = data
             elif isinstance(data, dict):
@@ -165,17 +167,27 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
 
             if isinstance(trades, list) and trades:
               logger.info(f"polymarket_trades_fetched url={url} count={len(trades)}")
-              all_trades.extend(trades)
-              break # Success for this URL
+              return [t for t in trades if isinstance(t, dict)]
             last_error = "empty_or_unexpected_payload"
       except Exception as e:
-        last_error = f"request_failed error={e}"
+        msg = str(e)
+        last_error = f"request_failed error={msg}"
+        if "No address associated with hostname" in msg:
+          logger.warning(f"polymarket_fetch_dns_error url={url} {last_error}")
+          return []
 
       logger.warning(f"polymarket_fetch_retry url={url} attempt={attempt} {last_error}")
       if attempt < 3:
         await asyncio.sleep(1 * attempt)
 
-  return all_trades
+    return []
+
+  primary = await _fetch_one(primary_url) if primary_url else []
+  if primary:
+    return primary
+  if fallback_url:
+    return await _fetch_one(fallback_url)
+  return []
 
 
 async def ingest_trades(session: AsyncSession) -> list[str]:
