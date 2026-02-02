@@ -424,7 +424,55 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             else:
               raise
 
-          telegram_ids = list(dict.fromkeys([*follow_ids, *collection_ids, *smart_ids]))
+          # Global feed logic: if a subscriber has NO configurations, they get everything.
+          # This maintains backward compatibility for users who haven't set up follows.
+          async def _get_global_ids(has_users_flag: bool) -> set[str]:
+            all_active_q = (
+              select(Subscription.telegram_id)
+              .where(Subscription.status.in_(["active", "trialing"]))
+              .where(Subscription.current_period_end > now)
+            )
+            all_active = set((await session.execute(all_active_q)).scalars().all())
+            if not all_active:
+              return set()
+
+            configured = set()
+            if has_follows:
+              if has_users_flag:
+                user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+                q = select(Subscription.telegram_id).join(User, user_join).join(WhaleFollow, WhaleFollow.user_id == User.id)
+              else:
+                q = select(Subscription.telegram_id).join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
+              configured.update((await session.execute(q)).scalars().all())
+
+            if has_collections:
+              if has_users_flag:
+                user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+                q = select(Subscription.telegram_id).join(User, user_join).join(Collection, Collection.user_id == User.id)
+              else:
+                q = select(Subscription.telegram_id).join(Collection, Collection.user_id == Subscription.telegram_id)
+              configured.update((await session.execute(q)).scalars().all())
+
+            if has_smart:
+              if has_users_flag:
+                user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+                q = select(Subscription.telegram_id).join(User, user_join).join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
+              else:
+                q = select(Subscription.telegram_id).join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == Subscription.telegram_id)
+              configured.update((await session.execute(q)).scalars().all())
+
+            return all_active - configured
+
+          try:
+            global_ids = await _get_global_ids(has_users)
+          except Exception as e:
+            if has_users and _is_missing_users_error(e):
+              _mark_users_table_missing()
+              global_ids = await _get_global_ids(False)
+            else:
+              global_ids = set()
+
+          telegram_ids = list(dict.fromkeys([*follow_ids, *collection_ids, *smart_ids, *list(global_ids)]))
         lookup_db_ok = True
     except Exception:
       logger.exception("subscriber_lookup_failed")
@@ -435,46 +483,45 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
 
     if not telegram_ids:
+      logger.info("alert_no_recipients whale_trade_id=%s", whale_trade_id)
       continue
 
-    if not lookup_db_ok:
-      for tid in telegram_ids:
+    logger.info("alert_processing whale_trade_id=%s total_potential_recipients=%s", whale_trade_id, len(telegram_ids))
+
+    async def _send_one(tid: str, is_admin: bool):
+      # Admin is exempt from rate limits
+      if not is_admin:
         if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
-          continue
-        try:
+          return
+
+      try:
+        # Check delivery inside its own session to avoid holding a global session
+        async with SessionLocal() as session:
+          result = await session.execute(
+            insert(Delivery)
+            .values(telegram_id=tid, whale_trade_id=whale_trade_id)
+            .on_conflict_do_nothing(index_elements=["telegram_id", "whale_trade_id"])
+          )
+          rowcount = result.rowcount
+          await session.commit()
+
+        if rowcount == 1:
           await application.bot.send_message(
             chat_id=int(tid),
             text=format_alert(payload, tid),
             disable_web_page_preview=True,
           )
-        except Exception:
-          logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
-      continue
+      except Exception:
+        logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 
-    try:
-      async with SessionLocal() as session:
-        for tid in telegram_ids:
-          if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
-            continue
-          try:
-            result = await session.execute(
-              insert(Delivery)
-              .values(telegram_id=tid, whale_trade_id=whale_trade_id)
-              .on_conflict_do_nothing(index_elements=["telegram_id", "whale_trade_id"])
-            )
-            if result.rowcount != 1:
-              continue
-            await application.bot.send_message(
-              chat_id=int(tid),
-              text=format_alert(payload, tid),
-              disable_web_page_preview=True,
-            )
-          except Exception:
-            logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
-        await session.commit()
-      logger.info("alert_dispatched whale_trade_id=%s recipients=%s", whale_trade_id, len(telegram_ids))
-    except Exception:
-      logger.exception("delivery_record_failed whale_trade_id=%s", whale_trade_id)
+    tasks = []
+    for tid in telegram_ids:
+      is_admin = bool(settings.telegram_alert_chat_id and tid == settings.telegram_alert_chat_id)
+      tasks.append(_send_one(tid, is_admin))
+
+    if tasks:
+      await asyncio.gather(*tasks)
+      logger.info("alert_dispatched whale_trade_id=%s recipients_processed=%s", whale_trade_id, len(tasks))
 
 
 @asynccontextmanager
