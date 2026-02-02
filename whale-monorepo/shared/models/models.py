@@ -167,6 +167,7 @@ class Subscription(Base):
     stripe_customer_id = Column(String(128), nullable=False, index=True)
     stripe_subscription_id = Column(String(128), nullable=False, unique=True, index=True)
     status = Column(String(16), nullable=False, index=True)
+    plan = Column(String(16), nullable=False, server_default="free", index=True)
     current_period_end = Column(DateTime(timezone=True), nullable=False, index=True)
 
 class StripeEvent(Base):

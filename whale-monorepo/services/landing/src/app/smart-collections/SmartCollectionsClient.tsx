@@ -55,8 +55,12 @@ export default function SmartCollectionsClient({ initialItems, canManage }: Prop
         },
       );
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(mapSubscribeError(data.detail));
+        const data = (await res.json().catch(() => ({}))) as { detail?: string; message?: string };
+        if (data.message) {
+          setError(data.message);
+        } else {
+          setError(mapSubscribeError(data.detail));
+        }
         setItems((prev) =>
           prev.map((c) => (c.id === id ? { ...c, subscribed: current.subscribed } : c)),
         );
@@ -67,8 +71,18 @@ export default function SmartCollectionsClient({ initialItems, canManage }: Prop
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
-          {error}
+        <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3">
+          <p className="text-xs text-red-200">{error}</p>
+          {error.includes('计划') && (
+            <div className="mt-2">
+              <a 
+                href="/subscribe" 
+                className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
+              >
+                Upgrade Now &rarr;
+              </a>
+            </div>
+          )}
         </div>
       )}
 

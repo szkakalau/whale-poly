@@ -6,7 +6,30 @@ type Params = {
   params: Promise<{ id: string }>;
 };
 
-const MAX_SUBSCRIPTIONS_PER_USER = 5;
+const PLAN_LIMITS = {
+  free: 0,
+  pro: 5,
+  elite: 20,
+};
+
+async function getUserPlan(telegramId: string | null) {
+  if (!telegramId) return 'free';
+  const now = new Date();
+  const sub = await prisma.subscription.findFirst({
+    where: {
+      telegramId,
+      status: { in: ['active', 'trialing'] },
+      currentPeriodEnd: { gt: now },
+    },
+    orderBy: {
+      currentPeriodEnd: 'desc',
+    },
+    select: {
+      plan: true,
+    },
+  });
+  return (sub?.plan || 'free') as keyof typeof PLAN_LIMITS;
+}
 
 async function ensureSmartCollection(id: string) {
   const sc = await prisma.smartCollection.findUnique({
@@ -43,14 +66,27 @@ export async function POST(_: Request, { params }: Params) {
   });
 
   if (!existing) {
+    const plan = await getUserPlan(user.telegramId);
+    const limit = PLAN_LIMITS[plan] ?? 0;
+
     const count = await prisma.smartCollectionSubscription.count({
       where: {
         userId: user.id,
       },
     });
-    if (count >= MAX_SUBSCRIPTIONS_PER_USER) {
+
+    if (count >= limit) {
+      const upgradeMsg = plan === 'free' 
+        ? 'Free 计划无法订阅 Smart Collections，请升级 Pro 或 Elite 计划。'
+        : `已达到 ${plan.toUpperCase()} 计划的 Smart Collections 上限 (${limit} 个)，请升级更高计划解锁更多。`;
+      
       return NextResponse.json(
-        { detail: 'subscription_limit_reached' },
+        { 
+          detail: 'subscription_limit_reached',
+          message: upgradeMsg,
+          plan: plan,
+          limit: limit
+        },
         { status: 403 },
       );
     }

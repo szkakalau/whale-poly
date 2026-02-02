@@ -118,3 +118,15 @@ model SmartCollectionSubscription {
   @@unique([userId, smartCollectionId], name: "user_smart_collection_unique")
   @@map("smart_collection_subscriptions")
 }
+
+model Subscription {
+  id                   String   @id
+  telegramId           String   @map("telegram_id")
+  stripeCustomerId     String   @map("stripe_customer_id")
+  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
+  status               String
+  plan                 String   @default("free")
+  currentPeriodEnd     DateTime @map("current_period_end")
+
+  @@map("subscriptions")
+}

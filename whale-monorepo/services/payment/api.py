@@ -60,12 +60,14 @@ async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan
       stripe_customer_id=stripe_customer_id,
       stripe_subscription_id=stripe_subscription_id,
       status="active",
+      plan=plan.name,
       current_period_end=current_period_end,
     )
     .on_conflict_do_update(
       index_elements=[Subscription.stripe_subscription_id],
       set_={
         "status": "active",
+        "plan": plan.name,
         "current_period_end": current_period_end,
         "telegram_id": telegram_id,
         "stripe_customer_id": stripe_customer_id,
@@ -247,6 +249,26 @@ async def subscription_list(
   return {"count": len(items), "active_only": active_only, "items": items}
 
 
+@app.get("/current-plan")
+async def current_plan(telegram_id: str, session: AsyncSession = Depends(get_session)):
+  now = datetime.now(timezone.utc)
+  sub = (
+    await session.execute(
+      select(Subscription)
+      .where(Subscription.telegram_id == telegram_id)
+      .where(Subscription.status.in_(["active", "trialing"]))
+      .where(Subscription.current_period_end > now)
+      .order_by(Subscription.current_period_end.desc())
+      .limit(1)
+    )
+  ).scalars().first()
+  
+  if not sub:
+    return {"plan": "free"}
+  
+  return {"plan": sub.plan or "pro"} # Default to pro for legacy active subs
+
+
 @app.post("/checkout")
 async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_session)):
   code = payload.telegram_activation_code.strip().upper()
@@ -309,6 +331,10 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
             sub = retrieve_subscription(stripe_subscription_id)
             cpe = int(sub.get("current_period_end") or 0)
             current_period_end = datetime.fromtimestamp(cpe, tz=timezone.utc) if cpe else datetime.now(timezone.utc)
+            
+            # Extract plan from metadata or subscription items
+            plan_from_meta = str(metadata.get("plan") or "pro").lower()
+
             await session.execute(
               insert(Subscription)
               .values(
@@ -317,11 +343,18 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
                 stripe_customer_id=stripe_customer_id,
                 stripe_subscription_id=stripe_subscription_id,
                 status="active",
+                plan=plan_from_meta,
                 current_period_end=current_period_end,
               )
               .on_conflict_do_update(
                 index_elements=[Subscription.stripe_subscription_id],
-                set_={"status": "active", "current_period_end": current_period_end, "telegram_id": telegram_id, "stripe_customer_id": stripe_customer_id},
+                set_={
+                    "status": "active", 
+                    "plan": plan_from_meta,
+                    "current_period_end": current_period_end, 
+                    "telegram_id": telegram_id, 
+                    "stripe_customer_id": stripe_customer_id
+                },
               )
             )
             if user_id:

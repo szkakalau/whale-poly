@@ -28,9 +28,11 @@ export default function SmartCollectionDetailClient({
 }: Props) {
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [pending, startTransition] = useTransition();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   function toggleSubscribe() {
     const next = !subscribed;
+    setErrorMsg(null);
     setSubscribed(next);
     startTransition(async () => {
       const res = await fetch(
@@ -41,6 +43,12 @@ export default function SmartCollectionDetailClient({
       );
       if (!res.ok) {
         setSubscribed(!next);
+        const data = await res.json();
+        if (data.message) {
+          setErrorMsg(data.message);
+        } else {
+          setErrorMsg('An error occurred. Please try again.');
+        }
       }
     });
   }
@@ -57,6 +65,19 @@ export default function SmartCollectionDetailClient({
             <p className="text-xs text-amber-300">
               This smart collection is currently disabled.
             </p>
+          )}
+          {errorMsg && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 mt-2">
+              <p className="text-xs text-red-200">{errorMsg}</p>
+              <div className="mt-2">
+                <a 
+                  href="/subscribe" 
+                  className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
+                >
+                  Upgrade Now &rarr;
+                </a>
+              </div>
+            </div>
           )}
         </div>
         <button

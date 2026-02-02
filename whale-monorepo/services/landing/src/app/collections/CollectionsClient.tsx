@@ -66,8 +66,12 @@ export default function CollectionsClient({ initialItems }: Props) {
         }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(mapCollectionError(data.detail));
+        const data = (await res.json().catch(() => ({}))) as { detail?: string; message?: string };
+        if (data.message) {
+          setError(data.message);
+        } else {
+          setError(mapCollectionError(data.detail));
+        }
         setItems((prev) => prev.filter((c) => c.id !== tempId));
         return;
       }
@@ -160,7 +164,21 @@ export default function CollectionsClient({ initialItems }: Props) {
               Save
             </button>
           </div>
-          {error && <div className="text-xs text-rose-300">{error}</div>}
+          {error && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3">
+              <p className="text-xs text-red-200">{error}</p>
+              {error.includes('计划') && (
+                <div className="mt-2">
+                  <a 
+                    href="/subscribe" 
+                    className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
+                  >
+                    Upgrade Now &rarr;
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

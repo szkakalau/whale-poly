@@ -54,6 +54,25 @@ class Settings:
     self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
     self.health_payment_api_url = os.getenv("HEALTH_PAYMENT_API_URL", "https://payment-api.onrender.com")
 
+    # Plan Gating Limits
+    self.plan_limits = {
+        "free": {
+            "smart_collections": 0,
+            "follows": 0,
+            "collections": 0
+        },
+        "pro": {
+            "smart_collections": 5,
+            "follows": 100,
+            "collections": 10
+        },
+        "elite": {
+            "smart_collections": 20,
+            "follows": 1000,
+            "collections": 50
+        }
+    }
+
   def _get(self, key: str) -> str:
     value = os.getenv(key)
     if not value:
