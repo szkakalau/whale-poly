@@ -35,6 +35,7 @@ configure_logging(settings.log_level)
 logger = logging.getLogger("telegram_bot.api")
 
 _HAS_USERS_TABLE: bool | None = None
+_HAS_WHALE_FOLLOWS_TABLE: bool | None = None
 
 
 def _is_missing_users_error(e: Exception) -> bool:
@@ -56,6 +57,27 @@ async def _has_users_table(session) -> bool:
   except Exception:
     _HAS_USERS_TABLE = False
   return _HAS_USERS_TABLE
+
+
+def _is_missing_whale_follows_error(e: Exception) -> bool:
+  msg = str(e).lower()
+  return ('relation "whale_follows" does not exist' in msg) or ("undefinedtableerror" in msg)
+
+
+def _mark_whale_follows_table_missing() -> None:
+  global _HAS_WHALE_FOLLOWS_TABLE
+  _HAS_WHALE_FOLLOWS_TABLE = False
+
+
+async def _has_whale_follows_table(session) -> bool:
+  global _HAS_WHALE_FOLLOWS_TABLE
+  if _HAS_WHALE_FOLLOWS_TABLE is not None:
+    return _HAS_WHALE_FOLLOWS_TABLE
+  try:
+    _HAS_WHALE_FOLLOWS_TABLE = bool((await session.execute(text("select to_regclass('public.whale_follows')"))).scalar_one_or_none())
+  except Exception:
+    _HAS_WHALE_FOLLOWS_TABLE = False
+  return _HAS_WHALE_FOLLOWS_TABLE
 
 
 def _redact_netloc(url: str) -> str:
@@ -151,38 +173,48 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     try:
       async with SessionLocal() as session:
         has_users = await _has_users_table(session)
+        has_follows = await _has_whale_follows_table(session)
         async def _lookup_ids(has_users_flag: bool) -> tuple[list[str], list[str], list[str]]:
-          if has_users_flag:
-            user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
-            follow_query = (
-              select(Subscription.telegram_id)
-              .join(User, user_join)
-              .join(WhaleFollow, WhaleFollow.user_id == User.id)
-              .where(Subscription.status.in_(["active", "trialing"]))
-              .where(Subscription.current_period_end > now)
-              .where(WhaleFollow.enabled.is_(True))
-              .where(WhaleFollow.wallet == wallet)
-              .where(WhaleFollow.min_size <= size_v)
-              .where(WhaleFollow.min_score <= score_v)
-            )
-          else:
-            follow_query = (
-              select(Subscription.telegram_id)
-              .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
-              .where(Subscription.status.in_(["active", "trialing"]))
-              .where(Subscription.current_period_end > now)
-              .where(WhaleFollow.enabled.is_(True))
-              .where(WhaleFollow.wallet == wallet)
-              .where(WhaleFollow.min_size <= size_v)
-              .where(WhaleFollow.min_score <= score_v)
-            )
-          if kind == "exit":
-            follow_query = follow_query.where(WhaleFollow.alert_exit.is_(True))
-          elif kind == "add":
-            follow_query = follow_query.where(WhaleFollow.alert_add.is_(True))
-          else:
-            follow_query = follow_query.where(WhaleFollow.alert_entry.is_(True))
-          follow_ids_v = (await session.execute(follow_query)).scalars().all()
+          follow_ids_v: list[str] = []
+          if has_follows:
+            if has_users_flag:
+              user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+              follow_query = (
+                select(Subscription.telegram_id)
+                .join(User, user_join)
+                .join(WhaleFollow, WhaleFollow.user_id == User.id)
+                .where(Subscription.status.in_(["active", "trialing"]))
+                .where(Subscription.current_period_end > now)
+                .where(WhaleFollow.enabled.is_(True))
+                .where(WhaleFollow.wallet == wallet)
+                .where(WhaleFollow.min_size <= size_v)
+                .where(WhaleFollow.min_score <= score_v)
+              )
+            else:
+              follow_query = (
+                select(Subscription.telegram_id)
+                .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
+                .where(Subscription.status.in_(["active", "trialing"]))
+                .where(Subscription.current_period_end > now)
+                .where(WhaleFollow.enabled.is_(True))
+                .where(WhaleFollow.wallet == wallet)
+                .where(WhaleFollow.min_size <= size_v)
+                .where(WhaleFollow.min_score <= score_v)
+              )
+            if kind == "exit":
+              follow_query = follow_query.where(WhaleFollow.alert_exit.is_(True))
+            elif kind == "add":
+              follow_query = follow_query.where(WhaleFollow.alert_add.is_(True))
+            else:
+              follow_query = follow_query.where(WhaleFollow.alert_entry.is_(True))
+            try:
+              follow_ids_v = (await session.execute(follow_query)).scalars().all()
+            except Exception as e:
+              if _is_missing_whale_follows_error(e):
+                _mark_whale_follows_table_missing()
+                follow_ids_v = []
+              else:
+                raise
 
           if has_users_flag:
             user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
@@ -439,44 +471,56 @@ async def admin_diag_subscribers(
 
   async with SessionLocal() as session:
     has_users = await _has_users_table(session)
+    has_follows = await _has_whale_follows_table(session)
     if has_users:
       user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
 
-    if has_users:
-      follow_base = (
-        select(Subscription.telegram_id)
-        .distinct()
-        .join(User, user_join)
-        .join(WhaleFollow, WhaleFollow.user_id == User.id)
-        .where(Subscription.status.in_(["active", "trialing"]))
-        .where(Subscription.current_period_end > now)
-        .where(WhaleFollow.enabled.is_(True))
-        .where(WhaleFollow.wallet == w)
-        .where(WhaleFollow.min_size <= float(trade_usd))
-        .where(WhaleFollow.min_score <= float(whale_score))
-      )
-    else:
-      follow_base = (
-        select(Subscription.telegram_id)
-        .distinct()
-        .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
-        .where(Subscription.status.in_(["active", "trialing"]))
-        .where(Subscription.current_period_end > now)
-        .where(WhaleFollow.enabled.is_(True))
-        .where(WhaleFollow.wallet == w)
-        .where(WhaleFollow.min_size <= float(trade_usd))
-        .where(WhaleFollow.min_score <= float(whale_score))
-      )
-    if kind == "exit":
-      follow_base = follow_base.where(WhaleFollow.alert_exit.is_(True))
-    elif kind == "add":
-      follow_base = follow_base.where(WhaleFollow.alert_add.is_(True))
-    else:
-      follow_base = follow_base.where(WhaleFollow.alert_entry.is_(True))
-    follow_ids = (await session.execute(follow_base.limit(int(sample_limit)))).scalars().all()
-    follow_count = int(
-      (await session.execute(select(func.count()).select_from(follow_base.subquery()))).scalar_one()
-    )
+    follow_ids: list[str] = []
+    follow_count = 0
+    if has_follows:
+      if has_users:
+        follow_base = (
+          select(Subscription.telegram_id)
+          .distinct()
+          .join(User, user_join)
+          .join(WhaleFollow, WhaleFollow.user_id == User.id)
+          .where(Subscription.status.in_(["active", "trialing"]))
+          .where(Subscription.current_period_end > now)
+          .where(WhaleFollow.enabled.is_(True))
+          .where(WhaleFollow.wallet == w)
+          .where(WhaleFollow.min_size <= float(trade_usd))
+          .where(WhaleFollow.min_score <= float(whale_score))
+        )
+      else:
+        follow_base = (
+          select(Subscription.telegram_id)
+          .distinct()
+          .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
+          .where(Subscription.status.in_(["active", "trialing"]))
+          .where(Subscription.current_period_end > now)
+          .where(WhaleFollow.enabled.is_(True))
+          .where(WhaleFollow.wallet == w)
+          .where(WhaleFollow.min_size <= float(trade_usd))
+          .where(WhaleFollow.min_score <= float(whale_score))
+        )
+      if kind == "exit":
+        follow_base = follow_base.where(WhaleFollow.alert_exit.is_(True))
+      elif kind == "add":
+        follow_base = follow_base.where(WhaleFollow.alert_add.is_(True))
+      else:
+        follow_base = follow_base.where(WhaleFollow.alert_entry.is_(True))
+      try:
+        follow_ids = (await session.execute(follow_base.limit(int(sample_limit)))).scalars().all()
+        follow_count = int(
+          (await session.execute(select(func.count()).select_from(follow_base.subquery()))).scalar_one()
+        )
+      except Exception as e:
+        if _is_missing_whale_follows_error(e):
+          _mark_whale_follows_table_missing()
+          follow_ids = []
+          follow_count = 0
+        else:
+          raise
 
     if has_users:
       collection_base = (
