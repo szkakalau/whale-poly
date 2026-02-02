@@ -3,7 +3,8 @@ from services.alert_engine.rules import should_alert
 
 def test_always_score_alerts():
   d = should_alert(whale_score=85, trade_usd=1, min_score=75, min_usd=1000, always_score=85)
-  assert d.should_alert is False
+  assert d.should_alert is True
+  assert d.reason == "always_score"
 
 
 def test_threshold_alerts():
