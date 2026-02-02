@@ -4,15 +4,16 @@ import json
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from uuid import uuid4
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Query
 from redis.asyncio import Redis
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.dialects.postgresql import insert
 from urllib.parse import urlparse
 
-from services.telegram_bot.bot import build_application, run_polling
+from services.telegram_bot.bot import build_application
 from services.telegram_bot.templates import format_alert
 from services.telegram_bot.rate_limit import allow_send
 from shared.config import settings
@@ -33,6 +34,78 @@ from shared.models import (
 
 configure_logging(settings.log_level)
 logger = logging.getLogger("telegram_bot.api")
+
+_HAS_USERS_TABLE: bool | None = None
+
+
+async def _has_users_table(session) -> bool:
+  global _HAS_USERS_TABLE
+  if _HAS_USERS_TABLE is not None:
+    return _HAS_USERS_TABLE
+  try:
+    _HAS_USERS_TABLE = bool((await session.execute(text("select to_regclass('public.users')"))).scalar_one_or_none())
+  except Exception:
+    _HAS_USERS_TABLE = False
+  return _HAS_USERS_TABLE
+
+
+async def _run_bot_runtime_forever(stop: asyncio.Event, redis: Redis, application) -> None:
+  await application.initialize()
+  await application.start()
+
+  lock_key = "telegram_bot:polling_lock"
+  lock_value: str | None = None
+  polling = False
+
+  try:
+    while not stop.is_set():
+      try:
+        if polling:
+          cur = await redis.get(lock_key)
+          if cur != lock_value:
+            try:
+              await application.updater.stop()
+            except Exception:
+              pass
+            polling = False
+            lock_value = None
+          else:
+            await redis.expire(lock_key, 90)
+        else:
+          lock_value = uuid4().hex
+          acquired = await redis.set(lock_key, lock_value, nx=True, ex=90)
+          if acquired:
+            try:
+              await application.updater.start_polling(allowed_updates=["message", "callback_query"])
+              polling = True
+              logger.info("bot_polling_started")
+            except Exception:
+              logger.exception("bot_polling_start_failed")
+              try:
+                cur = await redis.get(lock_key)
+                if cur == lock_value:
+                  await redis.delete(lock_key)
+              except Exception:
+                pass
+              polling = False
+              lock_value = None
+          else:
+            lock_value = None
+      except Exception:
+        logger.exception("bot_runtime_loop_failed")
+
+      try:
+        await asyncio.wait_for(stop.wait(), timeout=30)
+      except asyncio.TimeoutError:
+        continue
+  finally:
+    if polling:
+      try:
+        await application.updater.stop()
+      except Exception:
+        pass
+    await application.stop()
+    await application.shutdown()
 
 
 def _redact_netloc(url: str) -> str:
@@ -126,18 +199,31 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     lookup_db_ok = False
     try:
       async with SessionLocal() as session:
-        user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
-        follow_query = (
-          select(Subscription.telegram_id)
-          .join(User, user_join)
-          .join(WhaleFollow, WhaleFollow.user_id == User.id)
-          .where(Subscription.status == "active")
-          .where(Subscription.current_period_end > now)
-          .where(WhaleFollow.enabled.is_(True))
-          .where(WhaleFollow.wallet == wallet)
-          .where(WhaleFollow.min_size <= size_v)
-          .where(WhaleFollow.min_score <= score_v)
-        )
+        has_users = await _has_users_table(session)
+        if has_users:
+          user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+          follow_query = (
+            select(Subscription.telegram_id)
+            .join(User, user_join)
+            .join(WhaleFollow, WhaleFollow.user_id == User.id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(WhaleFollow.enabled.is_(True))
+            .where(WhaleFollow.wallet == wallet)
+            .where(WhaleFollow.min_size <= size_v)
+            .where(WhaleFollow.min_score <= score_v)
+          )
+        else:
+          follow_query = (
+            select(Subscription.telegram_id)
+            .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(WhaleFollow.enabled.is_(True))
+            .where(WhaleFollow.wallet == wallet)
+            .where(WhaleFollow.min_size <= size_v)
+            .where(WhaleFollow.min_score <= score_v)
+          )
         if kind == "exit":
           follow_query = follow_query.where(WhaleFollow.alert_exit.is_(True))
         elif kind == "add":
@@ -146,29 +232,52 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           follow_query = follow_query.where(WhaleFollow.alert_entry.is_(True))
         follow_ids = (await session.execute(follow_query)).scalars().all()
 
-        collection_query = (
-          select(Subscription.telegram_id)
-          .join(User, user_join)
-          .join(Collection, Collection.user_id == User.id)
-          .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
-          .where(Subscription.status == "active")
-          .where(Subscription.current_period_end > now)
-          .where(Collection.enabled.is_(True))
-          .where(CollectionWhale.wallet == wallet)
-        )
+        if has_users:
+          collection_query = (
+            select(Subscription.telegram_id)
+            .join(User, user_join)
+            .join(Collection, Collection.user_id == User.id)
+            .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(Collection.enabled.is_(True))
+            .where(CollectionWhale.wallet == wallet)
+          )
+        else:
+          collection_query = (
+            select(Subscription.telegram_id)
+            .join(Collection, Collection.user_id == Subscription.telegram_id)
+            .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(Collection.enabled.is_(True))
+            .where(CollectionWhale.wallet == wallet)
+          )
         collection_ids = (await session.execute(collection_query)).scalars().all()
 
-        smart_query = (
-          select(Subscription.telegram_id)
-          .join(User, user_join)
-          .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
-          .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
-          .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
-          .where(Subscription.status == "active")
-          .where(Subscription.current_period_end > now)
-          .where(SmartCollection.enabled.is_(True))
-          .where(SmartCollectionWhale.wallet == wallet)
-        )
+        if has_users:
+          smart_query = (
+            select(Subscription.telegram_id)
+            .join(User, user_join)
+            .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
+            .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
+            .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(SmartCollection.enabled.is_(True))
+            .where(SmartCollectionWhale.wallet == wallet)
+          )
+        else:
+          smart_query = (
+            select(Subscription.telegram_id)
+            .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == Subscription.telegram_id)
+            .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
+            .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
+            .where(Subscription.status == "active")
+            .where(Subscription.current_period_end > now)
+            .where(SmartCollection.enabled.is_(True))
+            .where(SmartCollectionWhale.wallet == wallet)
+          )
         smart_ids = (await session.execute(smart_query)).scalars().all()
 
         telegram_ids = list(dict.fromkeys([*follow_ids, *collection_ids, *smart_ids]))
@@ -248,7 +357,7 @@ async def lifespan(_: FastAPI):
   application = await build_application()
 
   tasks = [
-    asyncio.create_task(run_polling(stop, application), name="bot_polling"),
+    asyncio.create_task(_run_bot_runtime_forever(stop, redis, application), name="bot_runtime"),
     asyncio.create_task(consume_alerts_forever(stop, redis, application), name="alert_consumer"),
     asyncio.create_task(_log_subscriber_stats_forever(stop), name="subscription_stats"),
   ]
@@ -365,20 +474,35 @@ async def admin_diag_subscribers(
     return {"ok": False, "error": "wallet_required"}
 
   async with SessionLocal() as session:
-    user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
+    has_users = await _has_users_table(session)
+    if has_users:
+      user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
 
-    follow_base = (
-      select(Subscription.telegram_id)
-      .distinct()
-      .join(User, user_join)
-      .join(WhaleFollow, WhaleFollow.user_id == User.id)
-      .where(Subscription.status == "active")
-      .where(Subscription.current_period_end > now)
-      .where(WhaleFollow.enabled.is_(True))
-      .where(WhaleFollow.wallet == w)
-      .where(WhaleFollow.min_size <= float(trade_usd))
-      .where(WhaleFollow.min_score <= float(whale_score))
-    )
+    if has_users:
+      follow_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(User, user_join)
+        .join(WhaleFollow, WhaleFollow.user_id == User.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(WhaleFollow.enabled.is_(True))
+        .where(WhaleFollow.wallet == w)
+        .where(WhaleFollow.min_size <= float(trade_usd))
+        .where(WhaleFollow.min_score <= float(whale_score))
+      )
+    else:
+      follow_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(WhaleFollow.enabled.is_(True))
+        .where(WhaleFollow.wallet == w)
+        .where(WhaleFollow.min_size <= float(trade_usd))
+        .where(WhaleFollow.min_score <= float(whale_score))
+      )
     if kind == "exit":
       follow_base = follow_base.where(WhaleFollow.alert_exit.is_(True))
     elif kind == "add":
@@ -390,34 +514,59 @@ async def admin_diag_subscribers(
       (await session.execute(select(func.count()).select_from(follow_base.subquery()))).scalar_one()
     )
 
-    collection_base = (
-      select(Subscription.telegram_id)
-      .distinct()
-      .join(User, user_join)
-      .join(Collection, Collection.user_id == User.id)
-      .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
-      .where(Subscription.status == "active")
-      .where(Subscription.current_period_end > now)
-      .where(Collection.enabled.is_(True))
-      .where(CollectionWhale.wallet == w)
-    )
+    if has_users:
+      collection_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(User, user_join)
+        .join(Collection, Collection.user_id == User.id)
+        .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(Collection.enabled.is_(True))
+        .where(CollectionWhale.wallet == w)
+      )
+    else:
+      collection_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(Collection, Collection.user_id == Subscription.telegram_id)
+        .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(Collection.enabled.is_(True))
+        .where(CollectionWhale.wallet == w)
+      )
     collection_ids = (await session.execute(collection_base.limit(int(sample_limit)))).scalars().all()
     collection_count = int(
       (await session.execute(select(func.count()).select_from(collection_base.subquery()))).scalar_one()
     )
 
-    smart_base = (
-      select(Subscription.telegram_id)
-      .distinct()
-      .join(User, user_join)
-      .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
-      .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
-      .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
-      .where(Subscription.status == "active")
-      .where(Subscription.current_period_end > now)
-      .where(SmartCollection.enabled.is_(True))
-      .where(SmartCollectionWhale.wallet == w)
-    )
+    if has_users:
+      smart_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(User, user_join)
+        .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
+        .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
+        .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(SmartCollection.enabled.is_(True))
+        .where(SmartCollectionWhale.wallet == w)
+      )
+    else:
+      smart_base = (
+        select(Subscription.telegram_id)
+        .distinct()
+        .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == Subscription.telegram_id)
+        .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
+        .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
+        .where(Subscription.status == "active")
+        .where(Subscription.current_period_end > now)
+        .where(SmartCollection.enabled.is_(True))
+        .where(SmartCollectionWhale.wallet == w)
+      )
     smart_ids = (await session.execute(smart_base.limit(int(sample_limit)))).scalars().all()
     smart_count = int((await session.execute(select(func.count()).select_from(smart_base.subquery()))).scalar_one())
 
