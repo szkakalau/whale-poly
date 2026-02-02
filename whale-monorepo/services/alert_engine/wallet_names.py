@@ -2,11 +2,14 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
 from shared.models import WalletName
+
+
+_HAS_WALLET_NAMES_TABLE: bool | None = None
 
 
 def _normalize_wallet(value: str) -> str:
@@ -50,38 +53,66 @@ async def _fetch_ens_name(client: httpx.AsyncClient, wallet: str) -> str | None:
   return str(name)
 
 
+def _is_missing_wallet_names_error(e: Exception) -> bool:
+  msg = str(e).lower()
+  return ('relation "wallet_names" does not exist' in msg) or ("undefinedtableerror" in msg) or ("undefinedtable" in msg)
+
+
+async def _has_wallet_names_table(session: AsyncSession) -> bool:
+  global _HAS_WALLET_NAMES_TABLE
+  if _HAS_WALLET_NAMES_TABLE is not None:
+    return _HAS_WALLET_NAMES_TABLE
+  try:
+    _HAS_WALLET_NAMES_TABLE = bool((await session.execute(text("select to_regclass('public.wallet_names')"))).scalar_one_or_none())
+  except Exception:
+    _HAS_WALLET_NAMES_TABLE = True
+  return _HAS_WALLET_NAMES_TABLE
+
+
 async def resolve_wallet_name(session: AsyncSession, wallet_address: str) -> str | None:
   addr = _normalize_wallet(wallet_address)
   if not addr:
     return None
 
-  row = (await session.execute(select(WalletName).where(WalletName.wallet_address == addr))).scalars().first()
-  if row and (row.polymarket_username or row.ens_name):
-    return row.polymarket_username or row.ens_name
+  has_table = await _has_wallet_names_table(session)
+  row = None
+  if has_table:
+    try:
+      row = (await session.execute(select(WalletName).where(WalletName.wallet_address == addr))).scalars().first()
+      if row and (row.polymarket_username or row.ens_name):
+        return row.polymarket_username or row.ens_name
+    except Exception as e:
+      if _is_missing_wallet_names_error(e):
+        global _HAS_WALLET_NAMES_TABLE
+        _HAS_WALLET_NAMES_TABLE = False
+        row = None
+        has_table = False
+      else:
+        raise
 
   proxies = settings.https_proxy or None
   async with httpx.AsyncClient(proxies=proxies) as client:
     pm = await _fetch_polymarket_username(client, addr)
     ens = await _fetch_ens_name(client, addr)
 
-  if not row:
-    row = WalletName(wallet_address=addr)
-    session.add(row)
+  if has_table:
+    if not row:
+      row = WalletName(wallet_address=addr)
+      session.add(row)
 
-  sources: list[str] = []
-  if pm:
-    row.polymarket_username = pm
-    sources.append("polymarket")
-  if ens:
-    row.ens_name = ens
-    sources.append("ens")
+    sources: list[str] = []
+    if pm:
+      row.polymarket_username = pm
+      sources.append("polymarket")
+    if ens:
+      row.ens_name = ens
+      sources.append("ens")
 
-  if sources:
-    row.source = ",".join(sorted(set(sources)))
-  elif not row.source:
-    row.source = "none"
+    if sources:
+      row.source = ",".join(sorted(set(sources)))
+    elif not row.source:
+      row.source = "none"
 
-  row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(timezone.utc)
 
   return pm or ens
-

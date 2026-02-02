@@ -3,7 +3,7 @@ import json
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,17 +11,51 @@ from shared.config import settings
 from shared.models import Market, TokenCondition
 
 
+_HAS_TOKEN_CONDITIONS_TABLE: bool | None = None
+
+
+def _is_missing_token_conditions_error(e: Exception) -> bool:
+    msg = str(e).lower()
+    return ('relation "token_conditions" does not exist' in msg) or ("undefinedtableerror" in msg) or ("undefinedtable" in msg)
+
+
+async def _has_token_conditions_table(session: AsyncSession) -> bool:
+    global _HAS_TOKEN_CONDITIONS_TABLE
+    if _HAS_TOKEN_CONDITIONS_TABLE is not None:
+        return _HAS_TOKEN_CONDITIONS_TABLE
+    try:
+        _HAS_TOKEN_CONDITIONS_TABLE = bool((await session.execute(text("select to_regclass('public.token_conditions')"))).scalar_one_or_none())
+    except Exception:
+        _HAS_TOKEN_CONDITIONS_TABLE = True
+    return _HAS_TOKEN_CONDITIONS_TABLE
+
+
 async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str | None = None) -> str | None:
     # Normalize token_id
     token_id = token_id.lower().strip()
     
     # 1. Check cache first
-    cached = (await session.execute(select(TokenCondition).where(TokenCondition.token_id == token_id))).scalars().first()
+    cached = None
+    has_table = await _has_token_conditions_table(session)
+    if has_table:
+        try:
+            cached = (await session.execute(select(TokenCondition).where(TokenCondition.token_id == token_id))).scalars().first()
+        except Exception as e:
+            if _is_missing_token_conditions_error(e):
+                global _HAS_TOKEN_CONDITIONS_TABLE
+                _HAS_TOKEN_CONDITIONS_TABLE = False
+                has_table = False
+                cached = None
+            else:
+                raise
     if cached:
         # If we have a hint and the cached question is generic, update it
         if title_hint and (cached.question.startswith("Market (") or cached.question == "unknown"):
             cached.question = title_hint
-            await session.commit()
+            try:
+                await session.commit()
+            except Exception:
+                pass
         return cached.question
 
     # 1.5 Use title_hint if provided (this is a very strong signal from the trades API)
@@ -118,24 +152,34 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
     return question
 
 async def _save_token_condition(session: AsyncSession, token_id: str, condition_id: str, market_id: str, question: str):
-    await session.execute(
-        insert(TokenCondition)
-        .values(
-            token_id=token_id, 
-            condition_id=condition_id, 
-            market_id=market_id, 
-            question=question
+    has_table = await _has_token_conditions_table(session)
+    if not has_table:
+        return
+    try:
+        await session.execute(
+            insert(TokenCondition)
+            .values(
+                token_id=token_id, 
+                condition_id=condition_id, 
+                market_id=market_id, 
+                question=question
+            )
+            .on_conflict_do_update(
+                index_elements=[TokenCondition.token_id],
+                set_={
+                    "condition_id": condition_id,
+                    "market_id": market_id,
+                    "question": question
+                }
+            )
         )
-        .on_conflict_do_update(
-            index_elements=[TokenCondition.token_id],
-            set_={
-                "condition_id": condition_id,
-                "market_id": market_id,
-                "question": question
-            }
-        )
-    )
-    await session.commit()
+        await session.commit()
+    except Exception as e:
+        if _is_missing_token_conditions_error(e):
+            global _HAS_TOKEN_CONDITIONS_TABLE
+            _HAS_TOKEN_CONDITIONS_TABLE = False
+            return
+        raise
 
 
 
