@@ -61,7 +61,7 @@ async def status(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
       await session.execute(
         select(Subscription)
         .where(Subscription.telegram_id == telegram_id)
-        .where(Subscription.status == "active")
+        .where(Subscription.status.in_(["active", "trialing"]))
         .where(Subscription.current_period_end > now)
         .order_by(Subscription.current_period_end.desc())
         .limit(1)
@@ -134,7 +134,7 @@ async def send_alert_to_subscribers(payload: dict) -> int:
       telegram_ids = (
         await session.execute(
           select(Subscription.telegram_id)
-          .where(Subscription.status == "active")
+          .where(Subscription.status.in_(["active", "trialing"]))
           .where(Subscription.current_period_end > now)
         )
       ).scalars().all()
