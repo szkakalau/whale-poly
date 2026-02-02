@@ -34,6 +34,11 @@ async def health():
   return {"status": "ok"}
 
 
+@app.get("/")
+async def root():
+  return {"status": "ok"}
+
+
 @app.post("/ingest/trade")
 async def ingest_trade(payload: TradeIn, session: AsyncSession = Depends(get_session)):
   ts = payload.timestamp or datetime.now(timezone.utc)
@@ -70,4 +75,3 @@ async def ingest_trade(payload: TradeIn, session: AsyncSession = Depends(get_ses
     await redis.aclose()
 
   return {"ok": True}
-
