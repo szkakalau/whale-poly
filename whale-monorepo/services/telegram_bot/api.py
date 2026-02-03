@@ -219,6 +219,27 @@ def _hash_admin(value: str) -> str:
   return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
 
 
+def _is_health_market(payload: dict) -> bool:
+  title = str(payload.get("market_title") or payload.get("market_question") or "").lower()
+  m_id = str(payload.get("market_id") or "").lower()
+  return "health" in title or "health" in m_id
+
+
+async def _send_via_bot(token: str, chat_id: str, text: str):
+  url = f"https://api.telegram.org/bot{token}/sendMessage"
+  payload = {
+    "chat_id": chat_id,
+    "text": text,
+    "disable_web_page_preview": True,
+  }
+  async with httpx.AsyncClient() as client:
+    try:
+      resp = await client.post(url, json=payload, timeout=10)
+      resp.raise_for_status()
+    except Exception:
+      logger.exception("send_via_bot_failed token_prefix=%s chat_id=%s", token[:10], chat_id)
+
+
 async def _log_subscriber_stats_forever(stop: asyncio.Event) -> None:
   while not stop.is_set():
     try:
@@ -482,6 +503,10 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     if settings.telegram_alert_chat_id:
       telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
 
+    is_health = _is_health_market(payload)
+    if is_health and settings.telegram_health_chat_id:
+      telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_health_chat_id]))
+
     if not telegram_ids:
       logger.info("alert_no_recipients whale_trade_id=%s", whale_trade_id)
       continue
@@ -506,11 +531,15 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           await session.commit()
 
         if rowcount == 1:
-          await application.bot.send_message(
-            chat_id=int(tid),
-            text=format_alert(payload, tid),
-            disable_web_page_preview=True,
-          )
+          # Route to specific bot if it's the health channel
+          if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+            await _send_via_bot(settings.telegram_health_bot_token, tid, format_alert(payload, tid))
+          else:
+            await application.bot.send_message(
+              chat_id=int(tid),
+              text=format_alert(payload, tid),
+              disable_web_page_preview=True,
+            )
       except Exception:
         logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 
