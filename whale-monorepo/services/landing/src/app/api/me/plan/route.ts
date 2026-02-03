@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   const now = new Date();
-  const sub = await prisma.subscription.findFirst({
+  const sub = await (prisma as any).subscription.findFirst({
     where: {
       telegramId: user.telegramId,
       status: { in: ['active', 'trialing'] },

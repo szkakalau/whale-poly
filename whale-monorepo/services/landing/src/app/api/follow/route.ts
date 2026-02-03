@@ -12,7 +12,7 @@ const PLAN_LIMITS = {
 async function getUserPlan(telegramId: string | null) {
   if (!telegramId) return 'free';
   const now = new Date();
-  const sub = await prisma.subscription.findFirst({
+  const sub = await (prisma as any).subscription.findFirst({
     where: {
       telegramId,
       status: { in: ['active', 'trialing'] },
