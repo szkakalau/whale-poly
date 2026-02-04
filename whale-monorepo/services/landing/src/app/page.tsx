@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 
 const CTA_URL = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || "/subscribe";
 const FREE_CTA_URL = process.env.NEXT_PUBLIC_FREE_SUBSCRIPTION_URL || "/subscribe";
-const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/SightWhaleBot";
+const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 
 export default function Home() {
   return (
@@ -109,7 +109,7 @@ export default function Home() {
               <div className="space-y-5 relative z-10">
                 <h3 className="text-2xl font-bold text-white tracking-tight">Activation</h3>
                 <p className="text-gray-400 leading-relaxed text-lg font-light">
-                  Open <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@SightWhaleBot</a> and run <span className="font-mono text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">/start</span> to sync your secure profile.
+                  Open <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a> and run <span className="font-mono text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">/start</span> to sync your secure profile.
                 </p>
               </div>
             </div>
