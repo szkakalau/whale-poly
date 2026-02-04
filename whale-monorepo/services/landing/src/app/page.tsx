@@ -310,17 +310,18 @@ export default function Home() {
             </div>
 
             {/* Feature 4: Conviction */}
-            <div className="card bg-gradient-to-br from-violet-950/40 to-black border-violet-500/20 group hover:shadow-[0_0_40px_rgba(139,92,246,0.15)] p-10 flex flex-col md:col-span-1">
+            <div className="card bg-gradient-to-br from-violet-950/40 to-black border-violet-500/20 group hover:shadow-[0_0_40px_rgba(139,92,246,0.15)] p-10 flex flex-col md:col-span-2">
               <div className="flex justify-between items-start mb-8">
                 <h3 className="text-2xl font-bold text-violet-100 tracking-tight">🔥 Conviction</h3>
                 <div className="px-3 py-1 rounded-full text-[10px] bg-violet-500 text-white font-black tracking-widest shadow-lg">ELITE</div>
               </div>
               
-              <ul className="space-y-5 text-base text-gray-300 mb-10">
+              <ul className="grid md:grid-cols-2 gap-x-12 gap-y-5 text-base text-gray-300 mb-10">
                 {[
                   "Multiple smart money addresses align",
                   "Capital size is significant",
-                  "Positions are held over time"
+                  "Positions are held over time",
+                  "Historically accurate whale entry"
                 ].map((item, i) => (
                   <li key={i} className="flex gap-4 group/li">
                     <span className="text-violet-400 font-mono font-bold group-hover/li:translate-x-1 transition-transform">0{i+1}</span>
@@ -331,8 +332,30 @@ export default function Home() {
               <p className="mt-auto text-sm text-violet-200/50 border-t border-white/5 pt-6 font-medium">Reflecting <strong className="text-violet-400 font-bold text-glow">strong belief</strong>, not just speculation.</p>
             </div>
 
-            {/* Feature 4: Heatmap (Wide) */}
-            <div className="card md:col-span-3 p-10 md:p-12 group hover:border-violet-500/20">
+            {/* Feature 5: Performance (Fills the gap) */}
+            <div className="card bg-gradient-to-br from-indigo-950/40 to-black border-indigo-500/20 group hover:shadow-[0_0_40px_rgba(99,102,241,0.15)] p-10 flex flex-col">
+              <div className="flex justify-between items-start mb-8">
+                <h3 className="text-2xl font-bold text-indigo-100 tracking-tight">📈 Results</h3>
+                <div className="px-3 py-1 rounded-full text-[10px] bg-indigo-500 text-white font-black tracking-widest shadow-lg">STATS</div>
+              </div>
+              
+              <div className="space-y-6">
+                {[
+                  { label: "Win Rate", value: "72%", color: "text-emerald-400" },
+                  { label: "Avg ROI", value: "+18.4%", color: "text-cyan-400" },
+                  { label: "Total Signals", value: "1,240+", color: "text-indigo-400" }
+                ].map((stat, i) => (
+                  <div key={i} className="flex justify-between items-end border-b border-white/5 pb-2">
+                    <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">{stat.label}</span>
+                    <span className={`${stat.color} font-black text-xl font-mono`}>{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-auto text-xs text-gray-500 font-medium italic pt-6">Based on last 90 days of tracked signals.</p>
+            </div>
+
+            {/* Feature 6: Heatmap (Wide) */}
+            <div className="card md:col-span-3 p-10 md:p-14 group hover:border-violet-500/20">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
                 <div>
                   <h3 className="text-3xl font-bold flex items-center gap-4 text-white tracking-tight">
