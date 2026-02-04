@@ -18,10 +18,10 @@ export default function Home() {
       {/* Navigation */}
       <Header />
 
-      <main className="relative pt-32 pb-20">
+      <main className="relative pt-20 pb-12">
 
         {/* HERO SECTION */}
-        <section className="relative px-6 max-w-7xl mx-auto text-center mb-48 pt-10">
+        <section className="relative px-6 max-w-7xl mx-auto text-center mb-24 pt-4">
           <div className="animate-fade-in opacity-0" style={{ animationDelay: '0.1s' }}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-10 border border-violet-500/30 text-violet-200 text-sm hover:border-violet-400/50 transition-all cursor-default hover:scale-105">
               <span className="relative flex h-2 w-2">
@@ -78,8 +78,8 @@ export default function Home() {
         </section>
 
         {/* ONBOARDING - 3 STEPS */}
-        <section className="max-w-5xl mx-auto px-6 mb-40">
-          <div className="text-center mb-16">
+        <section className="max-w-5xl mx-auto px-6 mb-24">
+          <div className="text-center mb-10">
             <h2 className="text-sm font-bold text-violet-400 tracking-[0.2em] uppercase mb-4">
               Getting started
             </h2>
@@ -134,12 +134,12 @@ export default function Home() {
         </section>
 
         {/* SOCIAL PROOF */}
-        <section className="border-y border-white/5 bg-white/[0.01] backdrop-blur-sm py-24 mb-40">
+        <section className="border-y border-white/5 bg-white/[0.01] backdrop-blur-sm py-12 mb-24">
           <div className="max-w-6xl mx-auto px-6">
-            <blockquote className="text-4xl md:text-5xl font-bold text-center text-white tracking-tight mb-20 leading-tight">
+            <blockquote className="text-3xl md:text-4xl font-bold text-center text-white tracking-tight mb-10 leading-tight">
               “We don’t predict outcomes. <br className="hidden md:block" />We <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">track capital</span>.”
             </blockquote>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 { icon: "⚡️", title: "Real Data", desc: "Built on real on-chain & orderbook data" },
                 { icon: "🛡", title: "No Hype", desc: "No anonymous tips, no hype calls" },
@@ -156,42 +156,42 @@ export default function Home() {
         </section>
 
         {/* THE PROBLEM & SOLUTION GRID */}
-        <section className="max-w-7xl mx-auto px-6 mb-48">
-          <div className="grid lg:grid-cols-2 gap-24 items-center">
-            <div className="space-y-12">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+        <section className="max-w-7xl mx-auto px-6 mb-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-10">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
                 Prediction markets are hard because of <em className="text-red-400 not-italic bg-red-500/10 px-3 py-1 rounded-lg border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]">noise</em>.
               </h2>
               
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {[
                   "Headlines move faster than facts",
                   "Retail sentiment is loud and misleading",
                   "By the time a narrative is obvious, price already moved"
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-6 group">
-                    <div className="mt-2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] group-hover:scale-125 transition-transform"></div>
-                    <span className="text-xl text-gray-400 group-hover:text-gray-200 transition-colors">{item}</span>
+                  <div key={i} className="flex items-start gap-4 group">
+                    <div className="mt-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] group-hover:scale-125 transition-transform"></div>
+                    <span className="text-lg text-gray-400 group-hover:text-gray-200 transition-colors">{item}</span>
                   </div>
                 ))}
               </div>
               
-              <div className="glass p-8 rounded-2xl border-l-4 border-l-violet-500 shadow-xl">
-                <p className="text-2xl text-gray-200 font-light leading-relaxed">
+              <div className="glass p-6 rounded-2xl border-l-4 border-l-violet-500 shadow-xl">
+                <p className="text-xl text-gray-200 font-light leading-relaxed">
                   Meanwhile, <strong className="text-violet-300 font-bold tracking-tight">smart money</strong> acts quietly — early, consistently, and with size.
                 </p>
               </div>
             </div>
 
-            <div className="glass rounded-[3rem] p-10 md:p-16 relative overflow-hidden group border-white/10 hover:border-cyan-500/30 transition-all duration-700 shadow-2xl">
+            <div className="glass rounded-[3rem] p-8 md:p-12 relative overflow-hidden group border-white/10 hover:border-cyan-500/30 transition-all duration-700 shadow-2xl">
               <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] group-hover:bg-cyan-500/20 transition-all duration-700"></div>
               <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[100px] group-hover:bg-violet-500/20 transition-all duration-700"></div>
               
               <div className="relative z-10">
-                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-400 mb-4">The Solution</h2>
-                <h3 className="text-5xl md:text-6xl font-bold text-white mb-10 tracking-tight">We surface <span className="text-gradient-accent">Truth</span>.</h3>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-400 mb-4">The Solution</p>
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">We surface <span className="text-gradient-accent">Truth</span>.</h2>
                 
-                <p className="text-xl text-gray-400 mb-10 leading-relaxed">Polymarket Whale Intelligence monitors:</p>
+                <p className="text-lg text-gray-400 mb-8 leading-relaxed">Polymarket Whale Intelligence monitors:</p>
                 <ul className="grid gap-5 mb-12">
                   {[
                     "Large trades that move markets",
@@ -216,26 +216,26 @@ export default function Home() {
         </section>
 
         {/* FEATURES BENTO GRID */}
-        <section id="sample-signals" className="max-w-7xl mx-auto px-6 mb-64">
-          <div className="text-center mb-32">
+        <section id="sample-signals" className="max-w-7xl mx-auto px-6 mb-24">
+          <div className="text-center mb-12">
             <h2 className="section-title">Intelligence Platform</h2>
-            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">Everything you need to track the flow of funds in real-time.</p>
+            <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">Everything you need to track the flow of funds in real-time.</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12 auto-rows-[minmax(250px,auto)]">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-10 auto-rows-[minmax(250px,auto)]">
             
             {/* Feature 1: Alerts (Large Card) */}
-            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden group p-10 md:p-14 flex flex-col justify-between">
+            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden group p-8 md:p-12 flex flex-col justify-between">
               <div className="absolute -right-20 -top-20 w-[400px] h-[400px] bg-violet-600/20 rounded-full blur-[120px] group-hover:bg-violet-600/30 transition-all duration-700"></div>
               
               <div className="relative z-10">
-                <div className="flex items-center gap-6 mb-8">
+                <div className="flex items-center gap-6 mb-6">
                   <div className="p-4 bg-violet-500/20 rounded-2xl text-4xl shadow-inner group-hover:scale-110 transition-transform">🐋</div>
-                  <h3 className="text-4xl font-bold tracking-tight text-white">Whale Alerts</h3>
+                  <h3 className="text-3xl font-bold tracking-tight text-white">Whale Alerts</h3>
                 </div>
-                <p className="text-gray-400 text-xl mb-12 max-w-lg leading-relaxed font-light">Real-time notifications sent directly to your device when unusually large or aggressive trades hit the market.</p>
+                <p className="text-gray-400 text-lg mb-10 max-w-lg leading-relaxed font-light">Real-time notifications sent directly to your device when unusually large or aggressive trades hit the market.</p>
                 
-                <div className="bg-[#050505] border border-white/10 rounded-[2rem] p-10 font-mono text-base leading-relaxed relative overflow-hidden shadow-2xl transform transition-all group-hover:scale-[1.02] group-hover:border-violet-500/30 duration-700">
+                <div className="bg-[#050505] border border-white/10 rounded-[2rem] p-8 font-mono text-base leading-relaxed relative overflow-hidden shadow-2xl transform transition-all group-hover:scale-[1.01] group-hover:border-violet-500/30 duration-700">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-violet-500 to-cyan-500"></div>
                   <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   
@@ -387,11 +387,11 @@ export default function Home() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section className="max-w-7xl mx-auto px-6 mb-64">
-          <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-center mb-32 text-white">How It Works</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 relative">
+        <section className="max-w-7xl mx-auto px-6 mb-24">
+          <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-center mb-12 text-white">How It Works</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
             {/* Connecting Line */}
-            <div className="hidden sm:block absolute top-12 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-violet-500/20 to-transparent"></div>
+            <div className="hidden sm:block absolute top-10 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-violet-500/20 to-transparent"></div>
             
             {[
               { title: "Ingest", desc: "Real-time trade & orderbook data" },
@@ -399,52 +399,52 @@ export default function Home() {
               { title: "Score", desc: "Historical accuracy, timing & impact" },
               { title: "Deliver", desc: "Signals via dashboard, Telegram & email" }
             ].map((step, i) => (
-              <div key={i} className="relative pt-4 text-center group">
-                <div className="w-24 h-24 mx-auto bg-[#030014] border border-violet-500/20 rounded-3xl flex items-center justify-center text-3xl font-black text-violet-400 relative z-10 mb-8 shadow-2xl group-hover:scale-110 group-hover:border-violet-500 group-hover:shadow-[0_0_50px_rgba(139,92,246,0.2)] transition-all duration-500 transform rotate-3 group-hover:rotate-0">
+              <div key={i} className="relative pt-2 text-center group">
+                <div className="w-20 h-20 mx-auto bg-[#030014] border border-violet-500/20 rounded-3xl flex items-center justify-center text-2xl font-black text-violet-400 relative z-10 mb-6 shadow-2xl group-hover:scale-110 group-hover:border-violet-500 group-hover:shadow-[0_0_50px_rgba(139,92,246,0.2)] transition-all duration-500 transform rotate-3 group-hover:rotate-0">
                   {i + 1}
                 </div>
-                <h4 className="font-bold text-2xl mb-4 text-white tracking-tight">{step.title}</h4>
-                <p className="text-gray-400 leading-relaxed px-4 font-light">{step.desc}</p>
+                <h4 className="font-bold text-xl mb-3 text-white tracking-tight">{step.title}</h4>
+                <p className="text-gray-400 leading-relaxed px-4 text-sm font-light">{step.desc}</p>
               </div>
             ))}
           </div>
-          <p className="text-center mt-20 text-gray-500 text-sm flex items-center justify-center gap-3 font-medium">
+          <p className="text-center mt-12 text-gray-500 text-xs flex items-center justify-center gap-3 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
             Every signal is logged. Every score is auditable.
           </p>
         </section>
 
         {/* COMPARISON */}
-        <section className="max-w-6xl mx-auto px-6 mb-64">
-          <div className="glass rounded-[3rem] overflow-hidden p-12 md:p-24 relative">
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="glass rounded-[3rem] overflow-hidden p-10 md:p-14 relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-violet-500/30 to-transparent"></div>
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-center mb-24 text-white">Why We’re Different</h2>
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-center mb-12 text-white">Why We’re Different</h2>
             
-            <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
-              <div className="space-y-10">
-                <h3 className="text-gray-600 font-black mb-10 uppercase tracking-[0.3em] text-xs">Others</h3>
-                <ul className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-10 md:gap-14 items-center">
+              <div className="space-y-8">
+                <p className="text-gray-600 font-black mb-8 uppercase tracking-[0.3em] text-[10px]">Others</p>
+                <ul className="space-y-6">
                   {["Predict outcomes", "Anonymous tips", "Black-box calls", "Cherry-picked wins"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-6 text-gray-600 decoration-gray-800 line-through text-lg font-medium">
-                      <span className="w-8 h-8 rounded-xl bg-gray-900 flex items-center justify-center text-gray-700 text-xs border border-white/5">✕</span>
+                    <li key={i} className="flex items-center gap-4 text-gray-600 decoration-gray-800 line-through text-lg font-medium">
+                      <span className="w-6 h-6 rounded-lg bg-gray-900 flex items-center justify-center text-gray-700 text-[10px] border border-white/5">✕</span>
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
               
-              <div className="relative p-10 bg-white/[0.02] rounded-[2rem] border border-white/10 shadow-2xl">
+              <div className="relative p-8 bg-white/[0.02] rounded-[2rem] border border-white/10 shadow-2xl">
                 <div className="absolute inset-0 bg-violet-500/5 rounded-[2rem] blur-2xl"></div>
-                <h3 className="text-white font-black mb-10 uppercase tracking-[0.3em] text-xs relative">Whale Intelligence</h3>
-                <ul className="space-y-8 relative">
+                <p className="text-white font-black mb-8 uppercase tracking-[0.3em] text-[10px] relative">Whale Intelligence</p>
+                <ul className="space-y-6 relative">
                   {[
                     "Track behavior", 
                     "On-chain evidence", 
                     "Explainable signals", 
                     "Full history & stats"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-6 text-white text-xl font-bold tracking-tight">
-                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center text-white text-xs shadow-xl group-hover:scale-110 transition-transform">✓</span>
+                    <li key={i} className="flex items-center gap-4 text-white text-xl font-bold tracking-tight">
+                      <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center text-white text-[10px] shadow-xl">✓</span>
                       {item}
                     </li>
                   ))}
@@ -455,10 +455,10 @@ export default function Home() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-40">
-          <div className="text-center mb-24">
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-6">Simple Pricing</h2>
-            <p className="text-xl text-gray-400 font-light">Start tracking smart money today.</p>
+        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-24">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-4">Simple Pricing</h2>
+            <p className="text-lg text-gray-400 font-light">Start tracking smart money today.</p>
           </div>
           
           <div className="grid lg:grid-cols-3 gap-10 max-w-6xl mx-auto items-stretch">
