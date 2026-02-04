@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 
 const CTA_URL = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || "/subscribe";
 const FREE_CTA_URL = process.env.NEXT_PUBLIC_FREE_SUBSCRIPTION_URL || "/subscribe";
+const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/SightWhaleBot";
 
 export default function Home() {
   return (
@@ -52,8 +53,8 @@ export default function Home() {
           </p>
 
           <div className="animate-fade-in opacity-0 mt-16 flex flex-col sm:flex-row justify-center items-center gap-8" style={{ animationDelay: '0.4s' }}>
-            <a href={CTA_URL} className="btn-primary text-xl px-12 py-6 group shadow-[0_20px_60px_rgba(139,92,246,0.3)] hover:shadow-[0_20px_80px_rgba(139,92,246,0.5)] transform hover:-translate-y-1 transition-all duration-300">
-              Get Whale Alerts 
+            <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="btn-primary text-xl px-12 py-6 group shadow-[0_20px_60px_rgba(139,92,246,0.3)] hover:shadow-[0_20px_80px_rgba(139,92,246,0.5)] transform hover:-translate-y-1 transition-all duration-300">
+              Launch Telegram Bot
               <span className="ml-3 group-hover:translate-x-1.5 transition-transform inline-block font-bold">→</span>
             </a>
             <Link href="#sample-signals" className="text-gray-300 hover:text-white transition-colors text-lg font-medium flex items-center gap-2 group">
@@ -108,7 +109,7 @@ export default function Home() {
               <div className="space-y-5 relative z-10">
                 <h3 className="text-2xl font-bold text-white tracking-tight">Activation</h3>
                 <p className="text-gray-400 leading-relaxed text-lg font-light">
-                  Initialize the Telegram engine by running <span className="font-mono text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">/start</span> to sync your secure profile.
+                  Open <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@SightWhaleBot</a> and run <span className="font-mono text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">/start</span> to sync your secure profile.
                 </p>
               </div>
             </div>
