@@ -33,15 +33,15 @@ export default function Home() {
           </div>
 
           <h1 className="animate-fade-in opacity-0 text-6xl md:text-8xl font-bold tracking-tight mb-8 leading-[1.1] md:leading-[1.1]" style={{ animationDelay: '0.2s' }}>
-            Follow the <span className="text-gradient relative inline-block">
-              Smart Money
+            Catch the <span className="text-gradient relative inline-block">
+              Whales
               <span className="absolute -inset-1 blur-2xl bg-violet-500/20 -z-10"></span>
-            </span>.<br />
-            Not the <span className="text-transparent bg-clip-text bg-gradient-to-b from-gray-500 to-gray-700 decoration-gray-700 line-through decoration-4 decoration-wavy">Noise</span>.
+            </span><br />
+            Before the <span className="text-transparent bg-clip-text bg-gradient-to-b from-gray-500 to-gray-700 decoration-gray-700 line-through decoration-4 decoration-wavy">Crowd</span>.
           </h1>
           
           <p className="animate-fade-in opacity-0 mt-8 max-w-2xl mx-auto text-xl md:text-2xl text-gray-400 leading-relaxed font-light" style={{ animationDelay: '0.3s' }}>
-            Real-time intelligence on whale activity in Polymarket. We track what large, historically profitable players are <em className="text-violet-300 not-italic font-medium">actually betting</em> — so you don’t have to guess.
+            Real-time intelligence on large-scale capital moves. We track historically profitable players on Polymarket — so you can act with <em className="text-cyan-400 not-italic font-medium">conviction</em>.
           </p>
 
           <div className="animate-fade-in opacity-0 mt-12 flex flex-col sm:flex-row justify-center gap-4" style={{ animationDelay: '0.4s' }}>
@@ -288,7 +288,29 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Feature 3: Conviction */}
+            {/* Feature 3: Health Market (New) */}
+            <div className="card bg-gradient-to-br from-emerald-900/40 to-black border-emerald-500/30 group hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-bold text-emerald-200">🏥 Health Alpha</h3>
+                <div className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-white font-bold tracking-wider">NEW</div>
+              </div>
+              
+              <ul className="space-y-4 text-sm text-gray-300 mb-6">
+                {[
+                  "Specialized Health bot routing",
+                  "Track medical outcome markets",
+                  "FDA & clinical trial whale moves"
+                ].map((item, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="text-emerald-400 font-mono">0{i+1}</span>
+                    <span className="text-gray-300">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-auto text-xs text-emerald-200/70 border-t border-white/5 pt-4">Niche intelligence for <strong>high-impact</strong> sectors.</p>
+            </div>
+
+            {/* Feature 4: Conviction */}
             <div className="card bg-gradient-to-br from-violet-900/40 to-black border-violet-500/30 group hover:shadow-[0_0_30px_rgba(139,92,246,0.2)]">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-violet-200">🔥 Conviction</h3>
@@ -297,9 +319,9 @@ export default function Home() {
               
               <ul className="space-y-4 text-sm text-gray-300 mb-6">
                 {[
-                  "Multiple smart money addresses align",
+                  "Multiple smart money alignment",
                   "Capital size is significant",
-                  "Positions are held over time"
+                  "Positions held over time"
                 ].map((item, i) => (
                   <li key={i} className="flex gap-3">
                     <span className="text-violet-400 font-mono">0{i+1}</span>
@@ -424,9 +446,10 @@ export default function Home() {
               <div className="text-4xl font-bold mt-4 mb-6">$0<span className="text-sm font-normal text-gray-500">/mo</span></div>
               <p className="text-sm text-gray-500 mb-6">Basic access for casual observers.</p>
               <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Delayed whale alerts</li>
-                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Market heatmap (limited)</li>
-                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Sample signal history</li>
+                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Global whale alerts (delayed)</li>
+                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> 0 Smart Collections</li>
+                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> 0 Whale Follows</li>
+                <li className="flex items-center gap-3 text-sm text-gray-400"><span className="text-gray-600">○</span> Basic Market Heatmap</li>
               </ul>
               <a href={FREE_CTA_URL} className="btn-secondary w-full">Get started free</a>
             </div>
@@ -445,9 +468,10 @@ export default function Home() {
               <p className="text-sm text-gray-400 mb-6">For serious traders who want an edge.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> Real-time whale alerts</li>
-                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> Address profiles</li>
-                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> Full market heatmap</li>
-                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> 30-day history</li>
+                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> 5 Smart Collections</li>
+                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> 100 Whale Follows</li>
+                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> Full Market Heatmap</li>
+                <li className="flex items-center gap-3 text-sm text-white"><span className="text-cyan-400">✓</span> 30-day Signal History</li>
               </ul>
               <a href={CTA_URL} className="btn-primary w-full shadow-lg text-lg py-4">Get Pro Access</a>
             </div>
@@ -459,9 +483,10 @@ export default function Home() {
               <p className="text-sm text-gray-500 mb-6">Full institutional-grade access.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Everything in Pro</li>
-                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Conviction signals</li>
-                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Unlimited history</li>
-                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Priority support</li>
+                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> 20 Smart Collections</li>
+                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> 1,000 Whale Follows</li>
+                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Conviction Alpha Signals</li>
+                <li className="flex items-center gap-3 text-sm text-gray-300"><span className="text-violet-400">★</span> Unlimited History</li>
               </ul>
               <a href={CTA_URL} className="btn-secondary w-full border-violet-500/30 hover:bg-violet-500/10">Get Elite</a>
             </div>
