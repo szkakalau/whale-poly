@@ -491,8 +491,10 @@ export default function Home() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-32">
-          <div className="text-center mb-20">
+        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-32 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-violet-600/5 blur-[120px] rounded-full pointer-events-none"></div>
+          
+          <div className="text-center mb-20 relative z-10">
             <h2 className="text-xs font-bold text-violet-400 tracking-[0.4em] uppercase mb-6">
               Pricing
             </h2>
@@ -508,7 +510,7 @@ export default function Home() {
             {/* Free */}
             <div className="glass rounded-[3rem] h-full flex flex-col border-white/5 hover:border-white/10 p-12 group transition-all duration-500 bg-white/[0.01]">
               <h3 className="text-xl font-bold text-gray-500 tracking-tight uppercase mb-8">Free</h3>
-              <div className="text-6xl font-black mb-8 text-white tracking-tighter">$0<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
+              <div className="text-6xl font-black mb-8 text-white tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">$0<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
               <p className="text-gray-500 mb-12 text-lg font-light leading-relaxed">Basic access for casual observers.</p>
               <ul className="space-y-6 mb-12 flex-1">
                 {[
@@ -530,7 +532,7 @@ export default function Home() {
             <div className="glass rounded-[3.5rem] h-full flex flex-col border-violet-500/30 p-12 group relative overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.15)] bg-gradient-to-b from-violet-500/[0.08] to-transparent transform lg:scale-105 z-10 transition-all duration-700">
               <div className="absolute top-0 right-0 px-8 py-3 bg-violet-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-bl-[2rem] shadow-2xl">Most Popular</div>
               <h3 className="text-xl font-bold text-violet-400 tracking-tight uppercase mb-8">Professional</h3>
-              <div className="text-7xl font-black mb-8 text-white tracking-tighter">$99<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
+              <div className="text-7xl font-black mb-8 text-white tracking-tighter drop-shadow-[0_0_30px_rgba(139,92,246,0.5)]">$29<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
               <p className="text-gray-200 mb-12 text-lg font-light leading-relaxed">The gold standard for active traders.</p>
               <ul className="space-y-6 mb-12 flex-1">
                 {[
@@ -553,7 +555,7 @@ export default function Home() {
             {/* Institutional */}
             <div className="glass rounded-[3rem] h-full flex flex-col border-white/5 hover:border-white/10 p-12 group transition-all duration-500 bg-white/[0.01]">
               <h3 className="text-xl font-bold text-gray-500 tracking-tight uppercase mb-8">Institutional</h3>
-              <div className="text-6xl font-black mb-8 text-white tracking-tighter">$499<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
+              <div className="text-6xl font-black mb-8 text-white tracking-tighter drop-shadow-[0_0_25px_rgba(34,211,238,0.3)]">$129<span className="text-xl font-normal text-gray-600 tracking-normal ml-2">/mo</span></div>
               <p className="text-gray-500 mb-12 text-lg font-light leading-relaxed">For funds and trading desks.</p>
               <ul className="space-y-6 mb-12 flex-1">
                 {[
