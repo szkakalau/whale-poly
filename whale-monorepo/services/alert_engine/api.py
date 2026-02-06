@@ -197,7 +197,12 @@ async def force_alert(
     async with httpx.AsyncClient() as client:
       resp = await client.post(
         url,
-        json={"chat_id": settings.telegram_alert_chat_id, "text": text, "disable_web_page_preview": True},
+        json={
+          "chat_id": settings.telegram_alert_chat_id,
+          "text": text,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": True,
+        },
         timeout=10,
       )
     if 200 <= resp.status_code < 300:

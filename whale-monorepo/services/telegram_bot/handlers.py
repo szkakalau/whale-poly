@@ -151,7 +151,7 @@ async def send_alert_to_subscribers(payload: dict) -> int:
       sent = 0
       for tid in telegram_ids:
         text = format_alert(payload, tid)
-        await app.bot.send_message(chat_id=int(tid), text=text, disable_web_page_preview=True)
+        await app.bot.send_message(chat_id=int(tid), text=text, parse_mode="HTML", disable_web_page_preview=True)
         sent += 1
       return sent
     finally:

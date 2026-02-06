@@ -230,6 +230,7 @@ async def _send_via_bot(token: str, chat_id: str, text: str):
   payload = {
     "chat_id": chat_id,
     "text": text,
+    "parse_mode": "HTML",
     "disable_web_page_preview": True,
   }
   async with httpx.AsyncClient() as client:
@@ -538,6 +539,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             await application.bot.send_message(
               chat_id=int(tid),
               text=format_alert(payload, tid),
+              parse_mode="HTML",
               disable_web_page_preview=True,
             )
       except Exception:
@@ -605,6 +607,7 @@ async def test_alert(message: str = Query("Test alert from SightWhale")):
   payload = {
     "chat_id": settings.telegram_alert_chat_id,
     "text": message,
+    "parse_mode": "HTML",
     "disable_web_page_preview": True,
   }
   async with httpx.AsyncClient() as client:
