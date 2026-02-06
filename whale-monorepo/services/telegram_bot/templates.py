@@ -10,13 +10,18 @@ def user_hash(telegram_id: str) -> str:
 
 def format_alert(payload: dict, telegram_id: str) -> str:
   market_question = payload.get("market_question") or ""
+  market_title = payload.get("market_title") or ""
   market_id = payload.get("market_id") or payload.get("raw_token_id") or ""
-  if market_question:
-    market = market_question
+
+  if market_title:
+    market = f"<b>{market_title}</b>"
+  elif market_question:
+    market = f"<b>{market_question}</b>"
   elif market_id:
-    market = f"Market ({market_id})"
+    market = f"Market (<code>{market_id}</code>)"
   else:
     market = "Unknown"
+
   alert_type = payload.get("alert_type") or ""
   side = payload.get("side") or "UNKNOWN"
   size = payload.get("size") or payload.get("amount") or ""
@@ -24,12 +29,15 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   score = payload.get("score") or payload.get("whale_score") or ""
   wallet_name = payload.get("wallet_name") or ""
   wallet_address = payload.get("wallet") or payload.get("wallet_address") or ""
+
   if wallet_name:
-    wallet = wallet_name
+    wallet = f"<b>{wallet_name}</b>"
   else:
-    wallet = wallet_address
-    if isinstance(wallet, str) and wallet.startswith("0x") and len(wallet) > 10:
-      wallet = wallet[:6] + "..." + wallet[-4:]
+    wallet = str(wallet_address)
+    if wallet.startswith("0x") and len(wallet) > 10:
+      wallet = f"<code>{wallet[:6]}...{wallet[-4:]}</code>"
+    else:
+      wallet = f"<code>{wallet}</code>"
 
   def _fmt_usd(x) -> str:
     try:
@@ -55,16 +63,22 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     except Exception:
       return str(x)
 
-  type_line = f"Type:\n{alert_type}\n\n" if alert_type else ""
+  # Emoji and formatting mapping
+  side_emoji = "🟢" if side.upper() == "BUY" else "🔴" if side.upper() == "SELL" else "⚪️"
+  
+  type_label = "Entry" if alert_type == "whale_entry" else "Exit" if alert_type == "whale_exit" else alert_type
+  type_line = f"🏷 <b>Type:</b> {type_label}\n" if alert_type else ""
+
   wm = user_hash(telegram_id)
+  
   return (
-    "🐋 Whale Trade Detected\n\n"
-    f"Market:\n{market}\n\n"
+    "🐋 <b>Whale Trade Detected</b>\n\n"
+    f"📊 <b>Market:</b> {market}\n"
     f"{type_line}"
-    f"Side:\n{side}\n\n"
-    f"Size:\n${_fmt_usd(size)}\n\n"
-    f"Price:\n{_fmt_price(price)}\n\n"
-    f"Whale Score:\n{_fmt_score(score)}\n\n"
-    f"Wallet:\n{wallet}\n\n"
+    f"{side_emoji} <b>Side:</b> {side}\n"
+    f"💰 <b>Size:</b> ${_fmt_usd(size)}\n"
+    f"💵 <b>Price:</b> {_fmt_price(price)}\n"
+    f"🎯 <b>Whale Score:</b> {_fmt_score(score)}\n"
+    f"👛 <b>Wallet:</b> {wallet}\n\n"
     f"#{wm}"
   )

@@ -113,6 +113,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   if created:
     await _touch_market(session, raw_token_id, now)
     market_question = await get_market_question(session, raw_token_id)
+    market_title = market_question
     if not market_question:
       title = await resolve_market_title(session, raw_token_id)
       if title:
@@ -122,8 +123,10 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
           .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
         )
         market_question = title
+        market_title = title
       else:
         market_question = f"Market ({raw_token_id})"
+        market_title = None
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
@@ -135,6 +138,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "alert_type": a_type,
       "action_type": action_type,
       "market_question": market_question,
+      "market_title": market_title,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),
