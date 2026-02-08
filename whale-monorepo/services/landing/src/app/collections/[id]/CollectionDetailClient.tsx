@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import UpgradeModal from '@/components/UpgradeModal';
+
 type WhaleRow = {
   wallet: string;
 };
@@ -28,6 +30,9 @@ export default function CollectionDetailClient({
   const [newWallet, setNewWallet] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ title: '', description: '', feature: '' });
 
   function mapCollectionWhaleError(detail?: string): string {
     const code = String(detail || '').toLowerCase();
@@ -90,7 +95,29 @@ export default function CollectionDetailClient({
       if (!res.ok) {
         setWhales((prev) => prev.filter((w) => w.wallet !== normalized));
         const data = (await res.json().catch(() => ({}))) as { detail?: string };
-        setError(mapCollectionWhaleError(data.detail));
+        const detail = data.detail || '';
+
+        if (detail === 'plan_restricted') {
+          setUpgradeInfo({
+            title: 'Upgrade to Add Whales',
+            description: 'Free users cannot add whales to collections. Upgrade to Pro to organize your favorite whales.',
+            feature: 'Collections'
+          });
+          setShowUpgrade(true);
+          return;
+        }
+
+        if (detail === 'collection_limit_reached') {
+          setUpgradeInfo({
+            title: 'Collection Limit Reached',
+            description: 'You can add up to 10 whales per collection. Upgrade to Elite for unlimited organizational power.',
+            feature: 'Whale Collections'
+          });
+          setShowUpgrade(true);
+          return;
+        }
+
+        setError(mapCollectionWhaleError(detail));
       }
     });
   }
@@ -219,6 +246,14 @@ export default function CollectionDetailClient({
           </div>
         )}
       </div>
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)}
+        title={upgradeInfo.title}
+        description={upgradeInfo.description}
+        feature={upgradeInfo.feature}
+      />
     </div>
   );
 }

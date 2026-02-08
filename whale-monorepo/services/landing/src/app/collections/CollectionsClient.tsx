@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import UpgradeModal from '@/components/UpgradeModal';
 
 export type CollectionItem = {
   id: string;
@@ -22,6 +23,8 @@ export default function CollectionsClient({ initialItems }: Props) {
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ title: '', description: '', feature: '' });
 
   function mapCollectionError(detail?: string): string {
     const code = String(detail || '').toLowerCase();
@@ -67,6 +70,30 @@ export default function CollectionsClient({ initialItems }: Props) {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { detail?: string; message?: string };
+        const detail = data.detail || '';
+
+        if (detail === 'plan_restricted') {
+          setUpgradeInfo({
+            title: 'Upgrade to Create',
+            description: 'Free users cannot create custom collections. Upgrade to Pro to organize your favorite whales.',
+            feature: 'Collections'
+          });
+          setShowUpgrade(true);
+          setItems((prev) => prev.filter((c) => c.id !== tempId));
+          return;
+        }
+
+        if (detail === 'collection_limit_reached') {
+          setUpgradeInfo({
+            title: 'Limit Reached',
+            description: 'You have reached the maximum number of collections for your plan. Upgrade to Elite for higher limits.',
+            feature: 'Collection Limit'
+          });
+          setShowUpgrade(true);
+          setItems((prev) => prev.filter((c) => c.id !== tempId));
+          return;
+        }
+
         if (data.message) {
           setError(data.message);
         } else {
@@ -167,20 +194,18 @@ export default function CollectionsClient({ initialItems }: Props) {
           {error && (
             <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3">
               <p className="text-xs text-red-200">{error}</p>
-              {error.includes('计划') && (
-                <div className="mt-2">
-                  <a 
-                    href="/subscribe" 
-                    className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
-                  >
-                    Upgrade Now &rarr;
-                  </a>
-                </div>
-              )}
             </div>
           )}
         </div>
       )}
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)}
+        title={upgradeInfo.title}
+        description={upgradeInfo.description}
+        feature={upgradeInfo.feature}
+      />
 
       {items.length === 0 ? (
         <div className="text-sm text-gray-400 space-y-3">

@@ -5,6 +5,8 @@ export type AuthUser = {
   id: string;
   email: string;
   telegramId: string | null;
+  plan: 'FREE' | 'PRO' | 'ELITE';
+  planExpireAt: Date | null;
 };
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -15,7 +17,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, telegramId: true },
+    select: { id: true, email: true, telegramId: true, plan: true, planExpireAt: true },
   });
   if (!user) {
     return null;

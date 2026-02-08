@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import WhaleFollowButton from '@/components/WhaleFollowButton';
+import FullAccessGating from '@/components/FullAccessGating';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { canAccessFeature } from '@/lib/plans';
 
 type WhaleStats = {
   total_volume: number;
@@ -132,6 +134,9 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   const { wallet } = await params;
   const data = await fetchWhaleProfile(wallet);
   const user = await getCurrentUser();
+  const canFollow = user ? canAccessFeature(user, 'whale_follow') : false;
+  const hasFullAccess = user ? canAccessFeature(user, 'whale_score_full') : false;
+
   let initialFollowed = false;
   if (user && data) {
     const existing = await prisma.whaleFollow.findFirst({
@@ -211,7 +216,11 @@ export default async function WhaleProfilePage({ params }: PageProps) {
               </div>
             </div>
 
-            <WhaleFollowButton wallet={data.wallet} initialFollowed={initialFollowed} />
+            <WhaleFollowButton 
+              wallet={data.wallet} 
+              initialFollowed={initialFollowed} 
+              canFollow={canFollow}
+            />
           </div>
         </section>
 
@@ -239,200 +248,202 @@ export default async function WhaleProfilePage({ params }: PageProps) {
           />
         </section>
 
-        <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">30D Performance</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-xl bg-black/40 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-                  30D PnL
+        <FullAccessGating hasFullAccess={hasFullAccess}>
+          <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">30D Performance</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="rounded-xl bg-black/40 border border-white/10 p-4">
+                  <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                    30D PnL
+                  </div>
+                  <div
+                    className={`text-2xl font-semibold ${
+                      data.performance_30d.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                    }`}
+                  >
+                    {formatUsd(data.performance_30d.pnl)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Realized over last 30 days</div>
                 </div>
-                <div
-                  className={`text-2xl font-semibold ${
-                    data.performance_30d.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'
-                  }`}
-                >
-                  {formatUsd(data.performance_30d.pnl)}
+                <div className="rounded-xl bg-black/40 border border-white/10 p-4">
+                  <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                    30D Win Rate
+                  </div>
+                  <div className="text-2xl font-semibold text-white">
+                    {formatPercent(data.performance_30d.win_rate)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Closed trades only</div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">Realized over last 30 days</div>
-              </div>
-              <div className="rounded-xl bg-black/40 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-                  30D Win Rate
+                <div className="rounded-xl bg-black/40 border border-white/10 p-4">
+                  <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                    30D Volume
+                  </div>
+                  <div className="text-2xl font-semibold text-white">
+                    {formatUsd(data.performance_30d.volume)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Tracked whale volume</div>
                 </div>
-                <div className="text-2xl font-semibold text-white">
-                  {formatPercent(data.performance_30d.win_rate)}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Closed trades only</div>
-              </div>
-              <div className="rounded-xl bg-black/40 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-                  30D Volume
-                </div>
-                <div className="text-2xl font-semibold text-white">
-                  {formatUsd(data.performance_30d.volume)}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Tracked whale volume</div>
               </div>
             </div>
-          </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-lg font-semibold text-white mb-3">Behavior Summary</h2>
-            <div className="space-y-3 text-sm text-gray-300">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-gray-400">
-                  Common Action
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold text-white mb-3">Behavior Summary</h2>
+              <div className="space-y-3 text-sm text-gray-300">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-400">
+                    Common Action
+                  </div>
+                  <div className="mt-1 text-white">{data.behavior.common_action}</div>
                 </div>
-                <div className="mt-1 text-white">{data.behavior.common_action}</div>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-gray-400">
-                  Avg Trade Size
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-400">
+                    Avg Trade Size
+                  </div>
+                  <div className="mt-1">{formatUsd(data.behavior.avg_trade_size)}</div>
                 </div>
-                <div className="mt-1">{formatUsd(data.behavior.avg_trade_size)}</div>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-gray-400">
-                  Side Bias
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-400">
+                    Side Bias
+                  </div>
+                  <div className="mt-1 text-white">{data.behavior.side_bias}</div>
                 </div>
-                <div className="mt-1 text-white">{data.behavior.side_bias}</div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Top Markets</h2>
-              <span className="text-xs text-gray-500">
-                {data.top_markets.length} markets
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-gray-300">
-                <thead className="text-xs uppercase tracking-wide text-gray-500 border-b border-white/10">
-                  <tr>
-                    <th className="py-2 pr-4 text-left">Market</th>
-                    <th className="py-2 px-4 text-right">Trades</th>
-                    <th className="py-2 px-4 text-right">Volume</th>
-                    <th className="py-2 pl-4 text-right">PnL</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {data.top_markets.map((m, idx) => (
-                    <tr key={`${m.market}-${idx}`} className="hover:bg-white/[0.03]">
-                      <td className="py-3 pr-4 align-top max-w-xs">
-                        <div className="line-clamp-2 text-gray-100 text-sm">
-                          {m.market}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-gray-400">
-                        {m.trades.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-gray-200">
-                        {formatUsd(m.volume)}
-                      </td>
-                      <td
-                        className={`py-3 pl-4 text-right font-mono text-xs ${
-                          m.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'
-                        }`}
-                      >
-                        {formatUsd(m.pnl)}
-                      </td>
-                    </tr>
-                  ))}
-                  {data.top_markets.length === 0 && (
+          <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Top Markets</h2>
+                <span className="text-xs text-gray-500">
+                  {data.top_markets.length} markets
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-gray-300">
+                  <thead className="text-xs uppercase tracking-wide text-gray-500 border-b border-white/10">
                     <tr>
-                      <td
-                        colSpan={4}
-                        className="py-6 text-center text-sm text-gray-500"
-                      >
-                        No markets yet for this whale.
-                      </td>
+                      <th className="py-2 pr-4 text-left">Market</th>
+                      <th className="py-2 px-4 text-right">Trades</th>
+                      <th className="py-2 px-4 text-right">Volume</th>
+                      <th className="py-2 pl-4 text-right">PnL</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Recent Trades</h2>
-              <span className="text-xs text-gray-500">
-                {data.recent_trades.length} trades
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-gray-300">
-                <thead className="text-xs uppercase tracking-wide text-gray-500 border-b border-white/10">
-                  <tr>
-                    <th className="py-2 pr-4 text-left">Time</th>
-                    <th className="py-2 px-4 text-left">Market</th>
-                    <th className="py-2 px-4 text-right">Action</th>
-                    <th className="py-2 px-4 text-right">Side</th>
-                    <th className="py-2 px-4 text-right">Size</th>
-                    <th className="py-2 pl-4 text-right">Score</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {data.recent_trades.map((t, idx) => (
-                    <tr key={`${t.time}-${idx}`} className="hover:bg-white/[0.03]">
-                      <td className="py-3 pr-4 align-top text-xs text-gray-400 whitespace-nowrap font-mono">
-                        {new Date(t.time).toLocaleString(undefined, {
-                          month: 'short',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false,
-                        })}
-                      </td>
-                      <td className="py-3 px-4 align-top max-w-xs">
-                        <div className="line-clamp-2 text-gray-100 text-sm">
-                          {t.market}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 align-top text-right text-xs">
-                        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] uppercase tracking-wide text-gray-200">
-                          {t.action}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 align-top text-right text-xs">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
-                            t.side.toLowerCase() === 'buy'
-                              ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
-                              : 'border-rose-500/60 bg-rose-500/10 text-rose-200'
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {data.top_markets.map((m, idx) => (
+                      <tr key={`${m.market}-${idx}`} className="hover:bg-white/[0.03]">
+                        <td className="py-3 pr-4 align-top max-w-xs">
+                          <div className="line-clamp-2 text-gray-100 text-sm">
+                            {m.market}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-xs text-gray-400">
+                          {m.trades.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-xs text-gray-200">
+                          {formatUsd(m.volume)}
+                        </td>
+                        <td
+                          className={`py-3 pl-4 text-right font-mono text-xs ${
+                            m.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'
                           }`}
                         >
-                          {t.side}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 align-top text-right font-mono text-xs text-gray-200">
-                        {formatUsd(t.size)}
-                      </td>
-                      <td className="py-3 pl-4 align-top text-right font-mono text-xs text-gray-300">
-                        {t.whale_score.toFixed(1)}
-                      </td>
-                    </tr>
-                  ))}
-                  {data.recent_trades.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="py-6 text-center text-sm text-gray-500"
-                      >
-                        No recent whale trades yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                          {formatUsd(m.pnl)}
+                        </td>
+                      </tr>
+                    ))}
+                    {data.top_markets.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="py-6 text-center text-sm text-gray-500"
+                        >
+                          No markets yet for this whale.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Recent Trades</h2>
+                <span className="text-xs text-gray-500">
+                  {data.recent_trades.length} trades
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-gray-300">
+                  <thead className="text-xs uppercase tracking-wide text-gray-500 border-b border-white/10">
+                    <tr>
+                      <th className="py-2 pr-4 text-left">Time</th>
+                      <th className="py-2 px-4 text-left">Market</th>
+                      <th className="py-2 px-4 text-right">Action</th>
+                      <th className="py-2 px-4 text-right">Side</th>
+                      <th className="py-2 px-4 text-right">Size</th>
+                      <th className="py-2 pl-4 text-right">Score</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {data.recent_trades.map((t, idx) => (
+                      <tr key={`${t.time}-${idx}`} className="hover:bg-white/[0.03]">
+                        <td className="py-3 pr-4 align-top text-xs text-gray-400 whitespace-nowrap font-mono">
+                          {new Date(t.time).toLocaleString(undefined, {
+                            month: 'short',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                          })}
+                        </td>
+                        <td className="py-3 px-4 align-top max-w-xs">
+                          <div className="line-clamp-2 text-gray-100 text-sm">
+                            {t.market}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 align-top text-right text-xs">
+                          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] uppercase tracking-wide text-gray-200">
+                            {t.action}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 align-top text-right text-xs">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                              t.side.toLowerCase() === 'buy'
+                                ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                                : 'border-rose-500/60 bg-rose-500/10 text-rose-200'
+                            }`}
+                          >
+                            {t.side}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 align-top text-right font-mono text-xs text-gray-200">
+                          {formatUsd(t.size)}
+                        </td>
+                        <td className="py-3 pl-4 align-top text-right font-mono text-xs text-gray-300">
+                          {t.whale_score.toFixed(1)}
+                        </td>
+                      </tr>
+                    ))}
+                    {data.recent_trades.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="py-6 text-center text-sm text-gray-500"
+                        >
+                          No recent whale trades yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </FullAccessGating>
       </main>
 
       <Footer />

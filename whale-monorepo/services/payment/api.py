@@ -75,7 +75,15 @@ async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan
     )
   )
   if user_id:
-    await session.execute(update(User).where(User.id == user_id).values(telegram_id=telegram_id))
+    await session.execute(
+      update(User)
+      .where(User.id == user_id)
+      .values(
+        telegram_id=telegram_id,
+        plan=plan.name.upper(),
+        plan_expire_at=current_period_end
+      )
+    )
   await session.execute(update(ActivationCode).where(ActivationCode.code == code).values(used=True))
   await session.commit()
 
@@ -86,12 +94,27 @@ async def _mark_expired_forever(stop: asyncio.Event) -> None:
   while not stop.is_set():
     now = datetime.now(timezone.utc)
     async with SessionLocal() as session:
-      await session.execute(
-        update(Subscription)
+      # Find expiring subscriptions
+      expiring = (await session.execute(
+        select(Subscription.telegram_id)
         .where(Subscription.status == "active")
         .where(Subscription.current_period_end < now)
-        .values(status="expired")
-      )
+      )).scalars().all()
+
+      if expiring:
+        # Update subscription status
+        await session.execute(
+          update(Subscription)
+          .where(Subscription.status == "active")
+          .where(Subscription.current_period_end < now)
+          .values(status="expired")
+        )
+        # Revert users to FREE plan
+        await session.execute(
+          update(User)
+          .where(User.telegram_id.in_(expiring))
+          .values(plan="FREE", plan_expire_at=None)
+        )
       await session.commit()
     try:
       await asyncio.wait_for(stop.wait(), timeout=3600)
@@ -363,14 +386,32 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
               )
             )
             if user_id:
-              await session.execute(update(User).where(User.id == user_id).values(telegram_id=telegram_id))
+              await session.execute(
+                update(User)
+                .where(User.id == user_id)
+                .values(
+                  telegram_id=telegram_id,
+                  plan=plan_from_meta.upper(),
+                  plan_expire_at=current_period_end
+                )
+              )
             await session.execute(update(ActivationCode).where(ActivationCode.code == activation_code).values(used=True))
 
     if event_type in ("customer.subscription.deleted", "customer.subscription.canceled"):
       obj = event["data"]["object"]
       sid = str(obj.get("id") or "")
       if sid:
-        await session.execute(update(Subscription).where(Subscription.stripe_subscription_id == sid).values(status="canceled"))
+        # Find the telegram_id for this subscription
+        sub = (await session.execute(select(Subscription).where(Subscription.stripe_subscription_id == sid))).scalars().first()
+        if sub:
+          # Update subscription status
+          await session.execute(update(Subscription).where(Subscription.stripe_subscription_id == sid).values(status="canceled"))
+          # Revert user to FREE plan
+          await session.execute(
+            update(User)
+            .where(User.telegram_id == sub.telegram_id)
+            .values(plan="FREE", plan_expire_at=None)
+          )
 
     await session.commit()
   return {"ok": True}

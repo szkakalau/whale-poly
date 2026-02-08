@@ -2,34 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
 import { validateFollowPayload } from './types';
-
-const PLAN_LIMITS = {
-  free: 0,
-  pro: 100,
-  elite: 1000,
-};
-
-async function getUserPlan(telegramId: string | null) {
-  if (!telegramId) return 'free';
-  const now = new Date();
-  const sub = await (prisma as any).subscription.findFirst({
-    where: {
-      telegramId,
-      status: { in: ['active', 'trialing'] },
-      currentPeriodEnd: { gt: now },
-    },
-    orderBy: {
-      currentPeriodEnd: 'desc',
-    },
-    select: {
-      plan: true,
-    },
-  });
-  const planName = (sub?.plan || 'free').toLowerCase();
-  if (planName.includes('elite') || planName.includes('institutional')) return 'elite';
-  if (planName.includes('pro')) return 'pro';
-  return 'free' as keyof typeof PLAN_LIMITS;
-}
+import { getLimitValue, canAccessFeature } from '@/lib/plans';
 
 export async function POST(req: Request) {
   let payload: unknown;
@@ -47,6 +20,16 @@ export async function POST(req: Request) {
   }
   const user = await requireUser();
 
+  if (!canAccessFeature(user, 'whale_follow')) {
+    return NextResponse.json(
+      { 
+        detail: 'plan_restricted',
+        message: 'Free 计划无法关注鲸鱼，请升级 Pro 或 Elite 计划。' 
+      },
+      { status: 403 }
+    );
+  }
+
   // Check if it's a new follow
   const existing = await prisma.whaleFollow.findUnique({
     where: {
@@ -59,22 +42,16 @@ export async function POST(req: Request) {
   });
 
   if (!existing) {
-    const plan = await getUserPlan(user.telegramId);
-    const limit = PLAN_LIMITS[plan] ?? 0;
+    const limit = getLimitValue(user, 'max_follow_whales');
     const count = await prisma.whaleFollow.count({
       where: { userId: user.id },
     });
 
-    if (count >= limit) {
-      const planBranded = plan === 'elite' ? 'Institutional' : plan.charAt(0).toUpperCase() + plan.slice(1);
-      const upgradeMsg = plan === 'free'
-        ? 'Free 计划无法关注鲸鱼，请升级 Pro 或 Institutional 计划。'
-        : `已达到 ${planBranded} 计划的关注上限 (${limit} 个)，请升级更高计划解锁更多。`;
-
+    if (limit !== 'unlimited' && count >= limit) {
       return NextResponse.json(
         { 
           detail: 'follow_limit_reached',
-          message: upgradeMsg 
+          message: `已达到计划的关注上限 (${limit} 个)，请升级更高计划解锁更多。` 
         },
         { status: 403 }
       );

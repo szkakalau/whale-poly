@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import UpgradeModal from '@/components/UpgradeModal';
 
 export type SmartCollectionItem = {
   id: string;
@@ -19,6 +20,8 @@ export default function SmartCollectionsClient({ initialItems, canManage }: Prop
   const [items, setItems] = useState<SmartCollectionItem[]>(initialItems);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ title: '', description: '', feature: '' });
 
   function mapSubscribeError(detail?: string): string {
     const code = String(detail || '').toLowerCase();
@@ -56,6 +59,36 @@ export default function SmartCollectionsClient({ initialItems, canManage }: Prop
       );
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { detail?: string; message?: string };
+        const detail = data.detail || '';
+
+        if (detail === 'plan_restricted') {
+          setUpgradeInfo({
+            title: 'Upgrade to Subscribe',
+            description: 'Free users cannot subscribe to Smart Collections. Upgrade to Pro to track curated groups of whales.',
+            feature: 'Smart Collections'
+          });
+          setShowUpgrade(true);
+          // Revert optimistic update
+          setItems((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, subscribed: current.subscribed } : c)),
+          );
+          return;
+        }
+
+        if (detail === 'subscription_limit_reached') {
+          setUpgradeInfo({
+            title: 'Limit Reached',
+            description: 'You have reached the maximum number of Smart Collection subscriptions for your plan. Upgrade to Elite for higher limits.',
+            feature: 'Smart Collection Limit'
+          });
+          setShowUpgrade(true);
+          // Revert optimistic update
+          setItems((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, subscribed: current.subscribed } : c)),
+          );
+          return;
+        }
+
         if (data.message) {
           setError(data.message);
         } else {
@@ -73,18 +106,16 @@ export default function SmartCollectionsClient({ initialItems, canManage }: Prop
       {error && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3">
           <p className="text-xs text-red-200">{error}</p>
-          {error.includes('计划') && (
-            <div className="mt-2">
-              <a 
-                href="/subscribe" 
-                className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
-              >
-                Upgrade Now &rarr;
-              </a>
-            </div>
-          )}
         </div>
       )}
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)}
+        title={upgradeInfo.title}
+        description={upgradeInfo.description}
+        feature={upgradeInfo.feature}
+      />
 
       {items.length === 0 ? (
         <div className="text-sm text-gray-400 space-y-3">

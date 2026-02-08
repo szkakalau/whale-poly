@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { canAccessFeature } from '@/lib/plans';
 import { type SmartCollectionDetail } from '../types';
 
 type Params = {
@@ -36,6 +37,11 @@ async function loadSmartCollection(id: string, userId: string) {
 
 export async function GET(_: Request, { params }: Params) {
   const user = await requireUser();
+
+  if (!canAccessFeature(user, 'smart_collection_access')) {
+    return NextResponse.json({ detail: 'plan_restricted' }, { status: 403 });
+  }
+
   const { id } = await params;
 
   const sc = await loadSmartCollection(id, user.id);

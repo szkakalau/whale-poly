@@ -7,13 +7,22 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id         String        @id @default(cuid())
-  email      String        @unique
-  telegramId String?       @map("telegram_id")
+enum Plan {
+  FREE
+  PRO
+  ELITE
+}
 
-  follows    WhaleFollow[]
-  collections Collection[]
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  telegramId   String?       @unique @map("telegram_id")
+  plan         Plan          @default(FREE)
+  planExpireAt DateTime?     @map("plan_expire_at")
+
+  follows      WhaleFollow[]
+  collections  Collection[]
+  subscriptions Subscription[]
   smartCollectionSubscriptions SmartCollectionSubscription[]
 
   @@map("users")
@@ -120,13 +129,17 @@ model SmartCollectionSubscription {
 }
 
 model Subscription {
-  id                   String   @id
-  telegramId           String   @map("telegram_id")
-  stripeCustomerId     String   @map("stripe_customer_id")
-  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
+  id                   String   @id @default(cuid())
+  userId               String   @map("user_id")
+  plan                 Plan
+  price                Float
   status               String
-  plan                 String   @default("free")
-  currentPeriodEnd     DateTime @map("current_period_end")
+  startedAt            DateTime @default(now()) @map("started_at")
+  expiresAt            DateTime @map("expires_at")
+  stripeCustomerId     String?  @map("stripe_customer_id")
+  stripeSubscriptionId String?  @unique @map("stripe_subscription_id")
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
 }

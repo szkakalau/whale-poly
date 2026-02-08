@@ -181,6 +181,8 @@ class User(Base):
     id = Column(String(64), primary_key=True)
     email = Column(String(256), nullable=False, unique=True, index=True)
     telegram_id = Column(String(64), nullable=True, index=True)
+    plan = Column(String(16), nullable=False, server_default="FREE", index=True)
+    plan_expire_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class WhaleFollow(Base):

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import UpgradeModal from '@/components/UpgradeModal';
 
 type WhaleRow = {
   wallet: string;
@@ -29,6 +30,8 @@ export default function SmartCollectionDetailClient({
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [pending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState({ title: '', description: '', feature: '' });
 
   function toggleSubscribe() {
     const next = !subscribed;
@@ -43,7 +46,29 @@ export default function SmartCollectionDetailClient({
       );
       if (!res.ok) {
         setSubscribed(!next);
-        const data = await res.json();
+        const data = (await res.json().catch(() => ({}))) as { detail?: string; message?: string };
+        const detail = data.detail || '';
+
+        if (detail === 'plan_restricted') {
+          setUpgradeInfo({
+            title: 'Upgrade to Subscribe',
+            description: 'Free users cannot subscribe to Smart Collections. Upgrade to Pro to track curated groups of whales.',
+            feature: 'Smart Collections'
+          });
+          setShowUpgrade(true);
+          return;
+        }
+
+        if (detail === 'subscription_limit_reached') {
+          setUpgradeInfo({
+            title: 'Limit Reached',
+            description: 'You have reached the maximum number of Smart Collection subscriptions for your plan. Upgrade to Elite for higher limits.',
+            feature: 'Smart Collection Limit'
+          });
+          setShowUpgrade(true);
+          return;
+        }
+
         if (data.message) {
           setErrorMsg(data.message);
         } else {
@@ -69,14 +94,6 @@ export default function SmartCollectionDetailClient({
           {errorMsg && (
             <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 mt-2">
               <p className="text-xs text-red-200">{errorMsg}</p>
-              <div className="mt-2">
-                <a 
-                  href="/subscribe" 
-                  className="text-[11px] font-bold uppercase tracking-wider text-white hover:underline"
-                >
-                  Upgrade Now &rarr;
-                </a>
-              </div>
             </div>
           )}
         </div>
@@ -93,6 +110,14 @@ export default function SmartCollectionDetailClient({
           {subscribed ? 'Subscribed' : 'Subscribe'}
         </button>
       </div>
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)}
+        title={upgradeInfo.title}
+        description={upgradeInfo.description}
+        feature={upgradeInfo.feature}
+      />
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
         <div className="flex items-center justify-between">

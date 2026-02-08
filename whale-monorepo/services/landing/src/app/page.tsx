@@ -547,13 +547,15 @@ export default function Home() {
             <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 hover:border-white/10 p-7 group transition-all duration-500 bg-white/[0.01] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
               <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Free</h3>
               <div className="text-4xl font-black mb-5 text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:scale-105 transition-transform duration-500">$0<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
-              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">Basic access for casual observers.</p>
+              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">Basic intelligence for casual observers.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
-                  "Global alerts (15m delay)",
-                  "Public collections only",
-                  "Limited whale profiles",
-                  "Basic conviction data"
+                  "3 alerts per day",
+                  "10-min delayed signals",
+                  "Whale Score visibility",
+                  "No custom /follow alerts",
+                  "No custom collections",
+                  "No smart collections access"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs group/li">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-700 group-hover/li:bg-gray-500 transition-colors"></div>
@@ -561,7 +563,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href={FREE_CTA_URL} className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]">Get started free</a>
+              <a href="/dashboard" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]">Get started free</a>
             </div>
 
             {/* Pro - Most Popular (Center Reinforcement) */}
@@ -571,18 +573,18 @@ export default function Home() {
               
               <div className="absolute top-0 right-0 px-6 py-2 bg-gradient-to-r from-violet-600 to-violet-400 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-bl-2xl shadow-2xl z-20">Most Popular</div>
               
-              <h3 className="text-xs font-bold text-violet-400 tracking-tight uppercase mb-6">Professional</h3>
+              <h3 className="text-xs font-bold text-violet-400 tracking-tight uppercase mb-6">Pro</h3>
               <div className="text-6xl font-black mb-6 text-white tracking-tighter drop-shadow-[0_0_25px_rgba(139,92,246,0.5)] group-hover:scale-110 transition-transform duration-700">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
-              <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">For those who treat trading as a business, not a hobby.</p>
+              <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">For professional traders who need immediate edges.</p>
               
               <ul className="space-y-4 mb-10 flex-1">
                 {[
-                  "Full Whale Score breakdown",
-                  "Filter by Score (70-100)",
-                  "100 /follow alert rules",
-                  "Advanced conviction analysis",
-                  "Full trade history & PnL",
-                  "Priority Telegram support"
+                  "Unlimited real-time alerts",
+                  "Follow up to 20 whales",
+                  "Create up to 3 collections",
+                  "Subscribe to 5 Smart Collections",
+                  "Full Whale Score visibility",
+                  "Full Telegram Bot features"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4 text-gray-100 font-bold text-xs group/li">
                     <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center group-hover/li:bg-violet-500/30 transition-colors">
@@ -593,25 +595,28 @@ export default function Home() {
                 ))}
               </ul>
               
-              <a href={CTA_URL} className="relative w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center shadow-[0_20px_50px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all transform hover:-translate-y-1 active:scale-95 overflow-hidden group/btn">
+              <a 
+                href="/subscribe?plan=pro"
+                className="relative w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center shadow-[0_20px_50px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all transform hover:-translate-y-1 active:scale-95 overflow-hidden group/btn"
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover/btn:animate-shimmer"></div>
-                <span className="relative z-10">Start Profiting with the 1%</span>
+                <span className="relative z-10">Upgrade to Pro</span>
               </a>
             </div>
 
-            {/* Institutional */}
+            {/* Elite */}
             <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 hover:border-white/10 p-7 group transition-all duration-500 bg-white/[0.01] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
-              <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Institutional</h3>
-              <div className="text-4xl font-black mb-5 text-white tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-105 transition-transform duration-500">$129<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
-              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">For funds and trading desks.</p>
+              <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Elite</h3>
+              <div className="text-4xl font-black mb-5 text-white tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-105 transition-transform duration-500">$59<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
+              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">The ultimate toolkit for high-net-worth operators.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
-                  "20 Smart Collections",
-                  "1,000 /follow alert rules",
-                  "Direct API access (Websocket) - Soon",
-                  "Custom clustering algorithms - Soon",
-                  "Historical data exports - Soon",
-                  "Dedicated account manager"
+                  "Unlimited real-time alerts",
+                  "Follow up to 100 whales",
+                  "Unlimited collections",
+                  "Subscribe to 20 Smart Collections",
+                  "Priority Whale Score updates",
+                  "Exclusive alpha channel access"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs group/li">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30 group-hover/li:bg-cyan-500 transition-colors"></div>
@@ -619,7 +624,12 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href={CTA_URL} className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]">Contact Sales</a>
+              <a 
+                href="/subscribe?plan=elite"
+                className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Go Elite
+              </a>
             </div>
           </div>
         </section>

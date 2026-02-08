@@ -1,41 +1,24 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { getLimitValue, canAccessFeature } from '@/lib/plans';
 import {
   validateCollectionPayload,
   type CollectionResponse,
 } from './types';
 
-const PLAN_LIMITS = {
-  free: 0,
-  pro: 10,
-  elite: 50,
-};
-
-async function getUserPlan(telegramId: string | null) {
-  if (!telegramId) return 'free';
-  const now = new Date();
-  const sub = await (prisma as any).subscription.findFirst({
-    where: {
-      telegramId,
-      status: { in: ['active', 'trialing'] },
-      currentPeriodEnd: { gt: now },
-    },
-    orderBy: {
-      currentPeriodEnd: 'desc',
-    },
-    select: {
-      plan: true,
-    },
-  });
-  const planName = (sub?.plan || 'free').toLowerCase();
-  if (planName.includes('elite') || planName.includes('institutional')) return 'elite';
-  if (planName.includes('pro')) return 'pro';
-  return 'free' as keyof typeof PLAN_LIMITS;
-}
-
 export async function POST(req: Request) {
   const user = await requireUser();
+
+  if (!canAccessFeature(user, 'collection_creation')) {
+    return NextResponse.json(
+      { 
+        detail: 'plan_restricted',
+        message: 'Free 计划无法创建集合，请升级 Pro 或 Elite 计划。' 
+      },
+      { status: 403 }
+    );
+  }
 
   let body: unknown;
   try {
@@ -52,25 +35,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: code }, { status: 400 });
   }
 
-  const plan = await getUserPlan(user.telegramId);
-  const limit = PLAN_LIMITS[plan] ?? 0;
-  const count = await prisma.collection.count({
-    where: { userId: user.id },
-  });
+  const limit = getLimitValue(user, 'max_collections');
+  if (limit !== 'unlimited') {
+    const count = await prisma.collection.count({
+      where: { userId: user.id },
+    });
 
-  if (count >= limit) {
-    const planBranded = plan === 'elite' ? 'Institutional' : plan.charAt(0).toUpperCase() + plan.slice(1);
-    const upgradeMsg = plan === 'free'
-      ? 'Free 计划无法创建集合，请升级 Pro 或 Institutional 计划。'
-      : `已达到 ${planBranded} 计划的集合上限 (${limit} 个)，请升级更高计划解锁更多。`;
-
-    return NextResponse.json(
-      { 
-        detail: 'collection_limit_reached',
-        message: upgradeMsg 
-      },
-      { status: 403 }
-    );
+    if (count >= limit) {
+      return NextResponse.json(
+        { 
+          detail: 'collection_limit_reached',
+          message: `已达到计划的集合上限 (${limit} 个)，请升级更高计划解锁更多。` 
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const created = await prisma.collection.create({

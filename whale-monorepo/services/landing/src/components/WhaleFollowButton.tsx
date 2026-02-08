@@ -2,18 +2,26 @@
 
 import { useState, useTransition } from 'react';
 import WhaleFollowSettingsModal from './WhaleFollowSettingsModal';
+import UpgradeModal from './UpgradeModal';
 
 type Props = {
   wallet: string;
   initialFollowed?: boolean;
+  canFollow?: boolean;
 };
 
-export default function WhaleFollowButton({ wallet, initialFollowed }: Props) {
+export default function WhaleFollowButton({ wallet, initialFollowed, canFollow = true }: Props) {
   const [open, setOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [followed, setFollowed] = useState(Boolean(initialFollowed));
   const [pending, startTransition] = useTransition();
 
   function handleClick() {
+    if (!canFollow && !followed) {
+      setShowUpgrade(true);
+      return;
+    }
+
     if (!followed) {
       setOpen(true);
     } else {
@@ -50,6 +58,13 @@ export default function WhaleFollowButton({ wallet, initialFollowed }: Props) {
           }}
         />
       )}
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Upgrade to Follow"
+        description="Free users cannot follow individual whales. Upgrade to Pro to track up to 20 whales with custom alerts."
+        feature="Whale Follow"
+      />
     </>
   );
 }

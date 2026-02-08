@@ -4,37 +4,12 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user || !user.telegramId) {
-    return NextResponse.json({ plan: 'free' });
-  }
-
-  const now = new Date();
-  const sub = await (prisma as any).subscription.findFirst({
-    where: {
-      telegramId: user.telegramId,
-      status: { in: ['active', 'trialing'] },
-      currentPeriodEnd: { gt: now },
-    },
-    orderBy: {
-      currentPeriodEnd: 'desc',
-    },
-    select: {
-      plan: true,
-      currentPeriodEnd: true,
-    },
-  });
-
-  let planName = (sub?.plan || 'free').toLowerCase();
-  if (planName.includes('elite') || planName.includes('institutional')) {
-    planName = 'institutional';
-  } else if (planName.includes('pro')) {
-    planName = 'pro';
-  } else {
-    planName = 'free';
+  if (!user) {
+    return NextResponse.json({ plan: 'FREE', planExpireAt: null });
   }
 
   return NextResponse.json({
-    plan: planName,
-    current_period_end: sub?.currentPeriodEnd?.toISOString() || null,
+    plan: user.plan,
+    planExpireAt: user.planExpireAt?.toISOString() || null,
   });
 }

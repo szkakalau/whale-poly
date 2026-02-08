@@ -1,38 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { canAccessFeature, getLimitValue } from '@/lib/plans';
 
 type Params = {
   params: Promise<{ id: string }>;
 };
-
-const PLAN_LIMITS = {
-  free: 0,
-  pro: 5,
-  elite: 20,
-};
-
-async function getUserPlan(telegramId: string | null) {
-  if (!telegramId) return 'free';
-  const now = new Date();
-  const sub = await (prisma as any).subscription.findFirst({
-    where: {
-      telegramId,
-      status: { in: ['active', 'trialing'] },
-      currentPeriodEnd: { gt: now },
-    },
-    orderBy: {
-      currentPeriodEnd: 'desc',
-    },
-    select: {
-      plan: true,
-    },
-  });
-  const planName = (sub?.plan || 'free').toLowerCase();
-  if (planName.includes('elite') || planName.includes('institutional')) return 'elite';
-  if (planName.includes('pro')) return 'pro';
-  return 'free' as keyof typeof PLAN_LIMITS;
-}
 
 async function ensureSmartCollection(id: string) {
   const sc = await prisma.smartCollection.findUnique({
@@ -49,6 +22,17 @@ async function ensureSmartCollection(id: string) {
 
 export async function POST(_: Request, { params }: Params) {
   const user = await requireUser();
+
+  if (!canAccessFeature(user, 'smart_collection_access')) {
+    return NextResponse.json(
+      { 
+        detail: 'plan_restricted',
+        message: '该功能仅限 Pro 或 Elite 计划用户使用。' 
+      },
+      { status: 403 }
+    );
+  }
+
   const { id } = await params;
 
   const sc = await ensureSmartCollection(id);
@@ -69,30 +53,21 @@ export async function POST(_: Request, { params }: Params) {
   });
 
   if (!existing) {
-    const plan = await getUserPlan(user.telegramId);
-    const limit = PLAN_LIMITS[plan] ?? 0;
+    const limit = getLimitValue(user, 'max_smart_collections');
+    if (limit !== 'unlimited') {
+      const count = await prisma.smartCollectionSubscription.count({
+        where: { userId: user.id },
+      });
 
-    const count = await prisma.smartCollectionSubscription.count({
-      where: {
-        userId: user.id,
-      },
-    });
-
-    if (count >= limit) {
-      const planBranded = plan === 'elite' ? 'Institutional' : plan.charAt(0).toUpperCase() + plan.slice(1);
-      const upgradeMsg = plan === 'free' 
-        ? 'Free 计划无法订阅 Smart Collections，请升级 Pro 或 Institutional 计划。'
-        : `已达到 ${planBranded} 计划的 Smart Collections 上限 (${limit} 个)，请升级更高计划解锁更多。`;
-      
-      return NextResponse.json(
-        { 
-          detail: 'subscription_limit_reached',
-          message: upgradeMsg,
-          plan: plan,
-          limit: limit
-        },
-        { status: 403 },
-      );
+      if (count >= limit) {
+        return NextResponse.json(
+          {
+            detail: 'subscription_limit_reached',
+            message: `已达到计划的 Smart Collection 订阅上限 (${limit} 个)，请升级更高计划解锁更多。`,
+          },
+          { status: 403 },
+        );
+      }
     }
   }
 

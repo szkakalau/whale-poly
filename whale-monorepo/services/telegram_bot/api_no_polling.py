@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from services.telegram_bot.bot import build_application
 from services.telegram_bot.templates import format_alert
-from services.telegram_bot.rate_limit import allow_send
+from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
@@ -170,17 +170,74 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
 
     telegram_ids: list[str] = []
     lookup_db_ok = False
+    recipient_plan_map: dict[str, str] = {}
+
+    # Alert Engine Plan Enforcement Logic
+    PLAN_LIMITS_MAP = {
+      "FREE": {"max_alerts_per_day": 3, "alert_delay_minutes": 10},
+      "PRO": {"max_alerts_per_day": "unlimited", "alert_delay_minutes": 0},
+      "ELITE": {"max_alerts_per_day": "unlimited", "alert_delay_minutes": 0},
+    }
+
+    async def _send_with_rules(tid: str, p_raw: str, p_json: dict, p_plan_map: dict):
+      plan_name = p_plan_map.get(tid, "FREE").upper()
+      limits = PLAN_LIMITS_MAP.get(plan_name, PLAN_LIMITS_MAP["FREE"])
+      
+      # 1. Check Daily Limit
+      if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
+        logger.warning("daily_limit_reached telegram_id=%s plan=%s", tid, plan_name)
+        return False
+
+      # 2. Check Rate Limit (Fanout)
+      if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
+        await redis.rpush(settings.alert_created_queue, p_raw)
+        return False
+
+      # 3. Handle Delay for FREE users
+      delay_min = limits["alert_delay_minutes"]
+      if delay_min > 0:
+        # If it's a delayed message, we need to schedule it
+        async def _delayed_send():
+          try:
+            await asyncio.sleep(delay_min * 60)
+            await application.bot.send_message(
+              chat_id=int(tid),
+              text=format_alert(p_json, tid),
+              parse_mode="HTML",
+              disable_web_page_preview=True,
+            )
+            await increment_daily_alert_count(redis, tid)
+          except Exception:
+            logger.exception("delayed_telegram_send_failed telegram_id=%s", tid)
+        
+        asyncio.create_task(_delayed_send())
+        return True
+
+      # 4. Immediate Send for PRO/ELITE
+      try:
+        await application.bot.send_message(
+          chat_id=int(tid),
+          text=format_alert(p_json, tid),
+          parse_mode="HTML",
+          disable_web_page_preview=True,
+        )
+        await increment_daily_alert_count(redis, tid)
+        return True
+      except Exception:
+        logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+        return False
+
     try:
       async with SessionLocal() as session:
         has_users = await _has_users_table(session)
         has_follows = await _has_whale_follows_table(session)
-        async def _lookup_ids(has_users_flag: bool) -> tuple[list[str], list[str], list[str]]:
-          follow_ids_v: list[str] = []
+        async def _lookup_ids(has_users_flag: bool) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+          follow_map_v: dict[str, str] = {}
           if has_follows:
             if has_users_flag:
               user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
               follow_query = (
-                select(Subscription.telegram_id)
+                select(Subscription.telegram_id, User.plan)
                 .join(User, user_join)
                 .join(WhaleFollow, WhaleFollow.user_id == User.id)
                 .where(Subscription.status.in_(["active", "trialing"]))
@@ -192,7 +249,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               )
             else:
               follow_query = (
-                select(Subscription.telegram_id)
+                select(Subscription.telegram_id, Subscription.plan)
                 .join(WhaleFollow, WhaleFollow.user_id == Subscription.telegram_id)
                 .where(Subscription.status.in_(["active", "trialing"]))
                 .where(Subscription.current_period_end > now)
@@ -208,18 +265,19 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             else:
               follow_query = follow_query.where(WhaleFollow.alert_entry.is_(True))
             try:
-              follow_ids_v = (await session.execute(follow_query)).scalars().all()
+              rows = (await session.execute(follow_query)).all()
+              for r in rows:
+                follow_map_v[str(r[0])] = str(r[1]).upper()
             except Exception as e:
               if _is_missing_whale_follows_error(e):
                 _mark_whale_follows_table_missing()
-                follow_ids_v = []
               else:
                 raise
 
           if has_users_flag:
             user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
             collection_query = (
-              select(Subscription.telegram_id)
+              select(Subscription.telegram_id, User.plan)
               .join(User, user_join)
               .join(Collection, Collection.user_id == User.id)
               .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
@@ -230,7 +288,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             )
           else:
             collection_query = (
-              select(Subscription.telegram_id)
+              select(Subscription.telegram_id, Subscription.plan)
               .join(Collection, Collection.user_id == Subscription.telegram_id)
               .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
               .where(Subscription.status.in_(["active", "trialing"]))
@@ -238,12 +296,15 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               .where(Collection.enabled.is_(True))
               .where(CollectionWhale.wallet == wallet)
             )
-          collection_ids_v = (await session.execute(collection_query)).scalars().all()
+          collection_map_v: dict[str, str] = {}
+          rows = (await session.execute(collection_query)).all()
+          for r in rows:
+            collection_map_v[str(r[0])] = str(r[1]).upper()
 
           if has_users_flag:
             user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
             smart_query = (
-              select(Subscription.telegram_id)
+              select(Subscription.telegram_id, User.plan)
               .join(User, user_join)
               .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
               .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
@@ -255,7 +316,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             )
           else:
             smart_query = (
-              select(Subscription.telegram_id)
+              select(Subscription.telegram_id, Subscription.plan)
               .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == Subscription.telegram_id)
               .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
               .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
@@ -264,19 +325,23 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               .where(SmartCollection.enabled.is_(True))
               .where(SmartCollectionWhale.wallet == wallet)
             )
-          smart_ids_v = (await session.execute(smart_query)).scalars().all()
-          return follow_ids_v, collection_ids_v, smart_ids_v
+          smart_map_v: dict[str, str] = {}
+          rows = (await session.execute(smart_query)).all()
+          for r in rows:
+            smart_map_v[str(r[0])] = str(r[1]).upper()
+          return follow_map_v, collection_map_v, smart_map_v
 
         try:
-          follow_ids, collection_ids, smart_ids = await _lookup_ids(has_users)
+          follow_map, collection_map, smart_map = await _lookup_ids(has_users)
         except Exception as e:
           if has_users and _is_missing_users_error(e):
             _mark_users_table_missing()
-            follow_ids, collection_ids, smart_ids = await _lookup_ids(False)
+            follow_map, collection_map, smart_map = await _lookup_ids(False)
           else:
             raise
 
-        telegram_ids = list(dict.fromkeys([*follow_ids, *collection_ids, *smart_ids]))
+        recipient_plan_map = {**follow_map, **collection_map, **smart_map}
+        telegram_ids = list(recipient_plan_map.keys())
         lookup_db_ok = True
     except Exception:
       logger.exception("subscriber_lookup_failed")
@@ -308,29 +373,22 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     try:
       async with SessionLocal() as session:
         for tid in telegram_ids:
-          if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
-            await redis.rpush(settings.alert_created_queue, raw)
-            break
+          # If lookup was OK, use plan-aware sending rules
+          if not await _send_with_rules(tid, raw, payload, recipient_plan_map):
+            continue
+
           try:
-            result = await session.execute(
+            await session.execute(
               insert(Delivery)
               .values(telegram_id=tid, whale_trade_id=whale_trade_id)
               .on_conflict_do_nothing(index_elements=["telegram_id", "whale_trade_id"])
             )
-            if result.rowcount != 1:
-              continue
-            await application.bot.send_message(
-              chat_id=int(tid),
-              text=format_alert(payload, tid),
-              parse_mode="HTML",
-              disable_web_page_preview=True,
-            )
           except Exception:
-            logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+            logger.exception("delivery_record_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
         await session.commit()
       logger.info("alert_dispatched whale_trade_id=%s recipients=%s", whale_trade_id, len(telegram_ids))
     except Exception:
-      logger.exception("delivery_record_failed whale_trade_id=%s", whale_trade_id)
+      logger.exception("delivery_dispatch_failed whale_trade_id=%s", whale_trade_id)
 
 
 @asynccontextmanager

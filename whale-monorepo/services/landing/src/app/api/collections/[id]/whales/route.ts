@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { canAccessFeature } from '@/lib/plans';
 import { validateAddWhalePayload } from '../../../collections/types';
 
 type Params = {
@@ -22,6 +23,11 @@ async function ensureCollectionOwner(userId: string, id: string) {
 
 export async function POST(req: Request, { params }: Params) {
   const user = await requireUser();
+
+  if (!canAccessFeature(user, 'collection_creation')) {
+    return NextResponse.json({ detail: 'plan_restricted' }, { status: 403 });
+  }
+
   const { id } = await params;
 
   const col = await ensureCollectionOwner(user.id, id);
@@ -47,6 +53,16 @@ export async function POST(req: Request, { params }: Params) {
   const normalized = data.wallet.trim().toLowerCase();
   if (!normalized) {
     return NextResponse.json({ detail: 'wallet_required' }, { status: 400 });
+  }
+
+  // Check whale limit per collection
+  const currentCount = await prisma.collectionWhale.count({
+    where: { collectionId: col.id },
+  });
+
+  const MAX_WHALES_PER_COLLECTION = 10; // Simple limit
+  if (currentCount >= MAX_WHALES_PER_COLLECTION) {
+    return NextResponse.json({ detail: 'collection_limit_reached' }, { status: 403 });
   }
 
   const created = await prisma.collectionWhale.upsert({
