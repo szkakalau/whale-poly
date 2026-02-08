@@ -11,17 +11,17 @@ export default function Home() {
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#020202]">
-        {/* Pro Max: Layered depth with mixed blend modes */}
-        <div className="absolute top-[-15%] left-[-10%] w-[70%] h-[70%] bg-violet-600/20 rounded-full blur-[120px] animate-pulse-slow mix-blend-screen"></div>
-        <div className="absolute bottom-[-15%] right-[-10%] w-[70%] h-[70%] bg-cyan-600/15 rounded-full blur-[120px] animate-pulse-slow mix-blend-screen" style={{ animationDelay: '3s' }}></div>
-        <div className="absolute top-[20%] right-[15%] w-[45%] h-[45%] bg-indigo-500/10 rounded-full blur-[100px] animate-float mix-blend-overlay"></div>
+        {/* Pro Max: Layered depth with mixed blend modes - Optimized performance */}
+        <div className="absolute top-[-15%] left-[-10%] w-[70%] h-[70%] bg-violet-600/10 rounded-full blur-[80px] animate-pulse-slow will-change-[opacity,transform]"></div>
+        <div className="absolute bottom-[-15%] right-[-10%] w-[70%] h-[70%] bg-cyan-600/10 rounded-full blur-[80px] animate-pulse-slow will-change-[opacity,transform]" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-[20%] right-[15%] w-[45%] h-[45%] bg-indigo-500/5 rounded-full blur-[60px] animate-float will-change-transform"></div>
         
-        {/* Pro Max: Ultra-fine grid with parallax-like depth */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-50"></div>
+        {/* Pro Max: Ultra-fine grid - Performance: use static opacity */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
         
-        {/* Pro Max: Vignette and grain for texture */}
+        {/* Pro Max: Vignette and grain - Optimized grain opacity */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,transparent_0%,#020202_100%)]"></div>
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150"></div>
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
       {/* Navigation */}
@@ -57,8 +57,8 @@ export default function Home() {
 
         {/* HERO SECTION */}
         <section className="relative px-6 max-w-7xl mx-auto text-center mb-32 pt-12">
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: '0.1s' }}>
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass mb-12 border border-white/10 text-gray-300 text-[10px] md:text-xs hover:border-violet-500/50 transition-all cursor-default hover:shadow-[0_0_30px_rgba(139,92,246,0.2)] group relative overflow-hidden bg-white/[0.02]">
+              <div className="animate-fade-in opacity-0 will-change-[opacity,transform]" style={{ animationDelay: '0.1s' }}>
+                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass mb-12 border border-white/10 text-gray-300 text-[10px] md:text-xs hover:border-violet-500/50 transition-all cursor-default hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] group relative overflow-hidden bg-white/[0.02]">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -69,22 +69,22 @@ export default function Home() {
             </div>
           </div>
 
-          <h1 className="animate-fade-in opacity-0 text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-[1.05]" style={{ animationDelay: '0.2s' }}>
+          <h1 className="animate-fade-in opacity-0 text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-[1.05] will-change-[opacity,transform]" style={{ animationDelay: '0.2s' }}>
             Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
-              Whales
-              <span className="absolute -inset-x-4 -inset-y-2 blur-[60px] bg-violet-500/20 -z-10 animate-pulse"></span>
+              Score
+              <span className="absolute -inset-x-4 -inset-y-2 blur-[40px] bg-violet-500/10 -z-10 animate-pulse"></span>
             </span>.<br />
-            Frontrun the <span className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">Crowd</span>.
+            Frontrun the <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">Market</span>.
           </h1>
           
-          <p className="animate-fade-in opacity-0 mt-8 max-w-2xl mx-auto text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide" style={{ animationDelay: '0.3s' }}>
-            The ultimate intelligence layer for Polymarket. We surface the <span className="text-white font-medium relative group cursor-help">
-              smart money
+          <p className="animate-fade-in opacity-0 mt-8 max-w-2xl mx-auto text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide will-change-[opacity,transform]" style={{ animationDelay: '0.3s' }}>
+            The first AI-driven intelligence layer for Polymarket. We filter millions in noise into <span className="text-white font-medium relative group cursor-help">
+              high-conviction signals
               <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-500/50 group-hover:bg-violet-400 group-hover:h-[2px] transition-all"></span>
-            </span> moving markets — before the noise begins.
+            </span> using the proprietary Whale Score™.
           </p>
 
-          <div className="animate-fade-in opacity-0 mt-12 flex flex-col sm:flex-row justify-center items-center gap-6" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in opacity-0 mt-12 flex flex-col sm:flex-row justify-center items-center gap-6 will-change-[opacity,transform]" style={{ animationDelay: '0.4s' }}>
             <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="relative group px-8 py-4 bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_20px_40px_rgba(255,255,255,0.1)] hover:shadow-[0_25px_50px_rgba(255,255,255,0.2)]">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
@@ -134,9 +134,9 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { step: 1, title: "Activation", color: "violet", desc: <>Open <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a> and run <span className="font-mono text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">/start</span> to sync your secure profile.</> },
-              { step: 2, title: "Intelligence", color: "cyan", desc: <>Select your <span className="font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">/subscribe</span> plan to unlock full whale transparency.</> },
-              { step: 3, title: "Execution", color: "emerald", desc: <>Deploy custom <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> rules to shadow specific market leaders.</> }
+              { step: 1, title: "Connect", color: "violet", desc: <>One-click sync with your personal intelligence dashboard via <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a>.</> },
+              { step: 2, title: "Quantify Conviction", color: "cyan", desc: <>Every trade is instantly processed through our Whale Score engine, measuring PnL history and timing precision.</> },
+              { step: 3, title: "Shadow", color: "emerald", desc: <>Mirror every move with precision <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> alerts tailored to your strategy.</> }
             ].map((item, i) => (
               <div key={i} className={`glass rounded-[2rem] border border-white/5 p-8 flex flex-col gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden shadow-2xl`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${item.color}-500/10 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-${item.color}-500/20 transition-all duration-1000`}></div>
@@ -196,7 +196,7 @@ export default function Home() {
                 {[
                   "Headlines move faster than verified facts",
                   "Retail sentiment is loud, emotional, and lagging",
-                  "Narratives are priced in before they become public"
+                  "The house always wins because they have better data"
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-4 group">
                     <div className="mt-2 w-1.5 h-1.5 rounded-full bg-red-500/40 border border-red-500/60 shadow-[0_0_15px_rgba(239,68,68,0.2)] group-hover:bg-red-500 transition-all"></div>
@@ -217,12 +217,12 @@ export default function Home() {
               
               <div className="relative z-10">
                 <h2 className="text-[10px] font-bold text-cyan-400 tracking-[0.4em] uppercase mb-5">The Solution</h2>
-                <h3 className="text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Execution Truth</span>.</h3>
+                <h3 className="text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
                 
                 <ul className="grid gap-3 mb-8">
                   {[
                     "Large trades that shift liquidity",
-                    "Addresses with proven 80%+ accuracy",
+                    "Wallets with proven Whale Score 70+",
                     "Repeated accumulation clusters",
                     "Capital flows before market breakouts"
                   ].map((item, i) => (
@@ -261,12 +261,12 @@ export default function Home() {
                 <div className="flex items-center gap-5 mb-6">
                   <div className="w-14 h-14 bg-violet-500/15 rounded-2xl flex items-center justify-center text-3xl shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 border border-violet-500/20">🐋</div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight text-white mb-1">Whale Alerts</h3>
-                    <div className="text-violet-400 font-bold text-[10px] uppercase tracking-[0.3em]">Real-Time Execution</div>
+                    <h3 className="text-2xl font-black tracking-tight text-white mb-1">Whale Score Filter</h3>
+                    <div className="text-violet-400 font-bold text-[10px] uppercase tracking-[0.3em]">Kill the Noise. Only Follow the 70+.</div>
                   </div>
                 </div>
                 <p className="text-gray-400 text-base mb-8 max-w-xl leading-relaxed font-light">
-                  Direct notifications for high-conviction moves. We filter the noise so you only see the trades that shift the needle.
+                  Stop chasing every $10k bet. Our scoring system (0-100) separates &quot;Dumb Large Money&quot; from the elite 1% who actually move the needle.
                 </p>
                 
                 <div className="bg-[#010101] border border-white/10 rounded-2xl p-6 font-mono text-sm leading-relaxed relative overflow-hidden shadow-2xl transform transition-all group-hover:translate-y-[-4px] group-hover:border-violet-500/50 duration-700">
@@ -573,12 +573,12 @@ export default function Home() {
               
               <h3 className="text-xs font-bold text-violet-400 tracking-tight uppercase mb-6">Professional</h3>
               <div className="text-6xl font-black mb-6 text-white tracking-tighter drop-shadow-[0_0_25px_rgba(139,92,246,0.5)] group-hover:scale-110 transition-transform duration-700">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
-              <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">The gold standard for active traders.</p>
+              <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">For those who treat trading as a business, not a hobby.</p>
               
               <ul className="space-y-4 mb-10 flex-1">
                 {[
-                  "Real-time Whale Alerts",
-                  "5 Smart Collections",
+                  "Full Whale Score breakdown",
+                  "Filter by Score (70-100)",
                   "100 /follow alert rules",
                   "Advanced conviction analysis",
                   "Full trade history & PnL",
@@ -595,7 +595,7 @@ export default function Home() {
               
               <a href={CTA_URL} className="relative w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center shadow-[0_20px_50px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all transform hover:-translate-y-1 active:scale-95 overflow-hidden group/btn">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover/btn:animate-shimmer"></div>
-                <span className="relative z-10">Get Pro Access</span>
+                <span className="relative z-10">Start Profiting with the 1%</span>
               </a>
             </div>
 
