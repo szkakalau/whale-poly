@@ -7,7 +7,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300">
       <div className="mx-auto max-w-7xl px-5 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5" title="Sight Whale Home">
           <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-400 shadow-lg shadow-violet-500/20">
             <span className="absolute inset-0 rounded-lg bg-white/20 animate-pulse"></span>
           </div>

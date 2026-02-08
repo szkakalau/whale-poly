@@ -28,14 +28,14 @@ export const metadata: Metadata = {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Sight Whale — Follow the Smart Money on Polymarket"
+        alt: "Sight Whale — Follow the Smart Money on Polymarket and Prediction Markets"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sight Whale — Follow Polymarket Smart Money",
-    description: "Track the world's most profitable prediction market whales in real-time.",
+    title: "Sight Whale — Follow Polymarket Smart Money & Whale Alerts",
+    description: "Track the world's most profitable prediction market whales in real-time. Frontrun the crowd with Sight Whale.",
     images: ["/images/og-image.png"]
   },
   robots: {

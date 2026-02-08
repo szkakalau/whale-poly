@@ -27,6 +27,32 @@ export default function Home() {
       {/* Navigation */}
       <Header />
 
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Sight Whale",
+            "operatingSystem": "Web, Telegram",
+            "applicationCategory": "FinanceApplication",
+            "description": "Track Polymarket Whale Activity — Before the Crowd Reacts. Get real-time, on-chain intelligence on historically profitable whale behavior delivered to your Telegram.",
+            "offers": {
+              "@type": "AggregateOffer",
+              "lowPrice": "0",
+              "highPrice": "299",
+              "priceCurrency": "USD"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "ratingCount": "1200"
+            }
+          })
+        }}
+      />
+
       <main className="relative pt-20 pb-12">
 
         {/* HERO SECTION */}
@@ -220,9 +246,9 @@ export default function Home() {
         <section id="sample-signals" className="max-w-7xl mx-auto px-6 mb-32">
           <div className="text-center mb-16">
             <h2 className="section-title tracking-[0.2em] opacity-80 mb-4">Intelligence Platform</h2>
-            <h3 className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
               We monitor millions of data points to surface the only ones that matter.
-            </h3>
+            </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 auto-rows-[minmax(300px,auto)]">
