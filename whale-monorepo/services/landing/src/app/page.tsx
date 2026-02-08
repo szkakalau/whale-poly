@@ -220,9 +220,9 @@ export default function Home() {
         <section id="sample-signals" className="max-w-7xl mx-auto px-6 mb-32">
           <div className="text-center mb-16">
             <h2 className="section-title tracking-[0.2em] opacity-80 mb-4">Intelligence Platform</h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+            <h3 className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
               We monitor millions of data points to surface the only ones that matter.
-            </p>
+            </h3>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 auto-rows-[minmax(300px,auto)]">

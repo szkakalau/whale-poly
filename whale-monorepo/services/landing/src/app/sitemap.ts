@@ -21,6 +21,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/blog',
     '/backtesting',
     '/conviction',
+    '/subscribe',
+    '/follow',
+    '/smart-collections',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),

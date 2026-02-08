@@ -13,28 +13,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sight Whale — Polymarket Whale Intelligence",
-  description: "Track Polymarket Whale Activity — Before the Crowd Reacts. Private intelligence alerts delivered to your Telegram via Sight Whale.",
+  title: "Sight Whale — Polymarket Whale Intelligence & Real-time Alerts",
+  description: "Track Polymarket Whale Activity — Before the Crowd Reacts. Get real-time, on-chain intelligence on historically profitable whale behavior delivered to your Telegram.",
+  keywords: ["Polymarket", "Whale Intelligence", "Prediction Markets", "DeFi Alerts", "Crypto Trading Signals", "Smart Money Tracking", "On-chain Analytics"],
   openGraph: {
-    title: "Sight Whale — Polymarket Whale Intelligence",
-    description: "Private intelligence alerts based on historically profitable whale behavior.",
+    title: "Sight Whale — Polymarket Whale Intelligence & Real-time Alerts",
+    description: "Follow the smart money on Polymarket. Real-time alerts on high-conviction whale moves before they hit the headlines.",
     type: "website",
     url: "https://sightwhale.com/",
     siteName: "Sight Whale",
+    locale: "en_US",
     images: [
       {
-        url: "/images/whale-alert-biden.svg",
+        url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Sight Whale — Polymarket Whale Intelligence"
+        alt: "Sight Whale — Follow the Smart Money on Polymarket"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sight Whale — Polymarket Whale Intelligence",
-    description: "Private intelligence alerts delivered to your Telegram via Sight Whale.",
-    images: ["/images/whale-alert-biden.svg"]
+    title: "Sight Whale — Follow Polymarket Smart Money",
+    description: "Track the world's most profitable prediction market whales in real-time.",
+    images: ["/images/og-image.png"]
   },
   robots: {
     index: true,
