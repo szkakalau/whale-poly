@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 
 export default function Footer() {
@@ -22,10 +24,10 @@ export default function Footer() {
           <div className="space-y-6">
             <h4 className="text-white font-bold text-sm tracking-widest uppercase">Platform</h4>
             <ul className="space-y-4">
-              <li><a href="/backtesting" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Whale Performance</a></li>
-              <li><a href="/conviction" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Conviction Analysis</a></li>
-              <li><a href="/blog" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Intelligence Blog</a></li>
-              <li><a href="/smart-collections" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Smart Collections</a></li>
+              <li><Link href="/backtesting" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Whale Performance</Link></li>
+              <li><Link href="/conviction" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Conviction Analysis</Link></li>
+              <li><Link href="/blog" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Intelligence Blog</Link></li>
+              <li><Link href="/smart-collections" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Smart Collections</Link></li>
             </ul>
           </div>
 
