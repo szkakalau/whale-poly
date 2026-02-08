@@ -47,7 +47,7 @@ export default function ConvictionPage() {
           <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
             Conviction Signal Case Studies
           </h1>
-          <p className="text-xl text-violet-300 font-medium mb-6">Elite Signal Examples (Public Preview)</p>
+          <p className="text-xl text-violet-300 font-medium mb-6">Institutional Signal Examples (Public Preview)</p>
           <blockquote className="border-l-4 border-cyan-500 pl-6 py-4 bg-white/5 rounded-r-xl text-gray-300 italic">
             Below are realistic historical-style examples of Conviction Signals. They demonstrate structure, transparency, and post-event review — not promises.
           </blockquote>

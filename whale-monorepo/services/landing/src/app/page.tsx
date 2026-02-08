@@ -537,8 +537,8 @@ export default function Home() {
               <ul className="space-y-6 mb-12 flex-1">
                 {[
                   "Real-time Whale Alerts",
-                  "Unlimited Smart Collections",
-                  "Custom /follow alert rules",
+                  "5 Smart Collections",
+                  "100 /follow alert rules",
                   "Advanced conviction analysis",
                   "Full trade history & PnL",
                   "Priority Telegram support"
@@ -559,12 +559,12 @@ export default function Home() {
               <p className="text-gray-500 mb-12 text-lg font-light leading-relaxed">For funds and trading desks.</p>
               <ul className="space-y-6 mb-12 flex-1">
                 {[
-                  "Direct API access (Websocket)",
-                  "Custom clustering algorithms",
-                  "Dedicated account manager",
-                  "Multi-user team access",
-                  "Historical data exports",
-                  "Early access to alpha tools"
+                  "20 Smart Collections",
+                  "1,000 /follow alert rules",
+                  "Direct API access (Websocket) - Soon",
+                  "Custom clustering algorithms - Soon",
+                  "Historical data exports - Soon",
+                  "Dedicated account manager"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4 text-gray-400 font-medium">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/50"></div>

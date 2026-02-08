@@ -24,8 +24,17 @@ export async function GET() {
     },
   });
 
+  let planName = (sub?.plan || 'free').toLowerCase();
+  if (planName.includes('elite') || planName.includes('institutional')) {
+    planName = 'institutional';
+  } else if (planName.includes('pro')) {
+    planName = 'pro';
+  } else {
+    planName = 'free';
+  }
+
   return NextResponse.json({
-    plan: sub?.plan || 'free',
+    plan: planName,
     current_period_end: sub?.currentPeriodEnd?.toISOString() || null,
   });
 }

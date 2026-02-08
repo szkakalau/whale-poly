@@ -34,7 +34,7 @@ def _sub_id(code: str, plan: str) -> str:
 def _period_end(plan_name: str) -> datetime:
   now = datetime.now(timezone.utc)
   p = (plan_name or "").lower()
-  if p == "yearly":
+  if "yearly" in p:
     return now + timedelta(days=365)
   return now + timedelta(days=30)
 
@@ -273,9 +273,14 @@ async def current_plan(telegram_id: str, session: AsyncSession = Depends(get_ses
 async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_session)):
   code = payload.telegram_activation_code.strip().upper()
   plan_name = payload.plan.strip().lower()
+  
+  # Normalize institutional to elite
+  if "institutional" in plan_name:
+    plan_name = plan_name.replace("institutional", "elite")
+
   plan = (await session.execute(select(Plan).where(Plan.name == plan_name))).scalars().first()
   if not plan:
-    raise HTTPException(status_code=404, detail="plan not found")
+    raise HTTPException(status_code=404, detail=f"plan '{plan_name}' not found")
 
   if settings.payment_mode == "mock" or not settings.stripe_secret_key:
     url = await _activate_subscription(session, code=code, plan=plan, user_id=payload.user_id)

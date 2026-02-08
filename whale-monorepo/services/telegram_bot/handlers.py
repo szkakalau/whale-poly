@@ -69,10 +69,20 @@ async def status(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     ).scalars().first()
 
   if not sub:
-    await update.effective_message.reply_text("Status: inactive\nExpire: ")
+    await update.effective_message.reply_text("Status: inactive\nPlan: Free")
     return
 
-  await update.effective_message.reply_text(f"Status: active\nExpire: {sub.current_period_end.isoformat()}")
+  plan_display = (sub.plan or "pro").capitalize()
+  if "elite" in plan_display.lower():
+    plan_display = "Institutional"
+  elif "pro" in plan_display.lower():
+    plan_display = "Pro"
+
+  await update.effective_message.reply_text(
+    f"Status: active\n"
+    f"Plan: {plan_display}\n"
+    f"Expire: {sub.current_period_end.strftime('%Y-%m-%d %H:%M:%S')} UTC"
+  )
 
 
 async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:

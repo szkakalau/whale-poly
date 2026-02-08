@@ -1,15 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-export default function SubscribePage() {
+function SubscribeForm() {
+  const searchParams = useSearchParams();
   const [code, setCode] = useState('');
-  const [plan, setPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [tier, setTier] = useState<'pro' | 'elite'>('pro');
+  const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const p = searchParams.get('plan');
+    if (p === 'elite' || p === 'institutional') {
+      setTier('elite');
+    } else {
+      setTier('pro');
+    }
+  }, [searchParams]);
 
   function mapCheckoutError(detail: unknown, status: number): string {
     const raw = typeof detail === 'string' ? detail : '';
@@ -42,11 +54,16 @@ export default function SubscribePage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // Construct the plan name based on tier and period
+    // backend handles "yearly" for period calculation
+    const planName = period === 'yearly' ? `${tier}_yearly` : tier;
+
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ telegram_activation_code: code, plan })
+        body: JSON.stringify({ telegram_activation_code: code, plan: planName })
       });
       const data = (await res.json().catch(() => ({}))) as {
         detail?: string;
@@ -72,60 +89,85 @@ export default function SubscribePage() {
   }
 
   return (
+    <form onSubmit={onSubmit} className="glass rounded-2xl border border-white/10 p-6 space-y-6">
+      <div className="space-y-2">
+        <label className="text-sm text-gray-400">Activation Code</label>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="ABCD1234"
+          className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm text-gray-400">Tier</label>
+          <select
+            value={tier}
+            onChange={(e) => setTier(e.target.value as 'pro' | 'elite')}
+            className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
+          >
+            <option value="pro">Professional</option>
+            <option value="elite">Institutional</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm text-gray-400">Billing</label>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as 'monthly' | 'yearly')}
+            className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
+          >
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+      </div>
+
+      {error ? <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-lg">{error}</div> : null}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="btn-primary w-full shadow-lg text-lg py-4 disabled:opacity-60 disabled:cursor-not-allowed transform active:scale-[0.98] transition-all"
+      >
+        {loading ? 'Redirecting to checkout…' : 'Proceed to Checkout'}
+      </button>
+
+      <div className="text-sm text-gray-500 text-center">
+        <Link href="/" className="hover:text-gray-300 transition-colors">← Back to home</Link>
+      </div>
+    </form>
+  );
+}
+
+export default function SubscribePage() {
+  return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       <Header />
       <main className="mx-auto max-w-2xl px-6 py-32 relative">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white">Subscribe</h1>
-        <div className="space-y-4 text-gray-300 mb-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -z-10"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] -z-10"></div>
+        
+        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white tracking-tight">Activate Intelligence</h1>
+        <div className="space-y-6 text-gray-400 mb-10 text-lg font-light leading-relaxed">
           <p>
-            Step 1: Get an activation code from Telegram bot.
+            1. Open <a href="https://t.me/sightwhale_bot" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 font-medium underline decoration-violet-500/30 underline-offset-4">@sightwhale_bot</a> and run <code className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-violet-300">/start</code>
           </p>
           <p>
-            Step 2: Paste it here and checkout.
+            2. Tap <span className="text-white font-medium">Generate Code</span> to receive your unique token
           </p>
-          <p className="text-sm text-gray-500">
-            Need a code? Open Telegram and run <span className="font-mono">/start</span> then tap Generate Code.
+          <p>
+            3. Select your plan below and proceed to secure checkout
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="glass rounded-2xl border border-white/10 p-6 space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Activation Code</label>
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="ABCD1234"
-              className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Plan</label>
-            <select
-              value={plan}
-              onChange={(e) => setPlan(e.target.value === 'yearly' ? 'yearly' : 'monthly')}
-              className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </div>
-
-          {error ? <div className="text-sm text-red-300">{error}</div> : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full shadow-lg text-lg py-4 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Redirecting…' : 'Checkout'}
-          </button>
-
-          <div className="text-sm text-gray-500">
-            <Link href="/" className="underline hover:text-gray-300">Back</Link>
-          </div>
-        </form>
+        <Suspense fallback={<div className="glass rounded-2xl border border-white/10 p-12 text-center text-gray-500">Loading checkout options...</div>}>
+          <SubscribeForm />
+        </Suspense>
       </main>
       <Footer />
     </div>
