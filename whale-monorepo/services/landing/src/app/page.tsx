@@ -505,11 +505,8 @@ export default function Home() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-24 relative">
-          {/* Pro Max: Dynamic background glow for pricing */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-violet-600/5 blur-[90px] rounded-full pointer-events-none"></div>
-          
-          <div className="text-center mb-16 relative z-10">
+        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-24">
+          <div className="text-center mb-16">
             <h2 className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
               Pricing
             </h2>
@@ -520,12 +517,12 @@ export default function Home() {
             <p className="text-base text-gray-400 font-light max-w-2xl mx-auto">Choose the intelligence level that matches your market participation.</p>
           </div>
           
-          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch relative z-10">
+          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
             
             {/* Free */}
-            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 hover:border-white/10 p-7 group transition-all duration-500 bg-white/[0.01] hover:shadow-[0_12px_24px_rgba(0,0,0,0.24)]">
+            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 p-7 bg-white/[0.01]">
               <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Free</h3>
-              <div className="text-4xl font-black mb-5 text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:scale-105 transition-transform duration-500">$0<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
+              <div className="text-4xl font-black mb-5 text-white tracking-tighter">$0<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
               <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">Basic intelligence for casual observers.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
@@ -536,24 +533,21 @@ export default function Home() {
                   "No custom collections",
                   "No smart collections access"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs group/li">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-700 group-hover/li:bg-gray-500 transition-colors"></div>
+                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-700"></div>
                     {item}
                   </li>
                 ))}
               </ul>
-              <a href="/dashboard" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]">Get started free</a>
+              <a href="/dashboard" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs">Get started free</a>
             </div>
 
             {/* Pro - Most Popular (Center Reinforcement) */}
-            <div className="glass rounded-[2.5rem] h-full flex flex-col border-violet-500/40 p-8 group relative overflow-hidden shadow-[0_0_60px_rgba(139,92,246,0.12)] bg-gradient-to-b from-violet-500/[0.12] to-black/20 transform lg:scale-[1.05] z-20 transition-all duration-700 hover:shadow-[0_0_80px_rgba(139,92,246,0.18)]">
-              {/* Pro Max: Animated breathing light border */}
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/20 to-violet-500/0 -translate-x-full pointer-events-none"></div>
-              
-              <div className="absolute top-0 right-0 px-6 py-2 bg-gradient-to-r from-violet-600 to-violet-400 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-bl-2xl shadow-2xl z-20">Most Popular</div>
+            <div className="glass rounded-[2.5rem] h-full flex flex-col border-violet-500/40 p-8 relative overflow-hidden bg-white/[0.01]">
+              <div className="absolute top-0 right-0 px-6 py-2 bg-violet-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-bl-2xl z-20">Most Popular</div>
               
               <h3 className="text-xs font-bold text-violet-400 tracking-tight uppercase mb-6">Pro</h3>
-              <div className="text-6xl font-black mb-6 text-white tracking-tighter drop-shadow-[0_0_25px_rgba(139,92,246,0.5)] group-hover:scale-110 transition-transform duration-700">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
+              <div className="text-6xl font-black mb-6 text-white tracking-tighter">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
               <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">For professional traders who need immediate edges.</p>
               
               <ul className="space-y-4 mb-10 flex-1">
@@ -565,8 +559,8 @@ export default function Home() {
                   "Full Whale Score visibility",
                   "Full Telegram Bot features"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-gray-100 font-bold text-xs group/li">
-                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center group-hover/li:bg-violet-500/30 transition-colors">
+                  <li key={i} className="flex items-center gap-4 text-gray-100 font-bold text-xs">
+                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
                       <svg className="w-3 h-3 text-violet-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
                     </div>
                     {item}
@@ -576,17 +570,16 @@ export default function Home() {
               
               <a 
                 href="/subscribe?plan=pro"
-                className="relative w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center shadow-[0_20px_50px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all transform hover:-translate-y-1 active:scale-95 overflow-hidden group/btn"
+                className="w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full"></div>
-                <span className="relative z-10">Upgrade to Pro</span>
+                Upgrade to Pro
               </a>
             </div>
 
             {/* Elite */}
-            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 hover:border-white/10 p-7 group transition-all duration-500 bg-white/[0.01] hover:shadow-[0_12px_24px_rgba(0,0,0,0.24)]">
+            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 p-7 bg-white/[0.01]">
               <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Elite</h3>
-              <div className="text-4xl font-black mb-5 text-white tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-105 transition-transform duration-500">$59<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
+              <div className="text-4xl font-black mb-5 text-white tracking-tighter">$59<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
               <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">The ultimate toolkit for high-net-worth operators.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
@@ -597,15 +590,15 @@ export default function Home() {
                   "Priority Whale Score updates",
                   "Exclusive alpha channel access"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs group/li">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30 group-hover/li:bg-cyan-500 transition-colors"></div>
+                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30"></div>
                     {item}
                   </li>
                 ))}
               </ul>
               <a 
                 href="/subscribe?plan=elite"
-                className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs"
               >
                 Go Elite
               </a>
