@@ -12,16 +12,15 @@ export default function Home() {
       {/* Background Effects */}
       <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#020202]">
         {/* Pro Max: Layered depth with mixed blend modes - Optimized performance */}
-        <div className="absolute top-[-15%] left-[-10%] w-[70%] h-[70%] bg-violet-600/10 rounded-full blur-[80px] animate-pulse-slow will-change-[opacity,transform]"></div>
-        <div className="absolute bottom-[-15%] right-[-10%] w-[70%] h-[70%] bg-cyan-600/10 rounded-full blur-[80px] animate-pulse-slow will-change-[opacity,transform]" style={{ animationDelay: '3s' }}></div>
-        <div className="absolute top-[20%] right-[15%] w-[45%] h-[45%] bg-indigo-500/5 rounded-full blur-[60px] animate-float will-change-transform"></div>
+        <div className="absolute top-[-15%] left-[-10%] w-[70%] h-[70%] bg-violet-600/10 rounded-full blur-[60px] animate-pulse-slow will-change-opacity"></div>
+        <div className="absolute bottom-[-15%] right-[-10%] w-[70%] h-[70%] bg-cyan-600/10 rounded-full blur-[60px] animate-pulse-slow will-change-opacity" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-[20%] right-[15%] w-[45%] h-[45%] bg-indigo-500/5 rounded-full blur-[40px] animate-float will-change-transform"></div>
         
         {/* Pro Max: Ultra-fine grid - Performance: use static opacity */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
         
         {/* Pro Max: Vignette and grain - Optimized grain opacity */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,transparent_0%,#020202_100%)]"></div>
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
       {/* Navigation */}
@@ -72,9 +71,9 @@ export default function Home() {
           <h1 className="animate-fade-in opacity-0 text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-[1.05] will-change-[opacity,transform]" style={{ animationDelay: '0.2s' }}>
             Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
               Score
-              <span className="absolute -inset-x-4 -inset-y-2 blur-[40px] bg-violet-500/10 -z-10 animate-pulse"></span>
+              <span className="absolute -inset-x-4 -inset-y-2 blur-[20px] bg-violet-500/10 -z-10 animate-pulse"></span>
             </span>.<br />
-            Frontrun the <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">Market</span>.
+            Frontrun the <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">Market</span>.
           </h1>
           
           <p className="animate-fade-in opacity-0 mt-8 max-w-2xl mx-auto text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide will-change-[opacity,transform]" style={{ animationDelay: '0.3s' }}>
