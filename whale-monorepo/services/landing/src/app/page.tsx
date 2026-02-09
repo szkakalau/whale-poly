@@ -539,7 +539,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href="/dashboard" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs">Get started free</a>
+              <a href="/subscribe?plan=free" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs">Get started free</a>
             </div>
 
             {/* Pro - Most Popular (Center Reinforcement) */}

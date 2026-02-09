@@ -9,18 +9,16 @@ import Footer from '@/components/Footer';
 function SubscribeForm() {
   const searchParams = useSearchParams();
   const [code, setCode] = useState('');
-  const [tier, setTier] = useState<'pro' | 'elite'>('pro');
+  const [tier, setTier] = useState<'free' | 'pro' | 'elite'>('pro');
   const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const p = searchParams.get('plan');
-    if (p === 'elite' || p === 'institutional') {
-      setTier('elite');
-    } else {
-      setTier('pro');
-    }
+    const p = (searchParams.get('plan') || '').toLowerCase();
+    if (p === 'free') setTier('free');
+    else if (p === 'elite' || p === 'institutional') setTier('elite');
+    else setTier('pro');
   }, [searchParams]);
 
   function mapCheckoutError(detail: unknown, status: number): string {
@@ -55,8 +53,29 @@ function SubscribeForm() {
     setError(null);
     setLoading(true);
 
-    // Construct the plan name based on tier and period
-    // backend handles "yearly" for period calculation
+    // If FREE, directly activate without checkout
+    if (tier === 'free') {
+      try {
+        const res = await fetch('/api/upgrade', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ plan: 'FREE' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(typeof data.error === 'string' ? data.error : 'Activation failed. Please try again.');
+          return;
+        }
+        window.location.href = '/dashboard';
+      } catch {
+        setError('Network error while activating Free plan. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Construct plan for payment checkout
     const planName = period === 'yearly' ? `${tier}_yearly` : tier;
 
     try {
@@ -95,9 +114,10 @@ function SubscribeForm() {
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="ABCD1234"
+          placeholder={tier === 'free' ? 'Not required for Free' : 'ABCD1234'}
           className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all"
-          required
+          required={tier !== 'free'}
+          disabled={tier === 'free'}
         />
       </div>
 
@@ -106,11 +126,12 @@ function SubscribeForm() {
           <label className="text-sm text-gray-400">Tier</label>
           <select
             value={tier}
-            onChange={(e) => setTier(e.target.value as 'pro' | 'elite')}
+            onChange={(e) => setTier(e.target.value as 'free' | 'pro' | 'elite')}
             className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
           >
-            <option value="pro">Professional</option>
-            <option value="elite">Institutional</option>
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="elite">Elite</option>
           </select>
         </div>
 
@@ -120,6 +141,7 @@ function SubscribeForm() {
             value={period}
             onChange={(e) => setPeriod(e.target.value as 'monthly' | 'yearly')}
             className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
+            disabled={tier === 'free'}
           >
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
@@ -134,7 +156,7 @@ function SubscribeForm() {
         disabled={loading}
         className="btn-primary w-full shadow-lg text-lg py-4 disabled:opacity-60 disabled:cursor-not-allowed transform active:scale-[0.98] transition-all"
       >
-        {loading ? 'Redirecting to checkout…' : 'Proceed to Checkout'}
+        {loading ? (tier === 'free' ? 'Activating…' : 'Redirecting to checkout…') : (tier === 'free' ? 'Activate Free' : 'Proceed to Checkout')}
       </button>
 
       <div className="text-sm text-gray-500 text-center">
