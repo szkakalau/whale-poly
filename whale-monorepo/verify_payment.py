@@ -39,23 +39,32 @@ async def verify(code):
 
         print("-" * 20)
 
-        # 2. Check Subscription
-        sub = (await session.execute(select(Subscription).where(Subscription.telegram_id == ac.telegram_id))).scalars().first()
-        if not sub:
+        # 2. Check Subscriptions
+        subs = (await session.execute(select(Subscription).where(Subscription.telegram_id == ac.telegram_id))).scalars().all()
+        
+        if not subs:
             print(f"❌ FAILURE: No subscription found for Telegram ID {ac.telegram_id}")
             return
+            
+        print(f"✅ Found {len(subs)} subscription(s) for Telegram ID {ac.telegram_id}:")
         
-        print(f"✅ Subscription found.")
-        print(f"   - ID: {sub.id}")
-        print(f"   - Status: {sub.status} (Expected: active)")
-        print(f"   - Plan: {sub.plan} (Expected: pro)")
-        print(f"   - Current Period End: {sub.current_period_end}")
+        found_valid_pro = False
+        for sub in subs:
+            print(f"   --- Subscription ---")
+            print(f"   - ID: {sub.id}")
+            print(f"   - Stripe Sub ID: {sub.stripe_subscription_id}")
+            print(f"   - Status: {sub.status}")
+            print(f"   - Plan: {sub.plan}")
+            print(f"   - Current Period End: {sub.current_period_end}")
+            
+            if sub.status == 'active' and sub.plan == 'pro':
+                found_valid_pro = True
 
         print("="*40)
-        if sub.status == 'active' and sub.plan == 'pro':
-            print("🎉 VERIFICATION SUCCESS: Payment flow is complete and correct!")
+        if found_valid_pro:
+            print("🎉 VERIFICATION SUCCESS: Valid PRO subscription found!")
         else:
-            print("❌ FAILURE: Subscription status or plan is incorrect.")
+            print("❌ FAILURE: No active PRO subscription found.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
