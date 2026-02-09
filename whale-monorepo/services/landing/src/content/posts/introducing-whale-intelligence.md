@@ -1,6 +1,6 @@
 ---
 title: "Introducing Whale Intelligence"
-date: "2024-05-20"
+date: "2026-05-20"
 excerpt: "Why tracking smart money is the only edge left in prediction markets."
 author: "Whale Team"
 tags: ["Announcement", "Philosophy"]

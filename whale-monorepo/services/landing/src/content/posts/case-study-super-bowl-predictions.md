@@ -1,6 +1,6 @@
 ---
 title: "Case Study: Super Bowl Predictions"
-date: "2024-06-18"
+date: "2026-06-18"
 excerpt: "Analyzing how whales predicted the outcome of the big game before the coin toss."
 author: "Whale Team"
 tags: ["Case Study", "Sports"]

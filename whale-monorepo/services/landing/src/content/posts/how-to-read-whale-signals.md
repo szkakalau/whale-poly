@@ -1,6 +1,6 @@
 ---
 title: "How to Read Whale Signals"
-date: "2024-05-22"
+date: "2026-05-22"
 excerpt: "A guide to understanding flow, volume, and conviction scores."
 author: "Whale Team"
 tags: ["Education", "Guide"]
