@@ -143,8 +143,8 @@ function SubscribeForm() {
             className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
             disabled={tier === 'free'}
           >
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
+            <option value="monthly">Monthly {tier === 'pro' ? '($29)' : tier === 'elite' ? '($59)' : ''}</option>
+            <option value="yearly">Yearly {tier === 'pro' ? '($290)' : tier === 'elite' ? '($590)' : ''}</option>
           </select>
         </div>
       </div>

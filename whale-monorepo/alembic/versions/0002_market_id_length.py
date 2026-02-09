@@ -15,20 +15,30 @@ depends_on = None
 
 def upgrade() -> None:
   # markets
-  op.alter_column("markets", "id", type_=sa.String(512), existing_nullable=False)
+  with op.batch_alter_table("markets") as batch_op:
+    batch_op.alter_column("id", type_=sa.String(512), existing_nullable=False)
   # trades_raw
-  op.alter_column("trades_raw", "market_id", type_=sa.String(512), existing_nullable=False)
+  with op.batch_alter_table("trades_raw") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(512), existing_nullable=False)
   # whale_trades
-  op.alter_column("whale_trades", "market_id", type_=sa.String(512), existing_nullable=False)
+  with op.batch_alter_table("whale_trades") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(512), existing_nullable=False)
   # alerts
-  op.alter_column("alerts", "market_id", type_=sa.String(512), existing_nullable=False)
+  with op.batch_alter_table("alerts") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(512), existing_nullable=False)
   # market_alert_state
-  op.alter_column("market_alert_state", "market_id", type_=sa.String(512), existing_nullable=False)
+  with op.batch_alter_table("market_alert_state") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(512), existing_nullable=False)
 
 
 def downgrade() -> None:
-  op.alter_column("markets", "id", type_=sa.String(128), existing_nullable=False)
-  op.alter_column("trades_raw", "market_id", type_=sa.String(128), existing_nullable=False)
-  op.alter_column("whale_trades", "market_id", type_=sa.String(128), existing_nullable=False)
-  op.alter_column("alerts", "market_id", type_=sa.String(128), existing_nullable=False)
-  op.alter_column("market_alert_state", "market_id", type_=sa.String(128), existing_nullable=False)
+  with op.batch_alter_table("markets") as batch_op:
+    batch_op.alter_column("id", type_=sa.String(128), existing_nullable=False)
+  with op.batch_alter_table("trades_raw") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(128), existing_nullable=False)
+  with op.batch_alter_table("whale_trades") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(128), existing_nullable=False)
+  with op.batch_alter_table("alerts") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(128), existing_nullable=False)
+  with op.batch_alter_table("market_alert_state") as batch_op:
+    batch_op.alter_column("market_id", type_=sa.String(128), existing_nullable=False)

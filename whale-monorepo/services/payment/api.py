@@ -25,6 +25,14 @@ class CheckoutIn(BaseModel):
   telegram_activation_code: str
   plan: str
   user_id: str | None = None
+  
+class PlanUpsertItem(BaseModel):
+  name: str
+  price_usd: int
+  stripe_price_id: str
+  
+class PlansUpsertIn(BaseModel):
+  items: list[PlanUpsertItem]
 
 
 def _sub_id(code: str, plan: str) -> str:
@@ -162,6 +170,28 @@ async def plans(session: AsyncSession = Depends(get_session)):
   rows = (await session.execute(select(Plan).order_by(Plan.price_usd.asc()))).scalars().all()
   return [{"id": p.id, "name": p.name, "price_usd": p.price_usd, "stripe_price_id": p.stripe_price_id} for p in rows]
 
+@app.post("/admin/plans/upsert")
+async def admin_plans_upsert(payload: PlansUpsertIn, x_admin_token: str | None = Header(None, alias="X-Admin-Token"), session: AsyncSession = Depends(get_session)):
+  _require_admin(x_admin_token)
+  count = 0
+  for it in payload.items:
+    name = (it.name or "").strip().lower()
+    if not name or not it.stripe_price_id or not isinstance(it.price_usd, int):
+      continue
+    if "institutional" in name:
+      name = name.replace("institutional", "elite")
+    plan_id = f"{name}"[:64]
+    await session.execute(
+      insert(Plan)
+      .values(id=plan_id, name=name, price_usd=int(it.price_usd), stripe_price_id=str(it.stripe_price_id))
+      .on_conflict_do_update(
+        index_elements=[Plan.name],
+        set_={"price_usd": int(it.price_usd), "stripe_price_id": str(it.stripe_price_id)}
+      )
+    )
+    count += 1
+  await session.commit()
+  return {"upserted": count}
 
 @app.get("/admin/subscriptions/stats")
 async def subscription_stats(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):

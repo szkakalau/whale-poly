@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
+from shared.db import insert
 from shared.models import Market, TradeRaw
 
 
@@ -192,7 +192,7 @@ async def fetch_trades(client: httpx.AsyncClient) -> list[dict[str, Any]]:
 
 async def ingest_trades(session: AsyncSession) -> list[str]:
   proxies = settings.https_proxy or None
-  async with httpx.AsyncClient(proxies=proxies) as client:
+  async with httpx.AsyncClient(proxy=proxies) as client:
     raw_trades = await fetch_trades(client)
 
   if not raw_trades:

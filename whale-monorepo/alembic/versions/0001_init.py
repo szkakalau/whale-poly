@@ -33,7 +33,7 @@ def upgrade() -> None:
 
   op.create_table(
     "wallets",
-    sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
+    sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
     sa.Column("address", sa.String(length=128), nullable=False),
     sa.Column("total_volume", sa.Numeric(38, 18), server_default=sa.text("0"), nullable=False),
     sa.Column("total_trades", sa.BigInteger(), server_default=sa.text("0"), nullable=False),

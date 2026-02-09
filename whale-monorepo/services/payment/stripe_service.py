@@ -17,6 +17,8 @@ def create_checkout_session(*, stripe_price_id: str, activation_code: str, plan:
   metadata = {"activation_code": activation_code, "plan": plan}
   if user_id:
     metadata["user_id"] = user_id
+  if not settings.landing_success_url or not settings.landing_cancel_url:
+    raise RuntimeError("LANDING_SUCCESS_URL and LANDING_CANCEL_URL are required")
   session = stripe.checkout.Session.create(
     mode="subscription",
     line_items=[{"price": stripe_price_id, "quantity": 1}],

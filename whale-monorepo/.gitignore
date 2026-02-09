@@ -7,3 +7,10 @@ __pycache__/
 
 services/landing/node_modules/
 services/landing/.next/
+
+# Local database
+*.db
+whale.db
+
+# Trae IDE
+.trae/

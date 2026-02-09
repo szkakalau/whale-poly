@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { WhaleLogo } from './WhaleLogo';
+
 const CTA_URL = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || "/subscribe";
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 
@@ -8,9 +10,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300">
       <div className="mx-auto max-w-7xl px-5 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" title="Sight Whale Home">
-          <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-400 shadow-lg shadow-violet-500/20">
-            <span className="absolute inset-0 rounded-lg bg-white/20 animate-pulse"></span>
-          </div>
+          <WhaleLogo className="h-8 w-8 text-white drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
           <span className="font-bold tracking-tight text-lg text-white">Whale Intelligence</span>
         </Link>
         

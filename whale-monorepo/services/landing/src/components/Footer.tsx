@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { WhaleLogo } from './WhaleLogo';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 
@@ -10,9 +11,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <div className="w-4 h-4 rounded-full bg-white/20 animate-pulse"></div>
-              </div>
+              <WhaleLogo className="h-9 w-9 text-white drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]" />
               <span className="font-bold text-white text-xl tracking-tight">Sight Whale</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed max-w-sm font-light">
