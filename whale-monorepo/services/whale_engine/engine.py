@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from redis.asyncio import Redis
-from sqlalchemy import func, select, text
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import func, select, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.db import insert
 from shared.config import settings
 from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade, WhaleProfile, WhalePosition, WhaleTradeHistory, WhaleStats
 
@@ -27,41 +27,37 @@ async def _ensure_schema_flags(session: AsyncSession) -> tuple[bool, bool, bool,
   global _HAS_WHALE_POSITIONS_TABLE, _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN, _HAS_WHALE_PROFILES_TABLE, _HAS_WHALE_TRADE_HISTORY_TABLE, _HAS_WHALE_STATS_TABLE
 
   if _HAS_WHALE_POSITIONS_TABLE is None:
+    def check_tables(conn):
+      inspector = inspect(conn.bind)
+      tables = inspector.get_table_names()
+      has_pos = "whale_positions" in tables
+      has_prof = "whale_profiles" in tables
+      has_hist = "whale_trade_history" in tables
+      has_stats = "whale_stats" in tables
+      
+      print(f"DEBUG: Schema Check - tables={tables}")
+      print(f"DEBUG: Schema Check - has_hist={has_hist}, has_stats={has_stats}")
+      
+      has_action = False
+      if "whale_trades" in tables:
+        cols = [c["name"] for c in inspector.get_columns("whale_trades")]
+        has_action = "action_type" in cols
+      
+      return has_pos, has_prof, has_action, has_hist, has_stats
+
     try:
-      _HAS_WHALE_POSITIONS_TABLE = bool((await session.execute(text("select to_regclass('public.whale_positions')"))).scalar_one_or_none())
+      (
+        _HAS_WHALE_POSITIONS_TABLE,
+        _HAS_WHALE_PROFILES_TABLE,
+        _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN,
+        _HAS_WHALE_TRADE_HISTORY_TABLE,
+        _HAS_WHALE_STATS_TABLE
+      ) = await session.run_sync(check_tables)
     except Exception:
       _HAS_WHALE_POSITIONS_TABLE = False
-
-  if _HAS_WHALE_PROFILES_TABLE is None:
-    try:
-      _HAS_WHALE_PROFILES_TABLE = bool((await session.execute(text("select to_regclass('public.whale_profiles')"))).scalar_one_or_none())
-    except Exception:
       _HAS_WHALE_PROFILES_TABLE = False
-
-  if _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN is None:
-    try:
-      _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN = bool(
-        (await session.execute(
-          text(
-            "select 1 from information_schema.columns "
-            "where table_schema='public' and table_name='whale_trades' and column_name='action_type' "
-            "limit 1"
-          )
-        )).first()
-      )
-    except Exception:
       _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN = False
-
-  if _HAS_WHALE_TRADE_HISTORY_TABLE is None:
-    try:
-      _HAS_WHALE_TRADE_HISTORY_TABLE = bool((await session.execute(text("select to_regclass('public.whale_trade_history')"))).scalar_one_or_none())
-    except Exception:
       _HAS_WHALE_TRADE_HISTORY_TABLE = False
-
-  if _HAS_WHALE_STATS_TABLE is None:
-    try:
-      _HAS_WHALE_STATS_TABLE = bool((await session.execute(text("select to_regclass('public.whale_stats')"))).scalar_one_or_none())
-    except Exception:
       _HAS_WHALE_STATS_TABLE = False
 
   return _HAS_WHALE_POSITIONS_TABLE, _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN, _HAS_WHALE_PROFILES_TABLE, _HAS_WHALE_TRADE_HISTORY_TABLE, _HAS_WHALE_STATS_TABLE
@@ -79,7 +75,10 @@ async def compute_whale_score(session: AsyncSession, wallet: str) -> int:
       row = (await session.execute(select(WhaleStats).where(WhaleStats.wallet_address == wallet))).scalars().first()
       if row and row.whale_score is not None:
         return int(row.whale_score)
-    except Exception:
+    except Exception as e:
+      print(f"DEBUG: Error inserting WhaleTradeHistory: {e}")
+      import traceback
+      traceback.print_exc()
       pass
   since = now - timedelta(days=30)
   try:
@@ -91,6 +90,8 @@ async def compute_whale_score(session: AsyncSession, wallet: str) -> int:
   except Exception:
     total = 0
   usd_30d = float(total or 0)
+  if "SniperWhale009" in wallet:
+      print(f"DEBUG: compute_whale_score {wallet} usd_30d={usd_30d}")
 
   base = 50
   if usd_30d >= 50000:
@@ -240,7 +241,13 @@ def _usd(t: TradeRaw) -> float:
 
 
 def detect_behavior(trades: list[TradeRaw], now: datetime) -> tuple[str | None, int, float, float, str | None]:
-  window10 = [t for t in trades if (now - t.timestamp).total_seconds() <= 10 * 60]
+  def _to_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+      return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+  now_aware = _to_aware(now)
+  window10 = [t for t in trades if (now_aware - _to_aware(t.timestamp)).total_seconds() <= 10 * 60]
   buys10 = [t for t in window10 if (t.side or "").lower() == "buy"]
   sells10 = [t for t in window10 if (t.side or "").lower() == "sell"]
 
@@ -282,15 +289,16 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
     .on_conflict_do_update(index_elements=[Wallet.address], set_={"last_seen_at": now})
   )
 
+  trade_usd = _usd(trade)
   score = await compute_whale_score(session, wallet)
+  if "SniperWhale009" in wallet:
+      print(f"DEBUG: Wallet {wallet} score={score} trade_usd={trade_usd}")
 
   await session.execute(
     insert(WhaleScore)
     .values(wallet_address=wallet, final_score=score, updated_at=now)
     .on_conflict_do_update(index_elements=[WhaleScore.wallet_address], set_={"final_score": score, "updated_at": now})
   )
-
-  trade_usd = _usd(trade)
 
   recent_since = now - timedelta(minutes=20)
   recent = (
@@ -308,6 +316,10 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
     score = max(score, score_hint)
 
   qualifies = (score >= 90 and trade_usd >= 500) or (score >= 75 and trade_usd >= 3000) or bool(score_hint)
+  if "SniperWhale009" in wallet:
+      print(f"DEBUG: Wallet {wallet} qualifies={qualifies} (score={score}, trade_usd={trade_usd})")
+      print(f"DEBUG: has_trade_history={has_trade_history}")
+
   if not qualifies:
     return False
 
@@ -363,7 +375,10 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
         )
         .on_conflict_do_nothing(index_elements=[WhaleTradeHistory.trade_id])
       )
-    except Exception:
+    except Exception as e:
+      print(f"DEBUG: Error inserting WhaleTradeHistory: {e}")
+      import traceback
+      traceback.print_exc()
       pass
 
   wt_id = _id(trade_id)
@@ -642,143 +657,146 @@ def _combine_window_metrics(m7: _WindowMetrics | None, m30: _WindowMetrics | Non
 
 
 async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade_cap: int) -> dict[str, _WindowMetrics]:
-  q = text(
-    """
-    with base as (
-      select
-        wth.trade_id,
-        wth.wallet_address,
-        wth.market_id,
-        wth.side,
-        wth.timestamp,
-        (wth.pnl)::double precision as pnl,
-        (wth.trade_usd)::double precision as trade_usd,
-        row_number() over (partition by wth.wallet_address order by wth.timestamp desc) as rn
-      from whale_trade_history wth
-      where wth.timestamp >= :since
-    ),
-    limited as (
-      select * from base where rn <= :trade_cap
-    ),
-    agg as (
-      select
-        wallet_address,
-        count(*)::int as trades,
-        coalesce(sum(pnl), 0.0) as total_pnl,
-        coalesce(sum(trade_usd), 0.0) as total_volume,
-        coalesce(avg(trade_usd), 0.0) as avg_trade_size,
-        coalesce(stddev_pop(pnl), 0.0) as stddev_pnl,
-        (sum(case when pnl > 0 then 1 else 0 end)::double precision / nullif(count(*), 0)) as win_rate,
-        coalesce(avg(case when pnl > 0 then pnl end), 0.0) as avg_win,
-        coalesce(avg(case when pnl < 0 then abs(pnl) end), 0.0) as avg_loss
-      from limited
-      group by wallet_address
-    ),
-    cum as (
-      select
-        wallet_address,
-        timestamp,
-        sum(pnl) over (partition by wallet_address order by timestamp asc rows between unbounded preceding and current row) as cum_pnl
-      from limited
-    ),
-    dd as (
-      select
-        wallet_address,
-        coalesce(max(running_max - cum_pnl), 0.0) as max_drawdown
-      from (
-        select
-          wallet_address,
-          cum_pnl,
-          max(cum_pnl) over (partition by wallet_address order by timestamp asc rows between unbounded preceding and current row) as running_max
-        from cum
-      ) t
-      group by wallet_address
-    ),
-    tr as (
-      select
-        trade_id,
-        market_id,
-        percent_rank() over (partition by market_id order by price asc) as pr
-      from trades_raw
-      where timestamp >= :since
-    ),
-    timing as (
-      select
-        l.wallet_address,
-        coalesce(avg(case when lower(l.side) = 'buy' then tr.pr end), 0.5) as avg_entry_percentile,
-        coalesce(avg(case when lower(l.side) = 'sell' then tr.pr end), 0.5) as avg_exit_percentile
-      from limited l
-      join tr on tr.trade_id = l.trade_id
-      group by l.wallet_address
-    ),
-    market_vol as (
-      select market_id, coalesce(sum(amount * price), 0)::double precision as market_volume
-      from trades_raw
-      where timestamp >= :since
-      group by market_id
-    ),
-    impact as (
-      select
-        l.wallet_address,
-        coalesce(avg(l.trade_usd / nullif(m.market_volume, 0.0)), 0.0) as market_liquidity_ratio
-      from limited l
-      join market_vol m on m.market_id = l.market_id
-      group by l.wallet_address
-    ),
-    market_counts as (
-      select wallet_address, market_id, count(*)::int as cnt
-      from limited
-      group by wallet_address, market_id
-    ),
-    top_market as (
-      select wallet_address, max(cnt)::double precision as top_cnt
-      from market_counts
-      group by wallet_address
-    )
-    select
-      a.wallet_address,
-      a.trades,
-      a.total_pnl,
-      a.total_volume,
-      a.avg_trade_size,
-      coalesce(d.max_drawdown, 0.0) as max_drawdown,
-      a.stddev_pnl,
-      coalesce(t.avg_entry_percentile, 0.5) as avg_entry_percentile,
-      coalesce(t.avg_exit_percentile, 0.5) as avg_exit_percentile,
-      coalesce(a.total_pnl / nullif(a.total_volume, 0.0), 0.0) as roi,
-      coalesce(a.avg_win / nullif(a.avg_loss, 0.0), 0.0) as risk_reward_ratio,
-      coalesce(i.market_liquidity_ratio, 0.0) as market_liquidity_ratio,
-      coalesce(tm.top_cnt / nullif(a.trades::double precision, 0.0), 0.0) as top_market_fraction,
-      coalesce(abs(a.total_pnl) / nullif(a.total_volume, 0.0), 0.0) as pnl_abs_ratio,
-      coalesce(a.win_rate, 0.0) as win_rate
-    from agg a
-    left join dd d on d.wallet_address = a.wallet_address
-    left join timing t on t.wallet_address = a.wallet_address
-    left join impact i on i.wallet_address = a.wallet_address
-    left join top_market tm on tm.wallet_address = a.wallet_address
-    """
+  # Fetch TradeRaw for market context (percentiles, volume)
+  tr_result = await session.execute(
+    select(TradeRaw.trade_id, TradeRaw.market_id, TradeRaw.price, TradeRaw.amount, TradeRaw.timestamp)
+    .where(TradeRaw.timestamp >= since)
   )
-  rows = (await session.execute(q, {"since": since, "trade_cap": trade_cap})).mappings().all()
+  raw_trades = tr_result.all()
+  
+  # Compute Market Volume and Price Percentiles
+  market_volume: dict[str, float] = {}
+  market_prices: dict[str, list[tuple[float, str]]] = {} # market_id -> list of (price, trade_id)
+  
+  for r in raw_trades:
+    mid = str(r.market_id)
+    vol = float(r.price) * float(r.amount)
+    market_volume[mid] = market_volume.get(mid, 0.0) + vol
+    if mid not in market_prices:
+      market_prices[mid] = []
+    market_prices[mid].append((float(r.price), str(r.trade_id)))
+    
+  trade_percentiles: dict[str, float] = {}
+  for mid, items in market_prices.items():
+    items.sort(key=lambda x: x[0])
+    n = len(items)
+    for idx, (price, tid) in enumerate(items):
+      if n > 1:
+        p = idx / (n - 1)
+      else:
+        p = 0.5
+      trade_percentiles[tid] = p
+
+  # Fetch WhaleTradeHistory
+  wth_result = await session.execute(
+    select(WhaleTradeHistory)
+    .where(WhaleTradeHistory.timestamp >= since)
+    .order_by(WhaleTradeHistory.wallet_address, WhaleTradeHistory.timestamp.desc())
+  )
+  history_rows = wth_result.scalars().all()
+  
+  wallet_trades: dict[str, list[WhaleTradeHistory]] = {}
+  for wth in history_rows:
+    wa = str(wth.wallet_address)
+    if wa not in wallet_trades:
+      wallet_trades[wa] = []
+    wallet_trades[wa].append(wth)
+      
   out: dict[str, _WindowMetrics] = {}
-  for r in rows:
-    addr = str(r.get("wallet_address") or "")
-    if not addr:
+  for wallet, trades in wallet_trades.items():
+    trades = trades[:trade_cap]
+    if not trades:
       continue
-    out[addr] = _WindowMetrics(
-      trades=_safe_int(r.get("trades"), 0),
-      win_rate=_safe_float(r.get("win_rate"), 0.0),
-      roi=_safe_float(r.get("roi"), 0.0),
-      total_pnl=_safe_float(r.get("total_pnl"), 0.0),
-      total_volume=_safe_float(r.get("total_volume"), 0.0),
-      avg_trade_size=_safe_float(r.get("avg_trade_size"), 0.0),
-      max_drawdown=_safe_float(r.get("max_drawdown"), 0.0),
-      stddev_pnl=_safe_float(r.get("stddev_pnl"), 0.0),
-      avg_entry_percentile=_safe_float(r.get("avg_entry_percentile"), 0.5),
-      avg_exit_percentile=_safe_float(r.get("avg_exit_percentile"), 0.5),
-      risk_reward_ratio=_safe_float(r.get("risk_reward_ratio"), 0.0),
-      market_liquidity_ratio=_safe_float(r.get("market_liquidity_ratio"), 0.0),
-      top_market_fraction=_safe_float(r.get("top_market_fraction"), 0.0),
-      pnl_abs_ratio=_safe_float(r.get("pnl_abs_ratio"), 0.0),
+      
+    n_trades = len(trades)
+    total_pnl = sum(float(t.pnl) for t in trades)
+    total_vol = sum(float(t.trade_usd) for t in trades)
+    avg_trade_size = total_vol / n_trades if n_trades > 0 else 0.0
+    
+    pnls = [float(t.pnl) for t in trades]
+    mean_pnl = total_pnl / n_trades if n_trades > 0 else 0.0
+    
+    if n_trades > 0:
+      variance = sum((p - mean_pnl) ** 2 for p in pnls) / n_trades
+      stddev_pnl = math.sqrt(variance)
+    else:
+      stddev_pnl = 0.0
+      
+    wins = [p for p in pnls if p > 0]
+    losses = [p for p in pnls if p < 0]
+    
+    # Calculate win rate based on closed trades (wins + losses)
+    n_closed = len(wins) + len(losses)
+    win_rate = len(wins) / n_closed if n_closed > 0 else 0.0
+    
+    avg_win = sum(wins) / len(wins) if wins else 0.0
+    avg_loss = sum(abs(l) for l in losses) / len(losses) if losses else 0.0
+    
+    roi = total_pnl / total_vol if total_vol > 0 else 0.0
+    risk_reward = avg_win / avg_loss if avg_loss > 0 else 0.0
+    
+    # Max Drawdown
+    trades_asc = sorted(trades, key=lambda t: t.timestamp)
+    current_cum = 0.0
+    peak = -float('inf') 
+    max_dd = 0.0
+    
+    # Initialize peak with first cum if needed, but logic:
+    # running_max starts at -inf, updates as we go.
+    # Actually if first cum is -100, peak becomes -100.
+    
+    for t in trades_asc:
+      current_cum += float(t.pnl)
+      if current_cum > peak:
+        peak = current_cum
+      dd = peak - current_cum
+      if dd > max_dd:
+        max_dd = dd
+        
+    entry_prs = []
+    exit_prs = []
+    liquidity_ratios = []
+    market_counts: dict[str, int] = {}
+    
+    for t in trades:
+      pr = trade_percentiles.get(t.trade_id, 0.5)
+      side = str(t.side).lower()
+      if side == 'buy':
+        entry_prs.append(pr)
+      elif side == 'sell':
+        exit_prs.append(pr)
+        
+      m_vol = market_volume.get(t.market_id, 0.0)
+      liq_ratio = float(t.trade_usd) / m_vol if m_vol > 0 else 0.0
+      liquidity_ratios.append(liq_ratio)
+      
+      mid = str(t.market_id)
+      market_counts[mid] = market_counts.get(mid, 0) + 1
+      
+    avg_entry = sum(entry_prs) / len(entry_prs) if entry_prs else 0.5
+    avg_exit = sum(exit_prs) / len(exit_prs) if exit_prs else 0.5
+    m_liq_ratio = sum(liquidity_ratios) / len(liquidity_ratios) if liquidity_ratios else 0.0
+    
+    top_cnt = max(market_counts.values()) if market_counts else 0
+    top_frac = top_cnt / n_trades if n_trades > 0 else 0.0
+    
+    pnl_abs_ratio = abs(total_pnl) / total_vol if total_vol > 0 else 0.0
+    
+    out[wallet] = _WindowMetrics(
+      trades=n_trades,
+      win_rate=win_rate,
+      roi=roi,
+      total_pnl=total_pnl,
+      total_volume=total_vol,
+      avg_trade_size=avg_trade_size,
+      max_drawdown=max_dd,
+      stddev_pnl=stddev_pnl,
+      avg_entry_percentile=avg_entry,
+      avg_exit_percentile=avg_exit,
+      risk_reward_ratio=risk_reward,
+      market_liquidity_ratio=m_liq_ratio,
+      top_market_fraction=top_frac,
+      pnl_abs_ratio=pnl_abs_ratio,
     )
   return out
 
@@ -819,6 +837,7 @@ async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -
       return 0.0
 
   values: list[dict[str, object]] = []
+  profile_values: list[dict[str, object]] = []
   for addr in wallets:
     w7 = m7.get(addr)
     w30 = m30.get(addr)
@@ -878,6 +897,18 @@ async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -
       }
     )
 
+    wins = int(round(combined.trades * combined.win_rate))
+    losses = max(0, combined.trades - wins)
+    profile_values.append({
+        "wallet_address": addr,
+        "total_volume": float(combined.total_volume),
+        "total_trades": int(combined.trades),
+        "realized_pnl": float(combined.total_pnl),
+        "wins": wins,
+        "losses": losses,
+        "updated_at": now,
+    })
+
   if not values:
     return 0
 
@@ -913,5 +944,22 @@ async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -
       set_={"final_score": score_stmt.excluded.final_score, "updated_at": now},
     )
   )
+
+  if profile_values:
+    profile_stmt = insert(WhaleProfile).values(profile_values)
+    profile_update_cols = {
+        "total_volume": profile_stmt.excluded.total_volume,
+        "total_trades": profile_stmt.excluded.total_trades,
+        "realized_pnl": profile_stmt.excluded.realized_pnl,
+        "wins": profile_stmt.excluded.wins,
+        "losses": profile_stmt.excluded.losses,
+        "updated_at": now,
+    }
+    await session.execute(
+        profile_stmt.on_conflict_do_update(
+            index_elements=[WhaleProfile.wallet_address],
+            set_=profile_update_cols
+        )
+    )
 
   return len(values)

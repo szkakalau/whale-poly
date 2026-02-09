@@ -20,7 +20,7 @@ class Delivery(Base):
 
 class Wallet(Base):
     __tablename__ = "wallets"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     address = Column(String(128), unique=True, index=True)
     total_volume = Column(Numeric(38, 18), server_default="0")
     total_trades = Column(BigInteger, server_default="0")

@@ -85,6 +85,8 @@ class Settings:
       u = "postgresql+asyncpg://" + u[len("postgres://") :]
     if u.startswith("postgresql://"):
       u = "postgresql+asyncpg://" + u[len("postgresql://") :]
+    if u.startswith("sqlite:///"):
+      u = "sqlite+aiosqlite:///" + u[len("sqlite:///") :]
     return u
 
 
