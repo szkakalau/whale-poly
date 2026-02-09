@@ -1,6 +1,6 @@
 ---
 title: "The Future of Decentralized Prediction Markets"
-date: "2024-07-05"
+date: "2026-07-05"
 excerpt: "Where is this industry going? From Futarchy to corporate decision making."
 author: "Whale Team"
 tags: ["Future", "Crypto"]

@@ -1,6 +1,6 @@
 ---
 title: "The Role of Whales in Election Markets"
-date: "2024-05-27"
+date: "2026-05-27"
 excerpt: "How large capital flows shape political prediction markets and what it means for accuracy."
 author: "Whale Team"
 tags: ["Politics", "Market Analysis"]

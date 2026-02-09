@@ -1,6 +1,6 @@
 ---
 title: "Risk Management Strategies for Prediction Markets"
-date: "2024-06-10"
+date: "2026-06-10"
 excerpt: "Prediction markets are volatile. Learn how to protect your bankroll while chasing whale signals."
 author: "Whale Team"
 tags: ["Risk Management", "Strategy"]

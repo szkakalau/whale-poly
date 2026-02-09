@@ -1,6 +1,6 @@
 ---
 title: "How On-Chain Data Reveals Market Sentiment"
-date: "2024-06-15"
+date: "2026-06-15"
 excerpt: "The blockchain doesn't lie. How to read the tea leaves of wallet activity and stablecoin flows."
 author: "Whale Team"
 tags: ["On-Chain Analysis", "Data Science"]

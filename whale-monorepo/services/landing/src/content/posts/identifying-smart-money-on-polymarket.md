@@ -1,6 +1,6 @@
 ---
 title: "Identifying Smart Money on Polymarket"
-date: "2024-05-28"
+date: "2026-05-28"
 excerpt: "Not all volume is created equal. Learn how to distinguish between retail FOMO and institutional conviction."
 author: "Whale Team"
 tags: ["Strategy", "Whale Tracking"]

@@ -1,6 +1,6 @@
 ---
 title: "The Psychology of Market Makers"
-date: "2024-06-22"
+date: "2026-06-22"
 excerpt: "Understanding the players who provide liquidity and how they influence price action."
 author: "Whale Team"
 tags: ["Market Structure", "Psychology"]

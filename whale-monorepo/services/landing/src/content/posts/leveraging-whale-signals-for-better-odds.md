@@ -1,6 +1,6 @@
 ---
 title: "Leveraging Whale Signals for Better Odds"
-date: "2024-06-28"
+date: "2026-06-28"
 excerpt: "How to combine your own research with whale signals to maximize your Expected Value (EV)."
 author: "Whale Team"
 tags: ["Strategy", "Advanced"]
