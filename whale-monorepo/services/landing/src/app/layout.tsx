@@ -13,12 +13,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sight Whale — Polymarket Whale Intelligence & Real-time Alerts",
-  description: "Track Polymarket Whale Activity — Before the Crowd Reacts. Get real-time, on-chain intelligence on historically profitable whale behavior delivered to your Telegram.",
-  keywords: ["Polymarket", "Whale Intelligence", "Prediction Markets", "DeFi Alerts", "Crypto Trading Signals", "Smart Money Tracking", "On-chain Analytics"],
+  title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+  description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
+  keywords: [
+    "Polymarket", 
+    "Whale Intelligence", 
+    "Prediction Markets", 
+    "DeFi Alerts", 
+    "Crypto Trading Signals", 
+    "Smart Money Tracking", 
+    "On-chain Analytics",
+    "Election Betting Odds",
+    "Trump Odds",
+    "Sports Betting Strategy",
+    "Crypto Alpha",
+    "Real-time Odds Tracking"
+  ],
   openGraph: {
-    title: "Sight Whale — Polymarket Whale Intelligence & Real-time Alerts",
-    description: "Follow the smart money on Polymarket. Real-time alerts on high-conviction whale moves before they hit the headlines.",
+    title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+    description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
     type: "website",
     url: "https://sightwhale.com/",
     siteName: "Sight Whale",
@@ -34,8 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sight Whale — Follow Polymarket Smart Money & Whale Alerts",
-    description: "Track the world's most profitable prediction market whales in real-time. Frontrun the crowd with Sight Whale.",
+    title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+    description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
     images: ["/images/og-image.png"]
   },
   robots: {

@@ -25,7 +25,7 @@ export default function Home() {
             "name": "Sight Whale",
             "operatingSystem": "Web, Telegram",
             "applicationCategory": "FinanceApplication",
-            "description": "Track Polymarket Whale Activity — Before the Crowd Reacts. Get real-time, on-chain intelligence on historically profitable whale behavior delivered to your Telegram.",
+            "description": "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
             "offers": {
               "@type": "AggregateOffer",
               "lowPrice": "0",
