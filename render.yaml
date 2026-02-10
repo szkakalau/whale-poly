@@ -82,9 +82,9 @@ services:
       - key: TELEGRAM_ALERT_CHAT_ID
         sync: false
       - key: HEALTH_PAYMENT_API_URL
-        value: https://payment-api.onrender.com
+        value: https://payment-api-6wk6.onrender.com
       - key: HEALTH_TELEGRAM_BOT_API_URL
-        value: https://telegram-bot.onrender.com
+        value: https://telegram-bot-qk51.onrender.com
       - key: MARKET_INGEST_SECONDS
         value: "600"
       - key: TRADE_INGEST_SECONDS

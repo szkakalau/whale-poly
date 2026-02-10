@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE="${API_BASE:-https://trade-ingest-api.onrender.com}"
-WHALE_API="${WHALE_API:-https://whale-engine-api.onrender.com}"
-ALERT_API="${ALERT_API:-https://alert-engine-api.onrender.com}"
-PAY_API="${PAY_API:-https://payment-api.onrender.com}"
-TG_API="${TG_API:-https://telegram-bot.onrender.com}"
+API_BASE="${API_BASE:-${HEALTH_TRADE_INGEST_API_URL:-https://trade-ingest-api.onrender.com}}"
+WHALE_API="${WHALE_API:-${HEALTH_WHALE_ENGINE_API_URL:-https://whale-engine-api.onrender.com}}"
+ALERT_API="${ALERT_API:-${HEALTH_ALERT_ENGINE_API_URL:-https://alert-engine-api.onrender.com}}"
+PAY_API="${PAY_API:-${HEALTH_PAYMENT_API_URL:-https://payment-api.onrender.com}}"
+TG_API="${TG_API:-${HEALTH_TELEGRAM_BOT_API_URL:-https://telegram-bot.onrender.com}}"
 
 echo "== Checking service health =="
 for url in \
