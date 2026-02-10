@@ -77,6 +77,10 @@ services:
         sync: false
       - key: TELEGRAM_HEALTH_USERNAME
         sync: false
+      - key: HEALTH_PAYMENT_API_URL
+        value: https://payment-api.onrender.com
+      - key: HEALTH_TELEGRAM_BOT_API_URL
+        value: https://telegram-bot.onrender.com
       - key: MARKET_INGEST_SECONDS
         value: "600"
       - key: TRADE_INGEST_SECONDS

@@ -60,6 +60,9 @@ async def _fetch_health(client: httpx.AsyncClient, base_url: str) -> tuple[int |
   url = base_url.rstrip("/") + "/health"
   try:
     resp = await client.get(url, timeout=10)
+    if resp.status_code == 404:
+      alt = base_url.rstrip("/") + "/healthz"
+      resp = await client.get(alt, timeout=10)
     return resp.status_code, ""
   except Exception as e:
     return None, str(e)
@@ -148,9 +151,19 @@ async def _send_telegram(client: httpx.AsyncClient, content: str) -> None:
     return
   url = f"https://api.telegram.org/bot{settings.telegram_health_bot_token}/sendMessage"
   payload = {"chat_id": chat_id, "text": content, "disable_web_page_preview": True}
-  resp = await client.post(url, json=payload, timeout=10)
-  if resp.status_code < 200 or resp.status_code >= 300:
-    logger.warning("telegram_send_failed status=%s body=%s", resp.status_code, resp.text[:200])
+  last_error = ""
+  for attempt in range(1, 4):
+    try:
+      resp = await client.post(url, json=payload, timeout=15)
+      if resp.status_code >= 200 and resp.status_code < 300:
+        return
+      last_error = f"status={resp.status_code} body={resp.text[:200]}"
+    except Exception as e:
+      last_error = f"error={e}"
+    logger.warning("telegram_send_retry attempt=%s %s", attempt, last_error)
+    if attempt < 3:
+      await asyncio.sleep(1 * attempt)
+  logger.warning("telegram_send_failed %s", last_error)
 
 
 async def run_full_health_check() -> dict:
@@ -160,6 +173,7 @@ async def run_full_health_check() -> dict:
     "whale_engine": settings.health_whale_engine_api_url,
     "alert_engine": settings.health_alert_engine_api_url,
     "payment": settings.health_payment_api_url,
+    "telegram_bot": settings.health_telegram_bot_api_url,
   }
   started_at = datetime.now(timezone.utc)
   trade_id = f"health-test-{int(time.time())}"
@@ -180,7 +194,7 @@ async def run_full_health_check() -> dict:
     results["whale_trade"] = whale_trade_id or "timeout"
     results["alert"] = alert_id or "timeout"
 
-    ok = all(v == "200" for k, v in results.items() if k in {"trade_ingest", "whale_engine", "alert_engine", "payment"}) and injected and alert_id
+    ok = all(v == "200" for k, v in results.items() if k in {"trade_ingest", "whale_engine", "alert_engine", "payment", "telegram_bot"}) and injected and alert_id
     status = "OK" if ok else "FAIL"
     lines = [
       f"全链路检查结果: {status}",
@@ -189,6 +203,7 @@ async def run_full_health_check() -> dict:
       f"whale-engine /health: {results['whale_engine']}",
       f"alert-engine /health: {results['alert_engine']}",
       f"payment /health: {results['payment']}",
+      f"telegram-bot /health: {results['telegram_bot']}",
       f"注入测试交易: {results['inject_trade']}",
       f"WhaleTrade: {results['whale_trade']}",
       f"Alert: {results['alert']}",

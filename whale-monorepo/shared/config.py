@@ -53,6 +53,7 @@ class Settings:
     self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "https://whale-engine-api.onrender.com")
     self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
     self.health_payment_api_url = os.getenv("HEALTH_PAYMENT_API_URL", "https://payment-api.onrender.com")
+    self.health_telegram_bot_api_url = os.getenv("HEALTH_TELEGRAM_BOT_API_URL", "https://telegram-bot.onrender.com")
 
     # Plan Gating Limits
     self.plan_limits = {
