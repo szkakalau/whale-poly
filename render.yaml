@@ -230,3 +230,15 @@ services:
           name: whale-redis
           type: keyvalue
           property: connectionString
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: LANDING_SUCCESS_URL
+        sync: false
+      - key: LANDING_CANCEL_URL
+        sync: false
+      - key: PAYMENT_MODE
+        value: stripe
+      - key: DEFAULT_CURRENCY
+        value: usd

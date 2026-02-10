@@ -29,7 +29,7 @@ export default function Home() {
             "offers": {
               "@type": "AggregateOffer",
               "lowPrice": "0",
-              "highPrice": "299",
+              "highPrice": "590",
               "priceCurrency": "USD"
             },
             "aggregateRating": {
@@ -276,7 +276,7 @@ export default function Home() {
                     
                     <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Whale Score</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-violet-400 font-black text-xs">8.4</span>
+                      <span className="text-violet-400 font-black text-xs">84</span>
                       <div className="h-1 w-16 bg-gray-900 rounded-full overflow-hidden ring-1 ring-white/5">
                       <div className="h-full w-[84%] bg-gradient-to-r from-violet-600 to-violet-400"></div>
                       </div>
