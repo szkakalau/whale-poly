@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 
 from services.telegram_bot.bot import build_application
 from services.telegram_bot.templates import format_alert
-from services.telegram_bot.rate_limit import allow_send
-from shared.config import settings
+from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
+from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
 from shared.logging import configure_logging
 from shared.models import (
@@ -309,7 +309,23 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         kind = "entry"
 
     telegram_ids: list[str] = []
+    recipient_plan_map: dict[str, str] = {}
     lookup_db_ok = False
+    config = get_alert_config()
+    plan_cfg = config.get("user_plans", {})
+
+    def _plan_limits(name: str, default_delay_minutes: int, default_max_alerts):
+      data = plan_cfg.get(name, {})
+      delay_seconds = parse_duration(data.get("alerts_delay"), default_delay_minutes * 60)
+      delay_minutes = int(delay_seconds / 60)
+      max_alerts = data.get("max_alerts_per_day", default_max_alerts)
+      return {"max_alerts_per_day": max_alerts, "alert_delay_minutes": delay_minutes}
+
+    PLAN_LIMITS_MAP = {
+      "FREE": _plan_limits("free", 10, 3),
+      "PRO": _plan_limits("pro", 0, "unlimited"),
+      "ELITE": _plan_limits("elite", 0, "unlimited"),
+    }
     try:
       async with SessionLocal() as session:
         has_users = await _has_users_table(session)
@@ -512,13 +528,55 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       logger.info("alert_no_recipients whale_trade_id=%s", whale_trade_id)
       continue
 
+    try:
+      async with SessionLocal() as session:
+        rows = (
+          await session.execute(
+            select(Subscription.telegram_id, Subscription.plan)
+            .where(Subscription.telegram_id.in_(telegram_ids))
+            .where(Subscription.status.in_(["active", "trialing"]))
+            .where(Subscription.current_period_end > now)
+          )
+        ).all()
+      recipient_plan_map = {str(tid): (plan or "FREE") for tid, plan in rows}
+    except Exception:
+      recipient_plan_map = {}
+
     logger.info("alert_processing whale_trade_id=%s total_potential_recipients=%s", whale_trade_id, len(telegram_ids))
 
+    signal_level = (payload.get("signal_level") or "").lower()
+    behavior = payload.get("behavior")
+    score_value = _safe_float(payload.get("whale_score") or payload.get("score")) or 0.0
+    size_value = _safe_float(payload.get("size") or payload.get("amount")) or 0.0
+    config = get_alert_config()
+    thresholds = config.get("alert_thresholds", {})
+    confidence = thresholds.get("confidence_scores", {})
+    usd_thresholds = thresholds.get("usd_thresholds", {})
+    high_score = float(confidence.get("high_confidence", 85))
+    high_usd = float(usd_thresholds.get("high", 400))
+    high_confidence = (score_value >= high_score and size_value >= high_usd) or bool(behavior)
+    market_id = str(payload.get("market_id") or payload.get("raw_token_id") or "")
+    wallet_value = str(payload.get("wallet_address") or "").lower()
+
     async def _send_one(tid: str, is_admin: bool):
+      plan_name = recipient_plan_map.get(tid, "FREE").upper()
+      limits = PLAN_LIMITS_MAP.get(plan_name, PLAN_LIMITS_MAP["FREE"])
+
+      if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
+        return
+
       # Admin is exempt from rate limits
       if not is_admin:
         if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
           return
+      if plan_name == "PRO" and not high_confidence:
+        return
+
+      elite_priority_key = f"elite:last:{tid}"
+      elite_same_focus = False
+      if plan_name == "ELITE" and market_id and wallet_value:
+        last_focus = await redis.get(elite_priority_key)
+        elite_same_focus = last_focus == f"{wallet_value}|{market_id}"
 
       try:
         # Check delivery inside its own session to avoid holding a global session
@@ -532,6 +590,31 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           await session.commit()
 
         if rowcount == 1:
+          delay_seconds = limits["alert_delay_minutes"] * 60
+          if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
+            delay_seconds = max(delay_seconds, 60)
+
+          if delay_seconds > 0:
+            async def _delayed_send():
+              try:
+                await asyncio.sleep(delay_seconds)
+                if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+                  await _send_via_bot(settings.telegram_health_bot_token, tid, format_alert(payload, tid))
+                else:
+                  await application.bot.send_message(
+                    chat_id=int(tid),
+                    text=format_alert(payload, tid),
+                    parse_mode="HTML",
+                    disable_web_page_preview=True,
+                  )
+                await increment_daily_alert_count(redis, tid)
+                if plan_name == "ELITE" and market_id and wallet_value:
+                  await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
+              except Exception:
+                logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+            asyncio.create_task(_delayed_send())
+            return
+
           # Route to specific bot if it's the health channel
           if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
             await _send_via_bot(settings.telegram_health_bot_token, tid, format_alert(payload, tid))
@@ -542,6 +625,9 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               parse_mode="HTML",
               disable_web_page_preview=True,
             )
+          await increment_daily_alert_count(redis, tid)
+          if plan_name == "ELITE" and market_id and wallet_value:
+            await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
       except Exception:
         logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 

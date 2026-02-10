@@ -145,22 +145,15 @@ async def _resolve_chat_id(client: httpx.AsyncClient) -> str | None:
   return None
 
 
-async def _send_telegram(client: httpx.AsyncClient, content: str) -> None:
-  if not settings.telegram_health_bot_token:
-    logger.warning("telegram_health_bot_token_missing")
-    return
-  chat_id = await _resolve_chat_id(client)
-  if not chat_id:
-    logger.warning("telegram_health_chat_id_missing")
-    return
-  url = f"https://api.telegram.org/bot{settings.telegram_health_bot_token}/sendMessage"
+async def _send_telegram_raw(client: httpx.AsyncClient, token: str, chat_id: str, content: str) -> bool:
+  url = f"https://api.telegram.org/bot{token}/sendMessage"
   payload = {"chat_id": chat_id, "text": content, "disable_web_page_preview": True}
   last_error = ""
   for attempt in range(1, 4):
     try:
       resp = await client.post(url, json=payload, timeout=15)
       if resp.status_code >= 200 and resp.status_code < 300:
-        return
+        return True
       last_error = f"status={resp.status_code} body={resp.text[:200]}"
     except Exception as e:
       last_error = f"error={e}"
@@ -168,6 +161,25 @@ async def _send_telegram(client: httpx.AsyncClient, content: str) -> None:
     if attempt < 3:
       await asyncio.sleep(1 * attempt)
   logger.warning("telegram_send_failed %s", last_error)
+  return False
+
+
+async def _send_telegram(client: httpx.AsyncClient, content: str) -> None:
+  sent = False
+  if not settings.telegram_health_bot_token:
+    logger.warning("telegram_health_bot_token_missing")
+  else:
+    chat_id = await _resolve_chat_id(client)
+    if not chat_id:
+      logger.warning("telegram_health_chat_id_missing")
+    else:
+      sent = await _send_telegram_raw(client, settings.telegram_health_bot_token, chat_id, content)
+  if sent:
+    return
+  if settings.telegram_bot_token and settings.telegram_alert_chat_id:
+    await _send_telegram_raw(client, settings.telegram_bot_token, settings.telegram_alert_chat_id, content)
+  else:
+    logger.warning("telegram_alert_config_missing")
 
 
 async def _send_alert_telegram(client: httpx.AsyncClient, content: str) -> None:

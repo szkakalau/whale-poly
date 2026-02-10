@@ -11,7 +11,7 @@ from sqlalchemy import func, select, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.db import insert
-from shared.config import settings
+from shared.config import settings, get_alert_config, parse_duration
 from shared.models import TradeRaw, Wallet, WhaleScore, WhaleTrade, WhaleProfile, WhalePosition, WhaleTradeHistory, WhaleStats
 
 
@@ -241,32 +241,44 @@ def _usd(t: TradeRaw) -> float:
   return float(t.amount) * float(t.price)
 
 
-def detect_behavior(trades: list[TradeRaw], now: datetime) -> tuple[str | None, int, float, float, str | None]:
+def detect_behavior(micro_trades: list[TradeRaw], macro_trades: list[TradeRaw], now: datetime) -> tuple[str | None, int, float, float, str | None]:
   def _to_aware(dt: datetime) -> datetime:
     if dt.tzinfo is None:
       return dt.replace(tzinfo=timezone.utc)
     return dt
 
-  now_aware = _to_aware(now)
-  window10 = [t for t in trades if (now_aware - _to_aware(t.timestamp)).total_seconds() <= 10 * 60]
-  buys10 = [t for t in window10 if (t.side or "").lower() == "buy"]
-  sells10 = [t for t in window10 if (t.side or "").lower() == "sell"]
+  config = get_alert_config()
+  alert_thresholds = config.get("alert_thresholds", {})
+  behavior_config = config.get("behavior_detection", {})
+  spike_build_exit = alert_thresholds.get("spike_build_exit_thresholds", {})
 
-  single_large = next((t for t in trades if _usd(t) >= settings.whale_single_trade_usd_threshold), None)
+  now_aware = _to_aware(now)
+  micro_seconds = parse_duration(alert_thresholds.get("micro_window"), 20 * 60)
+  macro_seconds = parse_duration(alert_thresholds.get("macro_window"), 6 * 60 * 60)
+  micro_window = [t for t in micro_trades if (now_aware - _to_aware(t.timestamp)).total_seconds() <= micro_seconds]
+  macro_window = [t for t in macro_trades if (now_aware - _to_aware(t.timestamp)).total_seconds() <= macro_seconds]
+  buys_macro = [t for t in macro_window if (t.side or "").lower() == "buy"]
+  sells_macro = [t for t in macro_window if (t.side or "").lower() == "sell"]
+
+  spike_threshold = behavior_config.get("spike_threshold") or spike_build_exit.get("whale_entry") or settings.whale_single_trade_usd_threshold
+  build_threshold = behavior_config.get("build_threshold") or spike_build_exit.get("whale_build") or settings.whale_build_usd_threshold
+  exit_threshold = behavior_config.get("exit_threshold") or spike_build_exit.get("whale_exit") or settings.whale_exit_usd_threshold
+
+  single_large = next((t for t in micro_window if _usd(t) >= float(spike_threshold)), None)
   if single_large:
     return ("spike", 80, float(single_large.amount), float(single_large.price), str(single_large.side))
 
-  buy_val = sum(_usd(t) for t in buys10)
-  sell_val = sum(_usd(t) for t in sells10)
-  if len(buys10) >= 3 and buy_val >= settings.whale_build_usd_threshold:
-    total_amount = sum(float(t.amount) for t in buys10)
+  buy_val = sum(_usd(t) for t in buys_macro)
+  sell_val = sum(_usd(t) for t in sells_macro)
+  if len(buys_macro) >= 3 and buy_val >= float(build_threshold):
+    total_amount = sum(float(t.amount) for t in buys_macro)
     avg_price = (buy_val / total_amount) if total_amount > 0 else 0.0
     return ("build", 75, total_amount, avg_price, "buy")
 
-  buy_vol = sum(float(t.amount) for t in buys10)
-  sell_vol = sum(float(t.amount) for t in sells10)
-  if buy_vol > 0 and sell_vol >= 0.5 * buy_vol and sell_val >= settings.whale_exit_usd_threshold:
-    total_amount = sum(float(t.amount) for t in sells10)
+  buy_vol = sum(float(t.amount) for t in buys_macro)
+  sell_vol = sum(float(t.amount) for t in sells_macro)
+  if buy_vol > 0 and sell_vol >= 0.5 * buy_vol and sell_val >= float(exit_threshold):
+    total_amount = sum(float(t.amount) for t in sells_macro)
     avg_price = (sell_val / total_amount) if total_amount > 0 else 0.0
     return ("exit", 85, total_amount, avg_price, "sell")
 
@@ -301,22 +313,44 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
     .on_conflict_do_update(index_elements=[WhaleScore.wallet_address], set_={"final_score": score, "updated_at": now})
   )
 
-  recent_since = now - timedelta(minutes=20)
-  recent = (
+  config = get_alert_config()
+  alert_thresholds = config.get("alert_thresholds", {})
+  micro_seconds = parse_duration(alert_thresholds.get("micro_window"), 20 * 60)
+  macro_seconds = parse_duration(alert_thresholds.get("macro_window"), 6 * 60 * 60)
+  micro_since = now - timedelta(seconds=micro_seconds)
+  macro_since = now - timedelta(seconds=macro_seconds)
+  micro_recent = (
     await session.execute(
       select(TradeRaw)
       .where(TradeRaw.wallet == wallet)
       .where(TradeRaw.market_id == trade.market_id)
-      .where(TradeRaw.timestamp >= recent_since)
+      .where(TradeRaw.timestamp >= micro_since)
+      .order_by(TradeRaw.timestamp.asc())
+    )
+  ).scalars().all()
+  macro_recent = (
+    await session.execute(
+      select(TradeRaw)
+      .where(TradeRaw.wallet == wallet)
+      .where(TradeRaw.market_id == trade.market_id)
+      .where(TradeRaw.timestamp >= macro_since)
       .order_by(TradeRaw.timestamp.asc())
     )
   ).scalars().all()
 
-  behavior, score_hint, agg_amount, agg_price, behavior_side = detect_behavior(recent, now)
+  behavior, score_hint, agg_amount, agg_price, behavior_side = detect_behavior(micro_recent, macro_recent, now)
   if score_hint:
     score = max(score, score_hint)
 
-  qualifies = (score >= 90 and trade_usd >= 500) or (score >= 75 and trade_usd >= 3000) or bool(score_hint)
+  confidence_scores = alert_thresholds.get("confidence_scores", {})
+  usd_thresholds = alert_thresholds.get("usd_thresholds", {})
+  high_score = float(confidence_scores.get("high_confidence", 85))
+  low_score = float(confidence_scores.get("low_confidence", 70))
+  high_usd = float(usd_thresholds.get("high", 400))
+  low_usd = float(usd_thresholds.get("low", 2500))
+  high_signal = (score >= high_score and trade_usd >= high_usd) or bool(score_hint)
+  low_signal = (not high_signal) and (score >= low_score and trade_usd >= low_usd)
+  qualifies = high_signal or low_signal
   if "SniperWhale009" in wallet:
       print(f"DEBUG: Wallet {wallet} qualifies={qualifies} (score={score}, trade_usd={trade_usd})")
       print(f"DEBUG: has_trade_history={has_trade_history}")
@@ -328,6 +362,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   event_amount = agg_amount if score_hint else float(trade.amount)
   event_price = agg_price if score_hint else float(trade.price)
   event_trade_usd = float(event_amount) * float(event_price)
+  signal_level = "high" if high_signal else "low"
 
   action_type = "entry" if (event_side or "").lower() != "sell" else "exit"
   realized_pnl = 0.0
@@ -444,6 +479,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
           "amount": event_amount,
           "price": event_price,
           "trade_usd": event_trade_usd,
+          "signal_level": signal_level,
           "created_at": now.isoformat(),
         }
       ),

@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 from services.telegram_bot.bot import build_application
 from services.telegram_bot.templates import format_alert
 from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
-from shared.config import settings
+from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
 from shared.logging import configure_logging
 from shared.models import (
@@ -172,16 +172,37 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     lookup_db_ok = False
     recipient_plan_map: dict[str, str] = {}
 
-    # Alert Engine Plan Enforcement Logic
+    config = get_alert_config()
+    plan_cfg = config.get("user_plans", {})
+
+    def _plan_limits(name: str, default_delay_minutes: int, default_max_alerts):
+      data = plan_cfg.get(name, {})
+      delay_seconds = parse_duration(data.get("alerts_delay"), default_delay_minutes * 60)
+      delay_minutes = int(delay_seconds / 60)
+      max_alerts = data.get("max_alerts_per_day", default_max_alerts)
+      return {"max_alerts_per_day": max_alerts, "alert_delay_minutes": delay_minutes}
+
     PLAN_LIMITS_MAP = {
-      "FREE": {"max_alerts_per_day": 3, "alert_delay_minutes": 10},
-      "PRO": {"max_alerts_per_day": "unlimited", "alert_delay_minutes": 0},
-      "ELITE": {"max_alerts_per_day": "unlimited", "alert_delay_minutes": 0},
+      "FREE": _plan_limits("free", 10, 3),
+      "PRO": _plan_limits("pro", 0, "unlimited"),
+      "ELITE": _plan_limits("elite", 0, "unlimited"),
     }
 
     async def _send_with_rules(tid: str, p_raw: str, p_json: dict, p_plan_map: dict):
       plan_name = p_plan_map.get(tid, "FREE").upper()
       limits = PLAN_LIMITS_MAP.get(plan_name, PLAN_LIMITS_MAP["FREE"])
+      signal_level = (p_json.get("signal_level") or "").lower()
+      behavior = p_json.get("behavior")
+      score_value = _safe_float(p_json.get("whale_score") or p_json.get("score")) or 0.0
+      size_value = _safe_float(p_json.get("size") or p_json.get("amount")) or 0.0
+      thresholds = config.get("alert_thresholds", {})
+      confidence = thresholds.get("confidence_scores", {})
+      usd_thresholds = thresholds.get("usd_thresholds", {})
+      high_score = float(confidence.get("high_confidence", 85))
+      high_usd = float(usd_thresholds.get("high", 400))
+      high_confidence = (score_value >= high_score and size_value >= high_usd) or bool(behavior)
+      market_id = str(p_json.get("market_id") or p_json.get("raw_token_id") or "")
+      wallet_value = str(p_json.get("wallet_address") or "").lower()
       
       # 1. Check Daily Limit
       if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
@@ -193,13 +214,25 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         await redis.rpush(settings.alert_created_queue, p_raw)
         return False
 
+      if plan_name == "PRO" and not high_confidence:
+        return False
+
+      elite_priority_key = f"elite:last:{tid}"
+      elite_same_focus = False
+      if plan_name == "ELITE" and market_id and wallet_value:
+        last_focus = await redis.get(elite_priority_key)
+        elite_same_focus = last_focus == f"{wallet_value}|{market_id}"
+
       # 3. Handle Delay for FREE users
       delay_min = limits["alert_delay_minutes"]
-      if delay_min > 0:
+      delay_seconds = delay_min * 60
+      if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
+        delay_seconds = max(delay_seconds, 60)
+      if delay_seconds > 0:
         # If it's a delayed message, we need to schedule it
         async def _delayed_send():
           try:
-            await asyncio.sleep(delay_min * 60)
+            await asyncio.sleep(delay_seconds)
             await application.bot.send_message(
               chat_id=int(tid),
               text=format_alert(p_json, tid),
@@ -207,6 +240,8 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               disable_web_page_preview=True,
             )
             await increment_daily_alert_count(redis, tid)
+            if plan_name == "ELITE" and market_id and wallet_value:
+              await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
           except Exception:
             logger.exception("delayed_telegram_send_failed telegram_id=%s", tid)
         
@@ -222,6 +257,8 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           disable_web_page_preview=True,
         )
         await increment_daily_alert_count(redis, tid)
+        if plan_name == "ELITE" and market_id and wallet_value:
+          await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
         return True
       except Exception:
         logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)

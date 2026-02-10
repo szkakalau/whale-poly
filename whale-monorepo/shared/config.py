@@ -1,4 +1,11 @@
 import os
+from pathlib import Path
+from typing import Any
+
+try:
+  import yaml
+except Exception:
+  yaml = None
 
 from dotenv import load_dotenv
 
@@ -89,6 +96,121 @@ class Settings:
     if u.startswith("sqlite:///"):
       u = "sqlite+aiosqlite:///" + u[len("sqlite:///") :]
     return u
+
+
+_ALERT_CONFIG_CACHE: dict[str, Any] | None = None
+_ALERT_CONFIG_MTIME: float | None = None
+
+
+def _alert_config_defaults() -> dict[str, Any]:
+  return {
+    "user_plans": {
+      "free": {
+        "alerts_delay": "10m",
+        "max_alerts_per_day": 3,
+        "low_confidence_whales": True,
+        "max_follow_whales": 0,
+      },
+      "pro": {
+        "alerts_delay": "0m",
+        "max_alerts_per_day": "unlimited",
+        "low_confidence_whales": True,
+        "max_follow_whales": 20,
+        "smart_collections": "partial",
+      },
+      "elite": {
+        "alerts_delay": "0m",
+        "max_alerts_per_day": "unlimited",
+        "low_confidence_whales": True,
+        "max_follow_whales": 100,
+        "smart_collections": "full",
+        "high_confidence_first": True,
+      },
+    },
+    "alert_thresholds": {
+      "micro_window": "20m",
+      "macro_window": "2h",
+      "confidence_scores": {
+        "low_confidence": 70,
+        "medium_confidence": 80,
+        "high_confidence": 85,
+      },
+      "usd_thresholds": {
+        "low": 2500,
+        "medium": 3000,
+        "high": 5000,
+      },
+      "spike_build_exit_thresholds": {
+        "whale_entry": 5000,
+        "whale_exit": 5000,
+        "whale_build": 5000,
+      },
+    },
+    "cooldown_settings": {
+      "same_wallet_same_market": "600s",
+      "same_market_different_wallet": "60s",
+      "increased_position": "300s",
+    },
+    "behavior_detection": {
+      "spike_threshold": 5000,
+      "build_threshold": 10000,
+      "exit_threshold": 10000,
+    },
+  }
+
+
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+  merged = dict(base)
+  for key, value in override.items():
+    if isinstance(value, dict) and isinstance(merged.get(key), dict):
+      merged[key] = _deep_merge(merged[key], value)
+    else:
+      merged[key] = value
+  return merged
+
+
+def parse_duration(value: object, default_seconds: int) -> int:
+  if value is None:
+    return int(default_seconds)
+  if isinstance(value, (int, float)):
+    return int(value)
+  text = str(value).strip().lower()
+  if text.endswith("ms"):
+    return max(0, int(float(text[:-2]) / 1000))
+  if text.endswith("s"):
+    return max(0, int(float(text[:-1])))
+  if text.endswith("m"):
+    return max(0, int(float(text[:-1]) * 60))
+  if text.endswith("h"):
+    return max(0, int(float(text[:-1]) * 3600))
+  try:
+    return int(float(text))
+  except Exception:
+    return int(default_seconds)
+
+
+def get_alert_config() -> dict[str, Any]:
+  global _ALERT_CONFIG_CACHE, _ALERT_CONFIG_MTIME
+  base = _alert_config_defaults()
+  config_path = os.getenv("ALERT_CONFIG_PATH", "alert_engine_config.yaml")
+  path = Path(config_path)
+  if not path.is_absolute():
+    path = Path(os.getcwd()) / path
+  mtime = path.stat().st_mtime if path.exists() else None
+  if _ALERT_CONFIG_CACHE is not None and mtime == _ALERT_CONFIG_MTIME:
+    return _ALERT_CONFIG_CACHE
+  data = base
+  if path.exists() and yaml is not None:
+    try:
+      with path.open("r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f) or {}
+      if isinstance(loaded, dict):
+        data = _deep_merge(base, loaded)
+    except Exception:
+      data = base
+  _ALERT_CONFIG_CACHE = data
+  _ALERT_CONFIG_MTIME = mtime
+  return data
 
 
 settings = Settings()

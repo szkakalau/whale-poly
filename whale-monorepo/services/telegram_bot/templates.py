@@ -27,6 +27,7 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   size = payload.get("size") or payload.get("amount") or 0
   price = payload.get("price") or 0
   score = payload.get("score") or payload.get("whale_score") or 0
+  signal_level = (payload.get("signal_level") or "").lower()
   wallet_name = payload.get("wallet_name") or ""
   wallet_address = payload.get("wallet") or payload.get("wallet_address") or ""
 
@@ -57,6 +58,7 @@ def format_alert(payload: dict, telegram_id: str) -> str:
 
   side_emoji = "🟢" if side == "BUY" else "🔴" if side == "SELL" else "⚪️"
   type_label = "Entry" if alert_type == "whale_entry" else "Exit" if alert_type == "whale_exit" else alert_type.capitalize()
+  confidence_line = "⚠️ <b>Confidence:</b> <b>Low</b>\n" if signal_level == "low" else ""
   
   wm = user_hash(telegram_id)
   
@@ -68,6 +70,7 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     f"💰 <b>Size:</b> <b>${_fmt_usd(size)}</b>\n"
     f"💵 <b>Price:</b> <code>{_fmt_price(price)}</code>\n"
     f"🎯 <b>Whale Score:</b> <code>{int(float(score))}</code>\n"
+    f"{confidence_line}"
     f"👛 <b>Wallet:</b> <code>{wallet_display}</code>\n\n"
     f"<code>#{wm}</code>"
   )
