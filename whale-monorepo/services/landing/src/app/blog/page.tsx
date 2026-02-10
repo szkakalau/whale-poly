@@ -31,8 +31,8 @@ export const metadata = {
   },
 };
 
-export default function BlogIndexPage() {
-  const posts = getAllPosts();
+export default async function BlogIndexPage() {
+  const posts = await getAllPosts();
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">

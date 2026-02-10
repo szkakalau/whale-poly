@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { Prisma } from '@prisma/client';
+import { prisma } from './prisma';
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
 
@@ -16,8 +18,7 @@ export interface BlogPost {
   tags?: string[];
 }
 
-export function getAllPosts(): BlogPost[] {
-  // Create directory if it doesn't exist
+function getAllFilePosts(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
   }
@@ -44,11 +45,10 @@ export function getAllPosts(): BlogPost[] {
       } as BlogPost;
     });
 
-  // Sort posts by date
   return allPosts.sort((a, b) => (a.date > b.date ? -1 : 1));
 }
 
-export function getPostBySlug(slug: string): BlogPost | null {
+function getFilePostBySlug(slug: string): BlogPost | null {
   const fullPath = path.join(postsDirectory, `${slug}.md`);
   if (!fs.existsSync(fullPath)) {
     return null;
@@ -67,4 +67,100 @@ export function getPostBySlug(slug: string): BlogPost | null {
     coverImage: data.coverImage,
     tags: data.tags,
   } as BlogPost;
+}
+
+type DbBlogPost = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  read_time: string;
+  cover_image: string | null;
+  tags: string[] | null;
+  published_at: Date;
+};
+
+async function hasBlogPostsTable(): Promise<boolean> {
+  try {
+    const rows = await prisma.$queryRaw<{ exists: string | null }[]>(
+      Prisma.sql`select to_regclass('public.blog_posts') as "exists"`
+    );
+    return Boolean(rows?.[0]?.exists);
+  } catch {
+    return false;
+  }
+}
+
+async function getAllDbPosts(): Promise<BlogPost[]> {
+  const hasTable = await hasBlogPostsTable();
+  if (!hasTable) {
+    return [];
+  }
+  const rows = await prisma.$queryRaw<DbBlogPost[]>(
+    Prisma.sql`select slug, title, excerpt, content, author, read_time, cover_image, tags, published_at
+               from blog_posts
+               order by published_at desc`
+  );
+  return rows.map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    date: row.published_at.toISOString(),
+    excerpt: row.excerpt,
+    content: row.content,
+    author: row.author,
+    readTime: row.read_time,
+    coverImage: row.cover_image ?? undefined,
+    tags: row.tags ?? undefined,
+  }));
+}
+
+async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
+  const hasTable = await hasBlogPostsTable();
+  if (!hasTable) {
+    return null;
+  }
+  const rows = await prisma.$queryRaw<DbBlogPost[]>(
+    Prisma.sql`select slug, title, excerpt, content, author, read_time, cover_image, tags, published_at
+               from blog_posts
+               where slug = ${slug}
+               limit 1`
+  );
+  const row = rows?.[0];
+  if (!row) {
+    return null;
+  }
+  return {
+    slug: row.slug,
+    title: row.title,
+    date: row.published_at.toISOString(),
+    excerpt: row.excerpt,
+    content: row.content,
+    author: row.author,
+    readTime: row.read_time,
+    coverImage: row.cover_image ?? undefined,
+    tags: row.tags ?? undefined,
+  };
+}
+
+export async function getAllPosts(): Promise<BlogPost[]> {
+  const [dbPosts, filePosts] = await Promise.all([getAllDbPosts(), Promise.resolve(getAllFilePosts())]);
+  const merged = new Map<string, BlogPost>();
+  for (const post of dbPosts) {
+    merged.set(post.slug, post);
+  }
+  for (const post of filePosts) {
+    if (!merged.has(post.slug)) {
+      merged.set(post.slug, post);
+    }
+  }
+  return Array.from(merged.values()).sort((a, b) => (a.date > b.date ? -1 : 1));
+}
+
+export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  const dbPost = await getDbPostBySlug(slug);
+  if (dbPost) {
+    return dbPost;
+  }
+  return getFilePostBySlug(slug);
 }

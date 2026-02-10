@@ -1,3 +1,4 @@
+---
 title: "Will Trump talk to Emmanuel Macron in January 2026?"
 excerpt: "Polymarket’s Trump–Macron call market: based on resolution rules and credible reporting consensus, we assess whether an in‑person or phone/video interaction occurs within January."
 date: "2026-01-29"

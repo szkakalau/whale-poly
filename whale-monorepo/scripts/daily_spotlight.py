@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 
 import argparse
@@ -14,7 +15,7 @@ from collections import namedtuple
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 try:
-    from shared.models.models import TradeRaw, WhaleStats, Market, WalletName, WhaleProfile
+    from shared.models.models import Base, TradeRaw, WhaleStats, Market, WalletName, WhaleProfile
 except ImportError:
     print("Error: Could not import shared models. Make sure you are running this from the project root or 'scripts' directory.")
     sys.exit(1)
@@ -30,27 +31,27 @@ async def get_daily_spotlight():
     if args.mock:
         print("⚠️  Running in MOCK mode (Demonstration Data)\n")
         # Mock Data Generation
-        MockTrade = namedtuple('MockTrade', ['amount', 'price', 'wallet', 'timestamp'])
+        MockTrade = namedtuple('MockTrade', ['amount', 'price', 'wallet', 'timestamp', 'side'])
         MockMarket = namedtuple('MockMarket', ['title'])
         MockWalletName = namedtuple('MockWalletName', ['polymarket_username'])
         
         # 1. Big Spender Mock
         big_spender = (
-            MockTrade(amount=250000, price=0.45, wallet="0x1234...abcd", timestamp=datetime.now()), 
+            MockTrade(amount=250000, price=0.45, wallet="0x1234...abcd", timestamp=datetime.now(), side="buy"), 
             "Will Trump win the 2024 Election?", 
             "TrumpWhale99"
         )
         
         # 2. Contrarian Mock
         contrarian = (
-            MockTrade(amount=50000, price=0.15, wallet="0xabcd...1234", timestamp=datetime.now()),
+            MockTrade(amount=50000, price=0.15, wallet="0xabcd...1234", timestamp=datetime.now(), side="sell"),
             "Will Bitcoin hit $100k by March?",
             None
         )
         
         # 3. Sniper Mock
         sniper = (
-            MockTrade(amount=10000, price=0.60, wallet="0x9999...8888", timestamp=datetime.now()),
+            MockTrade(amount=10000, price=0.60, wallet="0x9999...8888", timestamp=datetime.now(), side="buy"),
             "Super Bowl Winner: Chiefs",
             0.88,
             "SmartMoney_007"
@@ -82,41 +83,31 @@ async def get_daily_spotlight():
         try:
             engine = create_async_engine(DATABASE_URL, echo=False)
             AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            if DATABASE_URL.startswith("sqlite+aiosqlite://"):
+                async with engine.begin() as conn:
+                    await conn.run_sync(Base.metadata.create_all)
             
-            async with AsyncSessionLocal() as session:
-                now = datetime.now(timezone.utc)
-                start_time = now - timedelta(hours=24)
-                
-                print(f"🔍 Generating Daily Spotlight for {now.date()} (Last 24h)...")
-                print(f"   (Scanning from {start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n")
-                
-                # --- DIAGNOSTICS REMOVED ---
-                
-                # 1. Big Spender
+            async def run_queries(session: AsyncSession, start_time: datetime):
                 stmt_spender = (
                     select(TradeRaw, Market.title, WalletName.polymarket_username)
                     .outerjoin(Market, TradeRaw.market_id == Market.id)
                     .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
                     .where(TradeRaw.timestamp >= start_time)
-                    .where(TradeRaw.side == 'buy')
                     .order_by(desc(TradeRaw.amount * TradeRaw.price))
                     .limit(1)
                 )
                 
-                # 2. Contrarian
                 stmt_contrarian = (
                     select(TradeRaw, Market.title, WalletName.polymarket_username)
                     .outerjoin(Market, TradeRaw.market_id == Market.id)
                     .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
                     .where(TradeRaw.timestamp >= start_time)
-                    .where(TradeRaw.side == 'buy')
                     .where(TradeRaw.price < 0.40) 
                     .where(TradeRaw.amount * TradeRaw.price > 1000)
                     .order_by(desc(TradeRaw.amount * TradeRaw.price))
                     .limit(1)
                 )
                 
-                # 3. Sniper
                 stmt_sniper = (
                     select(TradeRaw, Market.title, WhaleStats.win_rate, WalletName.polymarket_username)
                     .join(WhaleStats, TradeRaw.wallet == WhaleStats.wallet_address)
@@ -124,7 +115,6 @@ async def get_daily_spotlight():
                     .outerjoin(Market, TradeRaw.market_id == Market.id)
                     .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
                     .where(TradeRaw.timestamp >= start_time)
-                    .where(TradeRaw.side == 'buy')
                     .where(WhaleStats.win_rate >= 0.70)
                     .where(WhaleProfile.total_trades > 5)
                     .order_by(desc(TradeRaw.amount * TradeRaw.price))
@@ -139,6 +129,23 @@ async def get_daily_spotlight():
                 
                 res_sniper = await session.execute(stmt_sniper)
                 sniper = res_sniper.first()
+                return big_spender, contrarian, sniper
+
+            async with AsyncSessionLocal() as session:
+                now = datetime.now(timezone.utc)
+                start_time = now - timedelta(hours=24)
+                
+                print(f"🔍 Generating Daily Spotlight for {now.date()} (Last 24h)...")
+                print(f"   (Scanning from {start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n")
+                try:
+                    big_spender, contrarian, sniper = await run_queries(session, start_time)
+                except OperationalError as e:
+                    if DATABASE_URL.startswith("sqlite+aiosqlite://") and "no such table" in str(e):
+                        async with engine.begin() as conn:
+                            await conn.run_sync(Base.metadata.create_all)
+                        big_spender, contrarian, sniper = await run_queries(session, start_time)
+                    else:
+                        raise
         except Exception as e:
             print(f"Error connecting to database: {e}")
             print("\n💡 Tip: Run with --mock to see sample output without database connection.")
@@ -153,13 +160,14 @@ async def get_daily_spotlight():
         price_cents = float(trade.price) * 100
         name = username if username else f"{trade.wallet[:6]}...{trade.wallet[-4:]}"
         mkt_title = title if title else "Unknown Market"
+        side = (trade.side or "").upper() or "TRADE"
         
         print(f"💰 **The Big Spender**")
         print(f"   WHO: {name}")
-        print(f"   DID: Bought ${val:,.0f} of '{mkt_title}'")
+        print(f"   DID: {side} ${val:,.0f} of '{mkt_title}'")
         print(f"   AT:  {price_cents:.1f}¢")
         print(f"   📋 COPY THIS:")
-        print(f"   \"Who just dropped ${val/1000:.1f}k on this? 🐳 Big money entering '{mkt_title[:40]}...' at {price_cents:.0f}¢. #Polymarket #WhaleAlert\"\n")
+        print(f"   \"Who just {side} ${val/1000:.1f}k on this? 🐳 Big money entering '{mkt_title[:40]}...' at {price_cents:.0f}¢. #Polymarket #WhaleAlert\"\n")
     else:
         print("💰 The Big Spender: No large trades found > 24h.\n")
 
@@ -169,14 +177,15 @@ async def get_daily_spotlight():
         price_cents = float(trade.price) * 100
         name = username if username else f"{trade.wallet[:6]}...{trade.wallet[-4:]}"
         mkt_title = title if title else "Unknown Market"
+        side = (trade.side or "").upper() or "TRADE"
 
         print(f"🧠 **The Contrarian**")
         print(f"   WHO: {name}")
-        print(f"   DID: Bet ${val:,.0f} on LOW ODDS (<40%)")
+        print(f"   DID: {side} ${val:,.0f} on LOW ODDS (<40%)")
         print(f"   MKT: {mkt_title}")
         print(f"   AT:  {price_cents:.1f}¢")
         print(f"   📋 COPY THIS:")
-        print(f"   \"Everyone is selling, but this whale is buying the dip. ${val/1000:.1f}k bet at {price_cents:.0f}% odds on '{mkt_title[:30]}...'. What do they know? 🤔 #Alpha #Contrarian\"\n")
+        print(f"   \"Everyone is selling, but this whale just {side}. ${val/1000:.1f}k at {price_cents:.0f}% odds on '{mkt_title[:30]}...'. What do they know? 🤔 #Alpha #Contrarian\"\n")
     else:
         print("🧠 The Contrarian: No large contrarian bets found.\n")
 
@@ -187,13 +196,14 @@ async def get_daily_spotlight():
         name = username if username else f"{trade.wallet[:6]}...{trade.wallet[-4:]}"
         mkt_title = title if title else "Unknown Market"
         win_pct = win_rate * 100
+        side = (trade.side or "").upper() or "TRADE"
 
         print(f"🎯 **The Sniper**")
         print(f"   WHO: {name} (Win Rate: {win_pct:.1f}%)")
-        print(f"   DID: Entered '{mkt_title}'")
-        print(f"   SIZE: ${val:,.0f}")
+        print(f"   DID: {side} '{mkt_title}'")
+        print(f"   SIZE: ${val:,.0f} @ {price_cents:.1f}¢")
         print(f"   📋 COPY THIS:")
-        print(f"   \"The {win_pct:.0f}% win-rate sniper just made a move. Tracking {name} on '{mkt_title[:30]}...' 🎯 Follow the smart money. #WhaleWatching\"\n")
+        print(f"   \"The {win_pct:.0f}% win-rate sniper just {side}. Tracking {name} on '{mkt_title[:30]}...' 🎯 Follow the smart money. #WhaleWatching\"\n")
 
 if __name__ == "__main__":
     try:

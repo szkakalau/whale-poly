@@ -1,3 +1,4 @@
+---
 title: "Moonbirds FDV ≥ $200m one day after launch? Rules and whale signals"
 excerpt: "Polymarket’s Moonbirds governance token FDV market: using the most liquid price source and the “next day 4:00 PM ET” window, we analyze bull vs. bear theses and trading frameworks."
 date: "2026-01-29"

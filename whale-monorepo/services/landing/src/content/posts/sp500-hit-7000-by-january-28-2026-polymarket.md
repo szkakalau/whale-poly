@@ -1,3 +1,4 @@
+---
 title: "Will the S&P 500 hit 7,000 by January 28, 2026?"
 excerpt: "Polymarket’s SPX 7k market: we assess rules, bull vs. bear theses, and whale behavior to judge whether a 1‑minute high clears 7,000."
 date: "2026-01-29"

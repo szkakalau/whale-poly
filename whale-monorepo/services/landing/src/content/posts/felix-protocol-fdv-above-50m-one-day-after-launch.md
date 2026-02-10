@@ -1,3 +1,4 @@
+---
 title: "Felix Protocol: Will FDV exceed $50M one day after launch?"
 excerpt: "Using Polymarket’s FDV rules (total supply × price, next‑day 4:00 PM ET), we outline bull vs. bear theses and capital microstructure for a usable trading framework."
 date: "2026-01-28"

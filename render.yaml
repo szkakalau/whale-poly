@@ -77,6 +77,10 @@ services:
         sync: false
       - key: TELEGRAM_HEALTH_USERNAME
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ALERT_CHAT_ID
+        sync: false
       - key: HEALTH_PAYMENT_API_URL
         value: https://payment-api.onrender.com
       - key: HEALTH_TELEGRAM_BOT_API_URL
