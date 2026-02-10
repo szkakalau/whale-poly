@@ -30,9 +30,11 @@ celery_app.conf.timezone = "UTC"
 celery_app.conf.task_default_queue = "whale_engine"
 celery_app.conf.task_default_exchange = "whale_engine"
 celery_app.conf.task_default_routing_key = "whale_engine"
+consume_seconds = float(os.getenv("WHALE_CONSUME_SECONDS", "1"))
+recompute_seconds = float(os.getenv("WHALE_RECOMPUTE_SECONDS", "900"))
 celery_app.conf.beat_schedule = {
-  "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": 1.0},
-  "recompute-whale-stats": {"task": "services.whale_engine.recompute_whale_stats", "schedule": 900.0},
+  "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": consume_seconds},
+  "recompute-whale-stats": {"task": "services.whale_engine.recompute_whale_stats", "schedule": recompute_seconds},
 }
 
 

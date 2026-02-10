@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import os
 from typing import Any
 
 import httpx
@@ -317,10 +318,10 @@ async def ingest_markets(session: AsyncSession) -> int:
   if not url:
     return 0
 
-  batch_size = 50
+  batch_size = int(os.getenv("MARKET_INGEST_BATCH", "50"))
   offset = 0
   total_upserts = 0
-  max_markets = 1000
+  max_markets = int(os.getenv("MARKET_INGEST_MAX", "1000"))
   sep = "&" if "?" in url else "?"
 
   proxies = settings.https_proxy or None

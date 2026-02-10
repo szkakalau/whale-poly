@@ -34,9 +34,11 @@ celery_app.conf.timezone = "UTC"
 celery_app.conf.task_default_queue = "trade_ingest"
 celery_app.conf.task_default_exchange = "trade_ingest"
 celery_app.conf.task_default_routing_key = "trade_ingest"
+ingest_markets_seconds = float(os.getenv("MARKET_INGEST_SECONDS", "120"))
+ingest_trades_seconds = float(os.getenv("TRADE_INGEST_SECONDS", "30"))
 celery_app.conf.beat_schedule = {
-  "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": 120.0},
-  "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": 30.0},
+  "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": ingest_markets_seconds},
+  "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": ingest_trades_seconds},
   "full-health-check": {"task": "services.trade_ingest.health_check", "schedule": 3600.0},
   "rebuild-smart-collections": {"task": "services.trade_ingest.rebuild_smart_collections", "schedule": 86400.0},
 }

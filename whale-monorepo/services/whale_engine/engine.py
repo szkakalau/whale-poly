@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
@@ -657,11 +658,14 @@ def _combine_window_metrics(m7: _WindowMetrics | None, m30: _WindowMetrics | Non
 
 
 async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade_cap: int) -> dict[str, _WindowMetrics]:
-  # Fetch TradeRaw for market context (percentiles, volume)
-  tr_result = await session.execute(
+  raw_limit = int(os.getenv("WHALE_STATS_RAW_TRADE_CAP", "0"))
+  tr_query = (
     select(TradeRaw.trade_id, TradeRaw.market_id, TradeRaw.price, TradeRaw.amount, TradeRaw.timestamp)
     .where(TradeRaw.timestamp >= since)
   )
+  if raw_limit > 0:
+    tr_query = tr_query.order_by(TradeRaw.timestamp.desc()).limit(raw_limit)
+  tr_result = await session.execute(tr_query)
   raw_trades = tr_result.all()
   
   # Compute Market Volume and Price Percentiles
@@ -687,12 +691,15 @@ async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade
         p = 0.5
       trade_percentiles[tid] = p
 
-  # Fetch WhaleTradeHistory
-  wth_result = await session.execute(
+  history_limit = int(os.getenv("WHALE_STATS_HISTORY_CAP", "0"))
+  wth_query = (
     select(WhaleTradeHistory)
     .where(WhaleTradeHistory.timestamp >= since)
     .order_by(WhaleTradeHistory.wallet_address, WhaleTradeHistory.timestamp.desc())
   )
+  if history_limit > 0:
+    wth_query = wth_query.limit(history_limit)
+  wth_result = await session.execute(wth_query)
   history_rows = wth_result.scalars().all()
   
   wallet_trades: dict[str, list[WhaleTradeHistory]] = {}
@@ -807,9 +814,14 @@ async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -
   if not has_trade_history or not has_stats:
     return 0
 
-  since7 = now - timedelta(days=7)
-  since30 = now - timedelta(days=30)
-  since90 = now - timedelta(days=90)
+  trade_cap = int(os.getenv("WHALE_STATS_TRADE_CAP", str(trade_cap)))
+  days7 = max(1, int(os.getenv("WHALE_STATS_DAYS_7", "7")))
+  days30 = max(1, int(os.getenv("WHALE_STATS_DAYS_30", "30")))
+  days90 = max(1, int(os.getenv("WHALE_STATS_DAYS_90", "90")))
+
+  since7 = now - timedelta(days=days7)
+  since30 = now - timedelta(days=days30)
+  since90 = now - timedelta(days=days90)
 
   m7 = await _fetch_window_metrics(session, since=since7, trade_cap=trade_cap)
   m30 = await _fetch_window_metrics(session, since=since30, trade_cap=trade_cap)
