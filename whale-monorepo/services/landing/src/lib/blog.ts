@@ -18,6 +18,25 @@ export interface BlogPost {
   tags?: string[];
 }
 
+function normalizePostDate(value: string): string {
+  const now = new Date();
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) {
+    return now.toISOString();
+  }
+  if (parsed.getTime() > now.getTime()) {
+    return now.toISOString();
+  }
+  return parsed.toISOString();
+}
+
+function normalizePost(post: BlogPost): BlogPost {
+  return {
+    ...post,
+    date: normalizePostDate(post.date),
+  };
+}
+
 function getAllFilePosts(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
@@ -32,7 +51,7 @@ function getAllFilePosts(): BlogPost[] {
       const fileContents = fs.readFileSync(fullPath, 'utf8');
       const { data, content } = matter(fileContents);
 
-      return {
+      return normalizePost({
         slug,
         title: data.title,
         date: data.date,
@@ -42,7 +61,7 @@ function getAllFilePosts(): BlogPost[] {
         readTime: data.readTime,
         coverImage: data.coverImage,
         tags: data.tags,
-      } as BlogPost;
+      } as BlogPost);
     });
 
   return allPosts.sort((a, b) => (a.date > b.date ? -1 : 1));
@@ -56,7 +75,7 @@ function getFilePostBySlug(slug: string): BlogPost | null {
   const fileContents = fs.readFileSync(fullPath, 'utf8');
   const { data, content } = matter(fileContents);
 
-  return {
+  return normalizePost({
     slug,
     title: data.title,
     date: data.date,
@@ -66,7 +85,7 @@ function getFilePostBySlug(slug: string): BlogPost | null {
     readTime: data.readTime,
     coverImage: data.coverImage,
     tags: data.tags,
-  } as BlogPost;
+  } as BlogPost);
 }
 
 type DbBlogPost = {
@@ -102,17 +121,19 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
                from blog_posts
                order by published_at desc`
   );
-  return rows.map((row) => ({
-    slug: row.slug,
-    title: row.title,
-    date: row.published_at.toISOString(),
-    excerpt: row.excerpt,
-    content: row.content,
-    author: row.author,
-    readTime: row.read_time,
-    coverImage: row.cover_image ?? undefined,
-    tags: row.tags ?? undefined,
-  }));
+  return rows.map((row) =>
+    normalizePost({
+      slug: row.slug,
+      title: row.title,
+      date: row.published_at.toISOString(),
+      excerpt: row.excerpt,
+      content: row.content,
+      author: row.author,
+      readTime: row.read_time,
+      coverImage: row.cover_image ?? undefined,
+      tags: row.tags ?? undefined,
+    })
+  );
 }
 
 async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -130,7 +151,7 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
   if (!row) {
     return null;
   }
-  return {
+  return normalizePost({
     slug: row.slug,
     title: row.title,
     date: row.published_at.toISOString(),
@@ -140,7 +161,7 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
     readTime: row.read_time,
     coverImage: row.cover_image ?? undefined,
     tags: row.tags ?? undefined,
-  };
+  });
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {
@@ -154,13 +175,19 @@ export async function getAllPosts(): Promise<BlogPost[]> {
       merged.set(post.slug, post);
     }
   }
-  return Array.from(merged.values()).sort((a, b) => (a.date > b.date ? -1 : 1));
+  return Array.from(merged.values())
+    .map((post) => normalizePost(post))
+    .sort((a, b) => (a.date > b.date ? -1 : 1));
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   const dbPost = await getDbPostBySlug(slug);
   if (dbPost) {
-    return dbPost;
+    return normalizePost(dbPost);
   }
-  return getFilePostBySlug(slug);
+  const filePost = getFilePostBySlug(slug);
+  if (!filePost) {
+    return null;
+  }
+  return normalizePost(filePost);
 }
