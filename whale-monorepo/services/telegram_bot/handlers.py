@@ -72,11 +72,13 @@ async def status(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text("Status: inactive\nPlan: Free")
     return
 
-  plan_display = (sub.plan or "pro").capitalize()
-  if "elite" in plan_display.lower():
-    plan_display = "Institutional"
-  elif "pro" in plan_display.lower():
+  plan_key = (sub.plan or "pro").lower()
+  if "elite" in plan_key:
+    plan_display = "Elite"
+  elif "pro" in plan_key:
     plan_display = "Pro"
+  else:
+    plan_display = "Free"
 
   await update.effective_message.reply_text(
     f"Status: active\n"
