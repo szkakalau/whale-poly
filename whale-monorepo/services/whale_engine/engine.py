@@ -173,6 +173,44 @@ class _PositionUpdate:
   action_type: str
 
 
+@dataclass(frozen=True)
+class _CachedTrade:
+  side: str
+  amount: float
+  price: float
+  timestamp: datetime
+
+
+async def _load_recent_trades(redis: Redis, wallet: str, market_id: str) -> list[_CachedTrade] | None:
+  key = f"recent_trades:{wallet}:{market_id}"
+  exists = await redis.exists(key)
+  if not exists:
+    return None
+  raws = await redis.lrange(key, 0, -1)
+  trades: list[_CachedTrade] = []
+  for raw in raws:
+    try:
+      data = json.loads(raw)
+    except Exception:
+      continue
+    ts_raw = data.get("timestamp")
+    try:
+      ts = datetime.fromisoformat(ts_raw)
+    except Exception:
+      continue
+    if ts.tzinfo is None:
+      ts = ts.replace(tzinfo=timezone.utc)
+    trades.append(
+      _CachedTrade(
+        side=str(data.get("side") or ""),
+        amount=float(data.get("amount") or 0),
+        price=float(data.get("price") or 0),
+        timestamp=ts,
+      )
+    )
+  return trades
+
+
 def _apply_trade_to_position(prev_size: float, prev_avg: float, side: str, amount: float, price: float) -> _PositionUpdate:
   s = (side or "").lower()
   amt = float(amount or 0.0)
@@ -303,7 +341,24 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   )
 
   trade_usd = _usd(trade)
-  score = await compute_whale_score(session, wallet)
+  score_key = f"trade_score:{trade_id}"
+  cached_trade_score = await redis.get(score_key)
+  if cached_trade_score is not None:
+    try:
+      score = int(float(cached_trade_score))
+    except Exception:
+      score = await compute_whale_score(session, wallet)
+  else:
+    cached_wallet_score = await redis.get(f"whale_score:{wallet}")
+    if cached_wallet_score is not None:
+      try:
+        score = int(float(cached_wallet_score))
+      except Exception:
+        score = await compute_whale_score(session, wallet)
+    else:
+      score = await compute_whale_score(session, wallet)
+      await redis.set(f"whale_score:{wallet}", str(score), ex=settings.whale_score_cache_seconds)
+    await redis.set(score_key, str(score), ex=settings.trade_score_cache_seconds)
   if "SniperWhale009" in wallet:
       print(f"DEBUG: Wallet {wallet} score={score} trade_usd={trade_usd}")
 
@@ -319,24 +374,29 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   macro_seconds = parse_duration(alert_thresholds.get("macro_window"), 6 * 60 * 60)
   micro_since = now - timedelta(seconds=micro_seconds)
   macro_since = now - timedelta(seconds=macro_seconds)
-  micro_recent = (
-    await session.execute(
-      select(TradeRaw)
-      .where(TradeRaw.wallet == wallet)
-      .where(TradeRaw.market_id == trade.market_id)
-      .where(TradeRaw.timestamp >= micro_since)
-      .order_by(TradeRaw.timestamp.asc())
-    )
-  ).scalars().all()
-  macro_recent = (
-    await session.execute(
-      select(TradeRaw)
-      .where(TradeRaw.wallet == wallet)
-      .where(TradeRaw.market_id == trade.market_id)
-      .where(TradeRaw.timestamp >= macro_since)
-      .order_by(TradeRaw.timestamp.asc())
-    )
-  ).scalars().all()
+  cached_recent = await _load_recent_trades(redis, wallet, trade.market_id)
+  if cached_recent is not None:
+    micro_recent = [t for t in cached_recent if t.timestamp >= micro_since]
+    macro_recent = [t for t in cached_recent if t.timestamp >= macro_since]
+  else:
+    micro_recent = (
+      await session.execute(
+        select(TradeRaw)
+        .where(TradeRaw.wallet == wallet)
+        .where(TradeRaw.market_id == trade.market_id)
+        .where(TradeRaw.timestamp >= micro_since)
+        .order_by(TradeRaw.timestamp.asc())
+      )
+    ).scalars().all()
+    macro_recent = (
+      await session.execute(
+        select(TradeRaw)
+        .where(TradeRaw.wallet == wallet)
+        .where(TradeRaw.market_id == trade.market_id)
+        .where(TradeRaw.timestamp >= macro_since)
+        .order_by(TradeRaw.timestamp.asc())
+      )
+    ).scalars().all()
 
   behavior, score_hint, agg_amount, agg_price, behavior_side = detect_behavior(micro_recent, macro_recent, now)
   if score_hint:

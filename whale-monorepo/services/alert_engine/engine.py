@@ -31,12 +31,44 @@ async def get_market_question(session: AsyncSession, market_id: str) -> str | No
   return row.title
 
 
-async def _can_alert_event(session: AsyncSession, market_id: str, wallet: str, now: datetime, usd: float) -> bool:
+async def _can_alert_event(session: AsyncSession, redis: Redis, market_id: str, wallet: str, now: datetime, usd: float) -> bool:
   config = get_alert_config()
   cooldown = config.get("cooldown_settings", {})
   same_wallet_seconds = parse_duration(cooldown.get("same_wallet_same_market"), settings.alert_cooldown_seconds)
   different_wallet_seconds = parse_duration(cooldown.get("same_market_different_wallet"), 0)
   increased_position_seconds = parse_duration(cooldown.get("increased_position"), same_wallet_seconds)
+
+  key_wallet = f"cooldown:{wallet}:{market_id}"
+  cached = await redis.get(key_wallet)
+  if cached:
+    try:
+      data = json.loads(cached)
+      last_usd = float(data.get("last_usd") or 0)
+      last_at_raw = data.get("last_at")
+      last_at = datetime.fromisoformat(last_at_raw) if last_at_raw else None
+      if last_at and last_at.tzinfo is None:
+        last_at = last_at.replace(tzinfo=timezone.utc)
+    except Exception:
+      last_usd = 0.0
+      last_at = None
+    if last_usd <= 0 or not last_at:
+      return False
+    elapsed = (now - last_at).total_seconds()
+    if elapsed >= increased_position_seconds and usd >= last_usd:
+      return True
+    return usd >= 2 * last_usd
+
+  if different_wallet_seconds > 0:
+    market_key = f"cooldown_market:{market_id}"
+    market_cached = await redis.get(market_key)
+    if market_cached:
+      try:
+        data = json.loads(market_cached)
+        last_wallet = str(data.get("last_wallet") or "").lower()
+      except Exception:
+        last_wallet = ""
+      if last_wallet and last_wallet != str(wallet or "").lower():
+        return False
 
   window_start = now - timedelta(seconds=same_wallet_seconds)
   row = (
@@ -122,7 +154,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
 
   now = datetime.now(timezone.utc)
   wallet_name = await resolve_wallet_name(session, wallet)
-  can_alert = await _can_alert_event(session, raw_token_id, wallet, now, usd)
+  can_alert = await _can_alert_event(session, redis, raw_token_id, wallet, now, usd)
   logger.info(f"DEBUG: can_alert_event={can_alert}")
   if not can_alert:
     return False
@@ -156,6 +188,23 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   created = result.rowcount == 1
   logger.info(f"DEBUG: alert created={created}")
   if created:
+    config = get_alert_config()
+    cooldown = config.get("cooldown_settings", {})
+    same_wallet_seconds = parse_duration(cooldown.get("same_wallet_same_market"), settings.alert_cooldown_seconds)
+    different_wallet_seconds = parse_duration(cooldown.get("same_market_different_wallet"), 0)
+    increased_position_seconds = parse_duration(cooldown.get("increased_position"), same_wallet_seconds)
+    wallet_ttl = max(int(same_wallet_seconds), int(increased_position_seconds))
+    await redis.set(
+      f"cooldown:{wallet}:{raw_token_id}",
+      json.dumps({"last_usd": usd, "last_at": now.isoformat()}),
+      ex=wallet_ttl,
+    )
+    if different_wallet_seconds > 0:
+      await redis.set(
+        f"cooldown_market:{raw_token_id}",
+        json.dumps({"last_wallet": wallet, "last_at": now.isoformat()}),
+        ex=int(different_wallet_seconds),
+      )
     market_question = await get_market_question(session, raw_token_id)
     market_title = market_question
     if not market_question:

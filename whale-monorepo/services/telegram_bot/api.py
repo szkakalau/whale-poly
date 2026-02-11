@@ -39,6 +39,7 @@ _HAS_USERS_TABLE: bool | None = None
 _HAS_WHALE_FOLLOWS_TABLE: bool | None = None
 _HAS_COLLECTIONS_TABLES: bool | None = None
 _HAS_SMART_COLLECTION_TABLES: bool | None = None
+_REDIS_OK: bool | None = None
 
 
 def _is_missing_users_error(e: Exception) -> bool:
@@ -267,19 +268,15 @@ async def _log_subscriber_stats_forever(stop: asyncio.Event) -> None:
 
 async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application) -> None:
   global _HAS_USERS_TABLE
-  while not stop.is_set():
-    item = await redis.blpop(settings.alert_created_queue, timeout=1)
-    if not item:
-      continue
-    _, raw = item
+  async def _process_raw(raw: str) -> None:
     try:
       payload = json.loads(raw)
     except Exception:
-      continue
+      return
 
     whale_trade_id = str(payload.get("whale_trade_id") or "")
     if not whale_trade_id:
-      continue
+      return
 
     now = datetime.now(timezone.utc)
     wallet_address = str(payload.get("wallet_address") or "")
@@ -454,7 +451,30 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             return follow_ids_v, collection_ids_v, smart_ids_v
 
           try:
-            follow_ids, collection_ids, smart_ids = await _lookup_ids(has_users)
+            size_bucket = int(max(0.0, size_v) // 500)
+            score_bucket = int(max(0.0, score_v) // 5)
+            cache_key = f"subs:{wallet}:{size_bucket}:{score_bucket}:{int(has_users)}"
+            cached_raw = await redis.get(cache_key)
+            if cached_raw:
+              try:
+                data = json.loads(cached_raw)
+                follow_ids = list(map(str, data.get("follow", []) or []))
+                collection_ids = list(map(str, data.get("collections", []) or []))
+                smart_ids = list(map(str, data.get("smart", []) or []))
+              except Exception:
+                follow_ids = []
+                collection_ids = []
+                smart_ids = []
+            else:
+              follow_ids, collection_ids, smart_ids = await _lookup_ids(has_users)
+              try:
+                await redis.set(
+                  cache_key,
+                  json.dumps({"follow": follow_ids, "collections": collection_ids, "smart": smart_ids}),
+                  ex=120,
+                )
+              except Exception:
+                pass
           except Exception as e:
             if has_users and _is_missing_users_error(e):
               _mark_users_table_missing()
@@ -502,7 +522,19 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             return all_active - configured
 
           try:
-            global_ids = await _get_global_ids(has_users)
+            g_key = f"subs_global:{int(has_users)}"
+            g_cached = await redis.get(g_key)
+            if g_cached:
+              try:
+                global_ids = set(json.loads(g_cached) or [])
+              except Exception:
+                global_ids = set()
+            else:
+              global_ids = await _get_global_ids(has_users)
+              try:
+                await redis.set(g_key, json.dumps(list(global_ids)), ex=120)
+              except Exception:
+                pass
           except Exception as e:
             if has_users and _is_missing_users_error(e):
               _mark_users_table_missing()
@@ -526,7 +558,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
 
     if not telegram_ids:
       logger.info("alert_no_recipients whale_trade_id=%s", whale_trade_id)
-      continue
+      return
 
     try:
       async with SessionLocal() as session:
@@ -639,19 +671,48 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     if tasks:
       await asyncio.gather(*tasks)
       logger.info("alert_dispatched whale_trade_id=%s recipients_processed=%s", whale_trade_id, len(tasks))
+    return
+
+  while not stop.is_set():
+    item = await redis.blpop(settings.alert_created_queue, timeout=1)
+    if not item:
+      continue
+    _, raw = item
+    raws = [raw]
+    for _ in range(max(0, settings.alert_consume_batch_size - 1)):
+      nxt = await redis.lpop(settings.alert_created_queue)
+      if not nxt:
+        break
+      raws.append(nxt)
+    for raw_item in raws:
+      await _process_raw(raw_item)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
   stop = asyncio.Event()
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  await redis.ping()
-  logger.info(
-    "redis_connected host=%s queue=%s",
-    _redact_netloc(settings.redis_url),
-    settings.alert_created_queue,
-  )
+  global _REDIS_OK
+  redis = None
+  try:
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    await redis.ping()
+    _REDIS_OK = True
+    logger.info(
+      "redis_connected host=%s queue=%s",
+      _redact_netloc(settings.redis_url),
+      settings.alert_created_queue,
+    )
+  except Exception:
+    _REDIS_OK = False
+    logger.exception("redis_unavailable host=%s", _redact_netloc(settings.redis_url))
   tasks: list[asyncio.Task] = []
+  if not _REDIS_OK:
+    try:
+      yield
+    finally:
+      if redis is not None:
+        await redis.aclose()
+    return
   if not settings.telegram_bot_token:
     logger.warning("telegram_bot_token_missing")
     try:
@@ -682,7 +743,10 @@ app = FastAPI(title="telegram-bot", lifespan=lifespan)
 
 @app.get("/health")
 async def health():
-  return {"status": "ok"}
+  redis_ok = _REDIS_OK
+  if redis_ok is None:
+    redis_ok = False
+  return {"status": "ok", "redis": "ok" if redis_ok else "unavailable"}
 
 
 @app.post("/alerts/test")

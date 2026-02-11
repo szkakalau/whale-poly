@@ -13,6 +13,7 @@ from celery.schedules import crontab
 import httpx
 from redis.asyncio import Redis
 from sqlalchemy import select, desc, text
+from sqlalchemy.dialects.postgresql import insert
 
 from services.trade_ingest.markets import ingest_markets
 from services.trade_ingest.polymarket import ingest_trades
@@ -42,6 +43,7 @@ ingest_trades_seconds = float(os.getenv("TRADE_INGEST_SECONDS", "30"))
 celery_app.conf.beat_schedule = {
   "ingest-markets": {"task": "services.trade_ingest.ingest_markets", "schedule": ingest_markets_seconds},
   "ingest-trades": {"task": "services.trade_ingest.ingest_trades", "schedule": ingest_trades_seconds},
+  "consume-incoming-trades": {"task": "services.trade_ingest.consume_incoming_trades", "schedule": settings.trade_ingest_batch_seconds},
   "full-health-check": {"task": "services.trade_ingest.health_check", "schedule": 3600.0},
   "daily-spotlight": {"task": "services.trade_ingest.daily_spotlight", "schedule": crontab(hour=20, minute=0)},
   "rebuild-smart-collections": {"task": "services.trade_ingest.rebuild_smart_collections", "schedule": 86400.0},
@@ -58,6 +60,42 @@ def _run(coro):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
   return loop.run_until_complete(coro)
+
+
+def _parse_ts(value: str | None) -> datetime | None:
+  if not value:
+    return None
+  try:
+    dt = datetime.fromisoformat(value)
+  except Exception:
+    return None
+  if dt.tzinfo is None:
+    dt = dt.replace(tzinfo=timezone.utc)
+  return dt
+
+
+async def _cache_trade(redis: Redis, payload: dict) -> None:
+  wallet = str(payload.get("wallet") or "").lower()
+  market_id = str(payload.get("market_id") or "")
+  if not wallet or not market_id:
+    return
+  ts = payload.get("timestamp")
+  if isinstance(ts, datetime):
+    ts_value = ts
+  else:
+    ts_value = _parse_ts(str(ts))
+  if not ts_value:
+    ts_value = datetime.now(timezone.utc)
+  body = {
+    "timestamp": ts_value.isoformat(),
+    "side": payload.get("side"),
+    "amount": float(payload.get("amount") or 0),
+    "price": float(payload.get("price") or 0),
+  }
+  key = f"recent_trades:{wallet}:{market_id}"
+  await redis.rpush(key, json.dumps(body))
+  await redis.ltrim(key, -settings.recent_trades_cache_max, -1)
+  await redis.expire(key, settings.recent_trades_cache_seconds)
 
 
 async def _fetch_health(client: httpx.AsyncClient, base_url: str) -> tuple[int | None, str]:
@@ -515,7 +553,27 @@ def ingest_trades_task() -> int:
       async with SessionLocal() as session:
         trade_ids = await ingest_trades(session)
         await session.commit()
-      
+
+        if trade_ids:
+          rows = (
+            await session.execute(
+              select(TradeRaw).where(TradeRaw.trade_id.in_(list(trade_ids)))
+            )
+          ).scalars().all()
+          for r in rows:
+            await _cache_trade(
+              redis,
+              {
+                "trade_id": r.trade_id,
+                "market_id": r.market_id,
+                "wallet": r.wallet,
+                "side": r.side,
+                "amount": float(r.amount),
+                "price": float(r.price),
+                "timestamp": r.timestamp,
+              },
+            )
+
       if trade_ids:
         await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in trade_ids])
       return len(trade_ids)
@@ -526,6 +584,94 @@ def ingest_trades_task() -> int:
     return _run(runner())
   except Exception:
     logger.exception("ingest_trades_failed")
+    return 0
+
+
+async def _consume_incoming_trades_once() -> int:
+  started = time.monotonic()
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    first = await redis.lpop(settings.trade_ingest_incoming_queue)
+    if not first:
+      return 0
+    raws = [first]
+    for _ in range(max(0, settings.trade_ingest_batch_size - 1)):
+      nxt = await redis.lpop(settings.trade_ingest_incoming_queue)
+      if not nxt:
+        break
+      raws.append(nxt)
+
+    payloads: list[dict] = []
+    market_titles: dict[str, str] = {}
+    for raw in raws:
+      try:
+        p = json.loads(raw)
+      except Exception:
+        continue
+      trade_id = str(p.get("trade_id") or "")
+      market_id = str(p.get("market_id") or "")
+      wallet = str(p.get("wallet") or "").lower()
+      side = str(p.get("side") or "").lower()
+      amount = float(p.get("amount") or 0)
+      price = float(p.get("price") or 0)
+      ts = _parse_ts(str(p.get("timestamp") or "")) or datetime.now(timezone.utc)
+      if not trade_id or not market_id or not wallet:
+        continue
+      payload = {
+        "trade_id": trade_id,
+        "market_id": market_id,
+        "wallet": wallet,
+        "side": side or "buy",
+        "amount": amount,
+        "price": price,
+        "timestamp": ts,
+        "market_title": p.get("market_title"),
+      }
+      payloads.append(payload)
+      title = str(p.get("market_title") or "")
+      if title:
+        market_titles[market_id] = title
+
+    if not payloads:
+      return 0
+
+    async with SessionLocal() as session:
+      for mid, title in market_titles.items():
+        await session.execute(
+          insert(Market)
+          .values(id=mid, title=title, status=None)
+          .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+        )
+
+      stmt = (
+        insert(TradeRaw)
+        .values(payloads)
+        .on_conflict_do_nothing(index_elements=[TradeRaw.trade_id])
+        .returning(TradeRaw.trade_id)
+      )
+      inserted = (await session.execute(stmt)).scalars().all()
+      await session.commit()
+
+    if inserted:
+      await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in inserted])
+      inserted_set = set(str(t) for t in inserted)
+      for p in payloads:
+        if p["trade_id"] in inserted_set:
+          await _cache_trade(redis, p)
+
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+    logger.info("metric_trade_ingest_batch received=%s inserted=%s ms=%s", len(payloads), len(inserted), elapsed_ms)
+    return len(inserted)
+  finally:
+    await redis.aclose()
+
+
+@celery_app.task(name="services.trade_ingest.consume_incoming_trades")
+def consume_incoming_trades_task() -> int:
+  try:
+    return _run(_consume_incoming_trades_once())
+  except Exception:
+    logger.exception("consume_incoming_trades_failed")
     return 0
 
 

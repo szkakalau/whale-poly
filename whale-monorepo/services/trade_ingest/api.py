@@ -1,16 +1,11 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from pydantic import BaseModel
 from redis.asyncio import Redis
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.config import settings
-from shared.db import get_session
 from shared.logging import configure_logging
-from shared.models import Market, TradeRaw
 
 
 configure_logging(settings.log_level)
@@ -40,38 +35,29 @@ async def root():
 
 
 @app.post("/ingest/trade")
-async def ingest_trade(payload: TradeIn, session: AsyncSession = Depends(get_session)):
+async def ingest_trade(payload: TradeIn):
   ts = payload.timestamp or datetime.now(timezone.utc)
   if ts.tzinfo is None:
     ts = ts.replace(tzinfo=timezone.utc)
 
-  if payload.market_title:
-    await session.execute(
-      insert(Market)
-      .values(id=payload.market_id, title=payload.market_title, status=None)
-      .on_conflict_do_update(index_elements=[Market.id], set_={"title": payload.market_title})
-    )
-
-  await session.execute(
-    insert(TradeRaw)
-    .values(
-      trade_id=payload.trade_id,
-      market_id=payload.market_id,
-      wallet=payload.wallet.lower(),
-      side=payload.side.lower(),
-      amount=payload.amount,
-      price=payload.price,
-      timestamp=ts,
-      market_title=payload.market_title,
-    )
-    .on_conflict_do_nothing(index_elements=[TradeRaw.trade_id])
-  )
-  await session.commit()
-
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
-    await redis.rpush(settings.trade_created_queue, json.dumps({"trade_id": payload.trade_id}))
+    await redis.rpush(
+      settings.trade_ingest_incoming_queue,
+      json.dumps(
+        {
+          "trade_id": payload.trade_id,
+          "market_id": payload.market_id,
+          "market_title": payload.market_title,
+          "wallet": payload.wallet.lower(),
+          "side": payload.side.lower(),
+          "amount": payload.amount,
+          "price": payload.price,
+          "timestamp": ts.isoformat(),
+        }
+      ),
+    )
   finally:
     await redis.aclose()
 
-  return {"ok": True}
+  return {"ok": True, "queued": True}
