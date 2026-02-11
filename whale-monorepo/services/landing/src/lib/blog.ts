@@ -100,7 +100,7 @@ type DbBlogPost = {
   published_at: Date;
 };
 
-async function hasBlogPostsTable(): Promise<boolean> {
+export async function hasBlogPostsTable(): Promise<boolean> {
   try {
     const rows = await prisma.$queryRaw<{ exists: string | null }[]>(
       Prisma.sql`select to_regclass('public.blog_posts') as "exists"`
