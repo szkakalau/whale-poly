@@ -67,7 +67,7 @@ export function getAllFilePosts(): BlogPost[] {
   return allPosts.sort((a, b) => (a.date > b.date ? -1 : 1));
 }
 
-function getFilePostBySlug(slug: string): BlogPost | null {
+export function getFilePostBySlug(slug: string): BlogPost | null {
   const fullPath = path.join(postsDirectory, `${slug}.md`);
   if (!fs.existsSync(fullPath)) {
     return null;
@@ -136,7 +136,7 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
   );
 }
 
-async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
   const hasTable = await hasBlogPostsTable();
   if (!hasTable) {
     return null;
