@@ -4,11 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { getPostBySlug, getAllPosts } from '@/lib/blog';
+import { getPostBySlug } from '@/lib/blog';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
@@ -51,13 +53,6 @@ export async function generateMetadata({ params }: Props) {
       canonical: `/blog/${slug}`,
     },
   };
-}
-
-export async function generateStaticParams() {
-  const posts = await getAllPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
 }
 
 export default async function BlogPostPage({ params }: Props) {
