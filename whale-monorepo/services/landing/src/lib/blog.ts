@@ -37,7 +37,7 @@ function normalizePost(post: BlogPost): BlogPost {
   };
 }
 
-function getAllFilePosts(): BlogPost[] {
+export function getAllFilePosts(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
   }

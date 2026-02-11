@@ -1,9 +1,14 @@
 import { MetadataRoute } from 'next';
-import { getAllPosts } from '@/lib/blog';
+import { getAllFilePosts, getAllPosts } from '@/lib/blog';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://sightwhale.com';
-  const posts = await getAllPosts();
+  let posts = getAllFilePosts();
+  try {
+    posts = await getAllPosts();
+  } catch {
+    posts = getAllFilePosts();
+  }
 
   const blogUrls = posts.map((post) => {
     const lastModifiedDate = new Date(post.date);
