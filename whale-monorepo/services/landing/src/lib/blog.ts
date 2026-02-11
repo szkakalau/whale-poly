@@ -67,7 +67,7 @@ export function getAllFilePosts(): BlogPost[] {
   return allPosts.sort((a, b) => (a.date > b.date ? -1 : 1));
 }
 
-export function getFilePostBySlug(slug: string): BlogPost | null {
+function getFilePostBySlug(slug: string): BlogPost | null {
   const fullPath = path.join(postsDirectory, `${slug}.md`);
   if (!fs.existsSync(fullPath)) {
     return null;
@@ -99,15 +99,6 @@ type DbBlogPost = {
   tags: string[] | null;
   published_at: Date;
 };
-
-export async function hasBlogPostsTable(): Promise<boolean> {
-  try {
-    const schema = await resolveBlogPostsSchema();
-    return Boolean(schema);
-  } catch {
-    return false;
-  }
-}
 
 async function resolveBlogPostsSchema(): Promise<string | null> {
   const rows = await prisma.$queryRaw<{ table_schema: string }[]>(
@@ -148,7 +139,7 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
   );
 }
 
-export async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
+async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
   const schema = await resolveBlogPostsSchema();
   if (!schema) {
     return null;
