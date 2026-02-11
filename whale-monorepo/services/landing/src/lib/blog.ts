@@ -102,23 +102,35 @@ type DbBlogPost = {
 
 export async function hasBlogPostsTable(): Promise<boolean> {
   try {
-    const rows = await prisma.$queryRaw<{ exists: string | null }[]>(
-      Prisma.sql`select to_regclass('public.blog_posts') as "exists"`
-    );
-    return Boolean(rows?.[0]?.exists);
+    const schema = await resolveBlogPostsSchema();
+    return Boolean(schema);
   } catch {
     return false;
   }
 }
 
+async function resolveBlogPostsSchema(): Promise<string | null> {
+  const rows = await prisma.$queryRaw<{ table_schema: string }[]>(
+    Prisma.sql`select table_schema from information_schema.tables where table_name = 'blog_posts'`
+  );
+  const schema = rows?.[0]?.table_schema ?? null;
+  if (!schema) {
+    return null;
+  }
+  if (!/^[A-Za-z0-9_]+$/.test(schema)) {
+    return null;
+  }
+  return schema;
+}
+
 async function getAllDbPosts(): Promise<BlogPost[]> {
-  const hasTable = await hasBlogPostsTable();
-  if (!hasTable) {
+  const schema = await resolveBlogPostsSchema();
+  if (!schema) {
     return [];
   }
   const rows = await prisma.$queryRaw<DbBlogPost[]>(
     Prisma.sql`select slug, title, excerpt, content, author, read_time, cover_image, tags, published_at
-               from blog_posts
+               from ${Prisma.raw(`${schema}.blog_posts`)}
                order by published_at desc`
   );
   return rows.map((row) =>
@@ -137,13 +149,13 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
 }
 
 export async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
-  const hasTable = await hasBlogPostsTable();
-  if (!hasTable) {
+  const schema = await resolveBlogPostsSchema();
+  if (!schema) {
     return null;
   }
   const rows = await prisma.$queryRaw<DbBlogPost[]>(
     Prisma.sql`select slug, title, excerpt, content, author, read_time, cover_image, tags, published_at
-               from blog_posts
+               from ${Prisma.raw(`${schema}.blog_posts`)}
                where slug = ${slug}
                limit 1`
   );
