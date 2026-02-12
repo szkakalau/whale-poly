@@ -11,7 +11,7 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-5 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" title="Sight Whale Home">
           <WhaleLogo className="h-8 w-8 text-white drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
-          <span className="font-bold tracking-tight text-lg text-white">Whale Intelligence</span>
+          <span className="font-bold tracking-tight text-lg text-white">Polymarket Whale Intelligence</span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-7">

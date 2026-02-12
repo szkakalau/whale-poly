@@ -18,12 +18,12 @@ export async function generateMetadata({ params }: Props) {
   
   if (!post) {
     return {
-      title: 'Post Not Found - Whale Intelligence',
+      title: 'Post Not Found - Polymarket Whale Intelligence',
     };
   }
 
   return {
-    title: `${post.title} - Whale Intelligence`,
+    title: `${post.title} - Polymarket Whale Intelligence`,
     description: post.excerpt,
     keywords: post.tags,
     authors: [{ name: post.author || 'Whale Team' }],

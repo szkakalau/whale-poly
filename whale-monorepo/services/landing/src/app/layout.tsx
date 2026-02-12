@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
   keywords: [
     "Polymarket", 
-    "Whale Intelligence", 
+    "Polymarket Whale Intelligence", 
     "Prediction Markets", 
     "DeFi Alerts", 
     "Crypto Trading Signals", 

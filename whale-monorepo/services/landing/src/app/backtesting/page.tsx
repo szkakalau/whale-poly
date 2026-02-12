@@ -3,10 +3,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata = {
-  title: 'Backtesting Results - Whale Intelligence',
+  title: 'Backtesting Results - Polymarket Whale Intelligence',
   description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
   openGraph: {
-    title: 'Backtesting Results - Whale Intelligence',
+    title: 'Backtesting Results - Polymarket Whale Intelligence',
     description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
     type: 'website',
     url: 'https://sightwhale.com/backtesting',
@@ -21,7 +21,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Backtesting Results - Whale Intelligence',
+    title: 'Backtesting Results - Polymarket Whale Intelligence',
     description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
     images: ['/images/whale-alert-biden.svg']
   },

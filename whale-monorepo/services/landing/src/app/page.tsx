@@ -482,7 +482,7 @@ export default function Home() {
               
               <div className="relative p-10 rounded-[2.5rem] bg-violet-600/[0.02] border border-violet-500/20 shadow-[0_0_50px_rgba(139,92,246,0.05)] overflow-hidden group">
                 <div className="absolute inset-0 bg-violet-500/[0.02] blur-3xl group-hover:bg-violet-500/[0.05] transition-colors duration-1000"></div>
-                <p className="text-violet-400 font-black uppercase tracking-[0.4em] text-[11px] mb-10 relative">Whale Intelligence</p>
+                <p className="text-violet-400 font-black uppercase tracking-[0.4em] text-[11px] mb-10 relative">Polymarket Whale Intelligence</p>
                 <ul className="space-y-8 relative">
                   {[
                     "Verified behavior tracking", 

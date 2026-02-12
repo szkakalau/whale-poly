@@ -45,9 +45,9 @@ export default function FullAccessGating({
       <UpgradeModal 
         isOpen={showUpgrade} 
         onClose={() => setShowUpgrade(false)}
-        title="Unlock Whale Intelligence"
+        title="Unlock Polymarket Whale Intelligence"
         description="Get deep insights into whale behavior, performance, and real-time alerts. Upgrade to Pro for full access."
-        feature="Whale Intelligence"
+        feature="Polymarket Whale Intelligence"
       />
     </div>
   );

@@ -3,10 +3,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata = {
-  title: 'Conviction Signals - Whale Intelligence',
+  title: 'Conviction Signals - Polymarket Whale Intelligence',
   description: 'Case studies showing how conviction signals are built and reviewed with transparent context.',
   openGraph: {
-    title: 'Conviction Signals - Whale Intelligence',
+    title: 'Conviction Signals - Polymarket Whale Intelligence',
     description: 'Case studies showing how conviction signals are built and reviewed with transparent context.',
     type: 'website',
     url: 'https://sightwhale.com/conviction',
@@ -21,7 +21,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Conviction Signals - Whale Intelligence',
+    title: 'Conviction Signals - Polymarket Whale Intelligence',
     description: 'Case studies showing how conviction signals are built and reviewed with transparent context.',
     images: ['/images/whale-alert-biden.svg']
   },
@@ -190,7 +190,7 @@ export default function ConvictionPage() {
           <h2 className="text-2xl font-bold mb-4 text-white">Telegram Sample Feed</h2>
           <p className="text-gray-400 mb-6">7-Day Historical Preview</p>
           <blockquote className="mb-8 border-l-4 border-gray-600 pl-6 py-2 text-gray-400 italic">
-            This is an example feed showing how Whale Intelligence appears in real usage.
+            This is an example feed showing how Polymarket Whale Intelligence appears in real usage.
           </blockquote>
 
           <div className="space-y-6 max-w-2xl mx-auto">
