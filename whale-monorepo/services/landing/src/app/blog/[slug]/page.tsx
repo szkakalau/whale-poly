@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props) {
       type: 'article',
       publishedTime: post.date,
       tags: post.tags,
-      url: `https://sightwhale.com/blog/${slug}`,
+      url: `https://www.sightwhale.com/blog/${slug}`,
       images: [
         {
           url: '/images/whale-alert-biden.svg',
@@ -96,10 +96,10 @@ export default async function BlogPostPage({ params }: Props) {
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://sightwhale.com/blog/${slug}`
+      "@id": `https://www.sightwhale.com/blog/${slug}`
     },
     image: [
-      "https://sightwhale.com/images/whale-alert-biden.svg"
+      "https://www.sightwhale.com/images/whale-alert-biden.svg"
     ],
     keywords: safePost.tags?.join(", ")
   };

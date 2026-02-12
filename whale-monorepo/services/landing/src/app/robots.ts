@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/api/', // Disallow API routes if they are not meant to be indexed
     },
-    sitemap: 'https://sightwhale.com/sitemap.xml',
+    sitemap: 'https://www.sightwhale.com/sitemap.xml',
   };
 }

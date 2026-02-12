@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getAllFilePosts, getAllPosts } from '@/lib/blog';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://sightwhale.com';
+  const baseUrl = 'https://www.sightwhale.com';
   let posts = getAllFilePosts();
   try {
     posts = await getAllPosts();

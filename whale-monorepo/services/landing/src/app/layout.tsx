@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
     description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
     type: "website",
-    url: "https://sightwhale.com/",
+    url: "https://www.sightwhale.com/",
     siteName: "Sight Whale",
     locale: "en_US",
     images: [
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  metadataBase: new URL("https://sightwhale.com"),
+  metadataBase: new URL("https://www.sightwhale.com"),
   alternates: {
     canonical: './',
   },
