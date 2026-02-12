@@ -58,7 +58,7 @@ export default function Home() {
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-[1.05]">
             Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
-              Score
+              Whale Score™
               <span className="absolute -inset-x-4 -inset-y-2 blur-[16px] bg-violet-500/10 -z-10"></span>
             </span>.<br />
             Frontrun the <span className="text-white">Market</span>.
