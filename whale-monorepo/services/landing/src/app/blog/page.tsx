@@ -6,6 +6,17 @@ import { getAllPosts } from '@/lib/blog';
 export const metadata = {
   title: 'Blog - Whale Intelligence',
   description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: 'Blog - Whale Intelligence',
     description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
