@@ -23,6 +23,9 @@ function normalizePostDate(value: string): string {
   if (!Number.isFinite(parsed.getTime())) {
     return new Date().toISOString();
   }
+  if (parsed.getTime() > Date.now()) {
+    return new Date('2026-01-25T00:00:00.000Z').toISOString();
+  }
   return parsed.toISOString();
 }
 
