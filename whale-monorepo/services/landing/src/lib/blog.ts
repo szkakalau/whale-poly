@@ -19,13 +19,9 @@ export interface BlogPost {
 }
 
 function normalizePostDate(value: string): string {
-  const now = new Date();
   const parsed = new Date(value);
   if (!Number.isFinite(parsed.getTime())) {
-    return now.toISOString();
-  }
-  if (parsed.getTime() > now.getTime()) {
-    return now.toISOString();
+    return new Date().toISOString();
   }
   return parsed.toISOString();
 }
