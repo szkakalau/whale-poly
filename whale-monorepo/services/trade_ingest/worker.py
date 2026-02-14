@@ -371,11 +371,17 @@ async def run_daily_spotlight() -> dict:
   now_utc = datetime.now(timezone.utc)
   start_time = now_utc - timedelta(hours=24)
   async with SessionLocal() as session:
+    health_filters = (
+      TradeRaw.market_id != "health-market",
+      TradeRaw.trade_id.notlike("health-test-%"),
+      TradeRaw.market_title != "Health Market",
+    )
     stmt_spender = (
       select(TradeRaw, Market.title, WalletName.polymarket_username)
       .outerjoin(Market, TradeRaw.market_id == Market.id)
       .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
       .where(TradeRaw.timestamp >= start_time)
+      .where(*health_filters)
       .order_by(desc(TradeRaw.amount * TradeRaw.price))
       .limit(1)
     )
@@ -384,6 +390,7 @@ async def run_daily_spotlight() -> dict:
       .outerjoin(Market, TradeRaw.market_id == Market.id)
       .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
       .where(TradeRaw.timestamp >= start_time)
+      .where(*health_filters)
       .where(TradeRaw.price < 0.40)
       .where(TradeRaw.amount * TradeRaw.price > 1000)
       .order_by(desc(TradeRaw.amount * TradeRaw.price))
@@ -396,6 +403,7 @@ async def run_daily_spotlight() -> dict:
       .outerjoin(Market, TradeRaw.market_id == Market.id)
       .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
       .where(TradeRaw.timestamp >= start_time)
+      .where(*health_filters)
       .where(WhaleStats.win_rate >= 0.70)
       .where(WhaleProfile.total_trades > 5)
       .order_by(desc(TradeRaw.amount * TradeRaw.price))
