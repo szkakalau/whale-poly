@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
@@ -91,7 +91,8 @@ async def get_daily_spotlight():
                 health_filters = (
                     TradeRaw.market_id != "health-market",
                     TradeRaw.trade_id.notlike("health-test-%"),
-                    TradeRaw.market_title != "Health Market",
+                    or_(TradeRaw.market_title.is_(None), TradeRaw.market_title != "Health Market"),
+                    or_(Market.title.is_(None), Market.title != "Health Market"),
                 )
                 stmt_spender = (
                     select(TradeRaw, Market.title, WalletName.polymarket_username)

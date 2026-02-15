@@ -12,7 +12,7 @@ from celery import Celery
 from celery.schedules import crontab
 import httpx
 from redis.asyncio import Redis
-from sqlalchemy import select, desc, text
+from sqlalchemy import select, desc, text, or_
 from sqlalchemy.dialects.postgresql import insert
 
 from services.trade_ingest.markets import ingest_markets
@@ -374,7 +374,8 @@ async def run_daily_spotlight() -> dict:
     health_filters = (
       TradeRaw.market_id != "health-market",
       TradeRaw.trade_id.notlike("health-test-%"),
-      TradeRaw.market_title != "Health Market",
+      or_(TradeRaw.market_title.is_(None), TradeRaw.market_title != "Health Market"),
+      or_(Market.title.is_(None), Market.title != "Health Market"),
     )
     stmt_spender = (
       select(TradeRaw, Market.title, WalletName.polymarket_username)
