@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, desc, or_
+from sqlalchemy import select, desc, or_, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
@@ -87,12 +87,24 @@ async def get_daily_spotlight():
                 async with engine.begin() as conn:
                     await conn.run_sync(Base.metadata.create_all)
             
+            def is_health_trade(trade, title) -> bool:
+                values = [
+                    getattr(trade, "market_id", None),
+                    getattr(trade, "trade_id", None),
+                    getattr(trade, "market_title", None),
+                    title,
+                ]
+                for v in values:
+                    if v and "health" in str(v).lower():
+                        return True
+                return False
+
             async def run_queries(session: AsyncSession, start_time: datetime):
                 health_filters = (
-                    TradeRaw.market_id != "health-market",
-                    TradeRaw.trade_id.notlike("health-test-%"),
-                    or_(TradeRaw.market_title.is_(None), TradeRaw.market_title != "Health Market"),
-                    or_(Market.title.is_(None), Market.title != "Health Market"),
+                    ~func.coalesce(TradeRaw.market_id, "").ilike("%health%"),
+                    ~func.coalesce(TradeRaw.trade_id, "").ilike("health-test-%"),
+                    ~func.coalesce(TradeRaw.market_title, "").ilike("%health%"),
+                    ~func.coalesce(Market.title, "").ilike("%health%"),
                 )
                 stmt_spender = (
                     select(TradeRaw, Market.title, WalletName.polymarket_username)
@@ -138,6 +150,14 @@ async def get_daily_spotlight():
                 
                 res_sniper = await session.execute(stmt_sniper)
                 sniper = res_sniper.first()
+
+                if big_spender and is_health_trade(big_spender[0], big_spender[1]):
+                    big_spender = None
+                if contrarian and is_health_trade(contrarian[0], contrarian[1]):
+                    contrarian = None
+                if sniper and is_health_trade(sniper[0], sniper[1]):
+                    sniper = None
+
                 return big_spender, contrarian, sniper
 
             async with AsyncSessionLocal() as session:

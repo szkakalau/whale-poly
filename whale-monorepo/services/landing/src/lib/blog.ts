@@ -36,6 +36,14 @@ function normalizePost(post: BlogPost): BlogPost {
   };
 }
 
+function isHealthMonitorPost(post: BlogPost): boolean {
+  if (!post.slug.startsWith("daily-spotlight-")) {
+    return false;
+  }
+  const hay = `${post.title}\n${post.excerpt}\n${post.content}`.toLowerCase();
+  return hay.includes("health market");
+}
+
 export function getAllFilePosts(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
@@ -123,19 +131,21 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
                from ${Prisma.raw(`${schema}.blog_posts`)}
                order by published_at desc`
   );
-  return rows.map((row) =>
-    normalizePost({
-      slug: row.slug,
-      title: row.title,
-      date: row.published_at.toISOString(),
-      excerpt: row.excerpt,
-      content: row.content,
-      author: row.author,
-      readTime: row.read_time,
-      coverImage: row.cover_image ?? undefined,
-      tags: row.tags ?? undefined,
-    })
-  );
+  return rows
+    .map((row) =>
+      normalizePost({
+        slug: row.slug,
+        title: row.title,
+        date: row.published_at.toISOString(),
+        excerpt: row.excerpt,
+        content: row.content,
+        author: row.author,
+        readTime: row.read_time,
+        coverImage: row.cover_image ?? undefined,
+        tags: row.tags ?? undefined,
+      })
+    )
+    .filter((post) => !isHealthMonitorPost(post));
 }
 
 async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -153,7 +163,7 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
   if (!row) {
     return null;
   }
-  return normalizePost({
+  const post = normalizePost({
     slug: row.slug,
     title: row.title,
     date: row.published_at.toISOString(),
@@ -164,6 +174,10 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
     coverImage: row.cover_image ?? undefined,
     tags: row.tags ?? undefined,
   });
+  if (isHealthMonitorPost(post)) {
+    return null;
+  }
+  return post;
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {

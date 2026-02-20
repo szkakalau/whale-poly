@@ -12,7 +12,7 @@ from celery import Celery
 from celery.schedules import crontab
 import httpx
 from redis.asyncio import Redis
-from sqlalchemy import select, desc, text, or_
+from sqlalchemy import select, desc, text, or_, func
 from sqlalchemy.dialects.postgresql import insert
 
 from services.trade_ingest.markets import ingest_markets
@@ -72,6 +72,19 @@ def _parse_ts(value: str | None) -> datetime | None:
   if dt.tzinfo is None:
     dt = dt.replace(tzinfo=timezone.utc)
   return dt
+
+
+def _is_health_trade(trade, title) -> bool:
+  values = [
+    getattr(trade, "market_id", None),
+    getattr(trade, "trade_id", None),
+    getattr(trade, "market_title", None),
+    title,
+  ]
+  for v in values:
+    if v and "health" in str(v).lower():
+      return True
+  return False
 
 
 async def _cache_trade(redis: Redis, payload: dict) -> None:
@@ -371,11 +384,25 @@ async def run_daily_spotlight() -> dict:
   now_utc = datetime.now(timezone.utc)
   start_time = now_utc - timedelta(hours=24)
   async with SessionLocal() as session:
+    await session.execute(
+      text(
+        """
+        delete from blog_posts
+        where slug like 'daily-spotlight-%'
+          and (
+            lower(content) like '%health%'
+            or lower(title) like '%health%'
+            or lower(excerpt) like '%health%'
+          )
+        """
+      )
+    )
+    await session.commit()
     health_filters = (
-      TradeRaw.market_id != "health-market",
-      TradeRaw.trade_id.notlike("health-test-%"),
-      or_(TradeRaw.market_title.is_(None), TradeRaw.market_title != "Health Market"),
-      or_(Market.title.is_(None), Market.title != "Health Market"),
+      ~func.coalesce(TradeRaw.market_id, "").ilike("%health%"),
+      ~func.coalesce(TradeRaw.trade_id, "").ilike("health-test-%"),
+      ~func.coalesce(TradeRaw.market_title, "").ilike("%health%"),
+      ~func.coalesce(Market.title, "").ilike("%health%"),
     )
     stmt_spender = (
       select(TradeRaw, Market.title, WalletName.polymarket_username)
@@ -413,6 +440,13 @@ async def run_daily_spotlight() -> dict:
     big_spender = (await session.execute(stmt_spender)).first()
     contrarian = (await session.execute(stmt_contrarian)).first()
     sniper = (await session.execute(stmt_sniper)).first()
+
+    if big_spender and _is_health_trade(big_spender[0], big_spender[1]):
+      big_spender = None
+    if contrarian and _is_health_trade(contrarian[0], contrarian[1]):
+      contrarian = None
+    if sniper and _is_health_trade(sniper[0], sniper[1]):
+      sniper = None
 
   now_local = now_utc.astimezone(ZoneInfo("Asia/Shanghai"))
   lines = [
