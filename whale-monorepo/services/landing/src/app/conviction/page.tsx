@@ -9,7 +9,7 @@ export const metadata = {
     title: 'Conviction Signals - Polymarket Whale Intelligence',
     description: 'Case studies showing how conviction signals are built and reviewed with transparent context.',
     type: 'website',
-    url: 'https://sightwhale.com/conviction',
+    url: 'https://www.sightwhale.com/conviction',
     images: [
       {
         url: '/images/whale-alert-biden.svg',

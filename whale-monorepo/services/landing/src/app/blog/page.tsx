@@ -21,7 +21,7 @@ export const metadata = {
     title: 'Blog - Polymarket Whale Intelligence',
     description: 'Insights, updates, and educational content about prediction market analysis and whale tracking.',
     type: 'website',
-    url: 'https://sightwhale.com/blog',
+    url: 'https://www.sightwhale.com/blog',
     images: [
       {
         url: '/images/whale-alert-biden.svg',

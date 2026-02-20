@@ -9,7 +9,7 @@ export const metadata = {
     title: 'Backtesting Results - Polymarket Whale Intelligence',
     description: 'Historical backtesting results for Whale Alerts with methodology and performance breakdowns.',
     type: 'website',
-    url: 'https://sightwhale.com/backtesting',
+    url: 'https://www.sightwhale.com/backtesting',
     images: [
       {
         url: '/images/whale-alert-biden.svg',
