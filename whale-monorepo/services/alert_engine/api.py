@@ -136,6 +136,7 @@ async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Ad
 @app.post("/alerts/force")
 async def force_alert(
   market_question: str = Query("Test Market Alert"),
+  outcome: str | None = Query(None),
   side: str = Query("buy"),
   size: float = Query(12345.67),
   price: float = Query(0.42),
@@ -171,6 +172,7 @@ async def force_alert(
     "whale_score": whale_score,
     "alert_type": "test",
     "market_question": market_question,
+    "outcome": outcome,
     "side": side,
     "size": size,
     "price": price,
@@ -188,6 +190,7 @@ async def force_alert(
     text = (
       "Forced Alert Test\n\n"
       f"Market:\n{market_question}\n\n"
+      f"Outcome:\n{outcome}\n\n"
       f"Side:\n{side}\n\n"
       f"Size:\n${size}\n\n"
       f"Price:\n{price}\n\n"

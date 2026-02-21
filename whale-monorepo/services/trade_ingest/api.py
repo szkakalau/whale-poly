@@ -17,6 +17,7 @@ class TradeIn(BaseModel):
   trade_id: str
   market_id: str
   market_title: str | None = None
+  outcome: str | None = None
   wallet: str
   side: str
   amount: float
@@ -49,6 +50,7 @@ async def ingest_trade(payload: TradeIn):
           "trade_id": payload.trade_id,
           "market_id": payload.market_id,
           "market_title": payload.market_title,
+          "outcome": payload.outcome,
           "wallet": payload.wallet.lower(),
           "side": payload.side.lower(),
           "amount": payload.amount,

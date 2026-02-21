@@ -91,6 +91,7 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   wallet = normalize_key(str(wallet))
   side = str(t.get("side") or "").lower()
   side = "sell" if side == "sell" else "buy"
+  outcome = t.get("outcome") or t.get("outcome_name") or t.get("outcomeName") or t.get("tokenOutcome")
   amount_raw = t.get("amount")
   if amount_raw is None:
     amount_raw = t.get("size")
@@ -122,6 +123,7 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
     "market_id": market_id, 
     "wallet": wallet, 
     "side": side, 
+    "outcome": str(outcome) if outcome is not None and str(outcome).strip() else None,
     "amount": amount, 
     "price": price, 
     "timestamp": ts,

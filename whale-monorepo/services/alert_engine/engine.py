@@ -233,6 +233,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "behavior": event.get("behavior"),
       "market_question": market_question,
       "market_title": market_title,
+      "outcome": event.get("outcome"),
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),

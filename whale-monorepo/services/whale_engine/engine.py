@@ -535,6 +535,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
           "whale_score": score,
           "action_type": action_type,
           "behavior": behavior,
+          "outcome": trade.outcome,
           "side": event_side,
           "amount": event_amount,
           "price": event_price,

@@ -384,6 +384,7 @@ async def run_daily_spotlight() -> dict:
   now_utc = datetime.now(timezone.utc)
   start_time = now_utc - timedelta(hours=24)
   async with SessionLocal() as session:
+    await _ensure_blog_posts_table(session)
     await session.execute(
       text(
         """
@@ -404,42 +405,48 @@ async def run_daily_spotlight() -> dict:
       ~func.coalesce(TradeRaw.market_title, "").ilike("%health%"),
       ~func.coalesce(Market.title, "").ilike("%health%"),
     )
-    stmt_spender = (
-      select(TradeRaw, Market.title, WalletName.polymarket_username)
-      .outerjoin(Market, TradeRaw.market_id == Market.id)
-      .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
-      .where(TradeRaw.timestamp >= start_time)
-      .where(*health_filters)
-      .order_by(desc(TradeRaw.amount * TradeRaw.price))
-      .limit(1)
-    )
-    stmt_contrarian = (
-      select(TradeRaw, Market.title, WalletName.polymarket_username)
-      .outerjoin(Market, TradeRaw.market_id == Market.id)
-      .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
-      .where(TradeRaw.timestamp >= start_time)
-      .where(*health_filters)
-      .where(TradeRaw.price < 0.40)
-      .where(TradeRaw.amount * TradeRaw.price > 1000)
-      .order_by(desc(TradeRaw.amount * TradeRaw.price))
-      .limit(1)
-    )
-    stmt_sniper = (
-      select(TradeRaw, Market.title, WhaleStats.win_rate, WalletName.polymarket_username)
-      .join(WhaleStats, TradeRaw.wallet == WhaleStats.wallet_address)
-      .join(WhaleProfile, TradeRaw.wallet == WhaleProfile.wallet_address)
-      .outerjoin(Market, TradeRaw.market_id == Market.id)
-      .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
-      .where(TradeRaw.timestamp >= start_time)
-      .where(*health_filters)
-      .where(WhaleStats.win_rate >= 0.70)
-      .where(WhaleProfile.total_trades > 5)
-      .order_by(desc(TradeRaw.amount * TradeRaw.price))
-      .limit(1)
-    )
-    big_spender = (await session.execute(stmt_spender)).first()
-    contrarian = (await session.execute(stmt_contrarian)).first()
-    sniper = (await session.execute(stmt_sniper)).first()
+    try:
+      stmt_spender = (
+        select(TradeRaw, Market.title, WalletName.polymarket_username)
+        .outerjoin(Market, TradeRaw.market_id == Market.id)
+        .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
+        .where(TradeRaw.timestamp >= start_time)
+        .where(*health_filters)
+        .order_by(desc(TradeRaw.amount * TradeRaw.price))
+        .limit(1)
+      )
+      stmt_contrarian = (
+        select(TradeRaw, Market.title, WalletName.polymarket_username)
+        .outerjoin(Market, TradeRaw.market_id == Market.id)
+        .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
+        .where(TradeRaw.timestamp >= start_time)
+        .where(*health_filters)
+        .where(TradeRaw.price < 0.40)
+        .where(TradeRaw.amount * TradeRaw.price > 1000)
+        .order_by(desc(TradeRaw.amount * TradeRaw.price))
+        .limit(1)
+      )
+      stmt_sniper = (
+        select(TradeRaw, Market.title, WhaleStats.win_rate, WalletName.polymarket_username)
+        .join(WhaleStats, TradeRaw.wallet == WhaleStats.wallet_address)
+        .join(WhaleProfile, TradeRaw.wallet == WhaleProfile.wallet_address)
+        .outerjoin(Market, TradeRaw.market_id == Market.id)
+        .outerjoin(WalletName, TradeRaw.wallet == WalletName.wallet_address)
+        .where(TradeRaw.timestamp >= start_time)
+        .where(*health_filters)
+        .where(WhaleStats.win_rate >= 0.70)
+        .where(WhaleProfile.total_trades > 5)
+        .order_by(desc(TradeRaw.amount * TradeRaw.price))
+        .limit(1)
+      )
+      big_spender = (await session.execute(stmt_spender)).first()
+      contrarian = (await session.execute(stmt_contrarian)).first()
+      sniper = (await session.execute(stmt_sniper)).first()
+    except Exception:
+      logger.exception("daily_spotlight_query_failed")
+      big_spender = None
+      contrarian = None
+      sniper = None
 
     if big_spender and _is_health_trade(big_spender[0], big_spender[1]):
       big_spender = None
@@ -516,7 +523,6 @@ async def run_daily_spotlight() -> dict:
 
   blog_post = _build_blog_post(now_local, now_utc, big_spender, contrarian, sniper)
   async with SessionLocal() as session:
-    await _ensure_blog_posts_table(session)
     await _upsert_blog_post(session, blog_post)
     await session.commit()
 
@@ -609,6 +615,7 @@ def ingest_trades_task() -> int:
               {
                 "trade_id": r.trade_id,
                 "market_id": r.market_id,
+                "outcome": r.outcome,
                 "wallet": r.wallet,
                 "side": r.side,
                 "amount": float(r.amount),
@@ -653,6 +660,7 @@ async def _consume_incoming_trades_once() -> int:
         continue
       trade_id = str(p.get("trade_id") or "")
       market_id = str(p.get("market_id") or "")
+      outcome = p.get("outcome")
       wallet = str(p.get("wallet") or "").lower()
       side = str(p.get("side") or "").lower()
       amount = float(p.get("amount") or 0)
@@ -663,6 +671,7 @@ async def _consume_incoming_trades_once() -> int:
       payload = {
         "trade_id": trade_id,
         "market_id": market_id,
+        "outcome": outcome,
         "wallet": wallet,
         "side": side or "buy",
         "amount": amount,

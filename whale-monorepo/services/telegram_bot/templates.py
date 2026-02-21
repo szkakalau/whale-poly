@@ -23,6 +23,7 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     market = "Unknown"
 
   alert_type = payload.get("alert_type") or ""
+  outcome = payload.get("outcome") or payload.get("outcome_name") or payload.get("outcomeName")
   side = (payload.get("side") or "UNKNOWN").upper()
   size = payload.get("size") or payload.get("amount") or 0
   price = payload.get("price") or 0
@@ -59,6 +60,8 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   side_emoji = "🟢" if side == "BUY" else "🔴" if side == "SELL" else "⚪️"
   type_label = "Entry" if alert_type == "whale_entry" else "Exit" if alert_type == "whale_exit" else alert_type.capitalize()
   confidence_line = "⚠️ <b>Confidence:</b> <b>Low</b>\n" if signal_level == "low" else ""
+  outcome_value = str(outcome).strip().upper() if outcome else ""
+  outcome_line = f"🏁 <b>Outcome:</b> <b>{outcome_value}</b>\n" if outcome_value else ""
   
   wm = user_hash(telegram_id)
   
@@ -66,6 +69,7 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     "🐋 <b>Whale Trade Detected</b>\n\n"
     f"📊 <b>Market:</b>\n{market}\n\n"
     f"🏷 <b>Type:</b> {type_label}\n"
+    f"{outcome_line}"
     f"{side_emoji} <b>Side:</b> <b>{side}</b>\n"
     f"💰 <b>Size:</b> <b>${_fmt_usd(size)}</b>\n"
     f"💵 <b>Price:</b> <code>{_fmt_price(price)}</code>\n"
