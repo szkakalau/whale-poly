@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 
@@ -19,14 +19,50 @@ export default function UpgradeModal({
   description = "This feature is only available on Pro and Elite plans.",
   feature
 }: UpgradeModalProps) {
+  const handleEscape = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleBackdropClick = useCallback((event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleLinkClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, handleEscape]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upgrade-modal-title"
+      aria-describedby="upgrade-modal-description"
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Modal Content */}
@@ -38,6 +74,7 @@ export default function UpgradeModal({
         <button 
           onClick={onClose}
           className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 transition-colors text-gray-500 hover:text-white"
+          aria-label="Close upgrade modal"
         >
           <X size={20} />
         </button>
@@ -49,7 +86,9 @@ export default function UpgradeModal({
             </svg>
           </div>
 
-          <h2 className="text-2xl font-black text-white mb-3 tracking-tight">{title}</h2>
+          <h2 id="upgrade-modal-title" className="text-2xl font-black text-white mb-3 tracking-tight">
+            {title}
+          </h2>
           
           {feature && (
             <div className="inline-block px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-bold uppercase tracking-wider mb-4">
@@ -57,14 +96,14 @@ export default function UpgradeModal({
             </div>
           )}
 
-          <p className="text-gray-400 font-light leading-relaxed mb-8">
+          <p id="upgrade-modal-description" className="text-gray-400 font-light leading-relaxed mb-8">
             {description}
           </p>
 
           <div className="grid gap-3">
             <Link 
               href="/subscribe?plan=pro"
-              onClick={onClose}
+              onClick={handleLinkClick}
               className="w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-center shadow-[0_10px_30px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all hover:-translate-y-1 active:scale-95"
             >
               Upgrade to Pro — $29/mo
@@ -72,7 +111,7 @@ export default function UpgradeModal({
             
             <Link 
               href="/subscribe?plan=elite"
-              onClick={onClose}
+              onClick={handleLinkClick}
               className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-center hover:bg-white/10 transition-all"
             >
               Go Elite — $59/mo

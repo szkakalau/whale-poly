@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
 from redis.asyncio import Redis
 from shared.config import settings
 from shared.logging import configure_logging
@@ -17,7 +17,7 @@ class TradeIn(BaseModel):
   trade_id: str
   market_id: str
   market_title: str | None = None
-  outcome: str | None = None
+  outcome: str | None = Field(default=None, validation_alias=AliasChoices("outcome", "outcome_name", "outcomeName", "tokenOutcome"))
   wallet: str
   side: str
   amount: float
@@ -40,6 +40,9 @@ async def ingest_trade(payload: TradeIn):
   ts = payload.timestamp or datetime.now(timezone.utc)
   if ts.tzinfo is None:
     ts = ts.replace(tzinfo=timezone.utc)
+  outcome = payload.outcome
+  if outcome is not None and not str(outcome).strip():
+    outcome = None
 
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
@@ -50,7 +53,7 @@ async def ingest_trade(payload: TradeIn):
           "trade_id": payload.trade_id,
           "market_id": payload.market_id,
           "market_title": payload.market_title,
-          "outcome": payload.outcome,
+          "outcome": outcome,
           "wallet": payload.wallet.lower(),
           "side": payload.side.lower(),
           "amount": payload.amount,

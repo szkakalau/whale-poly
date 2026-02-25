@@ -660,7 +660,7 @@ async def _consume_incoming_trades_once() -> int:
         continue
       trade_id = str(p.get("trade_id") or "")
       market_id = str(p.get("market_id") or "")
-      outcome = p.get("outcome")
+      outcome = p.get("outcome") or p.get("outcome_name") or p.get("outcomeName") or p.get("tokenOutcome")
       wallet = str(p.get("wallet") or "").lower()
       side = str(p.get("side") or "").lower()
       amount = float(p.get("amount") or 0)
@@ -668,6 +668,8 @@ async def _consume_incoming_trades_once() -> int:
       ts = _parse_ts(str(p.get("timestamp") or "")) or datetime.now(timezone.utc)
       if not trade_id or not market_id or not wallet:
         continue
+      if outcome is not None and not str(outcome).strip():
+        outcome = None
       payload = {
         "trade_id": trade_id,
         "market_id": market_id,

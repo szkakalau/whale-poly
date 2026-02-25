@@ -63,6 +63,26 @@ def _parse_ts(raw: Any) -> datetime | None:
   return dt
 
 
+def _extract_outcome(value: Any) -> str | None:
+  if value is None:
+    return None
+  if isinstance(value, (list, tuple, set)):
+    for x in value:
+      v = _extract_outcome(x)
+      if v:
+        return v
+    return None
+  if isinstance(value, dict):
+    for key in ("outcome", "outcome_name", "outcomeName", "tokenOutcome", "label", "name"):
+      if key in value:
+        v = _extract_outcome(value.get(key))
+        if v:
+          return v
+    return None
+  s = str(value).strip()
+  return s or None
+
+
 def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   trade_id = t.get("trade_id") or t.get("id") or t.get("transactionHash")
   if not trade_id:
@@ -91,7 +111,12 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   wallet = normalize_key(str(wallet))
   side = str(t.get("side") or "").lower()
   side = "sell" if side == "sell" else "buy"
-  outcome = t.get("outcome") or t.get("outcome_name") or t.get("outcomeName") or t.get("tokenOutcome")
+  outcome = _extract_outcome(t.get("outcome") or t.get("outcome_name") or t.get("outcomeName") or t.get("tokenOutcome"))
+  if not outcome:
+    for key in ("token", "asset", "market", "outcome_token", "outcomeToken"):
+      outcome = _extract_outcome(t.get(key))
+      if outcome:
+        break
   amount_raw = t.get("amount")
   if amount_raw is None:
     amount_raw = t.get("size")

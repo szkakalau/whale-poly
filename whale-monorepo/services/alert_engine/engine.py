@@ -14,7 +14,7 @@ from services.alert_engine.rules import should_alert
 from services.alert_engine.wallet_names import resolve_wallet_name
 from services.trade_ingest.markets import resolve_market_title
 from shared.config import settings, get_alert_config, parse_duration
-from shared.models import Alert, Market, WhaleTrade, WhaleTradeHistory
+from shared.models import Alert, Market, TradeRaw, WhaleTrade, WhaleTradeHistory
 
 
 def _id(whale_trade_id: str) -> str:
@@ -220,6 +220,13 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       else:
         market_question = f"Market ({raw_token_id})"
         market_title = None
+    outcome = event.get("outcome") or event.get("outcome_name") or event.get("outcomeName") or event.get("tokenOutcome")
+    if not outcome:
+      trade_id = event.get("trade_id")
+      if trade_id:
+        outcome = (await session.execute(select(TradeRaw.outcome).where(TradeRaw.trade_id == str(trade_id)))).scalar_one_or_none()
+    if outcome is not None and not str(outcome).strip():
+      outcome = None
     payload = {
       "alert_id": alert.id,
       "whale_trade_id": whale_trade_id,
@@ -233,7 +240,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "behavior": event.get("behavior"),
       "market_question": market_question,
       "market_title": market_title,
-      "outcome": event.get("outcome"),
+      "outcome": outcome,
       "side": event.get("side") or "UNKNOWN",
       "size": usd,
       "price": event.get("price"),
