@@ -60,6 +60,16 @@ async def debug_build():
   env = {k: os.getenv(k) for k in keys if os.getenv(k)}
   return {"service": "alert-engine", "env": env}
 
+@app.get("/debug/resolve_outcome")
+async def debug_resolve_outcome(token_id: str = Query(..., min_length=1)):
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    resolved = await _resolve_outcome_from_token(redis, token_id)
+    cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
+    return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
+  finally:
+    await redis.aclose()
+
 @app.get("/debug/outcome")
 async def debug_outcome(token_id: str = Query(..., min_length=1)):
   tid = str(token_id).strip()
