@@ -662,7 +662,27 @@ async def _consume_incoming_trades_once() -> int:
         continue
       trade_id = str(p.get("trade_id") or "")
       market_id = str(p.get("market_id") or "")
-      outcome = p.get("outcome") or p.get("outcome_name") or p.get("outcomeName") or p.get("tokenOutcome")
+      outcome = (
+        p.get("outcome")
+        or p.get("outcome_name")
+        or p.get("outcomeName")
+        or p.get("tokenOutcome")
+        or p.get("outcomeToken")
+        or p.get("outcome_token")
+        or p.get("label")
+        or p.get("name")
+      )
+      if isinstance(outcome, dict):
+        outcome = (
+          outcome.get("outcome")
+          or outcome.get("outcome_name")
+          or outcome.get("outcomeName")
+          or outcome.get("tokenOutcome")
+          or outcome.get("outcomeToken")
+          or outcome.get("outcome_token")
+          or outcome.get("label")
+          or outcome.get("name")
+        )
       wallet = str(p.get("wallet") or "").lower()
       side = str(p.get("side") or "").lower()
       amount = float(p.get("amount") or 0)

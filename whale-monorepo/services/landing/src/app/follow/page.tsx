@@ -57,6 +57,7 @@ type AlertEventRow = {
   source_id: string | null;
   title: string;
   detail: string | null;
+  outcome: string | null;
   occurred_at: string;
 };
 
@@ -148,11 +149,12 @@ async function getAlertEvents(userId: string): Promise<AlertEventRow[]> {
       source_id: string | null;
       title: string;
       detail: string | null;
+      outcome: string | null;
       occurred_at: Date;
     }[]
   >(
     `
-    SELECT id, source_type, source_id, title, detail, occurred_at
+    SELECT id, source_type, source_id, title, detail, outcome, occurred_at
     FROM alert_events
     WHERE user_id = $1
     ORDER BY occurred_at DESC
@@ -166,6 +168,7 @@ async function getAlertEvents(userId: string): Promise<AlertEventRow[]> {
     source_id: row.source_id,
     title: row.title,
     detail: row.detail,
+    outcome: row.outcome,
     occurred_at: row.occurred_at.toISOString(),
   }));
 }
@@ -327,7 +330,9 @@ export default async function FollowPage() {
     ? alertEvents.map((item) => ({
         type: item.source_type,
         title: item.title,
-        detail: item.detail || 'Alert update',
+        detail: item.outcome
+          ? `${item.detail || 'Alert update'} · Outcome ${item.outcome}`
+          : item.detail || 'Alert update',
         time: item.occurred_at,
         href:
           item.source_type === 'whale' && item.source_id

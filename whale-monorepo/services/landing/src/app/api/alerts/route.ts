@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
 
@@ -12,11 +13,12 @@ export async function GET() {
       source_id: string | null;
       title: string;
       detail: string | null;
+      outcome: string | null;
       occurred_at: Date;
     }[]
   >(
     `
-    SELECT id, source_type, source_id, title, detail, occurred_at
+    SELECT id, source_type, source_id, title, detail, outcome, occurred_at
     FROM alert_events
     WHERE user_id = $1
     ORDER BY occurred_at DESC
@@ -31,6 +33,7 @@ export async function GET() {
       source_id: row.source_id,
       title: row.title,
       detail: row.detail,
+      outcome: row.outcome,
       occurred_at: row.occurred_at.toISOString(),
     })),
   );
@@ -47,6 +50,7 @@ export async function POST(req: Request) {
     market_question?: string | null;
     whale_score?: number | null;
     alert_type?: string | null;
+    outcome?: string | null;
     created_at?: string | null;
   };
   try {
@@ -64,6 +68,10 @@ export async function POST(req: Request) {
     payload.market_title ||
     payload.market_question ||
     `Whale score ${(payload.whale_score ?? 0).toFixed(1)}`;
+  const outcomeValue =
+    typeof payload.outcome === 'string' && payload.outcome.trim()
+      ? payload.outcome.trim()
+      : null;
   const collectionCooldownMinutes = Number(process.env.ALERTS_COLLECTION_COOLDOWN_MINUTES || 15);
   const whaleCooldownMinutes = Number(process.env.ALERTS_WHALE_COOLDOWN_MINUTES || 10);
   const collectionCooldown = Number.isFinite(collectionCooldownMinutes)
@@ -94,56 +102,45 @@ export async function POST(req: Request) {
   }
   let inserted = 0;
   for (const row of whaleUserRows) {
-    const recent = await prisma.alertEvent.findFirst({
-      where: {
-        userId: row.userId,
-        sourceType: 'whale',
-        sourceId: wallet,
-        detail,
-        occurredAt: { gte: whaleCooldownSince }
-      }
-    });
-    if (recent) {
+    const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT id
+      FROM alert_events
+      WHERE user_id = ${row.userId}
+        AND source_type = 'whale'
+        AND source_id = ${wallet}
+        AND detail = ${detail}
+        AND occurred_at >= ${whaleCooldownSince}
+      LIMIT 1
+    `);
+    if (recent.length > 0) {
       continue;
     }
-    await prisma.alertEvent.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: row.userId,
-        sourceType: 'whale',
-        sourceId: wallet,
-        title,
-        detail,
-        occurredAt
-      }
-    });
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
+      VALUES (${crypto.randomUUID()}, ${row.userId}, 'whale', ${wallet}, ${title}, ${detail}, ${outcomeValue}, ${occurredAt})
+    `);
     inserted += 1;
   }
   const collectionTitle = payload.market_title || payload.market_question || 'Smart Collection Alert';
   for (const row of collectionRows) {
-    const recent = await prisma.alertEvent.findFirst({
-      where: {
-        userId: row.userId,
-        sourceType: 'collection',
-        sourceId: row.smartCollectionId,
-        detail: `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`,
-        occurredAt: { gte: collectionCooldownSince }
-      }
-    });
-    if (recent) {
+    const detailText = `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`;
+    const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT id
+      FROM alert_events
+      WHERE user_id = ${row.userId}
+        AND source_type = 'collection'
+        AND source_id = ${row.smartCollectionId}
+        AND detail = ${detailText}
+        AND occurred_at >= ${collectionCooldownSince}
+      LIMIT 1
+    `);
+    if (recent.length > 0) {
       continue;
     }
-    await prisma.alertEvent.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: row.userId,
-        sourceType: 'collection',
-        sourceId: row.smartCollectionId,
-        title: `Collection Alert · ${collectionTitle}`,
-        detail: `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`,
-        occurredAt
-      }
-    });
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
+      VALUES (${crypto.randomUUID()}, ${row.userId}, 'collection', ${row.smartCollectionId}, ${`Collection Alert · ${collectionTitle}`}, ${detailText}, ${outcomeValue}, ${occurredAt})
+    `);
     inserted += 1;
   }
   return NextResponse.json({ ok: true, inserted });

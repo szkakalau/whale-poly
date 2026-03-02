@@ -237,7 +237,29 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       else:
         market_question = f"Market ({raw_token_id})"
         market_title = None
-    outcome = event.get("outcome") or event.get("outcome_name") or event.get("outcomeName") or event.get("tokenOutcome")
+    outcome = (
+      event.get("outcome")
+      or event.get("outcome_name")
+      or event.get("outcomeName")
+      or event.get("tokenOutcome")
+      or event.get("outcomeToken")
+      or event.get("outcome_token")
+      or event.get("token")
+      or event.get("asset")
+    )
+    if isinstance(outcome, dict):
+      outcome = (
+        outcome.get("outcome")
+        or outcome.get("outcome_name")
+        or outcome.get("outcomeName")
+        or outcome.get("tokenOutcome")
+        or outcome.get("outcomeToken")
+        or outcome.get("outcome_token")
+        or outcome.get("label")
+        or outcome.get("name")
+      )
+    if not outcome:
+      outcome = event.get("label") or event.get("name")
     if not outcome:
       trade_id = event.get("trade_id")
       if trade_id:

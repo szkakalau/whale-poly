@@ -17,7 +17,19 @@ class TradeIn(BaseModel):
   trade_id: str
   market_id: str
   market_title: str | None = None
-  outcome: str | None = Field(default=None, validation_alias=AliasChoices("outcome", "outcome_name", "outcomeName", "tokenOutcome"))
+  outcome: str | None = Field(
+    default=None,
+    validation_alias=AliasChoices(
+      "outcome",
+      "outcome_name",
+      "outcomeName",
+      "tokenOutcome",
+      "outcomeToken",
+      "outcome_token",
+      "label",
+      "name",
+    ),
+  )
   wallet: str
   side: str
   amount: float

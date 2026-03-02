@@ -23,7 +23,27 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     market = "Unknown"
 
   alert_type = payload.get("alert_type") or ""
-  outcome = payload.get("outcome") or payload.get("outcome_name") or payload.get("outcomeName")
+  outcome = (
+    payload.get("outcome")
+    or payload.get("outcome_name")
+    or payload.get("outcomeName")
+    or payload.get("tokenOutcome")
+    or payload.get("outcome_token")
+    or payload.get("outcomeToken")
+    or payload.get("label")
+    or payload.get("name")
+  )
+  if isinstance(outcome, dict):
+    outcome = (
+      outcome.get("outcome")
+      or outcome.get("outcome_name")
+      or outcome.get("outcomeName")
+      or outcome.get("tokenOutcome")
+      or outcome.get("outcome_token")
+      or outcome.get("outcomeToken")
+      or outcome.get("label")
+      or outcome.get("name")
+    )
   side = (payload.get("side") or "UNKNOWN").upper()
   size = payload.get("size") or payload.get("amount") or 0
   price = payload.get("price") or 0

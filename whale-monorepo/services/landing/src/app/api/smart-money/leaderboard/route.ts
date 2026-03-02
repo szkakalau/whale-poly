@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type Query = {
-  searchParams: Promise<URLSearchParams>;
-};
-
 const ALLOWED_ORDER_BY = new Set(['PNL', 'VOL', 'ROI']);
 const ALLOWED_TIME = new Set(['DAY', 'WEEK', 'MONTH', 'ALL']);
 const ALLOWED_CATEGORY = new Set([

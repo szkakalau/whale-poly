@@ -152,6 +152,7 @@ model AlertEvent {
   sourceId    String?  @map("source_id")
   title       String
   detail      String?
+  outcome     String?  @map("outcome")
   occurredAt  DateTime @map("occurred_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
