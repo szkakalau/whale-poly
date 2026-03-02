@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from urllib.parse import urlparse
 
+from services.alert_engine.engine import _resolve_outcome_from_token
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
@@ -45,6 +46,20 @@ def _hash_admin(value: str) -> str:
 @app.get("/health")
 async def health():
   return {"status": "ok"}
+
+@app.get("/admin/diag/outcome")
+async def admin_diag_outcome(
+  token_id: str = Query(..., min_length=1),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  _require_admin(x_admin_token)
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    resolved = await _resolve_outcome_from_token(redis, token_id)
+    cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
+    return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
+  finally:
+    await redis.aclose()
 
 
 @app.get("/alerts")
