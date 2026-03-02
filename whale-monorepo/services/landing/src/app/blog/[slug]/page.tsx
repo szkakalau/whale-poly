@@ -492,6 +492,28 @@ export default async function BlogPostPage({ params }: Props) {
                   .filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer')
                   .map((section) => {
                     const { kv, rest } = extractKeyValues(section.lines);
+                    const kvMap = new Map<string, string>();
+                    for (const item of kv) {
+                      const k = item.label.trim();
+                      if (!k) continue;
+                      if (!kvMap.has(k)) kvMap.set(k, item.value);
+                    }
+                    const marketValue = kvMap.get('Market') || '';
+                    if (!kvMap.has('Outcome')) kvMap.set('Outcome', '—');
+                    if (!kvMap.has('Market URL') && marketValue) {
+                      kvMap.set('Market URL', `https://polymarket.com/search?q=${encodeURIComponent(marketValue)}`);
+                    }
+
+                    const orderedKeys = ['Actor', 'Wallet', 'Direction', 'Market', 'Outcome', 'Notional', 'Price', 'Win rate', 'Market ID', 'Market URL', 'Trade ID'];
+                    const displayKv: Array<{ label: string; value: string }> = [];
+                    for (const key of orderedKeys) {
+                      const v = kvMap.get(key);
+                      if (v) displayKv.push({ label: key, value: v });
+                    }
+                    for (const [k, v] of kvMap.entries()) {
+                      if (orderedKeys.includes(k)) continue;
+                      if (v) displayKv.push({ label: k, value: v });
+                    }
                     return (
                       <div
                         key={section.title}
@@ -499,7 +521,7 @@ export default async function BlogPostPage({ params }: Props) {
                       >
                         <p className="text-sm uppercase tracking-[0.2em] text-gray-400">{section.title}</p>
                         <div className="mt-4 space-y-3 text-sm">
-                          {kv.map((item) => (
+                          {displayKv.map((item) => (
                             <div key={`${section.title}-${item.label}`} className="flex items-start justify-between gap-4">
                               <span className="text-gray-400">{item.label}</span>
                               <span className="text-right font-semibold text-white">{item.value}</span>

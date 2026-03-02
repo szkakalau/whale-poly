@@ -275,6 +275,7 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
     side = (trade.side or "").upper() or "TRADE"
     name = username if username else f"{trade.wallet[:6]}...{trade.wallet[-4:]}"
     market = mkt_title if mkt_title else "Unknown Market"
+    outcome = str(getattr(trade, "outcome", "") or "").strip()
     wallet_addr = (trade.wallet or "").lower()
     market_id = str(getattr(trade, "market_id", "") or "")
     trade_id = str(getattr(trade, "trade_id", "") or "")
@@ -289,6 +290,7 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
       f"- Wallet: {wallet_addr}" if wallet_addr else "- Wallet: unknown",
       f"- Direction: {side}",
       f"- Market: {market}",
+      f"- Outcome: {outcome}" if outcome else "- Outcome: unknown",
       f"- Market ID: {market_id}" if market_id else "- Market ID: unknown",
       f"- Market URL: {market_url}",
       f"- Trade ID: {trade_id}" if trade_id else "- Trade ID: unknown",
