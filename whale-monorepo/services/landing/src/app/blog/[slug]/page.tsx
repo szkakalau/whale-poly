@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prisma } from '@prisma/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getAllFilePosts, getAllPosts, getPostBySlug } from '@/lib/blog';
+import { prisma } from '@/lib/prisma';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -185,6 +187,131 @@ function extractActors(spotlight: SpotlightData): string[] {
     }
   }
   return Array.from(found);
+}
+
+function parseBeijingWindow(windowLine: string | null): { start: Date; end: Date } | null {
+  if (!windowLine) return null;
+  const m = windowLine.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);
+  if (!m) return null;
+  const date = m[1];
+  const time = m[2];
+  const [y, mo, d] = date.split('-').map((v) => Number(v));
+  const [hh, mm] = time.split(':').map((v) => Number(v));
+  if (![y, mo, d, hh, mm].every((n) => Number.isFinite(n))) return null;
+  const end = new Date(Date.UTC(y, mo - 1, d, hh - 8, mm, 0));
+  const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+function parseCents(value: string): number | null {
+  const v = value.trim().replace(/[,$]/g, '');
+  const m = v.match(/(-?\d+(\.\d+)?)\s*¢/);
+  if (!m) return null;
+  const cents = Number(m[1]);
+  if (!Number.isFinite(cents)) return null;
+  return cents / 100;
+}
+
+function parseUsd(value: string): number | null {
+  const v = value.trim().replace(/[$,]/g, '');
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseActorWalletHint(actor: string): { prefix: string; suffix: string } | null {
+  const raw = actor.trim();
+  if (!raw.toLowerCase().startsWith('0x')) return null;
+  const normalized = raw.replace('…', '...').replace(/\s+/g, '');
+  const m = normalized.match(/^(0x[a-fA-F0-9]{3,10})\.\.\.([a-fA-F0-9]{3,10})$/);
+  if (!m) return null;
+  return { prefix: m[1].toLowerCase(), suffix: m[2].toLowerCase() };
+}
+
+async function resolveOutcomeFromDb(params: {
+  windowLine: string | null;
+  market: string | null;
+  actor: string | null;
+  wallet: string | null;
+  direction: string | null;
+  notionalText: string | null;
+  priceText: string | null;
+}): Promise<{ wallet: string | null; outcome: string | null } | null> {
+  const window = parseBeijingWindow(params.windowLine);
+  if (!window) return null;
+  const market = (params.market || '').trim();
+  const direction = (params.direction || '').trim().toLowerCase();
+  const side = direction === 'buy' || direction === 'sell' ? direction : null;
+  const notional = params.notionalText ? parseUsd(params.notionalText) : null;
+  const price = params.priceText ? parseCents(params.priceText) : null;
+
+  let walletExact: string | null = null;
+  const walletRaw = (params.wallet || '').trim().toLowerCase();
+  if (/^0x[a-f0-9]{40}$/.test(walletRaw)) walletExact = walletRaw;
+
+  let walletFromUsername: string | null = null;
+  const actor = (params.actor || '').trim();
+  const actorHint = actor ? parseActorWalletHint(actor) : null;
+  if (!walletExact && actor && !actorHint) {
+    const rows = await prisma.$queryRaw<{ wallet_address: string }[]>(
+      Prisma.sql`
+        SELECT wallet_address
+        FROM wallet_names
+        WHERE lower(polymarket_username) = lower(${actor})
+        LIMIT 1
+      `,
+    );
+    walletFromUsername = rows[0]?.wallet_address ? String(rows[0].wallet_address).toLowerCase() : null;
+  }
+
+  const whereParts: Prisma.Sql[] = [
+    Prisma.sql`timestamp >= ${window.start}`,
+    Prisma.sql`timestamp < ${window.end}`,
+    Prisma.sql`coalesce(market_id, '') not ilike '%health%'`,
+    Prisma.sql`coalesce(trade_id, '') not ilike 'health-test-%'`,
+    Prisma.sql`coalesce(market_title, '') not ilike '%health%'`,
+  ];
+
+  if (side) whereParts.push(Prisma.sql`lower(side) = ${side}`);
+  if (market) {
+    const marketNeedle = market.length > 80 ? market.slice(0, 80) : market;
+    whereParts.push(Prisma.sql`coalesce(market_title, '') ilike ${`%${marketNeedle}%`}`);
+  }
+
+  if (walletExact) {
+    whereParts.push(Prisma.sql`lower(wallet) = ${walletExact}`);
+  } else if (walletFromUsername) {
+    whereParts.push(Prisma.sql`lower(wallet) = ${walletFromUsername}`);
+  } else if (actorHint) {
+    whereParts.push(Prisma.sql`lower(wallet) like ${`${actorHint.prefix}%`}`);
+    whereParts.push(Prisma.sql`lower(wallet) like ${`%${actorHint.suffix}`}`);
+  }
+
+  const whereSql = Prisma.join(whereParts, ' AND ');
+
+  const rows = await prisma.$queryRaw<
+    { wallet: string; outcome: string | null; score: number }[]
+  >(
+    Prisma.sql`
+      SELECT
+        wallet,
+        outcome,
+        (
+          ${notional === null ? Prisma.sql`0` : Prisma.sql`abs((amount * price)::float - ${notional})`} +
+          ${price === null ? Prisma.sql`0` : Prisma.sql`abs(price::float - ${price})`}
+        ) AS score
+      FROM trades_raw
+      WHERE ${whereSql}
+      ORDER BY score ASC, timestamp DESC
+      LIMIT 1
+    `,
+  );
+
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    wallet: row.wallet ? String(row.wallet).toLowerCase() : null,
+    outcome: row.outcome ? String(row.outcome) : null,
+  };
 }
 
 function extractMarkets(spotlight: SpotlightData): Array<{ label: string; url: string }> {
@@ -488,9 +615,10 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
-                {spotlight.sections
-                  .filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer')
-                  .map((section) => {
+                {(await Promise.all(
+                  spotlight.sections
+                    .filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer')
+                    .map(async (section) => {
                     const { kv, rest } = extractKeyValues(section.lines);
                     const kvMap = new Map<string, string>();
                     for (const item of kv) {
@@ -499,7 +627,20 @@ export default async function BlogPostPage({ params }: Props) {
                       if (!kvMap.has(k)) kvMap.set(k, item.value);
                     }
                     const marketValue = kvMap.get('Market') || '';
-                    if (!kvMap.has('Outcome')) kvMap.set('Outcome', '—');
+                    if (!kvMap.has('Outcome') || kvMap.get('Outcome') === 'unknown') {
+                      const resolved = await resolveOutcomeFromDb({
+                        windowLine: spotlight.windowLine,
+                        market: marketValue || null,
+                        actor: kvMap.get('Actor') || null,
+                        wallet: kvMap.get('Wallet') || null,
+                        direction: kvMap.get('Direction') || null,
+                        notionalText: kvMap.get('Notional') || null,
+                        priceText: kvMap.get('Price') || null,
+                      });
+                      if (resolved?.outcome) kvMap.set('Outcome', resolved.outcome);
+                      if (resolved?.wallet && !kvMap.has('Wallet')) kvMap.set('Wallet', resolved.wallet);
+                      if (!kvMap.has('Outcome')) kvMap.set('Outcome', '—');
+                    }
                     if (!kvMap.has('Market URL') && marketValue) {
                       kvMap.set('Market URL', `https://polymarket.com/search?q=${encodeURIComponent(marketValue)}`);
                     }
@@ -514,6 +655,7 @@ export default async function BlogPostPage({ params }: Props) {
                       if (orderedKeys.includes(k)) continue;
                       if (v) displayKv.push({ label: k, value: v });
                     }
+
                     return (
                       <div
                         key={section.title}
@@ -535,7 +677,8 @@ export default async function BlogPostPage({ params }: Props) {
                         </div>
                       </div>
                     );
-                  })}
+                  }),
+                )).map((node) => node)}
               </div>
 
               {spotlight.sections
