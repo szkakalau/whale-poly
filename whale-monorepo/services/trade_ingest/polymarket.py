@@ -113,6 +113,18 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
   side = "sell" if side == "sell" else "buy"
   outcome = _extract_outcome(t.get("outcome") or t.get("outcome_name") or t.get("outcomeName") or t.get("tokenOutcome"))
   if not outcome:
+    outcome_idx = t.get("outcomeIndex")
+    if outcome_idx is None:
+      outcome_idx = t.get("outcome_index")
+    try:
+      idx = int(outcome_idx) if outcome_idx is not None else None
+    except Exception:
+      idx = None
+    if idx == 0:
+      outcome = "Yes"
+    elif idx == 1:
+      outcome = "No"
+  if not outcome:
     for key in ("token", "asset", "market", "outcome_token", "outcomeToken"):
       outcome = _extract_outcome(t.get(key))
       if outcome:
