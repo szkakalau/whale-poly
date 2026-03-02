@@ -42,6 +42,61 @@ _HAS_SMART_COLLECTION_TABLES: bool | None = None
 _REDIS_OK: bool | None = None
 
 
+async def _resolve_outcome_from_token(redis: Redis, token_id: str) -> str | None:
+  tid = str(token_id or "").strip()
+  if not tid:
+    return None
+  cache_key = f"token_outcome:{tid}"
+  cached = await redis.get(cache_key)
+  if cached:
+    return None if cached == "__none__" else cached
+  proxy = settings.https_proxy or None
+  outcome: str | None = None
+  try:
+    async with httpx.AsyncClient(proxy=proxy) as client:
+      resp = await client.get("https://clob.polymarket.com/book", params={"token_id": tid}, timeout=10)
+      if resp.status_code == 200:
+        book = resp.json()
+        condition_id = None
+        if isinstance(book, dict):
+          condition_id = book.get("market") or book.get("condition_id")
+        if condition_id:
+          for url in (
+            f"https://clob.polymarket.com/markets/{condition_id}",
+            f"https://clob.polymarket.com/market/{condition_id}",
+          ):
+            try:
+              market_resp = await client.get(url, timeout=10)
+            except Exception:
+              continue
+            if market_resp.status_code != 200:
+              continue
+            market = market_resp.json()
+            if not isinstance(market, dict):
+              continue
+            tokens = market.get("tokens")
+            if not isinstance(tokens, list):
+              continue
+            tid_lower = tid.lower()
+            for t in tokens:
+              if not isinstance(t, dict):
+                continue
+              token_value = str(t.get("token_id") or t.get("asset_id") or t.get("tokenId") or t.get("id") or "").strip().lower()
+              if token_value == tid_lower:
+                outcome = str(t.get("outcome") or "").strip() or None
+                if outcome:
+                  break
+            if outcome:
+              break
+  except Exception:
+    outcome = None
+  if outcome is not None and str(outcome).strip():
+    await redis.set(cache_key, str(outcome), ex=86400)
+    return str(outcome)
+  await redis.set(cache_key, "__none__", ex=120)
+  return None
+
+
 def _is_missing_users_error(e: Exception) -> bool:
   msg = str(e).lower()
   return ('relation "users" does not exist' in msg) or ("undefinedtableerror" in msg)
@@ -277,6 +332,12 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     whale_trade_id = str(payload.get("whale_trade_id") or "")
     if not whale_trade_id:
       return
+    if not (payload.get("outcome") and str(payload.get("outcome")).strip()):
+      token_id = str(payload.get("raw_token_id") or payload.get("market_id") or "").strip()
+      if token_id:
+        resolved = await _resolve_outcome_from_token(redis, token_id)
+        if resolved:
+          payload["outcome"] = resolved
 
     now = datetime.now(timezone.utc)
     wallet_address = str(payload.get("wallet_address") or "")
