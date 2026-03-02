@@ -225,8 +225,15 @@ export default async function BlogPostPage({ params }: Props) {
   const safePost = post as NonNullable<typeof post>;
   const isDailySpotlight = safePost.slug.startsWith('daily-spotlight-');
   const spotlight = isDailySpotlight ? parseDailySpotlight(safePost.content) : null;
-  const spotlightWallets = spotlight ? extractWallets(spotlight).slice(0, 4) : [];
+  const allSpotlightWallets = spotlight ? extractWallets(spotlight) : [];
+  const spotlightWallets = allSpotlightWallets.slice(0, 4);
   const spotlightMarkets = spotlight ? extractMarkets(spotlight) : [];
+  const polymarketSearchUrl = `https://polymarket.com/search?q=${encodeURIComponent(
+    spotlightMarkets[0]?.label || safePost.title,
+  )}`;
+  const spotlightSignalsCount = spotlight
+    ? spotlight.sections.filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer').length
+    : 0;
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -319,36 +326,40 @@ export default async function BlogPostPage({ params }: Props) {
                 ) : null}
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Verifiable data</p>
-                <div className="mt-4 grid grid-cols-1 gap-4 text-sm text-gray-200">
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Time window</p>
-                    <p className="mt-2 font-semibold text-white">
-                      {spotlight.windowLine || 'Not provided'}
-                    </p>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-6">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Today at a glance</p>
+                  <div className="text-sm text-gray-300">
+                    Verification-friendly summary extracted from today’s spotlight.
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Wallets referenced</p>
-                    {spotlightWallets.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {spotlightWallets.map((w) => (
-                          <Link
-                            key={w}
-                            href={`/whales/${encodeURIComponent(w)}`}
-                            className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-mono text-violet-200 hover:bg-white/10"
-                          >
-                            {w.slice(0, 6)}…{w.slice(-4)}
-                          </Link>
-                        ))}
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Time window</p>
+                        <p className="mt-2 font-semibold text-white">
+                          {spotlight.windowLine || 'Not provided'}
+                        </p>
                       </div>
-                    ) : (
-                      <p className="mt-2 text-sm text-gray-300">No wallet addresses detected in this post.</p>
-                    )}
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-gray-200">
+                          Signals: {spotlightSignalsCount}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-gray-200">
+                          Wallets: {allSpotlightWallets.length}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-gray-200">
+                          Markets: {spotlightMarkets.length}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Markets referenced</p>
-                    {spotlightMarkets.length > 0 ? (
+
+                  {spotlightMarkets.length > 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Markets</p>
                       <div className="mt-2 space-y-2">
                         {spotlightMarkets.slice(0, 3).map((m) => (
                           <a
@@ -362,14 +373,73 @@ export default async function BlogPostPage({ params }: Props) {
                           </a>
                         ))}
                       </div>
-                    ) : (
-                      <p className="mt-2 text-sm text-gray-300">No market references detected in this post.</p>
-                    )}
+                    </div>
+                  ) : null}
+
+                  {spotlightWallets.length > 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Wallets</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {spotlightWallets.map((w) => (
+                          <Link
+                            key={w}
+                            href={`/whales/${encodeURIComponent(w)}`}
+                            className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-mono text-violet-200 hover:bg-white/10"
+                          >
+                            {w.slice(0, 6)}…{w.slice(-4)}
+                          </Link>
+                        ))}
+                      </div>
+                      {allSpotlightWallets.length > spotlightWallets.length ? (
+                        <div className="mt-3 text-xs text-gray-500">
+                          Showing {spotlightWallets.length} of {allSpotlightWallets.length}. Use the leaderboard for more.
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Verify</p>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <a
+                        href={polymarketSearchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-gray-200 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="font-semibold text-white">Polymarket search</div>
+                        <div className="mt-1 text-xs text-gray-400">Open the closest market context we can infer.</div>
+                      </a>
+                      <a
+                        href="https://clob.polymarket.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-gray-200 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="font-semibold text-white">CLOB API</div>
+                        <div className="mt-1 text-xs text-gray-400">Validate order book and recent moves.</div>
+                      </a>
+                      <Link
+                        href="/methodology"
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-gray-200 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="font-semibold text-white">Methodology</div>
+                        <div className="mt-1 text-xs text-gray-400">How alerts and scoring are generated.</div>
+                      </Link>
+                      <Link
+                        href="/smart-money"
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-gray-200 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="font-semibold text-white">Leaderboard</div>
+                        <div className="mt-1 text-xs text-gray-400">Explore wallets with track records.</div>
+                      </Link>
+                    </div>
+                    {spotlightMarkets.length === 0 && spotlightWallets.length === 0 ? (
+                      <div className="mt-4 text-xs text-gray-500 leading-relaxed">
+                        This post may not include explicit wallet addresses or market titles. The summary still provides the time window and spotlight signals below, plus verification links above.
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-                <div className="mt-5 text-xs text-gray-500 leading-relaxed">
-                  The cards below include the extracted numbers and statements for today’s spotlight. Use the links to validate
-                  the market context and follow wallets you care about.
                 </div>
               </div>
 
