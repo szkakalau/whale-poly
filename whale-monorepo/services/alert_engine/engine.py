@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from redis.asyncio import Redis
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +46,53 @@ async def get_market_question(session: AsyncSession, market_id: str) -> str | No
   if not row:
     return None
   return row.title
+
+
+def _extract_outcome_value(value: object) -> str | None:
+  if value is None:
+    return None
+  if isinstance(value, (list, tuple, set)):
+    for x in value:
+      v = _extract_outcome_value(x)
+      if v:
+        return v
+    return None
+  if isinstance(value, dict):
+    for key in ("outcome", "outcome_name", "outcomeName", "tokenOutcome", "outcomeToken", "outcome_token", "label", "name"):
+      if key in value:
+        v = _extract_outcome_value(value.get(key))
+        if v:
+          return v
+    return None
+  s = str(value).strip()
+  return s or None
+
+
+async def _resolve_outcome_from_token(redis: Redis, token_id: str) -> str | None:
+  tid = str(token_id or "").strip()
+  if not tid:
+    return None
+  cache_key = f"token_outcome:{tid}"
+  cached = await redis.get(cache_key)
+  if cached:
+    return None if cached == "__none__" else cached
+  proxy = settings.https_proxy or None
+  outcome: str | None = None
+  try:
+    async with httpx.AsyncClient(proxy=proxy) as client:
+      resp = await client.get("https://gamma-api.polymarket.com/tokens", params={"tokenId": tid}, timeout=10)
+      if resp.status_code == 200:
+        data = resp.json()
+        token_data = data[0] if isinstance(data, list) and data else data
+        if isinstance(token_data, dict):
+          outcome = _extract_outcome_value(token_data)
+  except Exception:
+    outcome = None
+  if outcome is not None and str(outcome).strip():
+    await redis.set(cache_key, str(outcome), ex=86400)
+    return str(outcome)
+  await redis.set(cache_key, "__none__", ex=3600)
+  return None
 
 
 async def _can_alert_event(session: AsyncSession, redis: Redis, market_id: str, wallet: str, now: datetime, usd: float) -> bool:
@@ -264,6 +311,17 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       trade_id = event.get("trade_id")
       if trade_id:
         outcome = (await session.execute(select(TradeRaw.outcome).where(TradeRaw.trade_id == str(trade_id)))).scalar_one_or_none()
+    if not outcome and raw_token_id:
+      resolved = await _resolve_outcome_from_token(redis, raw_token_id)
+      if resolved:
+        outcome = resolved
+        trade_id = event.get("trade_id")
+        if trade_id:
+          await session.execute(
+            update(TradeRaw)
+            .where(TradeRaw.trade_id == str(trade_id))
+            .values(outcome=str(outcome))
+          )
     if outcome is not None and not str(outcome).strip():
       outcome = None
     payload = {
@@ -287,5 +345,7 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "created_at": now.isoformat(),
     }
     await _send_landing_alert(payload)
-    await redis.rpush(settings.alert_created_queue, json.dumps(payload))
+    payload_raw = json.dumps(payload)
+    await redis.rpush(settings.alert_created_queue, payload_raw)
+    await redis.set("alert_created:last", payload_raw, ex=86400)
   return created

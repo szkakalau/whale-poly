@@ -92,7 +92,8 @@ async def debug_queues():
       size = await redis.llen(name)
       last = await redis.lrange(name, -1, -1)
       queues.append({"name": name, "len": size, "last": last[0] if last else None})
-    return {"queues": queues}
+    last_alert = await redis.get("alert_created:last")
+    return {"queues": queues, "last_alert": last_alert}
   finally:
     await redis.aclose()
 
@@ -110,6 +111,7 @@ async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Ad
       size = await redis.llen(name)
       last = await redis.lrange(name, -1, -1)
       queues.append({"name": name, "len": int(size), "last_preview": (last[0] or "")[:200] if last else None})
+    last_alert = await redis.get("alert_created:last")
   finally:
     await redis.aclose()
 
@@ -117,7 +119,7 @@ async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Ad
   chat_id_present = bool(settings.telegram_alert_chat_id)
   return {
     "service": "alert-engine",
-    "redis": {"host": _redact_netloc(settings.redis_url), "queues": queues},
+    "redis": {"host": _redact_netloc(settings.redis_url), "queues": queues, "last_alert": (last_alert or "")[:500] if last_alert else None},
     "rules": {
       "alert_cooldown_seconds": int(settings.alert_cooldown_seconds),
       "alert_min_score": int(settings.alert_min_score),
@@ -181,6 +183,7 @@ async def force_alert(
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
     await redis.rpush(settings.alert_created_queue, json.dumps(payload))
+    await redis.set("alert_created:last", json.dumps(payload), ex=86400)
   finally:
     await redis.aclose()
 
