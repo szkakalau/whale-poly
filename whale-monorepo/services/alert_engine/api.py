@@ -94,6 +94,35 @@ async def debug_outcome(token_id: str = Query(..., min_length=1)):
       except Exception as e:
         step["error"] = repr(e)
       result["steps"].append(step)
+
+    for name, url, params in [
+      ("clob_ok", "https://clob.polymarket.com/ok", None),
+      ("clob_book_token_id", "https://clob.polymarket.com/book", {"token_id": tid}),
+      ("clob_book_tokenID", "https://clob.polymarket.com/book", {"tokenID": tid}),
+      ("clob_orderbook_token_id", "https://clob.polymarket.com/orderbook", {"token_id": tid}),
+      ("clob_price", "https://clob.polymarket.com/price", {"token_id": tid, "side": "buy"}),
+    ]:
+      step: dict = {"name": name}
+      try:
+        resp = await client.get(url, params=params, timeout=10)
+        step["status"] = resp.status_code
+        step["preview"] = resp.text[:200]
+        if resp.status_code == 200:
+          try:
+            data = resp.json()
+            if isinstance(data, dict):
+              step["keys"] = sorted(list(data.keys()))[:40]
+              if "market" in data:
+                step["market"] = data.get("market")
+              if "condition_id" in data:
+                step["condition_id"] = data.get("condition_id")
+              if "asset_id" in data:
+                step["asset_id"] = data.get("asset_id")
+          except Exception:
+            pass
+      except Exception as e:
+        step["error"] = repr(e)
+      result["steps"].append(step)
   return result
 
 @app.get("/admin/diag/outcome")
