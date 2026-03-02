@@ -143,6 +143,31 @@ function extractKeyValues(lines: string[]) {
   return { kv, rest };
 }
 
+function extractWallets(spotlight: SpotlightData): string[] {
+  const found = new Set<string>();
+  const re = /0x[a-fA-F0-9]{40}/g;
+  for (const section of spotlight.sections) {
+    for (const line of section.lines) {
+      const matches = line.match(re);
+      if (matches) {
+        for (const m of matches) {
+          found.add(m.toLowerCase());
+        }
+      }
+    }
+    const { kv } = extractKeyValues(section.lines);
+    for (const item of kv) {
+      const matches = item.value.match(re);
+      if (matches) {
+        for (const m of matches) {
+          found.add(m.toLowerCase());
+        }
+      }
+    }
+  }
+  return Array.from(found);
+}
+
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
@@ -154,6 +179,7 @@ export default async function BlogPostPage({ params }: Props) {
   const safePost = post as NonNullable<typeof post>;
   const isDailySpotlight = safePost.slug.startsWith('daily-spotlight-');
   const spotlight = isDailySpotlight ? parseDailySpotlight(safePost.content) : null;
+  const spotlightWallets = spotlight ? extractWallets(spotlight).slice(0, 4) : [];
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -246,6 +272,40 @@ export default async function BlogPostPage({ params }: Props) {
                 ) : null}
               </div>
 
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+                <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Verifiable data</p>
+                <div className="mt-4 grid grid-cols-1 gap-4 text-sm text-gray-200">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Time window</p>
+                    <p className="mt-2 font-semibold text-white">
+                      {spotlight.windowLine || 'Not provided'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Wallets referenced</p>
+                    {spotlightWallets.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {spotlightWallets.map((w) => (
+                          <Link
+                            key={w}
+                            href={`/whales/${encodeURIComponent(w)}`}
+                            className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-mono text-violet-200 hover:bg-white/10"
+                          >
+                            {w.slice(0, 6)}…{w.slice(-4)}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-300">No wallet addresses detected in this post.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-5 text-xs text-gray-500 leading-relaxed">
+                  The cards below include the extracted numbers and statements for today’s spotlight. Use the links to validate
+                  the market context and follow wallets you care about.
+                </div>
+              </div>
+
               <div className="grid gap-6 lg:grid-cols-3">
                 {spotlight.sections
                   .filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer')
@@ -298,6 +358,74 @@ export default async function BlogPostPage({ params }: Props) {
                     {section.lines.join(' ')}
                   </div>
                 ))}
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-6">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Sources</p>
+                  <div className="mt-3 space-y-2 text-sm text-gray-200">
+                    <a
+                      href="https://polymarket.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-violet-300 hover:text-violet-200 underline underline-offset-4"
+                    >
+                      Polymarket (markets and prices)
+                    </a>
+                    <div className="text-xs text-gray-500">
+                      Public market metadata and pricing context.
+                    </div>
+                    <a
+                      href="https://clob.polymarket.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-violet-300 hover:text-violet-200 underline underline-offset-4"
+                    >
+                      Polymarket CLOB API
+                    </a>
+                    <div className="text-xs text-gray-500">
+                      Public order book endpoints used for best-effort verification.
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Use this signal</p>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Link
+                      href="/smart-money"
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-white">Smart Money Leaderboard</div>
+                      <div className="mt-1 text-xs text-gray-400">Discover top wallets and recent performance.</div>
+                    </Link>
+                    <Link
+                      href="/smart-collections"
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-white">Smart Collections</div>
+                      <div className="mt-1 text-xs text-gray-400">Subscribe to strategy bundles for higher signal density.</div>
+                    </Link>
+                    <Link
+                      href="/follow"
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-white">Set up alerts</div>
+                      <div className="mt-1 text-xs text-gray-400">Follow wallets and receive Telegram alerts.</div>
+                    </Link>
+                    <Link
+                      href="/subscribe"
+                      className="rounded-2xl border border-violet-500/40 bg-violet-500/10 p-4 hover:bg-violet-500/15 transition-colors"
+                    >
+                      <div className="text-sm font-semibold text-white">Upgrade</div>
+                      <div className="mt-1 text-xs text-gray-400">Unlock higher limits and premium signals.</div>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-500">
+                  Methodology: <Link className="text-gray-300 hover:text-white underline underline-offset-4" href="/methodology">how we generate alerts</Link>. Editorial policy: <Link className="text-gray-300 hover:text-white underline underline-offset-4" href="/editorial-policy">how we publish</Link>.
+                </div>
+              </div>
             </div>
           ) : (
             <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-violet-200 prose-code:bg-violet-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:pr-4 prose-li:marker:text-violet-500">
