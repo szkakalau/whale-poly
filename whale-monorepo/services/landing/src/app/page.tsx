@@ -1,10 +1,49 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+  let followCount = 0;
+  let smartCollectionCount = 0;
+  let telegramConnected = false;
+  if (user) {
+    const [follows, subscriptions] = await prisma.$transaction([
+      prisma.whaleFollow.count({ where: { userId: user.id } }),
+      prisma.smartCollectionSubscription.count({ where: { userId: user.id } }),
+    ]);
+    followCount = follows;
+    smartCollectionCount = subscriptions;
+    telegramConnected = Boolean(user.telegramId);
+  }
+  const steps = [
+    {
+      title: '关注一个鲸鱼',
+      description: '跟随聪明钱钱包，获取高置信度交易提醒。',
+      done: followCount > 0,
+      href: '/smart-money',
+      cta: '去关注',
+    },
+    {
+      title: '订阅一个 Smart Collection',
+      description: '按策略分组订阅，提升信号密度与稳定性。',
+      done: smartCollectionCount > 0,
+      href: '/smart-collections',
+      cta: '去订阅',
+    },
+    {
+      title: '绑定 Telegram',
+      description: '用 Bot 接收实时提醒，不错过关键变动。',
+      done: telegramConnected,
+      href: TELEGRAM_BOT_URL,
+      cta: '去绑定',
+    },
+  ];
+  const completedCount = steps.filter((step) => step.done).length;
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden">
       {/* Background Effects */}
@@ -103,6 +142,74 @@ export default function Home() {
                 <div className="text-xs text-gray-200 font-semibold group-hover:text-white">Conviction Cases</div>
               </div>
             </Link>
+          </div>
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+            <div>
+              <p className="text-[10px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">
+                Quick Start
+              </p>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+                完成 3 步，开启第一条聪明钱提醒
+              </h2>
+              <p className="text-sm text-gray-400 max-w-2xl">
+                关注鲸鱼、订阅集合、绑定 Telegram，形成从发现到触达的最短闭环。
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
+              <div className="text-2xl font-semibold text-white mt-2">
+                {completedCount} / {steps.length}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                {user ? '已自动记录你的完成情况' : '登录后将自动记录完成情况'}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {steps.map((step) => (
+              <div
+                key={step.title}
+                className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col justify-between gap-4"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                        step.done
+                          ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                          : 'border-white/15 bg-white/5 text-gray-400'
+                      }`}
+                    >
+                      {step.done ? '已完成' : '未完成'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+                </div>
+                {step.href.startsWith('http') ? (
+                  <a
+                    href={step.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+                  >
+                    {step.cta}
+                    <span className="text-[10px] text-gray-400">External</span>
+                  </a>
+                ) : (
+                  <Link
+                    href={step.href}
+                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+                  >
+                    {step.cta}
+                    <span className="text-[10px] text-gray-400">Go</span>
+                  </Link>
+                )}
+              </div>
+            ))}
           </div>
         </section>
 

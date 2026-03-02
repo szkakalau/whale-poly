@@ -61,6 +61,7 @@ type PageProps = {
 
 const WHALE_ENGINE_BASE =
   process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
+const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://sightwhale.com';
 
 export const revalidate = 0;
 
@@ -100,6 +101,38 @@ function shortenWallet(addr: string): string {
   const v = (addr || '').trim();
   if (v.length <= 10) return v;
   return `${v.slice(0, 6)}…${v.slice(-4)}`;
+}
+
+function formatDateTime(value: string | null): string {
+  if (!value) return '–';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '–';
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function aggregateTrades(trades: WhaleRecentTrade[], days: number) {
+  const since = Date.now() - days * 24 * 60 * 60 * 1000;
+  const filtered = trades.filter((t) => {
+    const time = new Date(t.time).getTime();
+    return Number.isFinite(time) && time >= since;
+  });
+  const volume = filtered.reduce((sum, t) => sum + (Number.isFinite(t.size) ? t.size : 0), 0);
+  const avgScore =
+    filtered.length > 0
+      ? filtered.reduce((sum, t) => sum + (Number.isFinite(t.whale_score) ? t.whale_score : 0), 0) /
+        filtered.length
+      : 0;
+  return {
+    trades: filtered.length,
+    volume,
+    avgScore,
+  };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -180,6 +213,20 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   }
 
   const shortWallet = shortenWallet(data.wallet);
+  const lastTradeTime = data.recent_trades.length > 0 ? data.recent_trades[0].time : null;
+  const perf7d = aggregateTrades(data.recent_trades, 7);
+  const perf30d = aggregateTrades(data.recent_trades, 30);
+  const perf90d = aggregateTrades(data.recent_trades, 90);
+  const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/whales/${encodeURIComponent(data.wallet)}`;
+  const shareText = `Whale ${data.display_name} · Score ${data.whale_score.toFixed(
+    1,
+  )} · 30D PnL ${formatUsd(data.performance_30d.pnl)}`;
+  const shareX = `https://x.com/intent/tweet?text=${encodeURIComponent(
+    shareText,
+  )}&url=${encodeURIComponent(shareUrl)}`;
+  const shareTelegram = `https://t.me/share/url?url=${encodeURIComponent(
+    shareUrl,
+  )}&text=${encodeURIComponent(shareText)}`;
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -246,6 +293,98 @@ export default async function WhaleProfilePage({ params }: PageProps) {
             hint="Across settled markets"
             tone={data.stats.realized_pnl >= 0 ? 'positive' : 'negative'}
           />
+        </section>
+
+        <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">最近交易</div>
+            <div className="text-lg font-semibold text-white">
+              {formatDateTime(lastTradeTime)}
+            </div>
+            <div className="text-xs text-gray-500 mt-2">用于衡量活跃度与新鲜度</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">样本覆盖</div>
+            <div className="text-lg font-semibold text-white">
+              {data.stats.total_trades.toLocaleString()} trades
+            </div>
+            <div className="text-xs text-gray-500 mt-2">统计鲸鱼级别交易次数</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">行为特征</div>
+            <div className="text-lg font-semibold text-white">{data.behavior.common_action}</div>
+            <div className="text-xs text-gray-500 mt-2">
+              {data.behavior.side_bias} bias · Avg {formatUsd(data.behavior.avg_trade_size)}
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[
+            { label: '近 7 天', data: perf7d },
+            { label: '近 30 天', data: perf30d },
+            { label: '近 90 天', data: perf90d },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col gap-3"
+            >
+              <div className="text-xs uppercase tracking-wide text-gray-400">{item.label}表现</div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-2xl font-semibold text-white">
+                    {formatUsd(item.data.volume)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">累计成交额</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-white">
+                    {item.data.trades.toLocaleString()} trades
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Avg Score {item.data.avgScore.toFixed(1)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white mb-2">分享这位鲸鱼</h2>
+              <p className="text-xs text-gray-400">
+                将这张表现摘要转发到社交媒体，吸引更多关注与复访。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs">
+              <a
+                href={shareX}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
+              >
+                分享到 X
+              </a>
+              <a
+                href={shareTelegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
+              >
+                分享到 Telegram
+              </a>
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1 font-medium text-violet-100 hover:bg-violet-500/20"
+              >
+                打开分享卡
+              </a>
+            </div>
+          </div>
         </section>
 
         <FullAccessGating hasFullAccess={hasFullAccess}>

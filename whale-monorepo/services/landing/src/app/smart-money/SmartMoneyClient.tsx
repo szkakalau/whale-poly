@@ -25,6 +25,24 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
   const [upgradeInfo, setUpgradeInfo] = useState({ title: '', description: '', feature: '' });
   const [timePeriod, setTimePeriod] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('MONTH');
   const [category, setCategory] = useState<'OVERALL' | 'POLITICS' | 'SPORTS' | 'CRYPTO' | 'CULTURE' | 'MENTIONS' | 'WEATHER' | 'ECONOMICS' | 'TECH' | 'FINANCE'>('OVERALL');
+  const timeLabels: Record<typeof timePeriod, string> = {
+    DAY: '近 24 小时',
+    WEEK: '近 7 天',
+    MONTH: '近 30 天',
+    ALL: '全量历史',
+  };
+  const categoryLabels: Record<typeof category, string> = {
+    OVERALL: '全市场',
+    POLITICS: '政治',
+    SPORTS: '体育',
+    CRYPTO: '加密',
+    CULTURE: '文化',
+    MENTIONS: '热门讨论',
+    WEATHER: '天气',
+    ECONOMICS: '经济',
+    TECH: '科技',
+    FINANCE: '金融',
+  };
 
   useEffect(() => {
     startTransition(() => {
@@ -152,6 +170,28 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           <p className="text-xs text-red-200">{error}</p>
         </div>
       )}
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-2">榜单口径说明</h3>
+            <p className="text-xs text-gray-400">
+              排名基于所选时间范围与分类下的钱包表现汇总，Profit/ROI/Volume 为聚合值。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs text-gray-300">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1">
+              {timeLabels[timePeriod]}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1">
+              {categoryLabels[category]}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1">
+              排序：{orderBy === 'PNL' ? 'Profit' : orderBy === 'ROI' ? 'ROI' : 'Volume'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
         <table className="w-full text-sm text-gray-300">

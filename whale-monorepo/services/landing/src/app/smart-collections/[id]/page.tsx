@@ -11,6 +11,8 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
+const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://sightwhale.com';
+
 async function loadSmartCollectionDetail(id: string, userId: string | null) {
   const collection = await prisma.smartCollection.findUnique({
     where: {
@@ -98,6 +100,19 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
       ? whalesWithStats.reduce((sum, w) => sum + w.roi, 0) / whalesWithStats.length
       : 0;
   const snapshotDate = latestSnapshot ? latestSnapshot.toISOString() : null;
+  const snapshotHistory = collection.whales.reduce(
+    (acc, whale) => {
+      const key = whale.snapshotDate.toISOString();
+      const current = acc.get(key) || 0;
+      acc.set(key, current + 1);
+      return acc;
+    },
+    new Map<string, number>(),
+  );
+  const history = Array.from(snapshotHistory.entries())
+    .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+    .slice(0, 5)
+    .map(([date, count]) => ({ snapshot_date: date, whale_count: count }));
 
   let subscribed = false;
   if (userId) {
@@ -130,6 +145,7 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
       active_wallets: whalesWithStats.length,
       snapshot_date: snapshotDate,
     },
+    history,
   };
 }
 
@@ -154,6 +170,23 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
       </div>
     );
   }
+
+  const maxHistoryCount = detail.history.reduce(
+    (max, row) => Math.max(max, row.whale_count),
+    0,
+  );
+  const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/smart-collections/${encodeURIComponent(
+    detail.item.id,
+  )}`;
+  const shareText = `Smart Collection ${detail.item.name} · ${detail.summary.active_wallets} wallets · Avg ROI ${(
+    detail.summary.avg_roi * 100
+  ).toFixed(2)}%`;
+  const shareX = `https://x.com/intent/tweet?text=${encodeURIComponent(
+    shareText,
+  )}&url=${encodeURIComponent(shareUrl)}`;
+  const shareTelegram = `https://t.me/share/url?url=${encodeURIComponent(
+    shareUrl,
+  )}&text=${encodeURIComponent(shareText)}`;
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -264,6 +297,120 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                 Snapshot: {new Date(detail.summary.snapshot_date).toLocaleDateString()}
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h2 className="text-sm font-semibold text-white mb-4">信任说明</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">数据口径</div>
+                <div className="text-sm text-gray-200">
+                  Profit/ROI/Volume 来自鲸鱼历史交易表现汇总。
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">最新快照</div>
+                <div className="text-sm text-gray-200">
+                  {detail.summary.snapshot_date
+                    ? new Date(detail.summary.snapshot_date).toLocaleDateString()
+                    : '暂无快照'}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">入选逻辑</div>
+                <div className="text-sm text-gray-200">
+                  以集合规则筛选，展示最近一次快照结果。
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h2 className="text-sm font-semibold text-white mb-4">历史快照</h2>
+            {detail.history.length === 0 ? (
+              <div className="text-sm text-gray-400">暂无历史快照记录</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-end gap-2 h-24">
+                  {detail.history
+                    .slice()
+                    .reverse()
+                    .map((row) => {
+                      const height =
+                        maxHistoryCount > 0
+                          ? Math.max(10, (row.whale_count / maxHistoryCount) * 96)
+                          : 10;
+                      return (
+                        <div key={row.snapshot_date} className="flex-1 flex flex-col items-center">
+                          <div
+                            className="w-full rounded-t-lg bg-gradient-to-t from-violet-500/20 to-cyan-400/40"
+                            style={{ height: `${height}px` }}
+                          />
+                          <span className="mt-2 text-[10px] text-gray-500">
+                            {new Date(row.snapshot_date).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+                <div className="space-y-2">
+                  {detail.history.map((row) => (
+                    <div
+                      key={row.snapshot_date}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2"
+                    >
+                      <span className="text-xs text-gray-300">
+                        {new Date(row.snapshot_date).toLocaleDateString()}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {row.whale_count} wallets
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white mb-2">分享这份集合</h2>
+              <p className="text-xs text-gray-400">
+                复制链接或一键分享到社交媒体，让更多人看到这份策略表现。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs">
+              <a
+                href={shareX}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
+              >
+                分享到 X
+              </a>
+              <a
+                href={shareTelegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
+              >
+                分享到 Telegram
+              </a>
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1 font-medium text-violet-100 hover:bg-violet-500/20"
+              >
+                打开分享卡
+              </a>
+            </div>
           </div>
         </section>
       </main>

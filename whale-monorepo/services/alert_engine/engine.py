@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 
 from redis.asyncio import Redis
+import httpx
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +20,22 @@ from shared.models import Alert, Market, TradeRaw, WhaleTrade, WhaleTradeHistory
 
 def _id(whale_trade_id: str) -> str:
   return hashlib.sha1(f"al:{whale_trade_id}".encode("utf-8")).hexdigest()[:32]
+
+
+async def _send_landing_alert(payload: dict) -> None:
+  url = (settings.landing_alerts_ingest_url or "").strip()
+  if not url:
+    return
+  headers = {}
+  if settings.landing_alerts_ingest_token:
+    headers["x-alert-token"] = settings.landing_alerts_ingest_token
+  try:
+    async with httpx.AsyncClient() as client:
+      resp = await client.post(url, json=payload, headers=headers, timeout=10)
+    if resp.status_code < 200 or resp.status_code >= 300:
+      logger.warning("landing_alert_failed status=%s body=%s", resp.status_code, resp.text[:200])
+  except Exception as e:
+    logger.warning("landing_alert_error %s", str(e))
 
 
 async def get_market_question(session: AsyncSession, market_id: str) -> str | None:
@@ -247,5 +264,6 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
       "signal_level": signal_level,
       "created_at": now.isoformat(),
     }
+    await _send_landing_alert(payload)
     await redis.rpush(settings.alert_created_queue, json.dumps(payload))
   return created

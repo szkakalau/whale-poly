@@ -24,6 +24,7 @@ model User {
   collections  Collection[]
   subscriptions Subscription[]
   smartCollectionSubscriptions SmartCollectionSubscription[]
+  alertEvents  AlertEvent[]
 
   @@map("users")
 }
@@ -142,4 +143,20 @@ model Subscription {
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+model AlertEvent {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  sourceType  String   @map("source_type")
+  sourceId    String?  @map("source_id")
+  title       String
+  detail      String?
+  occurredAt  DateTime @map("occurred_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt], name: "idx_alert_user_time")
+  @@map("alert_events")
 }

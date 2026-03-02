@@ -20,8 +20,9 @@ const ALLOWED_CATEGORY = new Set([
   'FINANCE',
 ]);
 
-export async function GET(_: Request, ctx?: Query) {
-  const params = ctx ? await ctx.searchParams : new URLSearchParams();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const params = searchParams;
   const orderBy = (params.get('orderBy') || 'PNL').toUpperCase();
   const timePeriod = (params.get('timePeriod') || 'MONTH').toUpperCase();
   const category = (params.get('category') || 'OVERALL').toUpperCase();

@@ -42,6 +42,8 @@ class Settings:
     self.landing_cancel_url = os.getenv("LANDING_CANCEL_URL", "")
     self.default_currency = os.getenv("DEFAULT_CURRENCY", "usd")
     self.payment_mode = os.getenv("PAYMENT_MODE", "stripe").lower()
+    self.landing_alerts_ingest_url = os.getenv("LANDING_ALERTS_INGEST_URL", "")
+    self.landing_alerts_ingest_token = os.getenv("LANDING_ALERTS_INGEST_TOKEN", "")
 
     self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     self.bot_user_hash_secret = os.getenv("BOT_USER_HASH_SECRET", "")

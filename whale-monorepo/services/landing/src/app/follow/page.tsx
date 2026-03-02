@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
-  title: 'My Followed Whales - Sight Whale',
-  description: 'View and manage the whales you follow and their latest activity.',
+  title: 'My Dashboard - Sight Whale',
+  description: 'Track followed whales, smart collections, and the latest smart money updates.',
   alternates: {
     canonical: '/follow',
   },
@@ -29,25 +29,145 @@ type WhaleSummary = {
   wallet: string;
   whaleScore: number | null;
   lastTradeTime: string | null;
+  lastTradeMarket: string | null;
+  lastTradeAction: string | null;
+  lastTradeSide: string | null;
+  lastTradeSize: number | null;
+};
+
+type SubscriptionRow = {
+  id: string;
+  smartCollectionId: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+};
+
+type SmartCollectionUpdate = {
+  id: string;
+  name: string;
+  description: string | null;
+  snapshot_date: string | null;
+  whale_count: number | null;
+};
+
+type AlertEventRow = {
+  id: string;
+  source_type: string;
+  source_id: string | null;
+  title: string;
+  detail: string | null;
+  occurred_at: string;
 };
 
 const WHALE_ENGINE_BASE =
   process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
+const TELEGRAM_BOT_URL =
+  process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 
-async function getFollowRows(): Promise<FollowRow[]> {
-  const user = await getCurrentUser();
-  if (!user) {
+async function getFollowRows(userId: string | null): Promise<FollowRow[]> {
+  if (!userId) {
     return [];
   }
   const rows = await prisma.whaleFollow.findMany({
     where: {
-      userId: user.id,
+      userId,
     },
     orderBy: {
       createdAt: 'desc',
     },
   });
   return rows;
+}
+
+async function getSubscriptions(userId: string): Promise<SubscriptionRow[]> {
+  const rows = await prisma.smartCollectionSubscription.findMany({
+    where: { userId },
+    include: {
+      smartCollection: {
+        select: { id: true, name: true, description: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    smartCollectionId: row.smartCollection.id,
+    name: row.smartCollection.name,
+    description: row.smartCollection.description ?? '',
+    createdAt: row.createdAt,
+  }));
+}
+
+async function getSmartCollectionUpdates(userId: string): Promise<SmartCollectionUpdate[]> {
+  const rows = await prisma.$queryRawUnsafe<
+    {
+      id: string;
+      name: string;
+      description: string | null;
+      snapshot_date: Date | null;
+      whale_count: number | null;
+    }[]
+  >(
+    `
+    SELECT
+      sc.id,
+      sc.name,
+      sc.description,
+      latest.snapshot_date,
+      latest.whale_count
+    FROM smart_collection_subscriptions scs
+    JOIN smart_collections sc ON sc.id = scs.smart_collection_id
+    LEFT JOIN LATERAL (
+      SELECT snapshot_date, COUNT(*)::int AS whale_count
+      FROM smart_collection_whales scw
+      WHERE scw.smart_collection_id = sc.id
+      GROUP BY snapshot_date
+      ORDER BY snapshot_date DESC
+      LIMIT 1
+    ) latest ON true
+    WHERE scs.user_id = $1
+    ORDER BY scs.created_at DESC
+    `,
+    userId,
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    snapshot_date: row.snapshot_date ? row.snapshot_date.toISOString() : null,
+    whale_count: row.whale_count,
+  }));
+}
+
+async function getAlertEvents(userId: string): Promise<AlertEventRow[]> {
+  const rows = await prisma.$queryRawUnsafe<
+    {
+      id: string;
+      source_type: string;
+      source_id: string | null;
+      title: string;
+      detail: string | null;
+      occurred_at: Date;
+    }[]
+  >(
+    `
+    SELECT id, source_type, source_id, title, detail, occurred_at
+    FROM alert_events
+    WHERE user_id = $1
+    ORDER BY occurred_at DESC
+    LIMIT 20
+    `,
+    userId,
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    source_type: row.source_type,
+    source_id: row.source_id,
+    title: row.title,
+    detail: row.detail,
+    occurred_at: row.occurred_at.toISOString(),
+  }));
 }
 
 async function fetchWhaleSummary(wallet: string): Promise<WhaleSummary> {
@@ -61,11 +181,15 @@ async function fetchWhaleSummary(wallet: string): Promise<WhaleSummary> {
       wallet,
       whaleScore: null,
       lastTradeTime: null,
+      lastTradeMarket: null,
+      lastTradeAction: null,
+      lastTradeSide: null,
+      lastTradeSize: null,
     };
   }
   const data = (await res.json()) as {
     whale_score?: number;
-    recent_trades?: { time?: string }[];
+    recent_trades?: { time?: string; market?: string; action?: string; side?: string; size?: number }[];
   };
   const whaleScore =
     typeof data.whale_score === 'number' && Number.isFinite(data.whale_score)
@@ -75,10 +199,18 @@ async function fetchWhaleSummary(wallet: string): Promise<WhaleSummary> {
     ? data.recent_trades[0]
     : null;
   const lastTradeTime = last && typeof last.time === 'string' ? last.time : null;
+  const lastTradeMarket = last && typeof last.market === 'string' ? last.market : null;
+  const lastTradeAction = last && typeof last.action === 'string' ? last.action : null;
+  const lastTradeSide = last && typeof last.side === 'string' ? last.side : null;
+  const lastTradeSize = last && typeof last.size === 'number' ? last.size : null;
   return {
     wallet,
     whaleScore,
     lastTradeTime,
+    lastTradeMarket,
+    lastTradeAction,
+    lastTradeSide,
+    lastTradeSize,
   };
 }
 
@@ -112,10 +244,103 @@ function formatTime(value: string | null): string {
   });
 }
 
+function formatUsd(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return '–';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    return `${value >= 0 ? '' : '-'}$${(abs / 1_000_000).toFixed(1)}M`;
+  }
+  if (abs >= 1_000) {
+    return `${value >= 0 ? '' : '-'}$${(abs / 1_000).toFixed(1)}K`;
+  }
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) {
+    return '–';
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return '–';
+  }
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: '2-digit',
+  });
+}
+
 export default async function FollowPage() {
-  const rows = await getFollowRows();
+  const user = await getCurrentUser();
+  const rows = await getFollowRows(user?.id ?? null);
+  const subscriptions = user ? await getSubscriptions(user.id) : [];
+  const updates = user ? await getSmartCollectionUpdates(user.id) : [];
+  const alertEvents = user ? await getAlertEvents(user.id) : [];
   const summaries = await Promise.all(rows.map((row) => fetchWhaleSummary(row.wallet)));
   const byWallet = new Map(summaries.map((s) => [s.wallet.toLowerCase(), s]));
+  const telegramConnected = Boolean(user?.telegramId);
+  const recentMoves = summaries
+    .filter((summary) => summary.lastTradeTime)
+    .sort((a, b) => new Date(b.lastTradeTime || 0).getTime() - new Date(a.lastTradeTime || 0).getTime())
+    .slice(0, 5);
+  const steps = [
+    {
+      title: '关注一个鲸鱼',
+      description: '关注钱包，启用高置信度提醒。',
+      done: rows.length > 0,
+      href: '/smart-money',
+      cta: '去关注',
+    },
+    {
+      title: '订阅一个集合',
+      description: '订阅 Smart Collection，提升信号密度。',
+      done: subscriptions.length > 0,
+      href: '/smart-collections',
+      cta: '去订阅',
+    },
+    {
+      title: '绑定 Telegram',
+      description: '用 Bot 接收实时提醒。',
+      done: telegramConnected,
+      href: TELEGRAM_BOT_URL,
+      cta: '去绑定',
+    },
+  ];
+  const completedSteps = steps.filter((step) => step.done).length;
+  const fallbackActivity = [
+    ...recentMoves.map((move) => ({
+      type: 'whale',
+      title: `Whale ${shortenWallet(move.wallet)}`,
+      detail: move.lastTradeMarket || 'Unknown market',
+      time: move.lastTradeTime,
+      href: `/whales/${encodeURIComponent(move.wallet)}`,
+    })),
+    ...updates.map((item) => ({
+      type: 'collection',
+      title: `Collection ${item.name}`,
+      detail: `Snapshot ${formatDate(item.snapshot_date)}`,
+      time: item.snapshot_date,
+      href: `/smart-collections/${encodeURIComponent(item.id)}`,
+    })),
+  ];
+  const activityItems = (alertEvents.length > 0
+    ? alertEvents.map((item) => ({
+        type: item.source_type,
+        title: item.title,
+        detail: item.detail || 'Alert update',
+        time: item.occurred_at,
+        href:
+          item.source_type === 'whale' && item.source_id
+            ? `/whales/${encodeURIComponent(item.source_id)}`
+            : item.source_type === 'collection' && item.source_id
+            ? `/smart-collections/${encodeURIComponent(item.source_id)}`
+            : '/follow',
+      }))
+    : fallbackActivity
+  )
+    .filter((item) => item.time)
+    .sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime())
+    .slice(0, 6);
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -126,12 +351,294 @@ export default async function FollowPage() {
 
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 pt-32 pb-24 relative">
+      <main className="mx-auto max-w-5xl px-6 pt-32 pb-24 relative space-y-8">
         <section className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My Followed Whales</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My Dashboard</h1>
           <p className="text-gray-400 text-sm max-w-2xl">
-            View wallets you follow, their current whale score, and recent activity.
+            Track followed whales, smart collections, and the latest smart money updates.
           </p>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Smart Money Addresses</p>
+            <div className="text-2xl font-semibold text-white mt-2">{rows.length}</div>
+            <div className="text-xs text-gray-500 mt-2">你当前关注的 smart money 地址</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Smart Collections</p>
+            <div className="text-2xl font-semibold text-white mt-2">{subscriptions.length}</div>
+            <div className="text-xs text-gray-500 mt-2">Subscribed smart money groups</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Telegram Status</p>
+            <div className="text-2xl font-semibold text-white mt-2">
+              {telegramConnected ? 'Connected' : 'Not connected'}
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              {telegramConnected ? 'Alerts will reach your bot' : 'Connect to receive alerts'}
+            </div>
+            {!telegramConnected && (
+              <div className="mt-4">
+                <a
+                  href={TELEGRAM_BOT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+                >
+                  Connect Telegram Bot
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white mb-2">行动清单</h2>
+              <p className="text-xs text-gray-400">
+                完成关键动作，解锁完整提醒闭环与复访路径。
+              </p>
+            </div>
+            <div className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-gray-300">
+              进度 {completedSteps} / {steps.length}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {steps.map((step) => (
+              <div
+                key={step.title}
+                className="rounded-xl border border-white/10 bg-black/30 p-4 flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-white">{step.title}</h3>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                        step.done
+                          ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                          : 'border-white/15 bg-white/5 text-gray-400'
+                      }`}
+                    >
+                      {step.done ? '已完成' : '未完成'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400">{step.description}</p>
+                </div>
+                {step.href.startsWith('http') ? (
+                  <a
+                    href={step.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-white/10"
+                  >
+                    {step.cta}
+                    <span className="text-[10px] text-gray-500">External</span>
+                  </a>
+                ) : (
+                  <Link
+                    href={step.href}
+                    className="inline-flex items-center justify-between rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-white/10"
+                  >
+                    {step.cta}
+                    <span className="text-[10px] text-gray-500">Go</span>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">Latest Smart Collection Updates</h2>
+            <Link
+              href="/smart-collections"
+              className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/10"
+            >
+              Explore collections
+            </Link>
+          </div>
+          {updates.length === 0 ? (
+            <div className="text-sm text-gray-400">
+              Subscribe to Smart Collections to see the latest snapshot updates here.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {updates.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-white/10 bg-black/20 p-4 flex flex-col gap-2"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">{item.name}</h3>
+                      <p className="text-xs text-gray-400 line-clamp-2">
+                        {item.description || 'Smart money collection update'}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/smart-collections/${encodeURIComponent(item.id)}`}
+                      className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/10"
+                    >
+                      View
+                    </Link>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-gray-400">
+                    <span>Latest snapshot: {formatDate(item.snapshot_date)}</span>
+                    <span>{item.whale_count ?? 0} whales</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">Recent Whale Moves</h2>
+            <Link
+              href="/smart-money"
+              className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/10"
+            >
+              Explore smart money
+            </Link>
+          </div>
+          {recentMoves.length === 0 ? (
+            <div className="text-sm text-gray-400">
+              Follow whales to see their most recent trades and conviction moves here.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentMoves.map((move) => (
+                <div
+                  key={move.wallet}
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+                >
+                  <div>
+                    <Link
+                      href={`/whales/${encodeURIComponent(move.wallet)}`}
+                      className="text-sm font-medium text-white hover:text-violet-200"
+                    >
+                      {shortenWallet(move.wallet)}
+                    </Link>
+                    <div className="text-xs text-gray-400 line-clamp-1">
+                      {move.lastTradeMarket || 'Unknown market'}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
+                    <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 uppercase tracking-wide">
+                      {move.lastTradeAction || 'Trade'}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 uppercase tracking-wide ${
+                        move.lastTradeSide?.toLowerCase() === 'buy'
+                          ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                          : 'border-rose-500/60 bg-rose-500/10 text-rose-200'
+                      }`}
+                    >
+                      {move.lastTradeSide || 'Side'}
+                    </span>
+                    <span className="text-gray-400">{formatUsd(move.lastTradeSize)}</span>
+                    <span className="text-gray-500">{formatTime(move.lastTradeTime)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">提醒复盘</h2>
+            <span className="text-xs text-gray-500">
+              {alertEvents.length > 0 ? '来自已发送提醒记录' : '基于最新鲸鱼与集合动态'}
+            </span>
+          </div>
+          {activityItems.length === 0 ? (
+            <div className="text-sm text-gray-400">
+              暂无可复盘的提醒记录，关注鲸鱼或订阅集合后会显示最新动态。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activityItems.map((item) => (
+                <div
+                  key={`${item.type}-${item.title}-${item.time}`}
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+                >
+                  <div>
+                    <Link
+                      href={item.href}
+                      className="text-sm font-medium text-white hover:text-violet-200"
+                    >
+                      {item.title}
+                    </Link>
+                    <div className="text-xs text-gray-400">{item.detail}</div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 uppercase tracking-wide">
+                      {item.type === 'whale' ? 'Whale Move' : 'Collection Update'}
+                    </span>
+                    <span>{formatTime(item.time)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">Subscribed Smart Collections</h2>
+            <Link
+              href="/smart-collections"
+              className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/10"
+            >
+              Manage
+            </Link>
+          </div>
+          {subscriptions.length === 0 ? (
+            <div className="text-sm text-gray-400 space-y-3">
+              <p>
+                You are not subscribed to any Smart Collections yet. Subscriptions keep you aligned
+                with curated strategies.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/smart-collections"
+                  className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+                >
+                  Browse smart collections
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {subscriptions.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-white/10 bg-black/20 p-4 flex flex-col justify-between gap-3"
+                >
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">{item.name}</h3>
+                    <p className="text-xs text-gray-400 line-clamp-2">
+                      {item.description || 'Curated smart money behaviors'}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-gray-400">
+                    <span>Subscribed {item.createdAt.toLocaleDateString()}</span>
+                    <Link
+                      href={`/smart-collections/${encodeURIComponent(item.smartCollectionId)}`}
+                      className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
