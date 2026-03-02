@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 import SmartCollectionsClient, {
   type SmartCollectionItem,
 } from '../SmartCollectionsClient';
+import Link from 'next/link';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -41,6 +42,63 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
           (w) => w.snapshotDate.getTime() === latestSnapshot.getTime(),
         );
 
+  const wallets = whales.map((w) => w.wallet);
+  let stats: {
+    wallet_address: string;
+    volume: number;
+    profit: number;
+    roi: number;
+  }[] = [];
+  if (wallets.length > 0) {
+    stats = await prisma.$queryRawUnsafe<
+      {
+        wallet_address: string;
+        volume: number;
+        profit: number;
+        roi: number;
+        ord: number;
+      }[]
+    >(
+      `
+      SELECT 
+        t.wallet AS wallet_address,
+        COALESCE(p.total_volume::float, 0) AS volume,
+        COALESCE(s.total_pnl::float, p.realized_pnl::float, 0) AS profit,
+        COALESCE(s.roi::float, CASE WHEN COALESCE(p.total_volume::float, 0) > 0 THEN (COALESCE(s.total_pnl::float, p.realized_pnl::float, 0) / COALESCE(p.total_volume::float, 1)) ELSE 0 END) AS roi,
+        t.ord
+      FROM unnest($1::text[]) WITH ORDINALITY AS t(wallet, ord)
+      LEFT JOIN whale_profiles p ON p.wallet_address = t.wallet
+      LEFT JOIN whale_stats s ON s.wallet_address = t.wallet
+      ORDER BY t.ord ASC
+      `,
+      wallets,
+    );
+  }
+
+  const statsMap = new Map(
+    stats.map((s) => [
+      s.wallet_address,
+      {
+        volume: Number.isFinite(s.volume) ? s.volume : 0,
+        profit: Number.isFinite(s.profit) ? s.profit : 0,
+        roi: Number.isFinite(s.roi) ? s.roi : 0,
+      },
+    ]),
+  );
+
+  const whalesWithStats = whales.map((w) => {
+    const row = statsMap.get(w.wallet) || { volume: 0, profit: 0, roi: 0 };
+    return { wallet: w.wallet, ...row };
+  });
+
+  const totalProfit = whalesWithStats.reduce((sum, w) => sum + w.profit, 0);
+  const totalVolume = whalesWithStats.reduce((sum, w) => sum + w.volume, 0);
+  const avgRoi =
+    whalesWithStats.length > 0
+      ? whalesWithStats.reduce((sum, w) => sum + w.roi, 0) / whalesWithStats.length
+      : 0;
+  const snapshotDate = latestSnapshot ? latestSnapshot.toISOString() : null;
+
   let subscribed = false;
   if (userId) {
     const sub = await prisma.smartCollectionSubscription.findUnique({
@@ -64,9 +122,14 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
       description: collection.description ?? '',
       subscribed,
     } as SmartCollectionItem,
-    whales: whales.map((w) => ({
-      wallet: w.wallet,
-    })),
+    whales: whalesWithStats,
+    summary: {
+      total_profit: totalProfit,
+      total_volume: totalVolume,
+      avg_roi: avgRoi,
+      active_wallets: whalesWithStats.length,
+      snapshot_date: snapshotDate,
+    },
   };
 }
 
@@ -141,6 +204,10 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                 <thead className="bg-white/5 text-gray-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Wallet</th>
+                    <th className="px-3 py-2 font-medium text-right">Profit (USD)</th>
+                    <th className="px-3 py-2 font-medium text-right">ROI</th>
+                    <th className="px-3 py-2 font-medium text-right">Volume (USD)</th>
+                    <th className="px-3 py-2 font-medium text-right">Profile</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-gray-200">
@@ -149,6 +216,17 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                       <td className="px-3 py-2 font-mono text-xs">
                         {w.wallet}
                       </td>
+                      <td className="px-3 py-2 text-right">{Math.round(w.profit).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right">{(w.roi * 100).toFixed(2)}%</td>
+                      <td className="px-3 py-2 text-right">{Math.round(w.volume).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Link
+                          href={`/whales/${encodeURIComponent(w.wallet)}`}
+                          className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/10"
+                        >
+                          Open Profile
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -156,10 +234,41 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
             </div>
           )}
         </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Total Profit</p>
+            <div className="text-2xl font-semibold text-white mt-2">
+              {Math.round(detail.summary.total_profit).toLocaleString()} USD
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Avg ROI</p>
+            <div className="text-2xl font-semibold text-white mt-2">
+              {(detail.summary.avg_roi * 100).toFixed(2)}%
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Total Volume</p>
+            <div className="text-2xl font-semibold text-white mt-2">
+              {Math.round(detail.summary.total_volume).toLocaleString()} USD
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Active Wallets</p>
+            <div className="text-2xl font-semibold text-white mt-2">
+              {detail.summary.active_wallets}
+            </div>
+            {detail.summary.snapshot_date && (
+              <div className="text-xs text-gray-500 mt-2">
+                Snapshot: {new Date(detail.summary.snapshot_date).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        </section>
       </main>
 
       <Footer />
     </div>
   );
 }
-

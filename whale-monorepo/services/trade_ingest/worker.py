@@ -22,6 +22,7 @@ from shared.db import SessionLocal
 from shared.logging import configure_logging
 from shared.models import Alert, Market, TradeRaw, WalletName, WhaleProfile, WhaleStats, WhaleTrade
 from services.trade_ingest.smart_collections import rebuild_smart_collections
+from services.trade_ingest.polymarket import ingest_smart_money_leaderboard
 
 
 configure_logging(settings.log_level)
@@ -47,6 +48,7 @@ celery_app.conf.beat_schedule = {
   "full-health-check": {"task": "services.trade_ingest.health_check", "schedule": 3600.0},
   "daily-spotlight": {"task": "services.trade_ingest.daily_spotlight", "schedule": crontab(hour=20, minute=0)},
   "rebuild-smart-collections": {"task": "services.trade_ingest.rebuild_smart_collections", "schedule": 86400.0},
+  "ingest-smart-money-leaderboard": {"task": "services.trade_ingest.ingest_smart_money_leaderboard", "schedule": 43200.0},
 }
 
 
@@ -752,3 +754,17 @@ def rebuild_smart_collections_task() -> int:
 @celery_app.task(name="services.trade_ingest.daily_spotlight")
 def daily_spotlight_task() -> dict:
   return _run(run_daily_spotlight())
+
+
+@celery_app.task(name="services.trade_ingest.ingest_smart_money_leaderboard")
+def ingest_smart_money_leaderboard_task() -> int:
+  async def runner():
+    async with SessionLocal() as session:
+      n = await ingest_smart_money_leaderboard(session, category="OVERALL", time_period="MONTH", order_by="PNL", limit=50)
+      await session.commit()
+    return n
+  try:
+    return _run(runner())
+  except Exception:
+    logger.exception("ingest_smart_money_leaderboard_failed")
+    return 0

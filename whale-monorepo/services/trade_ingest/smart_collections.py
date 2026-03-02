@@ -2,9 +2,11 @@ import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
+import uuid
 
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import text
 
 from shared.models import (
     SmartCollection,
@@ -58,6 +60,84 @@ async def _select_wallets_for_rule(session: AsyncSession, rule_json: str) -> lis
     return [str(w).lower() for w in rows if w]
 
 
+async def ensure_smart_collection_tables(session: AsyncSession) -> None:
+    try:
+        await session.execute(text("select to_regclass('public.smart_collections')"))
+        await session.execute(text("select to_regclass('public.smart_collection_whales')"))
+        await session.execute(text("select to_regclass('public.smart_collection_subscriptions')"))
+        # Try creating if missing (PostgreSQL)
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collections (
+          id VARCHAR(64) PRIMARY KEY,
+          name VARCHAR(256) NOT NULL,
+          description VARCHAR(512),
+          rule_json TEXT NOT NULL,
+          enabled BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        )"""))
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collection_whales (
+          id VARCHAR(64) PRIMARY KEY,
+          smart_collection_id VARCHAR(64) NOT NULL,
+          wallet VARCHAR(128) NOT NULL,
+          snapshot_date TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW(),
+          CONSTRAINT smart_collection_wallet_unique UNIQUE (smart_collection_id, wallet, snapshot_date)
+        )"""))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_collection_id ON smart_collection_whales (smart_collection_id)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_wallet ON smart_collection_whales (wallet)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_snapshot_date ON smart_collection_whales (snapshot_date)"))
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collection_subscriptions (
+          id VARCHAR(64) PRIMARY KEY,
+          user_id VARCHAR(64) NOT NULL,
+          smart_collection_id VARCHAR(64) NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW(),
+          CONSTRAINT user_smart_collection_unique UNIQUE (user_id, smart_collection_id)
+        )"""))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scs_user_id ON smart_collection_subscriptions (user_id)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scs_collection_id ON smart_collection_subscriptions (smart_collection_id)"))
+    except Exception:
+        # SQLite fallback
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collections (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          rule_json TEXT NOT NULL,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT,
+          updated_at TEXT
+        )"""))
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collection_whales (
+          id TEXT PRIMARY KEY,
+          smart_collection_id TEXT NOT NULL,
+          wallet TEXT NOT NULL,
+          snapshot_date TEXT NOT NULL,
+          created_at TEXT,
+          updated_at TEXT,
+          CONSTRAINT smart_collection_wallet_unique UNIQUE (smart_collection_id, wallet, snapshot_date)
+        )"""))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_collection_id ON smart_collection_whales (smart_collection_id)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_wallet ON smart_collection_whales (wallet)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scw_snapshot_date ON smart_collection_whales (snapshot_date)"))
+        await session.execute(text("""
+        CREATE TABLE IF NOT EXISTS smart_collection_subscriptions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          smart_collection_id TEXT NOT NULL,
+          created_at TEXT,
+          updated_at TEXT,
+          CONSTRAINT user_smart_collection_unique UNIQUE (user_id, smart_collection_id)
+        )"""))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scs_user_id ON smart_collection_subscriptions (user_id)"))
+        await session.execute(text("CREATE INDEX IF NOT EXISTS ix_scs_collection_id ON smart_collection_subscriptions (smart_collection_id)"))
+
+
 async def rebuild_smart_collections(session: AsyncSession) -> int:
     now = datetime.now(timezone.utc)
     snapshot = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
@@ -82,6 +162,7 @@ async def rebuild_smart_collections(session: AsyncSession) -> int:
         for w in wallets:
             session.add(
                 SmartCollectionWhale(
+                    id=uuid.uuid4().hex,
                     smart_collection_id=col.id,
                     wallet=w,
                     snapshot_date=snapshot,
@@ -90,4 +171,3 @@ async def rebuild_smart_collections(session: AsyncSession) -> int:
         total_rows += len(wallets)
 
     return total_rows
-

@@ -6,7 +6,7 @@ import { Plan } from '@prisma/client';
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
-    const { plan, priceId } = await req.json();
+    const { plan } = await req.json();
 
     if (!Object.values(Plan).includes(plan)) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });

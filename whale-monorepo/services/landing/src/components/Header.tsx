@@ -21,6 +21,9 @@ export default function Header() {
           <Link href="/conviction" className="text-[13px] font-medium text-gray-300 hover:text-white transition-colors">
             Conviction
           </Link>
+          <Link href="/smart-money" className="text-[13px] font-medium text-gray-300 hover:text-white transition-colors">
+            Smart Money
+          </Link>
           <Link href="/blog" className="text-[13px] font-medium text-gray-300 hover:text-white transition-colors">
             Blog
           </Link>

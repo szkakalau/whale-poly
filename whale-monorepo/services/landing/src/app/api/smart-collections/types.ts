@@ -16,6 +16,8 @@ export type SmartCollectionDetail = SmartCollectionSummary & {
     snapshot_date: string;
     created_at: string;
     updated_at: string;
+    profit: number;
+    roi: number;
+    volume: number;
   }[];
 };
-

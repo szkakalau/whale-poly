@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
 from shared.db import insert
-from shared.models import Market, TradeRaw
+from shared.models import Market, TradeRaw, WhaleProfile, WhaleStats
 
 
 logger = logging.getLogger("trade_ingest.polymarket")
@@ -262,3 +262,154 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
   )
   inserted = (await session.execute(stmt)).scalars().all()
   return [str(tid) for tid in inserted]
+
+
+async def fetch_leaderboard(client: httpx.AsyncClient, *, category: str = "OVERALL", time_period: str = "MONTH", order_by: str = "PNL", limit: int = 50) -> list[dict[str, Any]]:
+  """
+  Fetch trader leaderboard rankings from Polymarket Data API.
+  Docs indicate: GET https://data-api.polymarket.com/v1/leaderboard
+  Response items may include: proxyWallet, userName, vol, pnl, rank
+  """
+  base = "https://data-api.polymarket.com/v1/leaderboard"
+  params = {
+    "category": category,
+    "timePeriod": time_period,
+    "orderBy": order_by,
+    "limit": max(1, min(int(limit), 50)),
+  }
+
+  async def _try(url: str) -> list[dict[str, Any]]:
+    try:
+      resp = await client.get(url, params=params, timeout=20)
+    except Exception as e:
+      logger.warning(f"leaderboard_request_failed error={e}")
+      return []
+    if resp.status_code != 200:
+      logger.warning(f"leaderboard_bad_status status={resp.status_code} body={resp.text[:200]}")
+      return []
+    try:
+      data = resp.json()
+    except Exception as e:
+      logger.warning(f"leaderboard_invalid_json error={e}")
+      return []
+    if isinstance(data, list):
+      return [d for d in data if isinstance(d, dict)]
+    if isinstance(data, dict):
+      arr = data.get("data") or data.get("items") or []
+      return [d for d in arr if isinstance(d, dict)]
+    return []
+
+  # Primary
+  rows = await _try(base)
+  if rows:
+    return rows
+
+  # Fallback guesses if path changes
+  for alt in (
+    "https://gamma-api.polymarket.com/leaderboard",
+    "https://gamma-api.polymarket.com/trader-leaderboard",
+  ):
+    rows = await _try(alt)
+    if rows:
+      return rows
+  return []
+
+
+def _parse_leaderboard_row(row: dict[str, Any]) -> dict[str, Any] | None:
+  wallet = row.get("proxyWallet") or row.get("wallet") or row.get("user")
+  if not wallet:
+    return None
+  wallet = normalize_key(str(wallet))
+  try:
+    vol = float(row.get("vol") or row.get("volume") or 0)
+  except Exception:
+    vol = 0.0
+  try:
+    pnl = float(row.get("pnl") or row.get("profit") or 0)
+  except Exception:
+    pnl = 0.0
+  roi = (pnl / vol) if vol > 0 else 0.0
+  return {
+    "wallet": wallet,
+    "volume": vol,
+    "pnl": pnl,
+    "roi": roi,
+  }
+
+
+async def ingest_smart_money_leaderboard(session: AsyncSession, *, category: str = "OVERALL", time_period: str = "MONTH", order_by: str = "PNL", limit: int = 50) -> int:
+  """
+  Fetch and upsert smart money (top traders) into WhaleProfile + WhaleStats.
+  """
+  proxies = settings.https_proxy or None
+  async with httpx.AsyncClient(proxy=proxies) as client:
+    rows = await fetch_leaderboard(client, category=category, time_period=time_period, order_by=order_by, limit=limit)
+
+  parsed = [_parse_leaderboard_row(r) for r in rows if isinstance(r, dict)]
+  parsed = [p for p in parsed if p]
+  if not parsed:
+    logger.info("leaderboard_empty")
+    return 0
+
+  profile_rows = []
+  stats_rows = []
+  for p in parsed:
+    profile_rows.append(
+      {
+        "wallet_address": p["wallet"],
+        "total_volume": p["volume"],
+        "total_trades": 0,
+        "realized_pnl": p["pnl"],
+        "wins": 0,
+        "losses": 0,
+        "updated_at": datetime.now(timezone.utc),
+      }
+    )
+    stats_rows.append(
+      {
+        "wallet_address": p["wallet"],
+        "whale_score": 0,
+        "performance_score": 0.0,
+        "consistency_score": 0.0,
+        "timing_score": 0.0,
+        "risk_score": 0.0,
+        "impact_score": 0.0,
+        "win_rate": 0.0,
+        "roi": p["roi"],
+        "total_pnl": p["pnl"],
+        "avg_trade_size": 0,
+        "max_drawdown": 0,
+        "stddev_pnl": 0,
+        "avg_entry_percentile": 0.5,
+        "avg_exit_percentile": 0.5,
+        "risk_reward_ratio": 0.0,
+        "market_liquidity_ratio": 0.0,
+        "updated_at": datetime.now(timezone.utc),
+      }
+    )
+
+  if profile_rows:
+    profile_insert = insert(WhaleProfile).values(profile_rows)
+    profile_stmt = profile_insert.on_conflict_do_update(
+      index_elements=[WhaleProfile.wallet_address],
+      set_={
+        "total_volume": profile_insert.excluded.total_volume,
+        "realized_pnl": profile_insert.excluded.realized_pnl,
+        "updated_at": profile_insert.excluded.updated_at,
+      },
+    )
+    await session.execute(profile_stmt)
+
+  if stats_rows:
+    stats_insert = insert(WhaleStats).values(stats_rows)
+    stats_stmt = stats_insert.on_conflict_do_update(
+      index_elements=[WhaleStats.wallet_address],
+      set_={
+        "roi": stats_insert.excluded.roi,
+        "total_pnl": stats_insert.excluded.total_pnl,
+        "updated_at": stats_insert.excluded.updated_at,
+      },
+    )
+    await session.execute(stats_stmt)
+
+  return len(parsed)
