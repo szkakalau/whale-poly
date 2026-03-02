@@ -25,10 +25,29 @@ export async function POST(req: Request) {
   });
   const base = ALERT_ENGINE_BASE.replace(/\/$/, '');
   const url = `${base}/alerts/force?${params.toString()}`;
-  const res = await fetch(url, { method: 'POST' });
-  if (!res.ok) {
-    return NextResponse.json({ detail: 'alert_engine_failed' }, { status: 502 });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    
+    const res = await fetch(url, { 
+      method: 'POST',
+      signal: controller.signal 
+    });
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) {
+      return NextResponse.json({ 
+        detail: 'alert_engine_failed', 
+        status: res.status 
+      }, { status: 502 });
+    }
+    
+    const payload = await res.json().catch(() => ({}));
+    return NextResponse.json({ ok: true, ...payload });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json({ detail: 'alert_engine_timeout' }, { status: 504 });
+    }
+    return NextResponse.json({ detail: 'alert_engine_unreachable' }, { status: 502 });
   }
-  const payload = await res.json().catch(() => ({}));
-  return NextResponse.json({ ok: true, ...payload });
 }

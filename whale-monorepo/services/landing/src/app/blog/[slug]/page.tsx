@@ -122,6 +122,7 @@ export default async function BlogPostPage({ params }: Props) {
         <article>
           <script
             type="application/ld+json"
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
           />
           <header className="mb-12 text-center">

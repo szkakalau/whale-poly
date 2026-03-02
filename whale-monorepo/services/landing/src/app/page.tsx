@@ -55,6 +55,7 @@ export default async function Home() {
       {/* Structured Data for SEO */}
       <script
         type="application/ld+json"
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",

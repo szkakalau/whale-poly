@@ -14,7 +14,6 @@ export async function POST(req: Request) {
 
     // Mocking Stripe integration logic here
     // In production, you would create a Stripe checkout session
-    console.log(`Creating subscription for user ${user.id} to plan ${plan}`);
 
     // Update user plan immediately for testing (Stub)
     const expiresAt = new Date();
