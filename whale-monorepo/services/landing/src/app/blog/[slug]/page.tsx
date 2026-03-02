@@ -168,6 +168,52 @@ function extractWallets(spotlight: SpotlightData): string[] {
   return Array.from(found);
 }
 
+function extractMarkets(spotlight: SpotlightData): Array<{ label: string; url: string }> {
+  const candidates: string[] = [];
+  const allowLabel = /market|question|event/i;
+  const urlRe = /^https?:\/\//i;
+
+  for (const section of spotlight.sections) {
+    const { kv, rest } = extractKeyValues(section.lines);
+
+    for (const item of kv) {
+      if (!allowLabel.test(item.label)) continue;
+      const v = item.value.trim();
+      if (!v) continue;
+      candidates.push(v);
+    }
+
+    for (const line of rest) {
+      const m = line.match(/^(Market|Question|Event)\s*:\s*(.+)$/i);
+      if (!m) continue;
+      const v = String(m[2] || '').trim();
+      if (!v) continue;
+      candidates.push(v);
+    }
+  }
+
+  const seen = new Set<string>();
+  const out: Array<{ label: string; url: string }> = [];
+  for (const raw of candidates) {
+    const v = raw.replace(/\s+/g, ' ').trim();
+    if (v.length < 8) continue;
+    if (v.length > 180) continue;
+    const key = v.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    if (urlRe.test(v)) {
+      out.push({ label: v, url: v });
+      continue;
+    }
+
+    const url = `https://polymarket.com/search?q=${encodeURIComponent(v)}`;
+    out.push({ label: v, url });
+  }
+
+  return out.slice(0, 4);
+}
+
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
@@ -180,6 +226,7 @@ export default async function BlogPostPage({ params }: Props) {
   const isDailySpotlight = safePost.slug.startsWith('daily-spotlight-');
   const spotlight = isDailySpotlight ? parseDailySpotlight(safePost.content) : null;
   const spotlightWallets = spotlight ? extractWallets(spotlight).slice(0, 4) : [];
+  const spotlightMarkets = spotlight ? extractMarkets(spotlight) : [];
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -299,6 +346,26 @@ export default async function BlogPostPage({ params }: Props) {
                       <p className="mt-2 text-sm text-gray-300">No wallet addresses detected in this post.</p>
                     )}
                   </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Markets referenced</p>
+                    {spotlightMarkets.length > 0 ? (
+                      <div className="mt-2 space-y-2">
+                        {spotlightMarkets.slice(0, 3).map((m) => (
+                          <a
+                            key={m.url}
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-sm text-violet-300 hover:text-violet-200 underline underline-offset-4"
+                          >
+                            {m.label}
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-300">No market references detected in this post.</p>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-5 text-xs text-gray-500 leading-relaxed">
                   The cards below include the extracted numbers and statements for today’s spotlight. Use the links to validate
@@ -385,6 +452,24 @@ export default async function BlogPostPage({ params }: Props) {
                     <div className="text-xs text-gray-500">
                       Public order book endpoints used for best-effort verification.
                     </div>
+                    {spotlightMarkets.length > 0 ? (
+                      <div className="pt-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">Market links</div>
+                        <div className="mt-2 space-y-2">
+                          {spotlightMarkets.slice(0, 3).map((m) => (
+                            <a
+                              key={m.url}
+                              href={m.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-violet-300 hover:text-violet-200 underline underline-offset-4"
+                            >
+                              {m.url.startsWith('https://polymarket.com/search') ? `Polymarket search: ${m.label}` : m.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
