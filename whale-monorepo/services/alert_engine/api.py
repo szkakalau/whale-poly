@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -46,6 +47,54 @@ def _hash_admin(value: str) -> str:
 @app.get("/health")
 async def health():
   return {"status": "ok"}
+
+@app.get("/debug/build")
+async def debug_build():
+  keys = [
+    "RENDER_GIT_COMMIT",
+    "RENDER_SERVICE_ID",
+    "RENDER_SERVICE_NAME",
+    "RENDER_EXTERNAL_URL",
+    "RENDER_INSTANCE_ID",
+  ]
+  env = {k: os.getenv(k) for k in keys if os.getenv(k)}
+  return {"service": "alert-engine", "env": env}
+
+@app.get("/debug/outcome")
+async def debug_outcome(token_id: str = Query(..., min_length=1)):
+  tid = str(token_id).strip()
+  proxy = settings.https_proxy or None
+  result: dict = {"token_id": tid, "proxy_set": bool(proxy), "steps": []}
+  async with httpx.AsyncClient(proxy=proxy) as client:
+    for name, url, params in [
+      ("gamma_tokens", "https://gamma-api.polymarket.com/tokens", {"tokenId": tid}),
+      ("gamma_markets_by_clob", "https://gamma-api.polymarket.com/markets", {"clobTokenIds": tid}),
+    ]:
+      step: dict = {"name": name}
+      try:
+        resp = await client.get(url, params=params, timeout=10)
+        step["status"] = resp.status_code
+        if resp.status_code == 200:
+          data = resp.json()
+          first = data[0] if isinstance(data, list) and data else data
+          if isinstance(first, dict):
+            step["keys"] = sorted(list(first.keys()))[:40]
+            market = first.get("market") if name == "gamma_tokens" else first
+            if isinstance(market, dict):
+              for k in ["clobTokenIds", "outcomes", "outcomeNames", "outcomeTokens", "tokens"]:
+                if k in market:
+                  v = market.get(k)
+                  if isinstance(v, list):
+                    step[f"{k}_len"] = len(v)
+                  elif isinstance(v, str):
+                    step[f"{k}_preview"] = v[:200]
+          step["preview"] = resp.text[:200]
+        else:
+          step["preview"] = resp.text[:200]
+      except Exception as e:
+        step["error"] = repr(e)
+      result["steps"].append(step)
+  return result
 
 @app.get("/admin/diag/outcome")
 async def admin_diag_outcome(
