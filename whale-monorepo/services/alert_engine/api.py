@@ -75,6 +75,7 @@ async def debug_outcome(token_id: str = Query(..., min_length=1)):
   tid = str(token_id).strip()
   proxy = settings.https_proxy or None
   result: dict = {"token_id": tid, "proxy_set": bool(proxy), "steps": []}
+  condition_id: str | None = None
   async with httpx.AsyncClient(proxy=proxy) as client:
     for name, url, params in [
       ("gamma_tokens", "https://gamma-api.polymarket.com/tokens", {"tokenId": tid}),
@@ -124,6 +125,8 @@ async def debug_outcome(token_id: str = Query(..., min_length=1)):
               step["keys"] = sorted(list(data.keys()))[:40]
               if "market" in data:
                 step["market"] = data.get("market")
+                if name == "clob_book_token_id" and isinstance(data.get("market"), str):
+                  condition_id = data.get("market")
               if "condition_id" in data:
                 step["condition_id"] = data.get("condition_id")
               if "asset_id" in data:
@@ -133,6 +136,33 @@ async def debug_outcome(token_id: str = Query(..., min_length=1)):
       except Exception as e:
         step["error"] = repr(e)
       result["steps"].append(step)
+
+    if condition_id:
+      for name, url in [
+        ("clob_market_markets", f"https://clob.polymarket.com/markets/{condition_id}"),
+        ("clob_market_market", f"https://clob.polymarket.com/market/{condition_id}"),
+      ]:
+        step: dict = {"name": name}
+        try:
+          resp = await client.get(url, timeout=10)
+          step["status"] = resp.status_code
+          step["preview"] = resp.text[:200]
+          if resp.status_code == 200:
+            try:
+              data = resp.json()
+              if isinstance(data, dict):
+                step["keys"] = sorted(list(data.keys()))[:40]
+                tokens = data.get("tokens")
+                if isinstance(tokens, list) and tokens:
+                  first = tokens[0] if isinstance(tokens[0], dict) else None
+                  if isinstance(first, dict):
+                    step["token_keys"] = sorted(list(first.keys()))[:40]
+                    step["tokens_len"] = len(tokens)
+            except Exception:
+              pass
+        except Exception as e:
+          step["error"] = repr(e)
+        result["steps"].append(step)
   return result
 
 @app.get("/admin/diag/outcome")
