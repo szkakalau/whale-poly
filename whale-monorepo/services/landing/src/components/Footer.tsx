@@ -46,6 +46,12 @@ export default function Footer() {
               <Link href="/contact" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
                 Contact
               </Link>
+              <Link href="/disclosures" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                Disclosures
+              </Link>
+              <Link href="/security" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                Security
+              </Link>
               <a 
                 href={TELEGRAM_BOT_URL} 
                 target="_blank" 
