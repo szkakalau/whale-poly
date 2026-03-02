@@ -7,6 +7,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 from celery import Celery
 from celery.schedules import crontab
@@ -264,7 +265,7 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
 
   def format_section(header: str, trade_data, is_sniper: bool = False) -> list[str]:
     if not trade_data:
-      return [f"## {header}", "No qualifying trades found."]
+      return [header, "No qualifying trades found."]
     if is_sniper:
       trade, mkt_title, win_rate, username = trade_data
     else:
@@ -274,11 +275,23 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
     side = (trade.side or "").upper() or "TRADE"
     name = username if username else f"{trade.wallet[:6]}...{trade.wallet[-4:]}"
     market = mkt_title if mkt_title else "Unknown Market"
+    wallet_addr = (trade.wallet or "").lower()
+    market_id = str(getattr(trade, "market_id", "") or "")
+    trade_id = str(getattr(trade, "trade_id", "") or "")
+    market_url = (
+      f"https://polymarket.com/search?q={quote(market, safe='')}"
+      if market and market != "Unknown Market"
+      else "https://polymarket.com"
+    )
     lines = [
-      f"## {header}",
+      header,
       f"- Actor: {name}",
+      f"- Wallet: {wallet_addr}" if wallet_addr else "- Wallet: unknown",
       f"- Direction: {side}",
       f"- Market: {market}",
+      f"- Market ID: {market_id}" if market_id else "- Market ID: unknown",
+      f"- Market URL: {market_url}",
+      f"- Trade ID: {trade_id}" if trade_id else "- Trade ID: unknown",
       f"- Notional: ${val:,.0f}",
       f"- Price: {price_cents:.1f}¢",
     ]
@@ -300,12 +313,13 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
   parts += format_section("High Win-Rate Sniper", sniper, True)
   parts += [
     "",
-    "## Market Read",
+    "Market Read",
     "- Large prints matter most when odds structure keeps shifting afterward.",
     "- Contrarian sizing often signals an information edge; watch for follow‑through.",
     "- Repeated activity from high‑win‑rate wallets tends to be more durable.",
     "",
-    "*Disclaimer: Research and information only. Not financial or betting advice.*",
+    "Disclaimer",
+    "Research and information only. Not financial or betting advice.",
   ]
 
   return {

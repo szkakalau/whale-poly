@@ -107,11 +107,12 @@ function parseDailySpotlight(raw: string): SpotlightData {
       windowLine = line.replace(/^Window:\s*/, '');
       continue;
     }
-    if (SPOTLIGHT_TITLES.has(line)) {
+    const normalizedTitle = line.replace(/^#{1,6}\s*/, '');
+    if (SPOTLIGHT_TITLES.has(line) || SPOTLIGHT_TITLES.has(normalizedTitle)) {
       if (current) {
         sections.push(current);
       }
-      current = { title: line, lines: [] };
+      current = { title: SPOTLIGHT_TITLES.has(normalizedTitle) ? normalizedTitle : line, lines: [] };
       continue;
     }
     if (!current) {
@@ -131,7 +132,11 @@ function extractKeyValues(lines: string[]) {
   for (const line of lines) {
     const idx = line.indexOf(':');
     if (idx > 0) {
-      const label = line.slice(0, idx).trim();
+      const label = line
+        .slice(0, idx)
+        .trim()
+        .replace(/^[-*]\s+/, '')
+        .replace(/^#{1,6}\s*/, '');
       const value = line.slice(idx + 1).trim();
       if (label && value) {
         kv.push({ label, value });
