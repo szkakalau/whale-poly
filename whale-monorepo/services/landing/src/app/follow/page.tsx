@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import TestAlertButton from '@/components/TestAlertButton';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -395,6 +396,7 @@ export default async function FollowPage() {
                 </a>
               </div>
             )}
+            {telegramConnected && <TestAlertButton />}
           </div>
         </section>
 
