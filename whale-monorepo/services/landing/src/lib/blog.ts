@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
 
 export interface BlogPost {
   slug: string;
@@ -108,6 +109,9 @@ type DbBlogPost = {
 };
 
 async function resolveBlogPostsSchema(): Promise<string | null> {
+  if (!hasDatabaseUrl) {
+    return null;
+  }
   const rows = await prisma.$queryRaw<{ table_schema: string }[]>(
     Prisma.sql`select table_schema from information_schema.tables where table_name = 'blog_posts'`
   );
@@ -122,6 +126,9 @@ async function resolveBlogPostsSchema(): Promise<string | null> {
 }
 
 async function getAllDbPosts(): Promise<BlogPost[]> {
+  if (!hasDatabaseUrl) {
+    return [];
+  }
   const schema = await resolveBlogPostsSchema();
   if (!schema) {
     return [];
@@ -149,6 +156,9 @@ async function getAllDbPosts(): Promise<BlogPost[]> {
 }
 
 async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
+  if (!hasDatabaseUrl) {
+    return null;
+  }
   const schema = await resolveBlogPostsSchema();
   if (!schema) {
     return null;
