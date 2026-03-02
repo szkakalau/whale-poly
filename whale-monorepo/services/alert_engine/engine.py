@@ -80,81 +80,46 @@ async def _resolve_outcome_from_token(redis: Redis, token_id: str) -> str | None
   outcome: str | None = None
   try:
     async with httpx.AsyncClient(proxy=proxy) as client:
-      resp = await client.get("https://gamma-api.polymarket.com/tokens", params={"tokenId": tid}, timeout=10)
+      resp = await client.get("https://clob.polymarket.com/book", params={"token_id": tid}, timeout=10)
       if resp.status_code == 200:
-        data = resp.json()
-        token_data = data[0] if isinstance(data, list) and data else data
-        if isinstance(token_data, dict):
-          outcome = _extract_outcome_value(token_data)
-          if not outcome:
-            market_data = token_data.get("market")
-            if isinstance(market_data, dict):
-              tokens = market_data.get("clobTokenIds")
-              if isinstance(tokens, str):
-                try:
-                  tokens = json.loads(tokens)
-                except Exception:
-                  tokens = None
-              tokens_list = [str(t).lower() for t in tokens] if isinstance(tokens, list) else []
-              idx = tokens_list.index(tid.lower()) if tid.lower() in tokens_list else -1
-              outcomes = market_data.get("outcomes") or market_data.get("outcomeNames") or market_data.get("outcome_names")
-              if isinstance(outcomes, str):
-                try:
-                  outcomes = json.loads(outcomes)
-                except Exception:
-                  outcomes = None
-              if isinstance(outcomes, list) and idx >= 0 and idx < len(outcomes):
-                outcome = _extract_outcome_value(outcomes[idx])
-              if not outcome:
-                token_items = market_data.get("outcomeTokens") or market_data.get("outcome_tokens") or market_data.get("tokens")
-                if isinstance(token_items, list):
-                  for item in token_items:
-                    if not isinstance(item, dict):
-                      continue
-                    token_value = str(item.get("tokenId") or item.get("id") or "").lower()
-                    if token_value == tid.lower():
-                      outcome = _extract_outcome_value(item)
-                      if outcome:
-                        break
-      if not outcome:
-        resp = await client.get("https://gamma-api.polymarket.com/markets", params={"clobTokenIds": tid}, timeout=10)
-        if resp.status_code == 200:
-          data = resp.json()
-          market_data = data[0] if isinstance(data, list) and data else data
-          if isinstance(market_data, dict):
-            tokens = market_data.get("clobTokenIds")
-            if isinstance(tokens, str):
-              try:
-                tokens = json.loads(tokens)
-              except Exception:
-                tokens = None
-            tokens_list = [str(t).lower() for t in tokens] if isinstance(tokens, list) else []
-            idx = tokens_list.index(tid.lower()) if tid.lower() in tokens_list else -1
-            outcomes = market_data.get("outcomes") or market_data.get("outcomeNames") or market_data.get("outcome_names")
-            if isinstance(outcomes, str):
-              try:
-                outcomes = json.loads(outcomes)
-              except Exception:
-                outcomes = None
-            if isinstance(outcomes, list) and idx >= 0 and idx < len(outcomes):
-              outcome = _extract_outcome_value(outcomes[idx])
-            if not outcome:
-              token_items = market_data.get("outcomeTokens") or market_data.get("outcome_tokens") or market_data.get("tokens")
-              if isinstance(token_items, list):
-                for item in token_items:
-                  if not isinstance(item, dict):
-                    continue
-                  token_value = str(item.get("tokenId") or item.get("id") or "").lower()
-                  if token_value == tid.lower():
-                    outcome = _extract_outcome_value(item)
-                    if outcome:
-                      break
+        book = resp.json()
+        condition_id = None
+        if isinstance(book, dict):
+          condition_id = book.get("market") or book.get("condition_id")
+        if condition_id:
+          for url in (
+            f"https://clob.polymarket.com/markets/{condition_id}",
+            f"https://clob.polymarket.com/market/{condition_id}",
+          ):
+            try:
+              market_resp = await client.get(url, timeout=10)
+            except Exception:
+              continue
+            if market_resp.status_code != 200:
+              continue
+            market = market_resp.json()
+            if not isinstance(market, dict):
+              continue
+            tokens = market.get("tokens")
+            if not isinstance(tokens, list):
+              continue
+            tid_lower = tid.lower()
+            for t in tokens:
+              if not isinstance(t, dict):
+                continue
+              token_value = str(t.get("token_id") or t.get("asset_id") or "").strip().lower()
+              if token_value == tid_lower:
+                outcome = _extract_outcome_value(t.get("outcome"))
+                if outcome:
+                  break
+            if outcome:
+              break
   except Exception:
     outcome = None
   if outcome is not None and str(outcome).strip():
     await redis.set(cache_key, str(outcome), ex=86400)
     return str(outcome)
-  await redis.set(cache_key, "__none__", ex=3600)
+  await redis.set(cache_key, "__none__", ex=120)
   return None
 
 
