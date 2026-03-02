@@ -98,7 +98,7 @@ export class BlogContentGenerator {
       content: content,
       tags: this.generateTags(marketData),
       readTime: this.calculateReadTime(content),
-      author: "Whale Team"
+      author: "Sight Whale Research"
     };
   }
 
@@ -128,8 +128,11 @@ export class BlogContentGenerator {
   private async buildContent(marketData: MarketData, template: TemplateSelection, date: Date): Promise<string> {
     const sections = [
       this.buildIntro(marketData, template.intro, date),
+      this.buildDataSnapshot(marketData, date),
       this.buildMarketAnalysis(marketData, template.analysis),
       this.buildWhaleSignals(marketData, template.whale),
+      this.buildCatalysts(marketData),
+      this.buildSources(marketData),
       this.buildConclusion(marketData, template.conclusion)
     ];
     
@@ -181,6 +184,42 @@ export class BlogContentGenerator {
     return analysis;
   }
 
+  private buildDataSnapshot(marketData: MarketData, date: Date): string {
+    const probability = (marketData.probability * 100).toFixed(1);
+    const whaleScore = Math.max(0, Math.min(100, marketData.whaleScore * 100)).toFixed(0);
+    const volume = Math.max(0, marketData.volume || 0);
+    const volumeLabel = volume >= 1_000_000 ? `$${(volume / 1_000_000).toFixed(2)}M` : volume >= 1_000 ? `$${(volume / 1_000).toFixed(0)}K` : `$${volume.toFixed(0)}`;
+    const trades24h = marketData.recentTrades.length;
+    const top = marketData.topHolders.length > 0 ? marketData.topHolders[0] : null;
+    const searchUrl = `https://polymarket.com/search?q=${encodeURIComponent(marketData.title)}`;
+    const asOf = date.toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+
+    const lines = [
+      "## Data Snapshot",
+      `As of ${asOf}, here are the key numbers we used for this read:`,
+      "",
+      `- Implied probability: ${probability}%`,
+      `- Total volume: ${volumeLabel}`,
+      `- Whale signal score: ${whaleScore}/100`,
+      `- Whale trades analyzed (24h): ${trades24h}`,
+    ];
+
+    if (top && Number.isFinite(top.position)) {
+      const pos = Math.max(0, top.position);
+      const posLabel = pos >= 1_000_000 ? `$${(pos / 1_000_000).toFixed(2)}M` : pos >= 1_000 ? `$${(pos / 1_000).toFixed(0)}K` : `$${pos.toFixed(0)}`;
+      lines.push(`- Largest visible holder: ${posLabel} position`);
+    }
+
+    lines.push(
+      "",
+      "Quick link:",
+      "",
+      `- Market search on Polymarket: ${searchUrl}`,
+    );
+
+    return lines.join('\n');
+  }
+
   private buildWhaleSignals(marketData: MarketData, whaleTemplate: string): string {
     let whaleSection = whaleTemplate;
     
@@ -226,6 +265,55 @@ export class BlogContentGenerator {
     }
     
     return whaleSection;
+  }
+
+  private buildCatalysts(marketData: MarketData): string {
+    const title = marketData.title.toLowerCase();
+    const bullets: string[] = [];
+    if (title.includes('election') || title.includes('primary') || title.includes('nominee') || title.includes('president') || title.includes('trump') || title.includes('biden')) {
+      bullets.push(
+        "Polling shifts (state or national) that change the base-rate narrative",
+        "A major debate moment or news cycle that re-prices near-term odds",
+        "Legal/ballot access developments that change the feasible outcome set",
+        "A sudden liquidity wave (large buys/sells) that moves the implied probability",
+      );
+    } else if (title.includes('world cup') || title.includes('super bowl') || title.includes('nba') || title.includes('nfl') || title.includes('mlb') || title.includes('uefa') || title.includes('fifa') || title.includes('sports')) {
+      bullets.push(
+        "Lineup/injury news that changes the true win probability",
+        "Schedule/context updates (rest days, travel, weather) that impact outcomes",
+        "A sharp move in related markets that triggers cross-market arbitrage",
+        "Large position rebalancing near key match times",
+      );
+    } else if (title.includes('bitcoin') || title.includes('crypto') || title.includes('solana') || title.includes('eth') || title.includes('interest rate') || title.includes('cpi') || title.includes('fed')) {
+      bullets.push(
+        "Macro prints (CPI, jobs) that shift risk appetite and volatility regimes",
+        "Regulatory headlines or exchange/liquidity events that move price expectations",
+        "A breakout or liquidation cascade that forces flows in both directions",
+        "Whale accumulation/distribution around key technical levels",
+      );
+    } else {
+      bullets.push(
+        "A single high-credibility information release that changes the base case",
+        "Liquidity shocks (big orders) that temporarily distort price discovery",
+        "Narrative turning points that flip positioning and momentum",
+      );
+    }
+
+    return [
+      "## What would change the odds?",
+      "If you're tracking this market, these are the typical catalysts that move pricing fast:",
+      "",
+      ...bullets.map((b) => `- ${b}`),
+    ].join('\n');
+  }
+
+  private buildSources(marketData: MarketData): string {
+    const searchUrl = `https://polymarket.com/search?q=${encodeURIComponent(marketData.title)}`;
+    return [
+      "## Sources & methodology",
+      "- Polymarket market data (prices/volume): " + searchUrl,
+      "- Whale trade signals: derived from on-site trade flow and wallet histories tracked by Sight Whale",
+    ].join('\n');
   }
 
   private buildConclusion(marketData: MarketData, conclusionTemplate: string): string {

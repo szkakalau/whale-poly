@@ -4,13 +4,23 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { getPostBySlug } from '@/lib/blog';
+import { getAllFilePosts, getAllPosts, getPostBySlug } from '@/lib/blog';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  let posts = getAllFilePosts();
+  try {
+    posts = await getAllPosts();
+  } catch {
+    posts = getAllFilePosts();
+  }
+  return posts.slice(0, 200).map((post) => ({ slug: post.slug }));
+}
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
@@ -161,7 +171,15 @@ export default async function BlogPostPage({ params }: Props) {
     publisher: {
       "@type": "Organization",
       name: "Sight Whale",
-      url: "https://sightwhale.com"
+      url: "https://www.sightwhale.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://www.sightwhale.com/images/og-image.png"
+      }
+    },
+    isPartOf: {
+      "@type": "Blog",
+      "@id": "https://www.sightwhale.com/blog"
     },
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -170,6 +188,7 @@ export default async function BlogPostPage({ params }: Props) {
     image: [
       "https://www.sightwhale.com/images/whale-alert-biden.svg"
     ],
+    inLanguage: "en-US",
     keywords: safePost.tags?.join(", ")
   };
 
