@@ -86,6 +86,41 @@ async def _resolve_outcome_from_token(redis: Redis, token_id: str) -> str | None
         token_data = data[0] if isinstance(data, list) and data else data
         if isinstance(token_data, dict):
           outcome = _extract_outcome_value(token_data)
+          if not outcome:
+            outcome = _extract_outcome_value(token_data.get("market"))
+      if not outcome:
+        resp = await client.get("https://gamma-api.polymarket.com/markets", params={"clobTokenIds": tid}, timeout=10)
+        if resp.status_code == 200:
+          data = resp.json()
+          market_data = data[0] if isinstance(data, list) and data else data
+          if isinstance(market_data, dict):
+            tokens = market_data.get("clobTokenIds")
+            if isinstance(tokens, str):
+              try:
+                tokens = json.loads(tokens)
+              except Exception:
+                tokens = None
+            tokens_list = [str(t).lower() for t in tokens] if isinstance(tokens, list) else []
+            idx = tokens_list.index(tid.lower()) if tid.lower() in tokens_list else -1
+            outcomes = market_data.get("outcomes") or market_data.get("outcomeNames") or market_data.get("outcome_names")
+            if isinstance(outcomes, str):
+              try:
+                outcomes = json.loads(outcomes)
+              except Exception:
+                outcomes = None
+            if isinstance(outcomes, list) and idx >= 0 and idx < len(outcomes):
+              outcome = _extract_outcome_value(outcomes[idx])
+            if not outcome:
+              token_items = market_data.get("outcomeTokens") or market_data.get("outcome_tokens") or market_data.get("tokens")
+              if isinstance(token_items, list):
+                for item in token_items:
+                  if not isinstance(item, dict):
+                    continue
+                  token_value = str(item.get("tokenId") or item.get("id") or "").lower()
+                  if token_value == tid.lower():
+                    outcome = _extract_outcome_value(item)
+                    if outcome:
+                      break
   except Exception:
     outcome = None
   if outcome is not None and str(outcome).strip():
