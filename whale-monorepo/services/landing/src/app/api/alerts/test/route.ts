@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const url = `${base}/alerts/force?${params.toString()}`;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     const res = await fetch(url, { 
       method: 'POST',

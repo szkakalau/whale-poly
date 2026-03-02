@@ -27,7 +27,7 @@ export async function POST(_: Request, { params }: Params) {
     return NextResponse.json(
       { 
         detail: 'plan_restricted',
-        message: '该功能仅限 Pro 或 Elite 计划用户使用。' 
+        message: 'This feature is available for Pro or Elite plans only.' 
       },
       { status: 403 }
     );
@@ -63,7 +63,7 @@ export async function POST(_: Request, { params }: Params) {
         return NextResponse.json(
           {
             detail: 'subscription_limit_reached',
-            message: `已达到计划的 Smart Collection 订阅上限 (${limit} 个)，请升级更高计划解锁更多。`,
+            message: `You have reached your Smart Collection subscription limit (${limit}). Upgrade to unlock more.`,
           },
           { status: 403 },
         );

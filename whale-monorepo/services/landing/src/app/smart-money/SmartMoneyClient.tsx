@@ -26,22 +26,22 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
   const [timePeriod, setTimePeriod] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('MONTH');
   const [category, setCategory] = useState<'OVERALL' | 'POLITICS' | 'SPORTS' | 'CRYPTO' | 'CULTURE' | 'MENTIONS' | 'WEATHER' | 'ECONOMICS' | 'TECH' | 'FINANCE'>('OVERALL');
   const timeLabels: Record<typeof timePeriod, string> = {
-    DAY: '近 24 小时',
-    WEEK: '近 7 天',
-    MONTH: '近 30 天',
-    ALL: '全量历史',
+    DAY: 'Last 24 hours',
+    WEEK: 'Last 7 days',
+    MONTH: 'Last 30 days',
+    ALL: 'All-time',
   };
   const categoryLabels: Record<typeof category, string> = {
-    OVERALL: '全市场',
-    POLITICS: '政治',
-    SPORTS: '体育',
-    CRYPTO: '加密',
-    CULTURE: '文化',
-    MENTIONS: '热门讨论',
-    WEATHER: '天气',
-    ECONOMICS: '经济',
-    TECH: '科技',
-    FINANCE: '金融',
+    OVERALL: 'All Markets',
+    POLITICS: 'Politics',
+    SPORTS: 'Sports',
+    CRYPTO: 'Crypto',
+    CULTURE: 'Culture',
+    MENTIONS: 'Mentions',
+    WEATHER: 'Weather',
+    ECONOMICS: 'Economics',
+    TECH: 'Tech',
+    FINANCE: 'Finance',
   };
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           setItems(Array.isArray(data.items) ? data.items : []);
         })
         .catch(() => {
-          setError('加载榜单失败，请稍后重试');
+          setError('Failed to load leaderboard. Please try again.');
         });
     });
   }, [orderBy, timePeriod, category]);
@@ -71,8 +71,8 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
         });
         if (res.ok) {
           setUpgradeInfo({
-            title: '已订阅 Smart Money 集合',
-            description: '您将收到该集合中钱包的实时告警。',
+            title: 'Subscribed to Smart Money collection',
+            description: 'You will receive real-time alerts for wallets in this collection.',
             feature: 'Smart Money Alerts',
           });
           setShowUpgrade(true);
@@ -81,16 +81,16 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
         const data = await res.json().catch(() => ({}));
         if (res.status === 403) {
           setUpgradeInfo({
-            title: '升级以订阅',
-            description: data.message || '该功能仅限 Pro 或 Elite 计划用户使用。',
+            title: 'Upgrade to subscribe',
+            description: data.message || 'This feature is available for Pro or Elite plans only.',
             feature: 'Smart Money Collections',
           });
           setShowUpgrade(true);
           return;
         }
-        setError('订阅失败，请稍后重试');
+        setError('Subscription failed. Please try again.');
       } catch {
-        setError('网络错误，请稍后重试');
+        setError('Network error. Please try again.');
       }
     });
   };
@@ -106,7 +106,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
               orderBy === 'PNL' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
-            按 Profit
+            Sort by Profit
           </button>
           <button
             type="button"
@@ -115,7 +115,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
               orderBy === 'VOL' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
-            按 Volume
+            Sort by Volume
           </button>
           <button
             type="button"
@@ -124,7 +124,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
               orderBy === 'ROI' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
-            按 ROI
+            Sort by ROI
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -161,7 +161,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           disabled={pending}
           className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/20 px-4 py-1.5 text-xs font-medium text-violet-50 hover:bg-violet-500/30"
         >
-          订阅集合（High PnL Whales）
+          Subscribe (High PnL Whales)
         </button>
       </div>
 
@@ -174,9 +174,9 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-white mb-2">榜单口径说明</h3>
+            <h3 className="text-sm font-semibold text-white mb-2">Methodology</h3>
             <p className="text-xs text-gray-400">
-              排名基于所选时间范围与分类下的钱包表现汇总，Profit/ROI/Volume 为聚合值。
+              Rankings are aggregated by the selected time period and category. Profit/ROI/Volume are aggregated values.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-gray-300">
@@ -187,7 +187,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
               {categoryLabels[category]}
             </span>
             <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1">
-              排序：{orderBy === 'PNL' ? 'Profit' : orderBy === 'ROI' ? 'ROI' : 'Volume'}
+              Sort: {orderBy === 'PNL' ? 'Profit' : orderBy === 'ROI' ? 'ROI' : 'Volume'}
             </span>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
             {items.length === 0 && (
               <tr>
                 <td className="py-6 px-4 text-center text-gray-400" colSpan={4}>
-                  暂无数据
+                  No data yet
                 </td>
               </tr>
             )}

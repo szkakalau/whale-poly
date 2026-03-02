@@ -21,19 +21,19 @@ export default function TestAlertButton() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setStatus('error');
-        setMessage(typeof data?.detail === 'string' ? data.detail : '发送失败');
+        setMessage(typeof data?.detail === 'string' ? data.detail : 'Send failed');
         return;
       }
       setStatus('success');
-      setMessage('测试告警已发送到 Telegram');
+      setMessage('Test alert sent to Telegram');
     } catch {
       setStatus('error');
-      setMessage('网络错误，请稍后再试');
+      setMessage('Network error. Please try again later.');
     }
   };
 
   const buttonLabel =
-    status === 'loading' ? '发送中…' : status === 'success' ? '已发送' : '发送测试告警';
+    status === 'loading' ? 'Sending…' : status === 'success' ? 'Sent' : 'Send test alert';
 
   return (
     <div className="mt-4 space-y-2">

@@ -17,22 +17,19 @@ export async function POST(req: Request) {
   }
 
   const data = typeof payload === 'object' && payload !== null ? (payload as Record<string, unknown>) : {};
-  
-  // 输入验证
+
   const telegram_activation_code = String(data.telegram_activation_code ?? '').trim();
   const plan = String(data.plan ?? '').trim();
   
   if (!telegram_activation_code || !plan) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
-  
-  // 验证激活码格式 (UUID格式)
+
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(telegram_activation_code)) {
     return NextResponse.json({ detail: 'invalid telegram_activation_code format' }, { status: 400 });
   }
-  
-  // 验证plan格式
+
   const validPlans = ['BASIC', 'PRO', 'ENTERPRISE'];
   if (!validPlans.includes(plan.toUpperCase())) {
     return NextResponse.json({ detail: 'invalid plan' }, { status: 400 });

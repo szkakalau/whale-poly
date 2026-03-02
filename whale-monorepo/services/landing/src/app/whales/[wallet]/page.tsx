@@ -55,6 +55,25 @@ type WhaleProfileResponse = {
   behavior: WhaleBehavior;
 };
 
+type WhaleEngineProfile = {
+  wallet?: string;
+  display_name?: string;
+  total_volume?: number;
+  total_trades?: number;
+  win_rate?: number;
+  realized_pnl?: number;
+  top_markets?: { market_id?: string; market_title?: string | null; volume?: number }[];
+  recent_trades?: {
+    created_at?: string;
+    market_id?: string;
+    market_title?: string | null;
+    side?: string;
+    trade_usd?: number;
+    price?: number;
+    whale_score?: number;
+  }[];
+};
+
 type PageProps = {
   params: Promise<{ wallet: string }>;
 };
@@ -64,6 +83,169 @@ const WHALE_ENGINE_BASE =
 const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://sightwhale.com';
 
 export const revalidate = 0;
+
+function safeNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safeString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfileResponse | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const data = payload as Record<string, unknown>;
+
+  if (data.stats && typeof data.stats === 'object') {
+    const wallet = safeString(data.wallet, walletHint);
+    const display_name = safeString(data.display_name, wallet);
+    const whale_score = safeNumber(data.whale_score, 0);
+    const rank = safeNumber(data.rank, 0);
+
+    const statsRaw = data.stats as Record<string, unknown>;
+    const stats: WhaleStats = {
+      total_volume: safeNumber(statsRaw.total_volume, 0),
+      total_trades: safeNumber(statsRaw.total_trades, 0),
+      win_rate: safeNumber(statsRaw.win_rate, 0),
+      realized_pnl: safeNumber(statsRaw.realized_pnl, 0),
+    };
+
+    const perfRaw =
+      data.performance_30d && typeof data.performance_30d === 'object'
+        ? (data.performance_30d as Record<string, unknown>)
+        : {};
+    const performance_30d: WhalePerformance30d = {
+      pnl: safeNumber(perfRaw.pnl, 0),
+      win_rate: safeNumber(perfRaw.win_rate, 0),
+      volume: safeNumber(perfRaw.volume, 0),
+    };
+
+    const top_markets = Array.isArray(data.top_markets)
+      ? (data.top_markets as unknown[]).map((m) => {
+          const row = m && typeof m === 'object' ? (m as Record<string, unknown>) : {};
+          return {
+            market: safeString(row.market, ''),
+            trades: safeNumber(row.trades, 0),
+            volume: safeNumber(row.volume, 0),
+            pnl: safeNumber(row.pnl, 0),
+          };
+        })
+      : [];
+
+    const recent_trades = Array.isArray(data.recent_trades)
+      ? (data.recent_trades as unknown[]).map((t) => {
+          const row = t && typeof t === 'object' ? (t as Record<string, unknown>) : {};
+          return {
+            time: safeString(row.time, ''),
+            market: safeString(row.market, ''),
+            action: safeString(row.action, ''),
+            side: safeString(row.side, ''),
+            size: safeNumber(row.size, 0),
+            price: safeNumber(row.price, 0),
+            whale_score: safeNumber(row.whale_score, 0),
+          };
+        })
+      : [];
+
+    const behaviorRaw =
+      data.behavior && typeof data.behavior === 'object' ? (data.behavior as Record<string, unknown>) : {};
+    const behavior: WhaleBehavior = {
+      common_action: safeString(behaviorRaw.common_action, 'Trade'),
+      avg_trade_size: safeNumber(behaviorRaw.avg_trade_size, 0),
+      side_bias: safeString(behaviorRaw.side_bias, 'Neutral'),
+    };
+
+    return {
+      wallet,
+      display_name,
+      whale_score,
+      rank,
+      stats,
+      performance_30d,
+      top_markets,
+      recent_trades,
+      behavior,
+    };
+  }
+
+  const raw = data as WhaleEngineProfile;
+  const wallet = safeString(raw.wallet, walletHint);
+  const display_name = safeString(raw.display_name, shortenWallet(wallet));
+  const total_volume = safeNumber(raw.total_volume, 0);
+  const total_trades = safeNumber(raw.total_trades, 0);
+  const win_rate = safeNumber(raw.win_rate, 0);
+  const realized_pnl = safeNumber(raw.realized_pnl, 0);
+
+  const rawRecent = Array.isArray(raw.recent_trades) ? raw.recent_trades : [];
+  const sideCounts = rawRecent.reduce(
+    (acc, t) => {
+      const side = safeString(t?.side, '').toLowerCase();
+      if (side === 'buy') acc.buy += 1;
+      if (side === 'sell') acc.sell += 1;
+      return acc;
+    },
+    { buy: 0, sell: 0 },
+  );
+  const side_bias = sideCounts.buy === sideCounts.sell ? 'Neutral' : sideCounts.buy > sideCounts.sell ? 'Buy' : 'Sell';
+  const avg_trade_size =
+    rawRecent.length > 0 ? rawRecent.reduce((sum, t) => sum + safeNumber(t?.trade_usd, 0), 0) / rawRecent.length : 0;
+
+  const whale_score = rawRecent.length > 0 ? rawRecent.reduce((max, t) => Math.max(max, safeNumber(t?.whale_score, 0)), 0) : 0;
+
+  const stats: WhaleStats = {
+    total_volume,
+    total_trades,
+    win_rate,
+    realized_pnl,
+  };
+
+  const performance_30d: WhalePerformance30d = {
+    pnl: 0,
+    win_rate: 0,
+    volume: 0,
+  };
+
+  const top_markets: WhaleTopMarket[] = Array.isArray(raw.top_markets)
+    ? raw.top_markets.map((m) => {
+        const market = safeString(m?.market_title, '') || safeString(m?.market_id, '');
+        return {
+          market,
+          trades: 0,
+          volume: safeNumber(m?.volume, 0),
+          pnl: 0,
+        };
+      })
+    : [];
+
+  const recent_trades: WhaleRecentTrade[] = rawRecent.map((t) => ({
+    time: safeString(t?.created_at, ''),
+    market: safeString(t?.market_title, '') || safeString(t?.market_id, ''),
+    action: 'Trade',
+    side: safeString(t?.side, 'unknown').toUpperCase(),
+    size: safeNumber(t?.trade_usd, 0),
+    price: safeNumber(t?.price, 0),
+    whale_score: safeNumber(t?.whale_score, 0),
+  }));
+
+  const behavior: WhaleBehavior = {
+    common_action: 'Trade',
+    avg_trade_size: safeNumber(avg_trade_size, 0),
+    side_bias,
+  };
+
+  return {
+    wallet,
+    display_name,
+    whale_score,
+    rank: 0,
+    stats,
+    performance_30d,
+    top_markets,
+    recent_trades,
+    behavior,
+  };
+}
 
 async function fetchWhaleProfile(wallet: string): Promise<WhaleProfileResponse | null> {
   const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
@@ -76,8 +258,8 @@ async function fetchWhaleProfile(wallet: string): Promise<WhaleProfileResponse |
     return null;
   }
 
-  const data = (await res.json()) as WhaleProfileResponse;
-  return data;
+  const payload = await res.json().catch(() => null);
+  return normalizeWhaleProfile(payload, wallet);
 }
 
 function formatUsd(value: number): string {
@@ -218,9 +400,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   const perf30d = aggregateTrades(data.recent_trades, 30);
   const perf90d = aggregateTrades(data.recent_trades, 90);
   const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/whales/${encodeURIComponent(data.wallet)}`;
-  const shareText = `Whale ${data.display_name} · Score ${data.whale_score.toFixed(
-    1,
-  )} · 30D PnL ${formatUsd(data.performance_30d.pnl)}`;
+  const shareText = `Whale ${data.display_name} · Score ${safeNumber(data.whale_score, 0).toFixed(1)} · 30D PnL ${formatUsd(safeNumber(data.performance_30d.pnl, 0))}`;
   const shareX = `https://x.com/intent/tweet?text=${encodeURIComponent(
     shareText,
   )}&url=${encodeURIComponent(shareUrl)}`;
@@ -253,12 +433,12 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                   <span className="w-2 h-2 rounded-full bg-violet-400" />
                   Whale Score
                   <span className="text-lg font-semibold text-white">
-                    {data.whale_score.toFixed(1)}
+                    {safeNumber(data.whale_score, 0).toFixed(1)}
                   </span>
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/50 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-200">
                   Rank
-                  <span className="text-sm font-semibold text-white">#{data.rank}</span>
+                <span className="text-sm font-semibold text-white">#{safeNumber(data.rank, 0)}</span>
                 </span>
               </div>
             </div>
@@ -297,21 +477,21 @@ export default async function WhaleProfilePage({ params }: PageProps) {
 
         <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">最近交易</div>
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Latest Trade</div>
             <div className="text-lg font-semibold text-white">
               {formatDateTime(lastTradeTime)}
             </div>
-            <div className="text-xs text-gray-500 mt-2">用于衡量活跃度与新鲜度</div>
+            <div className="text-xs text-gray-500 mt-2">Used to gauge activity and recency</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">样本覆盖</div>
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Sample Coverage</div>
             <div className="text-lg font-semibold text-white">
               {data.stats.total_trades.toLocaleString()} trades
             </div>
-            <div className="text-xs text-gray-500 mt-2">统计鲸鱼级别交易次数</div>
+            <div className="text-xs text-gray-500 mt-2">Count of qualifying whale trades</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">行为特征</div>
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Behavior Signal</div>
             <div className="text-lg font-semibold text-white">{data.behavior.common_action}</div>
             <div className="text-xs text-gray-500 mt-2">
               {data.behavior.side_bias} bias · Avg {formatUsd(data.behavior.avg_trade_size)}
@@ -321,28 +501,28 @@ export default async function WhaleProfilePage({ params }: PageProps) {
 
         <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[
-            { label: '近 7 天', data: perf7d },
-            { label: '近 30 天', data: perf30d },
-            { label: '近 90 天', data: perf90d },
+            { label: 'Last 7 days', data: perf7d },
+            { label: 'Last 30 days', data: perf30d },
+            { label: 'Last 90 days', data: perf90d },
           ].map((item) => (
             <div
               key={item.label}
               className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col gap-3"
             >
-              <div className="text-xs uppercase tracking-wide text-gray-400">{item.label}表现</div>
+              <div className="text-xs uppercase tracking-wide text-gray-400">{item.label} performance</div>
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-2xl font-semibold text-white">
                     {formatUsd(item.data.volume)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">累计成交额</div>
+                  <div className="text-xs text-gray-500 mt-1">Total volume</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-semibold text-white">
                     {item.data.trades.toLocaleString()} trades
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Avg Score {item.data.avgScore.toFixed(1)}
+                    Avg Score {safeNumber(item.data.avgScore, 0).toFixed(1)}
                   </div>
                 </div>
               </div>
@@ -353,9 +533,9 @@ export default async function WhaleProfilePage({ params }: PageProps) {
         <section className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-white mb-2">分享这位鲸鱼</h2>
+              <h2 className="text-sm font-semibold text-white mb-2">Share this whale</h2>
               <p className="text-xs text-gray-400">
-                将这张表现摘要转发到社交媒体，吸引更多关注与复访。
+                Share this performance summary to social media.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-xs">
@@ -365,7 +545,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
               >
-                分享到 X
+                Share to X
               </a>
               <a
                 href={shareTelegram}
@@ -373,7 +553,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
               >
-                分享到 Telegram
+                Share to Telegram
               </a>
               <a
                 href={shareUrl}
@@ -381,7 +561,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1 font-medium text-violet-100 hover:bg-violet-500/20"
               >
-                打开分享卡
+                Open share card
               </a>
             </div>
           </div>
@@ -563,7 +743,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                           {formatUsd(t.size)}
                         </td>
                         <td className="py-3 pl-4 align-top text-right font-mono text-xs text-gray-300">
-                          {t.whale_score.toFixed(1)}
+                          {safeNumber(t.whale_score, 0).toFixed(1)}
                         </td>
                       </tr>
                     ))}

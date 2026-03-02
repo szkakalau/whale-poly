@@ -289,25 +289,25 @@ export default async function FollowPage() {
     .slice(0, 5);
   const steps = [
     {
-      title: '关注一个鲸鱼',
-      description: '关注钱包，启用高置信度提醒。',
+      title: 'Follow a whale',
+      description: 'Follow a wallet and enable high-conviction alerts.',
       done: rows.length > 0,
       href: '/smart-money',
-      cta: '去关注',
+      cta: 'Follow',
     },
     {
-      title: '订阅一个集合',
-      description: '订阅 Smart Collection，提升信号密度。',
+      title: 'Subscribe to a collection',
+      description: 'Subscribe to Smart Collections for higher signal density.',
       done: subscriptions.length > 0,
       href: '/smart-collections',
-      cta: '去订阅',
+      cta: 'Subscribe',
     },
     {
-      title: '绑定 Telegram',
-      description: '用 Bot 接收实时提醒。',
+      title: 'Connect Telegram',
+      description: 'Receive real-time alerts via the bot.',
       done: telegramConnected,
       href: TELEGRAM_BOT_URL,
-      cta: '去绑定',
+      cta: 'Connect',
     },
   ];
   const completedSteps = steps.filter((step) => step.done).length;
@@ -369,7 +369,7 @@ export default async function FollowPage() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs uppercase tracking-wide text-gray-500">Smart Money Addresses</p>
             <div className="text-2xl font-semibold text-white mt-2">{rows.length}</div>
-            <div className="text-xs text-gray-500 mt-2">你当前关注的 smart money 地址</div>
+            <div className="text-xs text-gray-500 mt-2">Addresses you are currently following</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs uppercase tracking-wide text-gray-500">Smart Collections</p>
@@ -403,13 +403,13 @@ export default async function FollowPage() {
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-white mb-2">行动清单</h2>
+              <h2 className="text-sm font-semibold text-white mb-2">Action Checklist</h2>
               <p className="text-xs text-gray-400">
-                完成关键动作，解锁完整提醒闭环与复访路径。
+                Complete the key steps to finish your alerts setup.
               </p>
             </div>
             <div className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-gray-300">
-              进度 {completedSteps} / {steps.length}
+              Progress {completedSteps} / {steps.length}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -428,7 +428,7 @@ export default async function FollowPage() {
                           : 'border-white/15 bg-white/5 text-gray-400'
                       }`}
                     >
-                      {step.done ? '已完成' : '未完成'}
+                      {step.done ? 'Completed' : 'Pending'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">{step.description}</p>
@@ -558,14 +558,14 @@ export default async function FollowPage() {
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white">提醒复盘</h2>
+            <h2 className="text-sm font-semibold text-white">Alert Review</h2>
             <span className="text-xs text-gray-500">
-              {alertEvents.length > 0 ? '来自已发送提醒记录' : '基于最新鲸鱼与集合动态'}
+              {alertEvents.length > 0 ? 'From delivered alerts' : 'From latest whale and collection activity'}
             </span>
           </div>
           {activityItems.length === 0 ? (
             <div className="text-sm text-gray-400">
-              暂无可复盘的提醒记录，关注鲸鱼或订阅集合后会显示最新动态。
+              No alert history yet. Follow a whale or subscribe to a collection to see activity here.
             </div>
           ) : (
             <div className="space-y-3">

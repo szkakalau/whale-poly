@@ -23,10 +23,10 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
   function mapError(detail?: string): string {
     const code = String(detail || '').toLowerCase();
     if (code === 'plan_restricted') {
-      return 'Free 计划无法关注鲸鱼，请升级 Pro 或 Elite 计划。';
+      return 'Free plan cannot follow whales. Upgrade to Pro or Elite.';
     }
     if (code === 'follow_limit_reached') {
-      return '已达到计划的关注上限，请升级更高计划解锁更多。';
+      return 'You have reached the follow limit for your plan. Upgrade to unlock more.';
     }
     if (!code || code === 'validation_error') {
       return 'Unable to save settings. Please double-check the fields and try again.';

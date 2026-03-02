@@ -35,7 +35,6 @@ type TemplateSelection = {
   conclusion: string;
 };
 
-// 引人入胜的开头模板
 const INTRO_TEMPLATES = [
   "While most traders were focused on [MARKET_EVENT], a different story was unfolding in the order books...",
   "The numbers don't lie, but they don't always tell the whole story either. Here's what the smart money is actually doing...",
@@ -44,7 +43,6 @@ const INTRO_TEMPLATES = [
   "Everyone has an opinion. Only a few have the capital to back it up. Here's what they're betting on..."
 ];
 
-// 市场分析模板
 const ANALYSIS_TEMPLATES = {
   highProbability: [
     "With [PROBABILITY]% odds, the market is signaling strong confidence. But confidence can be fragile...",
@@ -63,7 +61,6 @@ const ANALYSIS_TEMPLATES = {
   ]
 };
 
-// 鲸鱼信号分析模板
 const WHALE_TEMPLATES = {
   largeBuy: [
     "When six-figure buys hit the order book, people notice. But size isn't everything - timing matters more...",
@@ -82,7 +79,6 @@ const WHALE_TEMPLATES = {
   ]
 };
 
-// 结论模板
 const CONCLUSION_TEMPLATES = [
   "The market will do what the market will do. But now you know what the smart money is thinking...",
   "Prices change, but capital flows leave lasting impressions. Watch where the money goes, not where the headlines point...",
@@ -92,10 +88,6 @@ const CONCLUSION_TEMPLATES = [
 ];
 
 export class BlogContentGenerator {
-  
-  /**
-   * 生成高质量的博客文章内容
-   */
   async generateBlogPost(marketData: MarketData, date: Date = new Date()): Promise<BlogPostData> {
     const template = this.selectTemplate(marketData);
     const content = await this.buildContent(marketData, template, date);
@@ -110,9 +102,6 @@ export class BlogContentGenerator {
     };
   }
 
-  /**
-   * 根据市场数据选择合适的模板
-   */
   private selectTemplate(marketData: MarketData): TemplateSelection {
     const probability = marketData.probability;
     const whaleScore = marketData.whaleScore;
@@ -136,9 +125,6 @@ export class BlogContentGenerator {
     };
   }
 
-  /**
-   * 构建完整的文章内容
-   */
   private async buildContent(marketData: MarketData, template: TemplateSelection, date: Date): Promise<string> {
     const sections = [
       this.buildIntro(marketData, template.intro, date),
@@ -150,9 +136,6 @@ export class BlogContentGenerator {
     return sections.join('\n\n');
   }
 
-  /**
-   * 构建引人入胜的开头
-   */
   private buildIntro(marketData: MarketData, introTemplate: string, date: Date): string {
     const marketEvent = this.getMarketEvent(marketData);
     const formattedDate = date.toLocaleDateString('en-US', { 
@@ -165,10 +148,8 @@ export class BlogContentGenerator {
       .replace('[MARKET_EVENT]', marketEvent)
       .replace('[DATE]', formattedDate);
     
-    // 添加具体的市场背景
     intro += `\n\n${marketData.title} has been making waves in the prediction market community, with ${(marketData.probability * 100).toFixed(1)}% odds reflecting the current consensus. But as any experienced trader knows, consensus and reality don't always align.`;
     
-    // 添加引人入胜的统计数据
     if (marketData.volume > 100000) {
       intro += ` Over $${(marketData.volume / 1000).toFixed(0)}k in volume has flowed through this market in recent weeks, suggesting this isn't just casual speculation.`;
     }
@@ -176,9 +157,6 @@ export class BlogContentGenerator {
     return intro;
   }
 
-  /**
-   * 构建市场分析部分
-   */
   private buildMarketAnalysis(marketData: MarketData, analysisTemplate: string): string {
     const probability = (marketData.probability * 100).toFixed(1);
     const bullish = marketData.probability > 0.5 ? 'bullish' : 'bearish';
@@ -187,15 +165,12 @@ export class BlogContentGenerator {
       .replace('[PROBABILITY]', probability)
       .replace('[BULLISH/BEARISH]', bullish.toUpperCase());
     
-    // 添加具体的市场动态分析
     analysis += `\n\nThe order book tells an interesting story. With ${probability}% implied probability, we're seeing ${this.getMarketSentiment(marketData.probability)} sentiment dominate the conversation. But the real question isn't what people think - it's what they're willing to bet on.`;
     
-    // 添加交易量分析
     if (marketData.volume > 50000) {
       analysis += ` The volume patterns suggest this isn't just retail speculation. When six-figure positions start moving, institutional capital is usually involved.`;
     }
     
-    // 添加价格行为分析
     if (marketData.recentTrades.length > 0) {
       const avgTradeSize = marketData.recentTrades.reduce((sum, trade) => sum + trade.amount, 0) / marketData.recentTrades.length;
       if (avgTradeSize > 10000) {
@@ -206,9 +181,6 @@ export class BlogContentGenerator {
     return analysis;
   }
 
-  /**
-   * 构建鲸鱼信号分析
-   */
   private buildWhaleSignals(marketData: MarketData, whaleTemplate: string): string {
     let whaleSection = whaleTemplate;
     
@@ -241,7 +213,6 @@ export class BlogContentGenerator {
       }
     }
     
-    // 添加持仓分析
     if (marketData.topHolders.length > 0) {
       const topHolder = marketData.topHolders[0];
       if (topHolder.position > 100000) {
@@ -257,13 +228,9 @@ export class BlogContentGenerator {
     return whaleSection;
   }
 
-  /**
-   * 构建结论
-   */
   private buildConclusion(marketData: MarketData, conclusionTemplate: string): string {
     let conclusion = conclusionTemplate;
     
-    // 添加具体的行动建议
     const probability = marketData.probability;
     const whaleScore = marketData.whaleScore;
     
@@ -275,15 +242,11 @@ export class BlogContentGenerator {
       conclusion += `\n\nThe mixed signals suggest this market is still finding its direction. Sometimes the best trade is no trade at all - until the picture becomes clearer.`;
     }
     
-    // 添加风险提醒
     conclusion += `\n\n*This analysis is for informational purposes only. Prediction markets carry significant risk. Never invest more than you can afford to lose.*`;
     
     return conclusion;
   }
 
-  /**
-   * 生成标题
-   */
   private generateTitle(marketData: MarketData): string {
     const probability = (marketData.probability * 100).toFixed(0);
     const eventName = marketData.title.split(':')[0] || marketData.title;
@@ -299,9 +262,6 @@ export class BlogContentGenerator {
     return this.selectRandom(titleTemplates);
   }
 
-  /**
-   * 生成摘要
-   */
   private generateExcerpt(marketData: MarketData): string {
     const probability = (marketData.probability * 100).toFixed(1);
     const volumeText = marketData.volume > 100000 ? `with over $${(marketData.volume / 1000).toFixed(0)}k in volume` : 'gaining significant attention';
@@ -315,13 +275,9 @@ export class BlogContentGenerator {
     return this.selectRandom(excerptTemplates);
   }
 
-  /**
-   * 生成标签
-   */
   private generateTags(marketData: MarketData): string[] {
     const baseTags = ['Market Analysis', 'Whale Intelligence', 'Polymarket'];
     
-    // 根据市场内容添加特定标签
     const title = marketData.title.toLowerCase();
     if (title.includes('election') || title.includes('trump') || title.includes('biden')) {
       baseTags.push('Politics', 'Election Markets');
@@ -339,28 +295,19 @@ export class BlogContentGenerator {
       baseTags.push('Smart Money');
     }
     
-    return [...new Set(baseTags)]; // 去重
+    return [...new Set(baseTags)];
   }
 
-  /**
-   * 计算阅读时间
-   */
   private calculateReadTime(content: string): string {
     const words = content.split(/\s+/).length;
-    const minutes = Math.ceil(words / 200); // 假设每分钟阅读200字
+    const minutes = Math.ceil(words / 200);
     return `${minutes} min`;
   }
 
-  /**
-   * 选择随机元素
-   */
   private selectRandom<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
   }
 
-  /**
-   * 获取市场事件描述
-   */
   private getMarketEvent(marketData: MarketData): string {
     const title = marketData.title.toLowerCase();
     if (title.includes('election')) return 'the political horse race';
@@ -369,9 +316,6 @@ export class BlogContentGenerator {
     return 'the latest market moves';
   }
 
-  /**
-   * 获取市场情绪
-   */
   private getMarketSentiment(probability: number): string {
     if (probability > 0.7) return 'overwhelmingly bullish';
     if (probability > 0.6) return 'moderately bullish';
@@ -381,5 +325,4 @@ export class BlogContentGenerator {
   }
 }
 
-// 导出实例
 export const blogGenerator = new BlogContentGenerator();

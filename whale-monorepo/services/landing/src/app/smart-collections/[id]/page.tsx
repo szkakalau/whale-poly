@@ -302,34 +302,34 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-sm font-semibold text-white mb-4">信任说明</h2>
+            <h2 className="text-sm font-semibold text-white mb-4">Trust & Methodology</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">数据口径</div>
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Methodology</div>
                 <div className="text-sm text-gray-200">
-                  Profit/ROI/Volume 来自鲸鱼历史交易表现汇总。
+                  Profit/ROI/Volume are aggregated from each whale’s historical performance.
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">最新快照</div>
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Latest Snapshot</div>
                 <div className="text-sm text-gray-200">
                   {detail.summary.snapshot_date
                     ? new Date(detail.summary.snapshot_date).toLocaleDateString()
-                    : '暂无快照'}
+                    : 'No snapshot yet'}
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">入选逻辑</div>
+                <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Selection Logic</div>
                 <div className="text-sm text-gray-200">
-                  以集合规则筛选，展示最近一次快照结果。
+                  Whales are selected by the collection rules and shown from the latest snapshot.
                 </div>
               </div>
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-sm font-semibold text-white mb-4">历史快照</h2>
+            <h2 className="text-sm font-semibold text-white mb-4">Snapshot History</h2>
             {detail.history.length === 0 ? (
-              <div className="text-sm text-gray-400">暂无历史快照记录</div>
+              <div className="text-sm text-gray-400">No snapshot history yet</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-end gap-2 h-24">
@@ -380,9 +380,9 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-white mb-2">分享这份集合</h2>
+              <h2 className="text-sm font-semibold text-white mb-2">Share this collection</h2>
               <p className="text-xs text-gray-400">
-                复制链接或一键分享到社交媒体，让更多人看到这份策略表现。
+                Copy the link or share to social media.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-xs">
@@ -392,7 +392,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
               >
-                分享到 X
+                Share to X
               </a>
               <a
                 href={shareTelegram}
@@ -400,7 +400,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-gray-200 hover:bg-white/10"
               >
-                分享到 Telegram
+                Share to Telegram
               </a>
               <a
                 href={shareUrl}
@@ -408,7 +408,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1 font-medium text-violet-100 hover:bg-violet-500/20"
               >
-                打开分享卡
+                Open share card
               </a>
             </div>
           </div>

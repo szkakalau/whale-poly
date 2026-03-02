@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         detail: 'plan_restricted',
-        message: 'Free 计划无法关注鲸鱼，请升级 Pro 或 Elite 计划。' 
+        message: 'Free plan cannot follow whales. Upgrade to Pro or Elite.' 
       },
       { status: 403 }
     );
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { 
           detail: 'follow_limit_reached',
-          message: `已达到计划的关注上限 (${limit} 个)，请升级更高计划解锁更多。` 
+          message: `You have reached your follow limit (${limit}). Upgrade to unlock more.` 
         },
         { status: 403 }
       );

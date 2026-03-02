@@ -38,7 +38,7 @@ export default async function SmartMoneyPage() {
         <section className="space-y-3">
           <h1 className="text-2xl md:text-3xl font-bold text-white">Smart Money Leaderboard</h1>
           <p className="text-sm text-gray-400 max-w-2xl">
-            从 Polymarket 获取聪明钱榜单（Profit/ROI/Volume），并可一键订阅系统集合以接收实时告警。
+            Pull smart money rankings from Polymarket (Profit/ROI/Volume) and subscribe to system collections for real-time alerts.
           </p>
         </section>
 

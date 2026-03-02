@@ -22,25 +22,25 @@ export default async function Home() {
   }
   const steps = [
     {
-      title: '关注一个鲸鱼',
-      description: '跟随聪明钱钱包，获取高置信度交易提醒。',
+      title: 'Follow a whale',
+      description: 'Track smart money wallets and get high-conviction trade alerts.',
       done: followCount > 0,
       href: '/smart-money',
-      cta: '去关注',
+      cta: 'Follow',
     },
     {
-      title: '订阅一个 Smart Collection',
-      description: '按策略分组订阅，提升信号密度与稳定性。',
+      title: 'Subscribe to a Smart Collection',
+      description: 'Subscribe to strategy bundles for higher signal density and consistency.',
       done: smartCollectionCount > 0,
       href: '/smart-collections',
-      cta: '去订阅',
+      cta: 'Subscribe',
     },
     {
-      title: '绑定 Telegram',
-      description: '用 Bot 接收实时提醒，不错过关键变动。',
+      title: 'Connect Telegram',
+      description: 'Receive real-time alerts via the bot so you never miss key moves.',
       done: telegramConnected,
       href: TELEGRAM_BOT_URL,
-      cta: '去绑定',
+      cta: 'Connect',
     },
   ];
   const completedCount = steps.filter((step) => step.done).length;
@@ -153,10 +153,10 @@ export default async function Home() {
                 Quick Start
               </p>
               <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
-                完成 3 步，开启第一条聪明钱提醒
+                Complete 3 steps to receive your first smart-money alert
               </h2>
               <p className="text-sm text-gray-400 max-w-2xl">
-                关注鲸鱼、订阅集合、绑定 Telegram，形成从发现到触达的最短闭环。
+                Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
@@ -165,7 +165,7 @@ export default async function Home() {
                 {completedCount} / {steps.length}
               </div>
               <div className="text-xs text-gray-500 mt-2">
-                {user ? '已自动记录你的完成情况' : '登录后将自动记录完成情况'}
+                {user ? 'Your progress is tracked automatically.' : 'Sign in to track your progress automatically.'}
               </div>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default async function Home() {
                           : 'border-white/15 bg-white/5 text-gray-400'
                       }`}
                     >
-                      {step.done ? '已完成' : '未完成'}
+                      {step.done ? 'Completed' : 'Pending'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
