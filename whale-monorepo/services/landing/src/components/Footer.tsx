@@ -30,15 +30,27 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Community Column */}
+          {/* Company Column */}
           <div className="space-y-6">
-            <h4 className="text-white font-bold text-sm tracking-widest uppercase">Connect</h4>
-            <div className="flex flex-col gap-4">
+            <h4 className="text-white font-bold text-sm tracking-widest uppercase">Company</h4>
+            <div className="flex flex-col gap-3">
+              <Link href="/about" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                About
+              </Link>
+              <Link href="/methodology" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                Methodology
+              </Link>
+              <Link href="/editorial-policy" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                Editorial Policy
+              </Link>
+              <Link href="/contact" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
+                Contact
+              </Link>
               <a 
                 href={TELEGRAM_BOT_URL} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center gap-3 text-gray-400 hover:text-white transition-all group"
+                className="mt-3 flex items-center gap-3 text-gray-400 hover:text-white transition-all group"
                 aria-label="Join our Telegram Bot for Whale Alerts"
               >
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-violet-500/20 transition-colors">
@@ -55,8 +67,8 @@ export default function Footer() {
             © {new Date().getFullYear()} Sight Whale. Built for the next generation of prediction market traders.
           </div>
           <div className="flex gap-8">
-            <a href="#" className="text-gray-500 hover:text-gray-300 text-xs transition-colors">Privacy Policy</a>
-            <a href="#" className="text-gray-500 hover:text-gray-300 text-xs transition-colors">Terms of Service</a>
+            <Link href="/privacy" className="text-gray-500 hover:text-gray-300 text-xs transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-gray-500 hover:text-gray-300 text-xs transition-colors">Terms</Link>
           </div>
         </div>
       </div>
