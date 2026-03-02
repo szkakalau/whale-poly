@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -808,6 +809,18 @@ async def health():
   if redis_ok is None:
     redis_ok = False
   return {"status": "ok", "redis": "ok" if redis_ok else "unavailable"}
+
+@app.get("/debug/build")
+async def debug_build():
+  keys = [
+    "RENDER_GIT_COMMIT",
+    "RENDER_SERVICE_ID",
+    "RENDER_SERVICE_NAME",
+    "RENDER_EXTERNAL_URL",
+    "RENDER_INSTANCE_ID",
+  ]
+  env = {k: os.getenv(k) for k in keys if os.getenv(k)}
+  return {"service": "telegram-bot", "env": env}
 
 
 @app.post("/alerts/test")
