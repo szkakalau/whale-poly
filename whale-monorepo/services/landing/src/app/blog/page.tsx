@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getAllPosts } from '@/lib/blog';
+import BlogIndexClient from './BlogIndexClient';
 
 export const metadata = {
   title: 'Blog - Polymarket Whale Intelligence',
@@ -67,41 +67,7 @@ export default async function BlogIndexPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {posts.map((post) => (
-            <Link 
-              key={post.slug} 
-              href={`/blog/${post.slug}`}
-              className="group relative flex flex-col bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 hover:border-violet-500/30 transition-all duration-300"
-            >
-              <div className="p-8 flex-1 flex flex-col">
-                <div className="flex items-center gap-3 text-sm text-gray-400 mb-4">
-                  <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
-                  <span>•</span>
-                  <div className="flex gap-2">
-                    {post.tags?.map(tag => (
-                      <span key={tag} className="px-2 py-1 rounded-md bg-white/5 text-xs text-gray-400 border border-white/5">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                
-                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-violet-300 transition-colors">
-                  {post.title}
-                </h2>
-                
-                <p className="text-gray-400 mb-6 flex-1">
-                  {post.excerpt}
-                </p>
-
-                <div className="flex items-center text-sm font-medium text-violet-400 group-hover:translate-x-1 transition-transform">
-                  Read Article →
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <BlogIndexClient posts={posts} />
       </main>
 
       <Footer />
