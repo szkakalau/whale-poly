@@ -227,6 +227,18 @@ function parseActorWalletHint(actor: string): { prefix: string; suffix: string }
   return { prefix: m[1].toLowerCase(), suffix: m[2].toLowerCase() };
 }
 
+function safeUrlHost(value: string): string {
+  try {
+    return new URL(value).host;
+  } catch {
+    return '';
+  }
+}
+
+function isFullWallet(value: string): boolean {
+  return /^0x[a-f0-9]{40}$/.test((value || '').trim().toLowerCase());
+}
+
 async function resolveOutcomeFromDb(params: {
   windowLine: string | null;
   market: string | null;
@@ -645,36 +657,127 @@ export default async function BlogPostPage({ params }: Props) {
                       kvMap.set('Market URL', `https://polymarket.com/search?q=${encodeURIComponent(marketValue)}`);
                     }
 
-                    const orderedKeys = ['Actor', 'Wallet', 'Direction', 'Market', 'Outcome', 'Notional', 'Price', 'Win rate', 'Market ID', 'Market URL', 'Trade ID'];
-                    const displayKv: Array<{ label: string; value: string }> = [];
-                    for (const key of orderedKeys) {
-                      const v = kvMap.get(key);
-                      if (v) displayKv.push({ label: key, value: v });
-                    }
-                    for (const [k, v] of kvMap.entries()) {
-                      if (orderedKeys.includes(k)) continue;
-                      if (v) displayKv.push({ label: k, value: v });
-                    }
+                    const actor = kvMap.get('Actor') || '—';
+                    const wallet = kvMap.get('Wallet') || '';
+                    const direction = (kvMap.get('Direction') || '').toUpperCase();
+                    const market = kvMap.get('Market') || '—';
+                    const outcome = kvMap.get('Outcome') || '—';
+                    const notional = kvMap.get('Notional') || '';
+                    const price = kvMap.get('Price') || '';
+                    const winRate = kvMap.get('Win rate') || '';
+                    const marketUrl = kvMap.get('Market URL') || '';
+                    const tradeId = kvMap.get('Trade ID') || '';
+                    const marketId = kvMap.get('Market ID') || '';
+                    const host = marketUrl ? safeUrlHost(marketUrl) : '';
+                    const isEmptyState = kvMap.size === 0 && rest.length > 0;
+
+                    const directionTone =
+                      direction === 'BUY'
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200'
+                        : direction === 'SELL'
+                        ? 'border-rose-500/50 bg-rose-500/10 text-rose-200'
+                        : 'border-white/15 bg-white/5 text-gray-200';
 
                     return (
                       <div
                         key={section.title}
-                        className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+                        className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-col"
                       >
-                        <p className="text-sm uppercase tracking-[0.2em] text-gray-400">{section.title}</p>
-                        <div className="mt-4 space-y-3 text-sm">
-                          {displayKv.map((item) => (
-                            <div key={`${section.title}-${item.label}`} className="flex items-start justify-between gap-4">
-                              <span className="text-gray-400">{item.label}</span>
-                              <span className="text-right font-semibold text-white">{item.value}</span>
-                            </div>
-                          ))}
-                          {rest.map((line) => (
-                            <p key={`${section.title}-${line}`} className="text-gray-300">
-                              {line}
-                            </p>
-                          ))}
+                        <div className="flex items-start justify-between gap-4">
+                          <p className="text-xs uppercase tracking-[0.22em] text-gray-400">{section.title}</p>
+                          {direction ? (
+                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold tracking-wide ${directionTone}`}>
+                              {direction}
+                            </span>
+                          ) : null}
                         </div>
+
+                        {isEmptyState ? (
+                          <div className="mt-6 flex-1 rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-gray-300">
+                            {rest.join(' ')}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="mt-4">
+                              <div className="text-xs uppercase tracking-wide text-gray-500">Market</div>
+                              {marketUrl ? (
+                                <a
+                                  href={marketUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-2 block text-base font-semibold text-white leading-snug hover:text-violet-200 transition-colors"
+                                >
+                                  <span className="line-clamp-3">{market}</span>
+                                </a>
+                              ) : (
+                                <div className="mt-2 text-base font-semibold text-white leading-snug line-clamp-3">
+                                  {market}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+                              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-gray-200">
+                                Outcome: <span className="ml-1 text-white">{outcome || '—'}</span>
+                              </span>
+                              {winRate ? (
+                                <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-gray-200">
+                                  Win: <span className="ml-1 text-white">{winRate}</span>
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <div className="mt-5 grid grid-cols-2 gap-3">
+                              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                                <div className="text-[11px] uppercase tracking-wide text-gray-500">Notional</div>
+                                <div className="mt-1 text-sm font-semibold text-white">{notional || '—'}</div>
+                              </div>
+                              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                                <div className="text-[11px] uppercase tracking-wide text-gray-500">Price</div>
+                                <div className="mt-1 text-sm font-semibold text-white">{price || '—'}</div>
+                              </div>
+                            </div>
+
+                            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {wallet && isFullWallet(wallet) ? (
+                                  <Link
+                                    href={`/whales/${encodeURIComponent(wallet)}`}
+                                    className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-mono text-violet-200 hover:bg-white/10"
+                                  >
+                                    {wallet.slice(0, 6)}…{wallet.slice(-4)}
+                                  </Link>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-gray-200">
+                                    Actor: <span className="ml-1 font-mono text-white">{actor}</span>
+                                  </span>
+                                )}
+                                {marketId ? (
+                                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-mono text-gray-300">
+                                    {marketId.length > 14 ? `${marketId.slice(0, 6)}…${marketId.slice(-6)}` : marketId}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {marketUrl ? (
+                                <a
+                                  href={marketUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-100 hover:bg-violet-500/15"
+                                >
+                                  {host ? `Open (${host})` : 'Open market'}
+                                </a>
+                              ) : null}
+                            </div>
+
+                            {tradeId ? (
+                              <div className="mt-4 text-[11px] text-gray-500 font-mono break-all">
+                                Trade: {tradeId}
+                              </div>
+                            ) : null}
+                          </>
+                        )}
                       </div>
                     );
                   }),
