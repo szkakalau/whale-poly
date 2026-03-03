@@ -12,7 +12,7 @@ function SubscribeForm() {
   const [tier, setTier] = useState<'free' | 'pro' | 'elite'>('pro');
   const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; actions: string[] } | null>(null);
 
   useEffect(() => {
     const p = (searchParams.get('plan') || '').toLowerCase();
@@ -21,31 +21,61 @@ function SubscribeForm() {
     else setTier('pro');
   }, [searchParams]);
 
-  function mapCheckoutError(detail: unknown, status: number): string {
+  function mapCheckoutError(detail: unknown, status: number): { message: string; actions: string[] } {
     const raw = typeof detail === 'string' ? detail : '';
     const code = raw.toLowerCase();
     if (!code) {
       if (status === 429) {
-        return 'Too many attempts. Please wait a moment before trying again.';
+        return {
+          message: 'Too many attempts. Please wait a moment before trying again.',
+          actions: ['Wait 60 seconds and resubmit.', 'Keep the same activation code from Telegram.']
+        };
       }
-      return 'Checkout failed. Please try again.';
+      return {
+        message: 'Checkout failed. Please try again.',
+        actions: ['Confirm your Telegram activation code is valid.', 'Retry in a moment.']
+      };
     }
     if (code.includes('invalid json') || code === 'invalid_json') {
-      return 'Something went wrong with the request. Please refresh the page and try again.';
+      return {
+        message: 'Something went wrong with the request.',
+        actions: ['Refresh the page and retry.', 'Make sure your activation code is complete.']
+      };
     }
     if (code.includes('telegram_activation_code and plan are required')) {
-      return 'Activation code and plan are required. Please fill both fields and submit again.';
+      return {
+        message: 'Activation code and plan are required.',
+        actions: ['Enter your Telegram activation code.', 'Select a plan and billing period.']
+      };
     }
     if (code.includes('payment api unreachable') || code.includes('payment api returned non-json')) {
-      return 'Payment service is temporarily unavailable. Please try again in a few minutes.';
+      return {
+        message: 'Payment service is temporarily unavailable.',
+        actions: ['Wait a few minutes and try again.', 'If this repeats, contact support.']
+      };
     }
     if (code.includes('activation') && code.includes('code')) {
-      return 'Activation code was not accepted. Double-check the code from the Telegram bot.';
+      return {
+        message: 'Activation code was not accepted.',
+        actions: ['Open @sightwhale_bot and generate a new code.', 'Paste the full code and retry.']
+      };
+    }
+    if (code.includes('invalid plan')) {
+      return {
+        message: 'Selected plan is not available right now.',
+        actions: ['Switch to Pro or Elite and retry.', 'If this looks wrong, contact support.']
+      };
     }
     if (code.includes('payment_api_base_url is required')) {
-      return 'Subscription service is not configured yet. Please try again later.';
+      return {
+        message: 'Subscription service is not configured yet.',
+        actions: ['Try again later.', 'Contact support if you need immediate access.']
+      };
     }
-    return 'Checkout failed. Please try again or contact support if it persists.';
+    return {
+      message: 'Checkout failed.',
+      actions: ['Retry in a minute.', 'Contact support if the issue persists.']
+    };
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -63,12 +93,18 @@ function SubscribeForm() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setError(typeof data.error === 'string' ? data.error : 'Activation failed. Please try again.');
+          setError({
+            message: typeof data.error === 'string' ? data.error : 'Activation failed.',
+            actions: ['Retry in a moment.', 'Contact support if this keeps happening.']
+          });
           return;
         }
-        window.location.href = '/dashboard';
+        window.location.href = '/follow';
       } catch {
-        setError('Network error while activating Free plan. Please try again.');
+        setError({
+          message: 'Network error while activating Free plan.',
+          actions: ['Check your connection and retry.', 'Contact support if the issue persists.']
+        });
       } finally {
         setLoading(false);
       }
@@ -94,14 +130,18 @@ function SubscribeForm() {
       }
       const url = String(data.checkout_url || '');
       if (!url) {
-        setError('Checkout session could not be created. Please try again.');
+        setError({
+          message: 'Checkout session could not be created.',
+          actions: ['Retry in a moment.', 'Contact support if the issue persists.']
+        });
         return;
       }
       window.location.href = url;
     } catch {
-      setError(
-        'Network error while starting checkout. Please check your connection and try again.',
-      );
+      setError({
+        message: 'Network error while starting checkout.',
+        actions: ['Check your connection and retry.', 'Contact support if the issue persists.']
+      });
     } finally {
       setLoading(false);
     }
@@ -149,7 +189,19 @@ function SubscribeForm() {
         </div>
       </div>
 
-      {error ? <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-lg">{error}</div> : null}
+      {error ? (
+        <div className="text-sm text-red-200 bg-red-500/10 border border-red-500/20 p-4 rounded-lg space-y-2">
+          <div className="font-semibold">{error.message}</div>
+          <ul className="list-disc list-inside space-y-1 text-red-300">
+            {error.actions.map((action) => (
+              <li key={action}>{action}</li>
+            ))}
+          </ul>
+          <Link href="/contact" className="text-red-200 underline underline-offset-4">
+            Contact support
+          </Link>
+        </div>
+      ) : null}
 
       <button
         type="submit"
@@ -190,6 +242,47 @@ export default function SubscribePage() {
         <Suspense fallback={<div className="glass rounded-2xl border border-white/10 p-12 text-center text-gray-500">Loading checkout options...</div>}>
           <SubscribeForm />
         </Suspense>
+
+        <section className="mt-12 rounded-2xl border border-white/10 bg-white/5 p-6 space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Plan differences you can verify</h2>
+            <p className="text-xs text-gray-400 mt-2">
+              Limits are enforced in-product and visible in your dashboard after activation.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+              <div className="text-xs uppercase tracking-wide text-gray-500">Free</div>
+              <div className="text-lg font-semibold text-white mt-2">$0</div>
+              <ul className="mt-3 space-y-2 text-xs text-gray-400">
+                <li>3 alerts per day</li>
+                <li>10-minute alert delay</li>
+                <li>No whale follows</li>
+                <li>No smart collections</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-violet-200">Pro</div>
+              <div className="text-lg font-semibold text-white mt-2">$29/mo · $290/yr</div>
+              <ul className="mt-3 space-y-2 text-xs text-gray-300">
+                <li>Unlimited alerts</li>
+                <li>Zero alert delay</li>
+                <li>Follow up to 20 whales</li>
+                <li>Subscribe to 5 smart collections</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-cyan-200">Elite</div>
+              <div className="text-lg font-semibold text-white mt-2">$59/mo · $590/yr</div>
+              <ul className="mt-3 space-y-2 text-xs text-gray-200">
+                <li>Everything in Pro</li>
+                <li>Follow up to 100 whales</li>
+                <li>Subscribe to 20 smart collections</li>
+                <li>Priority updates</li>
+              </ul>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

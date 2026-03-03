@@ -21,7 +21,7 @@ export default function SuccessPage() {
       <main className="mx-auto max-w-2xl px-6 py-32 relative">
         <h1 className="text-4xl font-bold mb-6 text-white">Payment received</h1>
         <p className="text-gray-300 mb-10">
-          Stripe payment completed. Your subscription will be activated automatically after webhook processing.
+          Payment completed. Your subscription will be activated automatically after processing.
         </p>
         <div className="glass rounded-2xl border border-white/10 p-6 space-y-4 text-gray-300">
           <p>
@@ -30,7 +30,7 @@ export default function SuccessPage() {
           <p>
             If it’s not active yet, wait 1–2 minutes and try again.
           </p>
-          <Link href="/" className="btn-primary inline-block mt-2">Back to home</Link>
+          <Link href="/follow" className="btn-primary inline-block mt-2">Go to dashboard</Link>
         </div>
       </main>
       <Footer />

@@ -397,6 +397,26 @@ export default async function BlogPostPage({ params }: Props) {
   const spotlightSignalsCount = spotlight
     ? spotlight.sections.filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer').length
     : 0;
+  let allPosts = getAllFilePosts();
+  if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+    try {
+      allPosts = await getAllPosts();
+    } catch {
+      allPosts = getAllFilePosts();
+    }
+  }
+  const researchPosts = allPosts.filter((p) =>
+    (p.tags || []).some((t) => ['research', 'analysis'].includes(String(t).toLowerCase())),
+  );
+  const normalizedTags = (safePost.tags || []).map((t) => String(t).toLowerCase());
+  const relatedResearch = researchPosts
+    .filter((p) => p.slug !== safePost.slug)
+    .filter((p) =>
+      normalizedTags.length === 0
+        ? true
+        : (p.tags || []).some((t) => normalizedTags.includes(String(t).toLowerCase())),
+    )
+    .slice(0, 3);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -906,6 +926,52 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
         </article>
+
+        {!isDailySpotlight && relatedResearch.length > 0 ? (
+          <section className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Research Series</p>
+                <h3 className="text-lg font-semibold text-white mt-2">Continue the research chain</h3>
+                <p className="text-xs text-gray-400 mt-2">
+                  Follow related research articles or jump to the full pillar library.
+                </p>
+              </div>
+              <Link
+                href="/blog/research"
+                className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-4 py-2 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+              >
+                Open Research Series
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {relatedResearch.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
+                >
+                  <div className="text-xs text-gray-500">
+                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                  <div className="text-sm font-semibold text-white mt-2">{post.title}</div>
+                  <div className="text-xs text-gray-400 mt-2 line-clamp-2">{post.excerpt}</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <div className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+          <h3 className="text-lg font-semibold text-white mb-2">Want the full research library?</h3>
+          <p className="text-xs text-gray-400 mb-4">Explore structured research pillars and internal link paths.</p>
+          <Link
+            href="/blog/research"
+            className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-gray-100 hover:bg-white/10"
+          >
+            Visit Research Series
+          </Link>
+        </div>
 
         {/* Share/CTA Section */}
         <div className="mt-20 pt-10 border-t border-white/10 text-center">

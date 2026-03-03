@@ -100,6 +100,27 @@ export default function UpgradeModal({
             {description}
           </p>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-xs text-gray-300 mb-8">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Pro</div>
+              <ul className="space-y-1">
+                <li>Unlimited alerts</li>
+                <li>20 whales</li>
+                <li>5 smart collections</li>
+                <li>Zero alert delay</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-violet-200 mb-2">Elite</div>
+              <ul className="space-y-1">
+                <li>Everything in Pro</li>
+                <li>100 whales</li>
+                <li>20 smart collections</li>
+                <li>Priority updates</li>
+              </ul>
+            </div>
+          </div>
+
           <div className="grid gap-3">
             <Link 
               href="/subscribe?plan=pro"

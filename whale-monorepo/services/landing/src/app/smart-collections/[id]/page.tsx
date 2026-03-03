@@ -177,7 +177,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
   );
   const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/smart-collections/${encodeURIComponent(
     detail.item.id,
-  )}`;
+  )}/share`;
   const shareText = `Smart Collection ${detail.item.name} · ${detail.summary.active_wallets} wallets · Avg ROI ${(
     detail.summary.avg_roi * 100
   ).toFixed(2)}%`;

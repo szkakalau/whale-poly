@@ -399,7 +399,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   const perf7d = aggregateTrades(data.recent_trades, 7);
   const perf30d = aggregateTrades(data.recent_trades, 30);
   const perf90d = aggregateTrades(data.recent_trades, 90);
-  const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/whales/${encodeURIComponent(data.wallet)}`;
+  const shareUrl = `${SITE_BASE.replace(/\/$/, '')}/whales/${encodeURIComponent(data.wallet)}/share`;
   const shareText = `Whale ${data.display_name} · Score ${safeNumber(data.whale_score, 0).toFixed(1)} · 30D PnL ${formatUsd(safeNumber(data.performance_30d.pnl, 0))}`;
   const shareX = `https://x.com/intent/tweet?text=${encodeURIComponent(
     shareText,

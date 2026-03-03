@@ -97,6 +97,21 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Recommended</p>
+          <h2 className="text-lg font-semibold text-white">Start with Smart Collections</h2>
+          <p className="text-xs text-gray-400 mt-1">
+            Get diversified whale alerts without manually picking individual wallets.
+          </p>
+        </div>
+        <Link
+          href="/smart-collections"
+          className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-4 py-2 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+        >
+          Explore Smart Collections
+        </Link>
+      </div>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button

@@ -19,9 +19,9 @@ export async function POST(req: Request) {
   const data = typeof payload === 'object' && payload !== null ? (payload as Record<string, unknown>) : {};
 
   const telegram_activation_code = String(data.telegram_activation_code ?? '').trim();
-  const plan = String(data.plan ?? '').trim();
+  const rawPlan = String(data.plan ?? '').trim().toLowerCase().replace('-', '_');
   
-  if (!telegram_activation_code || !plan) {
+  if (!telegram_activation_code || !rawPlan) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
 
@@ -30,9 +30,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: 'invalid telegram_activation_code format' }, { status: 400 });
   }
 
-  const validPlans = ['BASIC', 'PRO', 'ENTERPRISE'];
-  if (!validPlans.includes(plan.toUpperCase())) {
-    return NextResponse.json({ detail: 'invalid plan' }, { status: 400 });
+  let plan = rawPlan;
+  if (plan === 'institutional' || plan === 'enterprise') {
+    plan = 'elite';
+  } else if (plan === 'basic') {
+    plan = 'pro';
+  }
+  const validPlans = new Set(['pro', 'elite', 'pro_yearly', 'elite_yearly']);
+  if (!validPlans.has(plan)) {
+    return NextResponse.json({ detail: 'invalid plan', allowed: Array.from(validPlans) }, { status: 400 });
   }
 
   let upstream: Response;

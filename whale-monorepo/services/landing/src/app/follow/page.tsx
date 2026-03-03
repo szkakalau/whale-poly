@@ -274,6 +274,57 @@ function formatDate(value: string | null): string {
   });
 }
 
+function hoursSince(now: Date, value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+  return (now.getTime() - d.getTime()) / (1000 * 60 * 60);
+}
+
+function estimateNextAlertWindow(params: {
+  hasSignalSources: boolean;
+  telegramConnected: boolean;
+  lastAlertAt: string | null;
+  lastActivityAt: string | null;
+  now: Date;
+}): { label: string; detail: string } {
+  const { hasSignalSources, telegramConnected, lastAlertAt, lastActivityAt, now } = params;
+  if (!telegramConnected) {
+    return {
+      label: 'Connect Telegram first',
+      detail: 'Alerts will start once the bot is linked.',
+    };
+  }
+  if (!hasSignalSources) {
+    return {
+      label: 'Choose signal sources',
+      detail: 'Subscribe to a Smart Collection or follow a whale wallet.',
+    };
+  }
+  const lastAlertHours = hoursSince(now, lastAlertAt);
+  if (lastAlertHours !== null) {
+    if (lastAlertHours <= 1) {
+      return { label: 'Next alert likely in 1–6 hours', detail: 'Recent delivery just occurred.' };
+    }
+    if (lastAlertHours <= 6) {
+      return { label: 'Next alert likely in 6–24 hours', detail: 'Signals are flowing regularly.' };
+    }
+    if (lastAlertHours <= 24) {
+      return { label: 'Next alert likely in 24–48 hours', detail: 'Markets are active but not spiky.' };
+    }
+    return { label: 'Next alert likely in 24–72 hours', detail: 'Waiting for a higher conviction move.' };
+  }
+  const lastActivityHours = hoursSince(now, lastActivityAt);
+  if (lastActivityHours !== null && lastActivityHours <= 24) {
+    return { label: 'First alert likely in 1–24 hours', detail: 'Recent whale activity detected.' };
+  }
+  return { label: 'First alert likely in 24–72 hours', detail: 'Awaiting fresh whale activity.' };
+}
+
 export default async function FollowPage() {
   const user = await getCurrentUser();
   const rows = await getFollowRows(user?.id ?? null);
@@ -287,20 +338,22 @@ export default async function FollowPage() {
     .filter((summary) => summary.lastTradeTime)
     .sort((a, b) => new Date(b.lastTradeTime || 0).getTime() - new Date(a.lastTradeTime || 0).getTime())
     .slice(0, 5);
+  const hasSignalSources = rows.length > 0 || subscriptions.length > 0;
   const steps = [
     {
-      title: 'Follow a whale',
-      description: 'Follow a wallet and enable high-conviction alerts.',
-      done: rows.length > 0,
-      href: '/smart-money',
-      cta: 'Follow',
-    },
-    {
       title: 'Subscribe to a collection',
-      description: 'Subscribe to Smart Collections for higher signal density.',
+      description: 'Fastest way to get diversified smart-money alerts.',
       done: subscriptions.length > 0,
       href: '/smart-collections',
       cta: 'Subscribe',
+      badge: 'Recommended',
+    },
+    {
+      title: 'Follow a whale',
+      description: 'Track a specific wallet and customize alert settings.',
+      done: rows.length > 0,
+      href: '/smart-money',
+      cta: 'Follow',
     },
     {
       title: 'Connect Telegram',
@@ -347,6 +400,23 @@ export default async function FollowPage() {
     .filter((item) => item.time)
     .sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime())
     .slice(0, 6);
+  const now = new Date();
+  const lastAlert = alertEvents.length > 0 ? alertEvents[0] : null;
+  const lastOutcomeAlert = alertEvents.find((item) => item.outcome);
+  const lastActivityAt = activityItems.length > 0 ? activityItems[0].time : null;
+  const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const since30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const recentAlerts7d = alertEvents.filter((item) => new Date(item.occurred_at) >= since7d).length;
+  const recentAlerts30d = alertEvents.filter((item) => new Date(item.occurred_at) >= since30d).length;
+  const resolvedAlerts30d = alertEvents.filter((item) => item.outcome && new Date(item.occurred_at) >= since30d).length;
+  const resolvedRate30d = recentAlerts30d > 0 ? Math.round((resolvedAlerts30d / recentAlerts30d) * 100) : null;
+  const eta = estimateNextAlertWindow({
+    hasSignalSources,
+    telegramConnected,
+    lastAlertAt: lastAlert?.occurred_at ?? null,
+    lastActivityAt,
+    now,
+  });
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
@@ -403,6 +473,80 @@ export default async function FollowPage() {
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
+              <h2 className="text-sm font-semibold text-white mb-2">First Alert Readiness</h2>
+              <p className="text-xs text-gray-400">
+                Confirm delivery setup and see when the next alert is likely to arrive.
+              </p>
+            </div>
+            <div className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-gray-300">
+              {eta.label}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Signal Sources</p>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                    hasSignalSources
+                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                      : 'border-white/15 bg-white/5 text-gray-400'
+                  }`}
+                >
+                  {hasSignalSources ? 'Ready' : 'Missing'}
+                </span>
+              </div>
+              <div className="text-2xl font-semibold text-white">{subscriptions.length + rows.length}</div>
+              <div className="text-xs text-gray-500 mt-2">
+                {subscriptions.length} collections · {rows.length} whales
+              </div>
+              {!subscriptions.length && (
+                <div className="mt-3">
+                  <Link
+                    href="/smart-collections"
+                    className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+                  >
+                    Start with Smart Collections
+                  </Link>
+                </div>
+              )}
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Delivery Status</p>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                    telegramConnected
+                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                      : 'border-white/15 bg-white/5 text-gray-400'
+                  }`}
+                >
+                  {telegramConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+              <div className="text-2xl font-semibold text-white">
+                {telegramConnected ? 'Bot linked' : 'Needs connection'}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                {telegramConnected ? 'Alerts will reach your Telegram bot.' : 'Connect the bot to receive alerts.'}
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Estimated Next Alert</p>
+                <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] uppercase tracking-wide text-gray-300">
+                  Forecast
+                </span>
+              </div>
+              <div className="text-base font-semibold text-white">{eta.label}</div>
+              <div className="text-xs text-gray-500 mt-2">{eta.detail}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div>
               <h2 className="text-sm font-semibold text-white mb-2">Action Checklist</h2>
               <p className="text-xs text-gray-400">
                 Complete the key steps to finish your alerts setup.
@@ -420,7 +564,14 @@ export default async function FollowPage() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-white">{step.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-white">{step.title}</h3>
+                      {step.badge && (
+                        <span className="rounded-full border border-violet-500/60 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100">
+                          {step.badge}
+                        </span>
+                      )}
+                    </div>
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
                         step.done
@@ -554,6 +705,42 @@ export default async function FollowPage() {
               ))}
             </div>
           )}
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">Verification Snapshot</h2>
+            <span className="text-xs text-gray-500">Based on delivered alerts</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Last Alert Delivered</p>
+              <div className="text-base font-semibold text-white mt-2">
+                {lastAlert ? formatTime(lastAlert.occurred_at) : 'No alerts yet'}
+              </div>
+              <div className="text-xs text-gray-500 mt-2 line-clamp-2">
+                {lastAlert?.title || 'Follow whales or collections to start receiving alerts.'}
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Last Resolved Alert</p>
+              <div className="text-base font-semibold text-white mt-2">
+                {lastOutcomeAlert ? formatTime(lastOutcomeAlert.occurred_at) : 'No resolved alerts'}
+              </div>
+              <div className="text-xs text-gray-500 mt-2 line-clamp-2">
+                {lastOutcomeAlert?.outcome ? `Outcome ${lastOutcomeAlert.outcome}` : 'Resolved outcomes will appear here.'}
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Recent Performance</p>
+              <div className="text-base font-semibold text-white mt-2">
+                {recentAlerts7d} alerts · 7 days
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                {resolvedRate30d === null ? 'Resolution rate available after more alerts.' : `${resolvedRate30d}% resolved in 30 days`}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">

@@ -39,6 +39,21 @@ export default function BlogIndexClient({ posts }: Props) {
 
   return (
     <div className="space-y-12">
+      <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-white/5 to-cyan-500/10 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Research Series</p>
+          <h2 className="text-lg font-semibold text-white mt-2">Whale Intelligence Library</h2>
+          <p className="text-xs text-gray-400 mt-2">
+            Start with curated research pillars and follow the internal links.
+          </p>
+        </div>
+        <Link
+          href="/blog/research"
+          className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-4 py-2 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+        >
+          Open Research Series
+        </Link>
+      </div>
       <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
