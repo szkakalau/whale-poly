@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 from services.alert_engine.rules import should_alert
 from services.alert_engine.wallet_names import resolve_wallet_name
 from services.trade_ingest.markets import resolve_market_title
+from services.trade_ingest.markets import resolve_market_status
 from shared.config import settings, get_alert_config, parse_duration
 from shared.models import Alert, Market, TradeRaw, WhaleTrade, WhaleTradeHistory
 
@@ -246,6 +247,24 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
 
   now = datetime.now(timezone.utc)
   wallet_name = await resolve_wallet_name(session, wallet)
+  market_status = None
+  try:
+    market_status = (
+      await session.execute(select(Market.status).where(Market.id == raw_token_id))
+    ).scalars().first()
+  except Exception:
+    market_status = None
+  if isinstance(market_status, str) and market_status.lower() not in {"active", "open", "trading"}:
+    logger.info("skip_alert_closed_market market=%s status=%s", raw_token_id, market_status)
+    return False
+  if not market_status:
+    try:
+      resolved_status = await resolve_market_status(session, raw_token_id)
+    except Exception:
+      resolved_status = None
+    if isinstance(resolved_status, str) and resolved_status.lower() not in {"active", "open", "trading"}:
+      logger.info("skip_alert_closed_market market=%s status=%s", raw_token_id, resolved_status)
+      return False
   can_alert = await _can_alert_event(session, redis, raw_token_id, wallet, now, usd)
   logger.info(f"DEBUG: can_alert_event={can_alert}")
   if not can_alert:

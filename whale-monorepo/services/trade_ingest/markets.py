@@ -313,6 +313,30 @@ async def _fetch_market_by_id(client: httpx.AsyncClient, url: str, target_id: st
   return []
 
 
+async def resolve_market_status(session: AsyncSession, target_id: str) -> str | None:
+  raw_target = str(target_id or "").strip()
+  if not raw_target:
+    return None
+  url = settings.polymarket_markets_url or "https://gamma-api.polymarket.com/markets"
+  proxies = settings.https_proxy or None
+  async with httpx.AsyncClient(proxies=proxies) as client:
+    records = await _fetch_market_by_id(client, url, raw_target)
+  if not records:
+    return None
+  for r in records:
+    if not isinstance(r, dict):
+      continue
+    status = str(r.get("status") or "active")
+    title = str(r.get("title") or "")
+    ids = r.get("ids") or set()
+    if title and isinstance(ids, set) and ids:
+      await _upsert_market(session, title, status, ids)
+  first = records[0]
+  if isinstance(first, dict):
+    return str(first.get("status") or "active")
+  return None
+
+
 async def ingest_markets(session: AsyncSession) -> int:
   url = settings.polymarket_markets_url
   if not url:
