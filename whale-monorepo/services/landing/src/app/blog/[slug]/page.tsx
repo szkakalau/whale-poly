@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prisma } from '@prisma/client';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getAllFilePosts, getAllPosts, getPostBySlug } from '@/lib/blog';
@@ -248,6 +249,9 @@ async function resolveOutcomeFromDb(params: {
   notionalText: string | null;
   priceText: string | null;
 }): Promise<{ wallet: string | null; outcome: string | null } | null> {
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    return null;
+  }
   const window = parseBeijingWindow(params.windowLine);
   if (!window) return null;
   const market = (params.market || '').trim();
