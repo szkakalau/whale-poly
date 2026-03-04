@@ -23,6 +23,10 @@ def pytest_ignore_collect(collection_path, config):
   return "/whale-monorepo/scripts/" in p or p.endswith("/whale-monorepo/scripts")
 
 
+def pytest_configure(config):
+  config.addinivalue_line("markers", "asyncio: mark async tests")
+
+
 def pytest_pyfunc_call(pyfuncitem):
   testfunction = pyfuncitem.obj
   if not inspect.iscoroutinefunction(testfunction):
