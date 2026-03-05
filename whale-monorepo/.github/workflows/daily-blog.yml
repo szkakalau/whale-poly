@@ -1,0 +1,52 @@
+name: Daily Blog Automation
+
+on:
+  schedule:
+    # Run every day at 9:00 AM UTC (5:00 PM Beijing Time)
+    - cron: '0 9 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  generate-blog:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        cd whale-monorepo
+        pip install -r requirements.txt
+
+    - name: Generate daily blog post
+      run: |
+        cd whale-monorepo
+        python scripts/blog_automation.py --run
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        # Add other required environment variables
+
+    - name: Commit and push if changes
+      run: |
+        cd whale-monorepo
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Check if there are changes to commit
+        if git diff --quiet --exit-code; then
+          echo "No changes to commit"
+        else
+          git add services/landing/src/content/posts/
+          git commit -m "chore: auto-generated daily blog post [skip ci]"
+          git push origin main
+        fi
