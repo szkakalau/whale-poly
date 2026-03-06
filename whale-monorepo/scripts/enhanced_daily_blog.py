@@ -352,10 +352,8 @@ class EnhancedBlogGenerator:
         tags = self.generate_tags(analysis)
         read_time = self.calculate_read_time(content)
         
-        # 生成slug
-        slug_base = title.lower().replace(' ', '-').replace(':', '').replace('%', '')[:50]
-        date_str = datetime.now().strftime('%Y-%m-%d')
-        slug = f"{date_str}-{slug_base}"
+        # 生成filename
+        filename = self.generate_filename(title)
         
         return BlogPost(
             title=title,
@@ -370,7 +368,7 @@ class EnhancedBlogGenerator:
     
     def save_blog_post(self, post: BlogPost) -> str:
         """Save blog post to file"""
-        filename = f"{post.slug}.md"
+        filename = self.generate_filename(post.title)
         filepath = self.content_dir / filename
         
         # 生成frontmatter
