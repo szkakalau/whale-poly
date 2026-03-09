@@ -80,7 +80,19 @@ type PageProps = {
 
 const WHALE_ENGINE_BASE =
   process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
-const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://sightwhale.com';
+const SITE_BASE = (() => {
+  const fallback = 'https://www.sightwhale.com';
+  const raw = process.env.NEXT_PUBLIC_SITE_URL || fallback;
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'sightwhale.com') {
+      url.hostname = 'www.sightwhale.com';
+    }
+    return url.origin;
+  } catch {
+    return fallback;
+  }
+})();
 
 export const revalidate = 0;
 
@@ -332,7 +344,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: 'website',
-      url: `https://sightwhale.com/whales/${wallet}`,
+      url: `${SITE_BASE}/whales/${wallet}`,
     },
     twitter: {
       card: 'summary_large_image',

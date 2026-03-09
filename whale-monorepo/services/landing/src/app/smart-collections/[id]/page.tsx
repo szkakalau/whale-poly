@@ -11,7 +11,19 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://sightwhale.com';
+const SITE_BASE = (() => {
+  const fallback = 'https://www.sightwhale.com';
+  const raw = process.env.NEXT_PUBLIC_SITE_URL || fallback;
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'sightwhale.com') {
+      url.hostname = 'www.sightwhale.com';
+    }
+    return url.origin;
+  } catch {
+    return fallback;
+  }
+})();
 
 async function loadSmartCollectionDetail(id: string, userId: string | null) {
   const collection = await prisma.smartCollection.findUnique({
