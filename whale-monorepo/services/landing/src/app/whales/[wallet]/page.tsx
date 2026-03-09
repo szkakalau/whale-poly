@@ -510,6 +510,9 @@ export default async function WhaleProfilePage({ params }: PageProps) {
             tone={data.stats.realized_pnl >= 0 ? 'positive' : 'negative'}
           />
         </section>
+        <div className="text-[11px] text-gray-500 mb-10">
+          Win Rate uses closed (settled) trades only. New wallets may show limited history until positions settle.
+        </div>
 
         <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
