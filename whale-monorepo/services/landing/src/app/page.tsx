@@ -3,11 +3,177 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import LiveSignalsFeed, { type LiveSignal } from '@/components/LiveSignalsFeed';
+import { unstable_cache } from 'next/cache';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
+const WHALE_ENGINE_BASE =
+  process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
+
+function safeNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safeString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function shortenWallet(addr: string): string {
+  const v = (addr || '').trim();
+  if (v.length <= 10) return v;
+  return `${v.slice(0, 6)}…${v.slice(-4)}`;
+}
+
+function formatCompactInt(value: number): string {
+  if (!Number.isFinite(value)) return '0';
+  return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+function formatUsdCompact(value: number): string {
+  if (!Number.isFinite(value)) return '$0';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000).toFixed(1)}K`;
+  return `${value < 0 ? '-' : ''}$${abs.toFixed(0)}`;
+}
+
+type HomeStats = {
+  trackedWhales: number;
+  trackedVolumeUsd: number;
+  totalUsers: number;
+  telegramLinkedUsers: number;
+  totalFollows: number;
+  totalSmartSubscriptions: number;
+  alertEvents30d: number;
+};
+
+const loadHomeStats = unstable_cache(
+  async (): Promise<HomeStats> => {
+    const now = Date.now();
+    const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    const [counts, whaleAgg] = await prisma.$transaction([
+      prisma.user.aggregate({
+        _count: { _all: true, telegramId: true },
+      }),
+      prisma.$queryRawUnsafe<
+        { whale_count: unknown; total_volume: unknown }[]
+      >(
+        `
+        SELECT
+          COUNT(*)::bigint AS whale_count,
+          COALESCE(SUM(total_volume)::float, 0) AS total_volume
+        FROM whale_profiles
+        `,
+      ),
+    ]);
+
+    const [follows, smartSubs, alertEvents] = await prisma.$transaction([
+      prisma.whaleFollow.count(),
+      prisma.smartCollectionSubscription.count(),
+      prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } }),
+    ]);
+
+    const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
+    const trackedWhales = Number(BigInt(String(whaleRow.whale_count || 0)));
+    const trackedVolumeUsd = safeNumber(whaleRow.total_volume, 0);
+
+    return {
+      trackedWhales,
+      trackedVolumeUsd,
+      totalUsers: counts._count._all,
+      telegramLinkedUsers: counts._count.telegramId,
+      totalFollows: follows,
+      totalSmartSubscriptions: smartSubs,
+      alertEvents30d: alertEvents,
+    };
+  },
+  ['home-stats'],
+  { revalidate: 60 },
+);
+
+type WhaleEngineTrade = {
+  time?: unknown;
+  created_at?: unknown;
+  market?: unknown;
+  market_title?: unknown;
+  side?: unknown;
+  size?: unknown;
+  trade_usd?: unknown;
+  whale_score?: unknown;
+};
+
+type WhaleEngineProfile = {
+  wallet?: unknown;
+  whale_score?: unknown;
+  recent_trades?: unknown;
+};
+
+const loadLiveSignals = unstable_cache(
+  async (): Promise<LiveSignal[]> => {
+    const wallets = await prisma.$queryRawUnsafe<{ wallet_address: string }[]>(
+      `
+      SELECT wallet_address
+      FROM whale_profiles
+      ORDER BY total_volume DESC NULLS LAST
+      LIMIT 12
+      `,
+    );
+
+    const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
+
+    const results = await Promise.allSettled(
+      wallets.map(async (row) => {
+        const wallet = row.wallet_address;
+        const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
+          cache: 'force-cache',
+          next: { revalidate: 20 },
+        });
+        if (!res.ok) return null;
+        const payload = (await res.json().catch(() => null)) as WhaleEngineProfile | null;
+        if (!payload) return null;
+
+        const recent = Array.isArray(payload.recent_trades) ? (payload.recent_trades as WhaleEngineTrade[]) : [];
+        const last = recent.length > 0 ? recent[0] : null;
+        if (!last) return null;
+
+        const occurredAt = safeString(last.time ?? last.created_at, '');
+        const market = safeString(last.market ?? last.market_title, '');
+        const sideRaw = safeString(last.side, '').toUpperCase();
+        const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
+        const sizeUsd = safeNumber(last.size ?? last.trade_usd, 0);
+        const whaleScore = safeNumber(last.whale_score ?? payload.whale_score, NaN);
+        if (!occurredAt || !market || !Number.isFinite(sizeUsd) || sizeUsd <= 0) return null;
+
+        return {
+          id: `${wallet}-${occurredAt}`,
+          occurredAt,
+          walletMasked: shortenWallet(wallet),
+          market,
+          side,
+          sizeUsd,
+          whaleScore: Number.isFinite(whaleScore) ? whaleScore : undefined,
+          href: `/whales/${encodeURIComponent(wallet)}`,
+        } satisfies LiveSignal;
+      }),
+    );
+
+    const signals = results
+      .flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+      .slice(0, 10);
+
+    return signals;
+  },
+  ['home-live-signals'],
+  { revalidate: 20 },
+);
 
 export default async function Home() {
   const user = await getCurrentUser();
+  const [homeStats, liveSignals] = await Promise.all([loadHomeStats(), loadLiveSignals()]);
   let followCount = 0;
   let smartCollectionCount = 0;
   let telegramConnected = false;
@@ -24,6 +190,7 @@ export default async function Home() {
     {
       title: 'Follow a whale',
       description: 'Track smart money wallets and get high-conviction trade alerts.',
+      valuePoints: ['See full wallet exposure, not single trades', 'Set minimum size and score filters', 'Avoid stale “whale” prints'],
       done: followCount > 0,
       href: '/smart-money',
       cta: 'Follow',
@@ -31,6 +198,7 @@ export default async function Home() {
     {
       title: 'Subscribe to a Smart Collection',
       description: 'Subscribe to strategy bundles for higher signal density and consistency.',
+      valuePoints: ['Diversify across multiple whales', 'Reduce single-wallet risk', 'Higher signal-to-noise'],
       done: smartCollectionCount > 0,
       href: '/smart-collections',
       cta: 'Subscribe',
@@ -38,6 +206,7 @@ export default async function Home() {
     {
       title: 'Connect Telegram',
       description: 'Receive real-time alerts via the bot so you never miss key moves.',
+      valuePoints: ['Instant delivery to your phone', 'Faster than headlines', 'One-tap access to context'],
       done: telegramConnected,
       href: TELEGRAM_BOT_URL,
       cta: 'Connect',
@@ -69,11 +238,6 @@ export default async function Home() {
               "lowPrice": "0",
               "highPrice": "590",
               "priceCurrency": "USD"
-            },
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.9",
-              "ratingCount": "1200"
             }
           })
         }}
@@ -89,7 +253,10 @@ export default async function Home() {
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
               </span>
-              <span className="tracking-[0.05em]">Tracking <span className="font-black text-white px-0.5">$1.4B+</span> in Prediction Market Volume</span>
+              <span className="tracking-[0.05em]">
+                Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
+                across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
+              </span>
               <svg className="w-3 h-3 text-gray-500 group-hover:text-violet-400 transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
           </div>
@@ -98,7 +265,7 @@ export default async function Home() {
             Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
               Whale Score™
               <span className="absolute -inset-x-4 -inset-y-2 blur-[16px] bg-violet-500/10 -z-10"></span>
-            </span>.<br />
+            </span>. <br />
             Frontrun the <span className="text-white">Market</span>.
           </h1>
           
@@ -117,8 +284,8 @@ export default async function Home() {
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7" /></svg>
               </span>
             </a>
-            <Link href="#sample-signals" className="group px-8 py-4 glass border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center gap-3">
-              View Sample Signals
+            <Link href="#live-signals" className="group px-8 py-4 glass border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center gap-3">
+              View Live Signals
               <div className="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:scale-[1.5] transition-all"></div>
             </Link>
           </div>
@@ -146,6 +313,45 @@ export default async function Home() {
           </div>
         </section>
 
+        <section id="live-signals" className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 mb-10">
+            <div>
+              <p className="text-[10px] font-bold text-emerald-400 tracking-[0.35em] uppercase mb-4">
+                Real-Time
+              </p>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+                Recent whale signals, anonymized
+              </h2>
+              <p className="text-sm text-gray-400 max-w-2xl">
+                This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
+                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
+                <div className="text-lg font-black text-white mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
+                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.alertEvents30d)}</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Telegram Linked</div>
+                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.telegramLinkedUsers)}</div>
+              </div>
+            </div>
+          </div>
+
+          <LiveSignalsFeed signals={liveSignals} />
+          <div className="mt-3 text-[11px] text-gray-600">
+            Data refreshes automatically. Sizes shown in USD. Wallets are masked for privacy.
+          </div>
+        </section>
+
         <section className="max-w-6xl mx-auto px-6 mb-24">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
@@ -159,13 +365,28 @@ export default async function Home() {
                 Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
-              <div className="text-2xl font-semibold text-white mt-2">
-                {completedCount} / {steps.length}
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 w-full md:w-auto">
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
+                  <div className="text-2xl font-semibold text-white mt-2">
+                    {completedCount} / {steps.length}
+                  </div>
+                </div>
+                <div className="w-40">
+                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
+                    <div
+                      className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
+                      style={{ width: `${(completedCount / steps.length) * 100}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-2">
+                    {user ? 'Saved to your account.' : 'Not signed in.'}
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-2">
-                {user ? 'Your progress is tracked automatically.' : 'Sign in to track your progress automatically.'}
+              <div className="text-xs text-gray-500 mt-3">
+                {user ? 'Your progress is tracked automatically.' : 'Explore the steps below. Connect Telegram to start receiving alerts.'}
               </div>
             </div>
           </div>
@@ -173,7 +394,7 @@ export default async function Home() {
             {steps.map((step) => (
               <div
                 key={step.title}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col justify-between gap-4"
+                className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -189,6 +410,19 @@ export default async function Home() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+                  <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
+                      <ul className="space-y-1">
+                        {step.valuePoints.map((p) => (
+                          <li key={p} className="flex items-start gap-2">
+                            <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-violet-400" />
+                            <span className="leading-snug">{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
                 {step.href.startsWith('http') ? (
                   <a
@@ -270,6 +504,66 @@ export default async function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div>
+              <p className="text-[10px] font-bold text-violet-400 tracking-[0.35em] uppercase mb-4">
+                Analysis & Research
+              </p>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+                Proof you can click into
+              </h2>
+              <p className="text-sm text-gray-400 max-w-2xl">
+                We publish the framework behind the product so you can verify signals, not just consume them.
+              </p>
+            </div>
+            <Link
+              href="/blog/research"
+              className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-bold text-white hover:bg-white/10"
+            >
+              Browse Research
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                title: 'Signal Half-Life',
+                desc: 'How quickly whale information decays, and when you become exit liquidity.',
+                href: '/blog/signal-half-life-whale-trading-validity',
+                tag: 'Timing',
+              },
+              {
+                title: 'CLOB Microstructure',
+                desc: 'Spot real buying pressure vs fake liquidity walls in the order book.',
+                href: '/blog/clob-microstructure-real-buying-vs-fake-walls',
+                tag: 'Execution',
+              },
+              {
+                title: 'Portfolio Lens',
+                desc: 'Build cross-market hedge baskets instead of single-market bets.',
+                href: '/blog/polymarket-portfolio-hedging-arbitrage-baskets',
+                tag: 'Risk',
+              },
+            ].map((card) => (
+              <Link
+                key={card.href}
+                href={card.href}
+                className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-black tracking-[0.25em] uppercase text-gray-500">{card.tag}</div>
+                  <div className="text-[10px] text-violet-200/80 border border-violet-500/20 bg-violet-500/10 rounded-full px-2 py-0.5">
+                    Read
+                  </div>
+                </div>
+                <div className="mt-4 text-lg font-black text-white tracking-tight">{card.title}</div>
+                <div className="mt-2 text-sm text-gray-400 leading-relaxed">{card.desc}</div>
+              </Link>
+            ))}
           </div>
         </section>
 
@@ -472,9 +766,9 @@ export default async function Home() {
               
               <div className="space-y-5 relative z-10">
                 {[
-                  { label: "Win Rate", value: "72%", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-                  { label: "Avg ROI", value: "+18.4%", color: "text-cyan-400", bg: "bg-cyan-500/10" },
-                  { label: "Total Signals", value: "1,240+", color: "text-indigo-400", bg: "bg-indigo-500/10" }
+                  { label: "Tracked Whales", value: formatCompactInt(homeStats.trackedWhales), color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                  { label: "Tracked Volume", value: formatUsdCompact(homeStats.trackedVolumeUsd), color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                  { label: "Alerts (30D)", value: formatCompactInt(homeStats.alertEvents30d), color: "text-indigo-400", bg: "bg-indigo-500/10" }
                 ].map((stat, i) => (
                   <div key={i} className="flex justify-between items-center">
                     <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
@@ -485,7 +779,9 @@ export default async function Home() {
                   </div>
                 ))}
               </div>
-              <p className="mt-auto text-[10px] text-gray-500 font-medium italic pt-6 border-t border-white/5 relative z-10">Based on last 90 days of tracked signals.</p>
+              <p className="mt-auto text-[10px] text-gray-500 font-medium italic pt-6 border-t border-white/5 relative z-10">
+                Derived from internal tracked data, refreshed automatically.
+              </p>
             </div>
 
             {/* Feature 6: Heatmap (Wide) */}
@@ -557,7 +853,9 @@ export default async function Home() {
               <div className="flex -space-x-3">
                 {[1,2,3,4,5].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-[#020202] bg-gray-800 shadow-xl"></div>)}
               </div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 to-gray-600">Trusted by 2,000+ active traders</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 to-gray-600">
+                Trusted by {formatCompactInt(homeStats.totalUsers)} traders · {formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram
+              </span>
             </div>
           </div>
         </section>
