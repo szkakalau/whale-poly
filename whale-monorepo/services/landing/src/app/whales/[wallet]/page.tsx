@@ -299,6 +299,19 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function formatWinRate(value: number, opts?: { trades?: number; pnl?: number; volume?: number }): string {
+  if (!Number.isFinite(value)) return '—';
+  const trades = opts?.trades;
+  const pnl = opts?.pnl;
+  const volume = opts?.volume;
+  if (value === 0) {
+    if (typeof trades === 'number' && trades === 0) return '—';
+    if (typeof volume === 'number' && volume === 0) return '—';
+    if (typeof pnl === 'number' && pnl > 0) return '—';
+  }
+  return formatPercent(value);
+}
+
 function shortenWallet(addr: string): string {
   const v = (addr || '').trim();
   if (v.length <= 10) return v;
@@ -484,7 +497,10 @@ export default async function WhaleProfilePage({ params }: PageProps) {
           />
           <StatCard
             label="Win Rate"
-            value={formatPercent(data.stats.win_rate)}
+            value={formatWinRate(data.stats.win_rate, {
+              trades: data.stats.total_trades,
+              pnl: data.stats.realized_pnl,
+            })}
             hint="Closed positions"
           />
           <StatCard
@@ -610,7 +626,10 @@ export default async function WhaleProfilePage({ params }: PageProps) {
                     30D Win Rate
                   </div>
                   <div className="text-2xl font-semibold text-white">
-                    {formatPercent(data.performance_30d.win_rate)}
+                    {formatWinRate(data.performance_30d.win_rate, {
+                      volume: data.performance_30d.volume,
+                      pnl: data.performance_30d.pnl,
+                    })}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">Closed trades only</div>
                 </div>

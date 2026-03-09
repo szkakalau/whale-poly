@@ -46,6 +46,17 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function formatWinRate(value: number, opts?: { pnl?: number; volume?: number }): string {
+  if (!Number.isFinite(value)) return '—';
+  const pnl = opts?.pnl;
+  const volume = opts?.volume;
+  if (value === 0) {
+    if (typeof volume === 'number' && volume === 0) return '—';
+    if (typeof pnl === 'number' && pnl > 0) return '—';
+  }
+  return formatPercent(value);
+}
+
 function shortenWallet(addr: string): string {
   const v = (addr || '').trim();
   if (v.length <= 10) return v;
@@ -117,7 +128,7 @@ export default async function OpenGraphImage({ params }: Params) {
         <div style={{ display: 'flex', gap: 24 }}>
           {[
             { label: '30D PnL', value: formatUsd(pnl30d), color: pnl30d >= 0 ? '#34d399' : '#fb7185' },
-            { label: '30D Win Rate', value: formatPercent(win30d), color: '#f8fafc' },
+            { label: '30D Win Rate', value: formatWinRate(win30d, { pnl: pnl30d, volume: vol30d }), color: '#f8fafc' },
             { label: '30D Volume', value: formatUsd(vol30d), color: '#f8fafc' },
           ].map((item) => (
             <div
