@@ -16,6 +16,7 @@ const SITE_BASE = (() => {
   const raw = process.env.NEXT_PUBLIC_SITE_URL || fallback;
   try {
     const url = new URL(raw);
+    url.protocol = 'https:';
     if (url.hostname === 'sightwhale.com') {
       url.hostname = 'www.sightwhale.com';
     }
