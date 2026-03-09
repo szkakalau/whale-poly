@@ -26,12 +26,12 @@ function shortenWallet(addr: string): string {
 }
 
 function formatCompactInt(value: number): string {
-  if (!Number.isFinite(value)) return '0';
+  if (!Number.isFinite(value)) return '—';
   return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
 function formatUsdCompact(value: number): string {
-  if (!Number.isFinite(value)) return '$0';
+  if (!Number.isFinite(value)) return '—';
   const abs = Math.abs(value);
   if (abs >= 1_000_000_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000_000_000).toFixed(1)}B`;
   if (abs >= 1_000_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000_000).toFixed(1)}M`;
@@ -51,44 +51,56 @@ type HomeStats = {
 
 const loadHomeStats = unstable_cache(
   async (): Promise<HomeStats> => {
-    const now = Date.now();
-    const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    try {
+      const now = Date.now();
+      const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-    const [counts, whaleAgg] = await prisma.$transaction([
-      prisma.user.aggregate({
-        _count: { _all: true, telegramId: true },
-      }),
-      prisma.$queryRawUnsafe<
-        { whale_count: unknown; total_volume: unknown }[]
-      >(
-        `
-        SELECT
-          COUNT(*)::bigint AS whale_count,
-          COALESCE(SUM(total_volume)::float, 0) AS total_volume
-        FROM whale_profiles
-        `,
-      ),
-    ]);
+      const [counts, whaleAgg] = await prisma.$transaction([
+        prisma.user.aggregate({
+          _count: { _all: true, telegramId: true },
+        }),
+        prisma.$queryRawUnsafe<
+          { whale_count: unknown; total_volume: unknown }[]
+        >(
+          `
+          SELECT
+            COUNT(*)::bigint AS whale_count,
+            COALESCE(SUM(total_volume)::float, 0) AS total_volume
+          FROM whale_profiles
+          `,
+        ),
+      ]);
 
-    const [follows, smartSubs, alertEvents] = await prisma.$transaction([
-      prisma.whaleFollow.count(),
-      prisma.smartCollectionSubscription.count(),
-      prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } }),
-    ]);
+      const [follows, smartSubs, alertEvents] = await prisma.$transaction([
+        prisma.whaleFollow.count(),
+        prisma.smartCollectionSubscription.count(),
+        prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } }),
+      ]);
 
-    const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
-    const trackedWhales = Number(BigInt(String(whaleRow.whale_count || 0)));
-    const trackedVolumeUsd = safeNumber(whaleRow.total_volume, 0);
+      const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
+      const trackedWhales = Number(BigInt(String(whaleRow.whale_count || 0)));
+      const trackedVolumeUsd = safeNumber(whaleRow.total_volume, 0);
 
-    return {
-      trackedWhales,
-      trackedVolumeUsd,
-      totalUsers: counts._count._all,
-      telegramLinkedUsers: counts._count.telegramId,
-      totalFollows: follows,
-      totalSmartSubscriptions: smartSubs,
-      alertEvents30d: alertEvents,
-    };
+      return {
+        trackedWhales,
+        trackedVolumeUsd,
+        totalUsers: counts._count._all,
+        telegramLinkedUsers: counts._count.telegramId,
+        totalFollows: follows,
+        totalSmartSubscriptions: smartSubs,
+        alertEvents30d: alertEvents,
+      };
+    } catch {
+      return {
+        trackedWhales: Number.NaN,
+        trackedVolumeUsd: Number.NaN,
+        totalUsers: Number.NaN,
+        telegramLinkedUsers: Number.NaN,
+        totalFollows: Number.NaN,
+        totalSmartSubscriptions: Number.NaN,
+        alertEvents30d: Number.NaN,
+      };
+    }
   },
   ['home-stats'],
   { revalidate: 60 },
@@ -113,59 +125,63 @@ type WhaleEngineProfile = {
 
 const loadLiveSignals = unstable_cache(
   async (): Promise<LiveSignal[]> => {
-    const wallets = await prisma.$queryRawUnsafe<{ wallet_address: string }[]>(
-      `
-      SELECT wallet_address
-      FROM whale_profiles
-      ORDER BY total_volume DESC NULLS LAST
-      LIMIT 12
-      `,
-    );
+    try {
+      const wallets = await prisma.$queryRawUnsafe<{ wallet_address: string }[]>(
+        `
+        SELECT wallet_address
+        FROM whale_profiles
+        ORDER BY total_volume DESC NULLS LAST
+        LIMIT 12
+        `,
+      );
 
-    const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
+      const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
 
-    const results = await Promise.allSettled(
-      wallets.map(async (row) => {
-        const wallet = row.wallet_address;
-        const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
-          cache: 'force-cache',
-          next: { revalidate: 20 },
-        });
-        if (!res.ok) return null;
-        const payload = (await res.json().catch(() => null)) as WhaleEngineProfile | null;
-        if (!payload) return null;
+      const results = await Promise.allSettled(
+        wallets.map(async (row) => {
+          const wallet = row.wallet_address;
+          const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
+            cache: 'force-cache',
+            next: { revalidate: 20 },
+          });
+          if (!res.ok) return null;
+          const payload = (await res.json().catch(() => null)) as WhaleEngineProfile | null;
+          if (!payload) return null;
 
-        const recent = Array.isArray(payload.recent_trades) ? (payload.recent_trades as WhaleEngineTrade[]) : [];
-        const last = recent.length > 0 ? recent[0] : null;
-        if (!last) return null;
+          const recent = Array.isArray(payload.recent_trades) ? (payload.recent_trades as WhaleEngineTrade[]) : [];
+          const last = recent.length > 0 ? recent[0] : null;
+          if (!last) return null;
 
-        const occurredAt = safeString(last.time ?? last.created_at, '');
-        const market = safeString(last.market ?? last.market_title, '');
-        const sideRaw = safeString(last.side, '').toUpperCase();
-        const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
-        const sizeUsd = safeNumber(last.size ?? last.trade_usd, 0);
-        const whaleScore = safeNumber(last.whale_score ?? payload.whale_score, NaN);
-        if (!occurredAt || !market || !Number.isFinite(sizeUsd) || sizeUsd <= 0) return null;
+          const occurredAt = safeString(last.time ?? last.created_at, '');
+          const market = safeString(last.market ?? last.market_title, '');
+          const sideRaw = safeString(last.side, '').toUpperCase();
+          const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
+          const sizeUsd = safeNumber(last.size ?? last.trade_usd, 0);
+          const whaleScore = safeNumber(last.whale_score ?? payload.whale_score, NaN);
+          if (!occurredAt || !market || !Number.isFinite(sizeUsd) || sizeUsd <= 0) return null;
 
-        return {
-          id: `${wallet}-${occurredAt}`,
-          occurredAt,
-          walletMasked: shortenWallet(wallet),
-          market,
-          side,
-          sizeUsd,
-          whaleScore: Number.isFinite(whaleScore) ? whaleScore : undefined,
-          href: `/whales/${encodeURIComponent(wallet)}`,
-        } satisfies LiveSignal;
-      }),
-    );
+          return {
+            id: `${wallet}-${occurredAt}`,
+            occurredAt,
+            walletMasked: shortenWallet(wallet),
+            market,
+            side,
+            sizeUsd,
+            whaleScore: Number.isFinite(whaleScore) ? whaleScore : undefined,
+            href: `/whales/${encodeURIComponent(wallet)}`,
+          } satisfies LiveSignal;
+        }),
+      );
 
-    const signals = results
-      .flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
-      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
-      .slice(0, 10);
+      const signals = results
+        .flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
+        .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+        .slice(0, 10);
 
-    return signals;
+      return signals;
+    } catch {
+      return [];
+    }
   },
   ['home-live-signals'],
   { revalidate: 20 },
@@ -254,8 +270,14 @@ export default async function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
               </span>
               <span className="tracking-[0.05em]">
-                Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
-                across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
+                {Number.isFinite(homeStats.trackedVolumeUsd) && Number.isFinite(homeStats.trackedWhales) ? (
+                  <>
+                    Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
+                    across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
+                  </>
+                ) : (
+                  <>Tracking verifiable whale signals in real time</>
+                )}
               </span>
               <svg className="w-3 h-3 text-gray-500 group-hover:text-violet-400 transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
@@ -854,7 +876,13 @@ export default async function Home() {
                 {[1,2,3,4,5].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-[#020202] bg-gray-800 shadow-xl"></div>)}
               </div>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 to-gray-600">
-                Trusted by {formatCompactInt(homeStats.totalUsers)} traders · {formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram
+                {Number.isFinite(homeStats.totalUsers) && Number.isFinite(homeStats.telegramLinkedUsers) ? (
+                  <>
+                    Trusted by {formatCompactInt(homeStats.totalUsers)} traders · {formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram
+                  </>
+                ) : (
+                  <>Trusted by active traders</>
+                )}
               </span>
             </div>
           </div>
