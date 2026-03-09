@@ -44,10 +44,21 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
     FINANCE: 'Finance',
   };
 
+  const tableRows: Item[] = pending
+    ? Array.from({ length: 8 }, (_, idx) => ({
+        wallet: `loading-${idx}`,
+        volume: 0,
+        profit: 0,
+        roi: 0,
+      }))
+    : items;
+
   useEffect(() => {
+    const controller = new AbortController();
     startTransition(() => {
+      setError(null);
       const params = new URLSearchParams({ orderBy, limit: '25', timePeriod, category });
-      fetch(`/api/smart-money/leaderboard?${params.toString()}`, { cache: 'no-store' })
+      fetch(`/api/smart-money/leaderboard?${params.toString()}`, { signal: controller.signal })
         .then(async (res) => {
           if (!res.ok) {
             throw new Error(`failed ${res.status}`);
@@ -56,9 +67,12 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           setItems(Array.isArray(data.items) ? data.items : []);
         })
         .catch(() => {
-          setError('Failed to load leaderboard. Please try again.');
+          if (!controller.signal.aborted) {
+            setError('Failed to load leaderboard. Please try again.');
+          }
         });
     });
+    return () => controller.abort();
   }, [orderBy, timePeriod, category]);
 
   const subscribeSmartCollection = () => {
@@ -181,8 +195,15 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3">
+        <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 flex items-center justify-between gap-3">
           <p className="text-xs text-red-200">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-gray-100 hover:bg-white/10"
+          >
+            Reload
+          </button>
         </div>
       )}
 
@@ -219,19 +240,32 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
             </tr>
           </thead>
           <tbody>
-            {items.map((it) => (
+            {tableRows.map((it) => (
               <tr key={it.wallet} className="border-b border-white/5">
                 <td className="py-2 pl-4 font-mono text-xs">
-                  <Link href={`/whales/${encodeURIComponent(it.wallet)}`} className="text-violet-300 hover:text-violet-200 underline underline-offset-2">
-                    {it.wallet}
-                  </Link>
+                  {pending ? (
+                    <div className="h-4 w-44 rounded bg-white/10" />
+                  ) : (
+                    <Link
+                      href={`/whales/${encodeURIComponent(it.wallet)}`}
+                      className="text-violet-300 hover:text-violet-200 underline underline-offset-2"
+                    >
+                      {it.wallet}
+                    </Link>
+                  )}
                 </td>
-                <td className="py-2 px-4 text-right">{Math.round(it.profit).toLocaleString()}</td>
-                <td className="py-2 px-4 text-right">{(it.roi * 100).toFixed(2)}%</td>
-                <td className="py-2 pr-4 text-right">{Math.round(it.volume).toLocaleString()}</td>
+                <td className="py-2 px-4 text-right">
+                  {pending ? <div className="ml-auto h-4 w-20 rounded bg-white/10" /> : Math.round(it.profit).toLocaleString()}
+                </td>
+                <td className="py-2 px-4 text-right">
+                  {pending ? <div className="ml-auto h-4 w-14 rounded bg-white/10" /> : `${(it.roi * 100).toFixed(2)}%`}
+                </td>
+                <td className="py-2 pr-4 text-right">
+                  {pending ? <div className="ml-auto h-4 w-20 rounded bg-white/10" /> : Math.round(it.volume).toLocaleString()}
+                </td>
               </tr>
             ))}
-            {items.length === 0 && (
+            {!pending && items.length === 0 && (
               <tr>
                 <td className="py-6 px-4 text-center text-gray-400" colSpan={4}>
                   No data yet

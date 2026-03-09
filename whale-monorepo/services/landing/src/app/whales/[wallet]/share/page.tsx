@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 const WHALE_ENGINE_BASE =
   process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
@@ -119,11 +121,10 @@ function normalizeShareData(payload: unknown, walletHint: string): WhaleShareDat
   };
 }
 
-async function fetchShareData(wallet: string): Promise<WhaleShareData | null> {
+async function fetchShareDataUncached(wallet: string): Promise<WhaleShareData | null> {
   const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
   const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
     cache: 'no-store',
-    next: { revalidate: 0 },
   });
   if (!res.ok) {
     return null;
@@ -131,6 +132,12 @@ async function fetchShareData(wallet: string): Promise<WhaleShareData | null> {
   const payload = await res.json().catch(() => null);
   return normalizeShareData(payload, wallet);
 }
+
+const fetchShareDataCached = unstable_cache(fetchShareDataUncached, ['whale-share'], {
+  revalidate: 30,
+});
+
+const fetchShareData = cache((wallet: string) => fetchShareDataCached(wallet));
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { wallet } = await params;

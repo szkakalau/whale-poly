@@ -6,6 +6,8 @@ import FullAccessGating from '@/components/FullAccessGating';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { canAccessFeature } from '@/lib/plans';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 type WhaleStats = {
   total_volume: number;
@@ -260,11 +262,10 @@ function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfi
   };
 }
 
-async function fetchWhaleProfile(wallet: string): Promise<WhaleProfileResponse | null> {
+async function fetchWhaleProfileUncached(wallet: string): Promise<WhaleProfileResponse | null> {
   const base = WHALE_ENGINE_BASE.replace(/\/$/, '');
   const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
     cache: 'no-store',
-    next: { revalidate: 0 },
   });
 
   if (!res.ok) {
@@ -274,6 +275,12 @@ async function fetchWhaleProfile(wallet: string): Promise<WhaleProfileResponse |
   const payload = await res.json().catch(() => null);
   return normalizeWhaleProfile(payload, wallet);
 }
+
+const fetchWhaleProfileCached = unstable_cache(fetchWhaleProfileUncached, ['whale-profile'], {
+  revalidate: 30,
+});
+
+const fetchWhaleProfile = cache((wallet: string) => fetchWhaleProfileCached(wallet));
 
 function formatUsd(value: number): string {
   if (!Number.isFinite(value)) return '$0';

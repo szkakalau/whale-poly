@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 const SITE_BASE = (() => {
   const fallback = 'https://www.sightwhale.com';
@@ -35,7 +37,7 @@ function formatUsd(value: number): string {
   return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
-async function loadShareSummary(id: string) {
+async function loadShareSummaryUncached(id: string) {
   const collection = await prisma.smartCollection.findUnique({
     where: { id },
     include: {
@@ -114,6 +116,12 @@ async function loadShareSummary(id: string) {
     avg_roi: avgRoi,
   };
 }
+
+const loadShareSummaryCached = unstable_cache(loadShareSummaryUncached, ['smart-collection-share'], {
+  revalidate: 60,
+});
+
+const loadShareSummary = cache((id: string) => loadShareSummaryCached(id));
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;

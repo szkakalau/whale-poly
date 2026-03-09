@@ -6,6 +6,8 @@ import SmartCollectionsClient, {
   type SmartCollectionItem,
 } from '../SmartCollectionsClient';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -26,7 +28,7 @@ const SITE_BASE = (() => {
   }
 })();
 
-async function loadSmartCollectionDetail(id: string, userId: string | null) {
+async function loadSmartCollectionBaseUncached(id: string) {
   const collection = await prisma.smartCollection.findUnique({
     where: {
       id,
@@ -127,28 +129,11 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
     .slice(0, 5)
     .map(([date, count]) => ({ snapshot_date: date, whale_count: count }));
 
-  let subscribed = false;
-  if (userId) {
-    const sub = await prisma.smartCollectionSubscription.findUnique({
-      where: {
-        user_smart_collection_unique: {
-          userId,
-          smartCollectionId: collection.id,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-    subscribed = Boolean(sub);
-  }
-
   return {
     item: {
       id: collection.id,
       name: collection.name,
       description: collection.description ?? '',
-      subscribed,
     } as SmartCollectionItem,
     whales: whalesWithStats,
     summary: {
@@ -159,6 +144,41 @@ async function loadSmartCollectionDetail(id: string, userId: string | null) {
       snapshot_date: snapshotDate,
     },
     history,
+  };
+}
+
+const loadSmartCollectionBaseCached = unstable_cache(loadSmartCollectionBaseUncached, ['smart-collection-detail'], {
+  revalidate: 60,
+});
+
+const loadSmartCollectionBase = cache((id: string) => loadSmartCollectionBaseCached(id));
+
+async function loadSmartCollectionDetail(id: string, userId: string | null) {
+  const base = await loadSmartCollectionBase(id);
+  if (!base) return null;
+
+  let subscribed = false;
+  if (userId) {
+    const sub = await prisma.smartCollectionSubscription.findUnique({
+      where: {
+        user_smart_collection_unique: {
+          userId,
+          smartCollectionId: base.item.id,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    subscribed = Boolean(sub);
+  }
+
+  return {
+    ...base,
+    item: {
+      ...base.item,
+      subscribed,
+    } as SmartCollectionItem,
   };
 }
 
