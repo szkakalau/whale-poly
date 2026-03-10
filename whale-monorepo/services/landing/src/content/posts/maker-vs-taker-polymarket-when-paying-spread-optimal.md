@@ -3,7 +3,7 @@ title: "Maker vs Taker on Polymarket: When Paying the Spread Is Actually Optimal
 date: "2026-03-05"
 excerpt: "“Always use limit orders” is bad advice on a fast CLOB. Sometimes crossing the spread is cheaper than waiting. This post builds an execution-cost model that combines spread, depth, fee curves, fill probability, and opportunity cost—then shows how to validate it with Polymarket’s public APIs."
 author: "Whale Team"
-tags: ["Polymarket", "Maker Taker", "Limit Orders", "Market Orders", "Order Book", "Execution"]
+tags: ["Analysis", "Research", "Polymarket", "Maker Taker", "Limit Orders", "Market Orders", "Order Book", "Execution"]
 ---
 
 # Maker vs Taker on Polymarket: When Paying the Spread Is Actually Optimal

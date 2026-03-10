@@ -3,7 +3,7 @@ title: "Execution Alpha on Polymarket: Slippage, Spread, and Why Mid Price Lies"
 date: "2026-03-10"
 excerpt: "Most traders lose money on Polymarket without being wrong. The culprit is execution: spread, depth, and fee curves that turn the midpoint into a comforting fiction. This guide shows how to estimate execution cost from order book snapshots and how to choose maker vs taker in a way you can reproduce."
 author: "Whale Team"
-tags: ["Polymarket", "CLOB", "Market Microstructure", "Slippage", "Bid-Ask Spread", "Execution Cost", "Order Book Depth"]
+tags: ["Analysis", "Research", "Polymarket", "CLOB", "Market Microstructure", "Slippage", "Bid-Ask Spread", "Execution Cost", "Order Book Depth"]
 ---
 
 # Execution Alpha on Polymarket: Slippage, Spread, and Why Mid Price Lies

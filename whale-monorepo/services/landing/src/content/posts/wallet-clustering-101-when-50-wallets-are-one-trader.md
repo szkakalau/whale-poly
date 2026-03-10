@@ -3,7 +3,7 @@ title: "Wallet Clustering 101: When 50 Wallets Are One Trader"
 date: "2026-03-08"
 excerpt: "On Polymarket, performance can be distorted when one operator spreads activity across many wallets. This article lays out practical clustering signals—timing sync, market overlap, side consistency, and funding flows—plus the failure modes that create false positives. It also explains how clustering changes alert quality and win-rate statistics."
 author: "Whale Team"
-tags: ["On-Chain Analytics", "Wallet Clustering", "Sybil Trading", "Polymarket", "Data Quality", "Risk"]
+tags: ["Analysis", "Research", "On-Chain Analytics", "Wallet Clustering", "Sybil Trading", "Polymarket", "Data Quality", "Risk"]
 ---
 
 # Wallet Clustering 101: When 50 Wallets Are One Trader

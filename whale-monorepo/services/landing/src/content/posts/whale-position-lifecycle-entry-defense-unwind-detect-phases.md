@@ -3,7 +3,7 @@ title: "Whale Position Lifecycle: Entry → Defense → Unwind (and How to Detec
 date: "2026-03-09"
 excerpt: "Whale edges don’t decay on a timer—they move through a lifecycle. This guide frames Polymarket trading as a position state machine and shows how to detect Entry, Defense, and Unwind phases using net position changes, trade structure, and closed-position PnL you can verify via Polymarket’s public APIs."
 author: "Whale Team"
-tags: ["Polymarket", "Whale Trading", "Position Lifecycle", "On-Chain Analytics", "Risk Management", "Order Flow"]
+tags: ["Analysis", "Research", "Polymarket", "Whale Trading", "Position Lifecycle", "On-Chain Analytics", "Risk Management", "Order Flow"]
 ---
 
 # Whale Position Lifecycle: Entry → Defense → Unwind (and How to Detect Each Phase)
