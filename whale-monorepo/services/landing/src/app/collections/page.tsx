@@ -10,6 +10,10 @@ export const metadata = {
   title: 'Whale Collections - Sight Whale',
   description:
     'Group multiple whales into collections to track themes, strategies, or portfolios.',
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
     canonical: '/collections',
   },

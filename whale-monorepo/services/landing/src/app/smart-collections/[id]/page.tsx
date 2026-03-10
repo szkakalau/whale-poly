@@ -13,6 +13,18 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
+export const metadata = {
+  title: 'Smart Collection - Sight Whale',
+  description: 'Smart collection details and subscribed whales.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: '/smart-collections',
+  },
+};
+
 const SITE_BASE = (() => {
   const fallback = 'https://www.sightwhale.com';
   const raw = process.env.NEXT_PUBLIC_SITE_URL || fallback;

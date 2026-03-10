@@ -10,6 +10,10 @@ export const metadata = {
   title: 'Smart Collections - Sight Whale',
   description:
     'System-generated groups of whales clustered by strategy, performance, and behavior.',
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
     canonical: '/smart-collections',
   },
@@ -88,4 +92,3 @@ export default async function SmartCollectionsPage() {
     </div>
   );
 }
-

@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 export const metadata: Metadata = {
   title: 'Subscribe - Sight Whale',
   description: 'Subscribe to receive real-time whale intelligence alerts.',
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
     canonical: '/subscribe',
   },

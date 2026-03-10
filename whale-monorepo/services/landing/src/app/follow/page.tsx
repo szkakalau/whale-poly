@@ -8,6 +8,10 @@ import { getCurrentUser } from '@/lib/auth';
 export const metadata = {
   title: 'My Dashboard - Sight Whale',
   description: 'Track followed whales, smart collections, and the latest smart money updates.',
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
     canonical: '/follow',
   },
