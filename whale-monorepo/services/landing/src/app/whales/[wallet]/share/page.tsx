@@ -182,8 +182,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [ogImage],
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
     alternates: {
-      canonical: `/whales/${wallet}/share`,
+      canonical: `/whales/${wallet}`,
     },
   };
 }

@@ -153,8 +153,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [ogImage],
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
     alternates: {
-      canonical: `/smart-collections/${id}/share`,
+      canonical: `/smart-collections/${id}`,
     },
   };
 }
