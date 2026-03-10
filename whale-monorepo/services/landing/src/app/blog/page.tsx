@@ -42,7 +42,8 @@ export const metadata = {
   },
 };
 
-export const revalidate = 3600;
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function BlogIndexPage() {
   const posts = await getAllPosts();

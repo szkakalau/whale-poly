@@ -18,6 +18,9 @@ type Pillar = {
   keywords: string[];
 };
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 const PILLARS: Pillar[] = [
   {
     id: 'signal-timing',
