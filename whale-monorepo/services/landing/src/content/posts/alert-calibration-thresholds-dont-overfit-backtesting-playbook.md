@@ -1,6 +1,6 @@
 ---
 title: "Alert Calibration: Choosing Thresholds That Don’t Overfit (A Backtesting Playbook)"
-date: "2026-03-07"
+date: "2026-03-10"
 excerpt: "If your whale alerts feel noisy, the fix isn’t another heuristic—it’s calibration. This playbook shows how to choose alert thresholds using precision/recall, stratified backtests (by liquidity, market category, and regime), and out-of-sample validation so you don’t tune to yesterday’s tape."
 author: "Whale Team"
 tags: ["Analysis", "Research", "Backtesting", "Alert Thresholds", "Precision Recall", "Overfitting", "Polymarket", "Trading Signals"]
