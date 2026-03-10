@@ -14,3 +14,10 @@ whale.db
 
 # Trae IDE
 .trae/
+
+# Local automation artifacts
+blog_automation.log
+logs/
+venv/
+scripts/last_blog_run.txt
+scripts/auto_blog_daemon.sh
