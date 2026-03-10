@@ -1,0 +1,38 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyMiniAppSessionCookie } from './src/lib/telegramMiniApp';
+
+const SESSION_COOKIE = 'tg_session';
+
+function getSessionSecret(): string {
+  return process.env.TELEGRAM_MINIAPP_SECRET || process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
+}
+
+export async function middleware(req: NextRequest) {
+  const headers = new Headers(req.headers);
+
+  if (headers.get('x-user-id')) {
+    return NextResponse.next({ request: { headers } });
+  }
+
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) {
+    return NextResponse.next({ request: { headers } });
+  }
+
+  const secret = getSessionSecret();
+  if (!secret) {
+    return NextResponse.next({ request: { headers } });
+  }
+
+  const payload = await verifyMiniAppSessionCookie(token, secret);
+  if (!payload) {
+    return NextResponse.next({ request: { headers } });
+  }
+
+  headers.set('x-user-id', payload.uid);
+  return NextResponse.next({ request: { headers } });
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
+};
