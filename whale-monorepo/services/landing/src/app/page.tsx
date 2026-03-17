@@ -58,11 +58,19 @@ const loadHomeStats = unstable_cache(
       const now = Date.now();
       const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-      const [counts, whaleAgg] = await prisma.$transaction([
+      const [counts] = await prisma.$transaction([
         prisma.user.aggregate({
           _count: { _all: true, telegramId: true },
         }),
-        prisma.$queryRawUnsafe<
+        // Keep transaction but don't let whale_profiles failures wipe all stats.
+        // We'll query whale aggregate in a separate try/catch below.
+        prisma.$queryRawUnsafe<{ _noop: 1 }[]>(`SELECT 1 AS _noop`),
+      ]);
+
+      let whale_count = 0;
+      let total_volume = 0;
+      try {
+        const whaleAgg = await prisma.$queryRawUnsafe<
           { whale_count: unknown; total_volume: unknown }[]
         >(
           `
@@ -71,8 +79,15 @@ const loadHomeStats = unstable_cache(
             COALESCE(SUM(total_volume)::float, 0) AS total_volume
           FROM whale_profiles
           `,
-        ),
-      ]);
+        );
+        const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
+        whale_count = Number(BigInt(String(whaleRow.whale_count || 0)));
+        total_volume = safeNumber(whaleRow.total_volume, 0);
+      } catch {
+        // If whale_profiles is missing or schema changed, still return user-based stats.
+        whale_count = 0;
+        total_volume = 0;
+      }
 
       const [follows, smartSubs, alertEvents] = await prisma.$transaction([
         prisma.whaleFollow.count(),
@@ -80,13 +95,9 @@ const loadHomeStats = unstable_cache(
         prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } }),
       ]);
 
-      const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
-      const trackedWhales = Number(BigInt(String(whaleRow.whale_count || 0)));
-      const trackedVolumeUsd = safeNumber(whaleRow.total_volume, 0);
-
       return {
-        trackedWhales,
-        trackedVolumeUsd,
+        trackedWhales: whale_count,
+        trackedVolumeUsd: total_volume,
         totalUsers: counts._count._all,
         telegramLinkedUsers: counts._count.telegramId,
         totalFollows: follows,
