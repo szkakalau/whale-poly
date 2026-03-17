@@ -45,10 +45,19 @@ type WhaleBehavior = {
   side_bias: string;
 };
 
+type WhaleScoreBreakdown = {
+  performance: number;
+  consistency: number;
+  timing: number;
+  risk: number;
+  impact: number;
+} | null;
+
 type WhaleProfileResponse = {
   wallet: string;
   display_name: string;
   whale_score: number;
+  whale_score_breakdown: WhaleScoreBreakdown;
   rank: number;
   stats: WhaleStats;
   performance_30d: WhalePerformance30d;
@@ -60,6 +69,14 @@ type WhaleProfileResponse = {
 type WhaleEngineProfile = {
   wallet?: string;
   display_name?: string;
+  whale_score?: number;
+  whale_score_breakdown?: {
+    performance?: number;
+    consistency?: number;
+    timing?: number;
+    risk?: number;
+    impact?: number;
+  } | null;
   total_volume?: number;
   total_trades?: number;
   win_rate?: number;
@@ -116,6 +133,19 @@ function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfi
     const wallet = safeString(data.wallet, walletHint);
     const display_name = safeString(data.display_name, wallet);
     const whale_score = safeNumber(data.whale_score, 0);
+    const breakdownRaw =
+      data.whale_score_breakdown && typeof data.whale_score_breakdown === 'object'
+        ? (data.whale_score_breakdown as Record<string, unknown>)
+        : null;
+    const whale_score_breakdown: WhaleScoreBreakdown = breakdownRaw
+      ? {
+          performance: safeNumber(breakdownRaw.performance, 0),
+          consistency: safeNumber(breakdownRaw.consistency, 0),
+          timing: safeNumber(breakdownRaw.timing, 0),
+          risk: safeNumber(breakdownRaw.risk, 0),
+          impact: safeNumber(breakdownRaw.impact, 0),
+        }
+      : null;
     const rank = safeNumber(data.rank, 0);
 
     const statsRaw = data.stats as Record<string, unknown>;
@@ -175,6 +205,7 @@ function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfi
       wallet,
       display_name,
       whale_score,
+      whale_score_breakdown,
       rank,
       stats,
       performance_30d,
@@ -206,7 +237,16 @@ function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfi
   const avg_trade_size =
     rawRecent.length > 0 ? rawRecent.reduce((sum, t) => sum + safeNumber(t?.trade_usd, 0), 0) / rawRecent.length : 0;
 
-  const whale_score = rawRecent.length > 0 ? rawRecent.reduce((max, t) => Math.max(max, safeNumber(t?.whale_score, 0)), 0) : 0;
+  const whale_score = safeNumber(raw.whale_score, 0) || (rawRecent.length > 0 ? rawRecent.reduce((max, t) => Math.max(max, safeNumber(t?.whale_score, 0)), 0) : 0);
+  const whale_score_breakdown: WhaleScoreBreakdown = raw.whale_score_breakdown
+    ? {
+        performance: safeNumber(raw.whale_score_breakdown.performance, 0),
+        consistency: safeNumber(raw.whale_score_breakdown.consistency, 0),
+        timing: safeNumber(raw.whale_score_breakdown.timing, 0),
+        risk: safeNumber(raw.whale_score_breakdown.risk, 0),
+        impact: safeNumber(raw.whale_score_breakdown.impact, 0),
+      }
+    : null;
 
   const stats: WhaleStats = {
     total_volume,
@@ -253,6 +293,7 @@ function normalizeWhaleProfile(payload: unknown, walletHint: string): WhaleProfi
     wallet,
     display_name,
     whale_score,
+    whale_score_breakdown,
     rank: 0,
     stats,
     performance_30d,
@@ -482,6 +523,14 @@ export default async function WhaleProfilePage({ params }: PageProps) {
               canFollow={canFollow}
             />
           </div>
+        </section>
+
+        <section className="mb-10">
+          <WhaleScoreBreakdownCard
+            score={safeNumber(data.whale_score, 0)}
+            breakdown={data.whale_score_breakdown}
+            hasFullAccess={hasFullAccess}
+          />
         </section>
 
         <section className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -834,6 +883,139 @@ function StatCard({ label, value, hint, tone = 'default' }: StatCardProps) {
       </div>
       <div className={`text-2xl font-semibold ${toneClasses}`}>{value}</div>
       {hint && <div className="mt-1 text-xs text-gray-500">{hint}</div>}
+    </div>
+  );
+}
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function ScoreBar({
+  label,
+  value,
+  tone,
+  masked,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: 'violet' | 'emerald' | 'cyan' | 'rose' | 'gray';
+  masked?: boolean;
+  hint: string;
+}) {
+  const v = clamp01(value);
+  const fill =
+    tone === 'emerald'
+      ? 'from-emerald-500 to-emerald-300'
+      : tone === 'cyan'
+      ? 'from-cyan-500 to-cyan-300'
+      : tone === 'rose'
+      ? 'from-rose-500 to-rose-300'
+      : tone === 'gray'
+      ? 'from-gray-600 to-gray-400'
+      : 'from-violet-500 to-indigo-300';
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-400">{label}</div>
+          <div className="text-[11px] text-gray-500 mt-1">{hint}</div>
+        </div>
+        <div className="text-sm font-mono text-white">
+          {masked ? 'Pro' : v.toFixed(0)}
+        </div>
+      </div>
+      <div className="mt-3 h-2 w-full rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
+        <div
+          className={`h-full bg-gradient-to-r ${fill} ${masked ? 'opacity-30 blur-[1px]' : ''}`}
+          style={{ width: `${masked ? 65 : v}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function WhaleScoreBreakdownCard({
+  score,
+  breakdown,
+  hasFullAccess,
+}: {
+  score: number;
+  breakdown: WhaleScoreBreakdown;
+  hasFullAccess: boolean;
+}) {
+  const hasBreakdown = Boolean(breakdown);
+  const masked = !hasFullAccess;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-400">Whale Score™ Breakdown</div>
+          <div className="text-[11px] text-gray-500 mt-1">
+            Computed from recent 7/30/90D performance, stability, timing, risk, and market impact.
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-2">
+          <span className="text-xs text-violet-200">Total</span>
+          <span className="text-xl font-semibold text-white tabular-nums">{safeNumber(score, 0).toFixed(0)}</span>
+        </div>
+      </div>
+
+      {!hasBreakdown ? (
+        <div className="text-sm text-gray-400">
+          Breakdown is not available for this wallet yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ScoreBar
+            label="Performance"
+            value={breakdown?.performance ?? 0}
+            tone="emerald"
+            masked={false}
+            hint="Win rate + ROI blended score."
+          />
+          <ScoreBar
+            label="Impact"
+            value={breakdown?.impact ?? 0}
+            tone="cyan"
+            masked={masked}
+            hint="Trade size + market liquidity ratio."
+          />
+          <ScoreBar
+            label="Consistency"
+            value={breakdown?.consistency ?? 0}
+            tone="violet"
+            masked={masked}
+            hint="Lower volatility and steadier PnL."
+          />
+          <ScoreBar
+            label="Timing"
+            value={breakdown?.timing ?? 0}
+            tone="gray"
+            masked={masked}
+            hint="Entry/exit price percentile quality."
+          />
+          <ScoreBar
+            label="Risk"
+            value={breakdown?.risk ?? 0}
+            tone="rose"
+            masked={masked}
+            hint="Drawdown + risk/reward ratio."
+          />
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="text-xs uppercase tracking-wide text-gray-400">Access</div>
+            <div className="mt-2 text-sm text-gray-300 leading-relaxed">
+              {hasFullAccess
+                ? 'You have full access to the breakdown.'
+                : 'Upgrade to Pro or Elite to unlock full breakdown scores and deep analytics.'}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

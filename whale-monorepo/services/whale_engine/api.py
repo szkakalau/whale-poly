@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
-from shared.models import Market, TradeRaw, WalletName, WhaleProfile, WhaleTrade, WhaleScore, WhaleTradeHistory
+from shared.models import Market, TradeRaw, WalletName, WhaleProfile, WhaleTrade, WhaleScore, WhaleTradeHistory, WhaleStats
 
 
 configure_logging(settings.log_level)
@@ -160,6 +160,8 @@ async def whale_profile(wallet: str, session: AsyncSession = Depends(get_session
     return {
       "wallet": wallet,
       "display_name": wallet,
+      "whale_score": 0,
+      "whale_score_breakdown": None,
       "total_volume": 0.0,
       "total_trades": 0,
       "win_rate": 0.0,
@@ -169,6 +171,7 @@ async def whale_profile(wallet: str, session: AsyncSession = Depends(get_session
     }
 
   profile = (await session.execute(select(WhaleProfile).where(WhaleProfile.wallet_address == addr))).scalars().first()
+  stats_row = (await session.execute(select(WhaleStats).where(WhaleStats.wallet_address == addr))).scalars().first()
 
   total_volume = float(profile.total_volume) if profile and profile.total_volume is not None else 0.0
   total_trades = int(profile.total_trades) if profile and profile.total_trades is not None else 0
@@ -332,9 +335,22 @@ async def whale_profile(wallet: str, session: AsyncSession = Depends(get_session
     "volume": float(history_30d["volume"]) if history_30d else 0.0,
   }
 
+  whale_score = int(stats_row.whale_score) if stats_row and stats_row.whale_score is not None else 0
+  whale_score_breakdown = None
+  if stats_row:
+    whale_score_breakdown = {
+      "performance": float(stats_row.performance_score or 0.0),
+      "consistency": float(stats_row.consistency_score or 0.0),
+      "timing": float(stats_row.timing_score or 0.0),
+      "risk": float(stats_row.risk_score or 0.0),
+      "impact": float(stats_row.impact_score or 0.0),
+    }
+
   return {
     "wallet": addr,
     "display_name": display_name,
+    "whale_score": whale_score,
+    "whale_score_breakdown": whale_score_breakdown,
     "total_volume": total_volume,
     "total_trades": total_trades,
     "win_rate": win_rate,
