@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import settings
@@ -64,6 +64,93 @@ async def _fetch_history_agg(session: AsyncSession, wallet: str, since: datetime
 @app.get("/health")
 async def health():
   return {"status": "ok"}
+
+
+@app.get("/diag/score-system")
+async def diag_score_system(session: AsyncSession = Depends(get_session)):
+  """
+  Diagnose which Whale Score system is effectively in use:
+  - New stats-engine system requires whale_stats + whale_trade_history and periodic recompute.
+  - Fallback system computes score on demand from 30D volume + whale_profiles.
+  """
+  try:
+    whale_stats_reg = (await session.execute(text("select to_regclass('public.whale_stats')"))).scalar_one_or_none()
+    whale_hist_reg = (await session.execute(text("select to_regclass('public.whale_trade_history')"))).scalar_one_or_none()
+    has_whale_stats = bool(whale_stats_reg)
+    has_whale_trade_history = bool(whale_hist_reg)
+  except Exception:
+    has_whale_stats = False
+    has_whale_trade_history = False
+
+  whale_stats_max_updated_at = None
+  whale_stats_rows = None
+  if has_whale_stats:
+    try:
+      whale_stats_max_updated_at = (
+        await session.execute(text("select max(updated_at) from whale_stats"))
+      ).scalar_one_or_none()
+      whale_stats_rows = (
+        await session.execute(text("select count(*) from whale_stats"))
+      ).scalar_one_or_none()
+    except Exception:
+      whale_stats_max_updated_at = None
+      whale_stats_rows = None
+
+  whale_hist_max_ts = None
+  whale_hist_rows = None
+  if has_whale_trade_history:
+    try:
+      whale_hist_max_ts = (
+        await session.execute(text("select max(timestamp) from whale_trade_history"))
+      ).scalar_one_or_none()
+      whale_hist_rows = (
+        await session.execute(text("select count(*) from whale_trade_history"))
+      ).scalar_one_or_none()
+    except Exception:
+      whale_hist_max_ts = None
+      whale_hist_rows = None
+
+  now = datetime.now(timezone.utc)
+  stats_recent = False
+  if isinstance(whale_stats_max_updated_at, datetime):
+    dt = whale_stats_max_updated_at
+    if dt.tzinfo is None:
+      dt = dt.replace(tzinfo=timezone.utc)
+    stats_recent = (now - dt).total_seconds() < 3600
+
+  history_recent = False
+  if isinstance(whale_hist_max_ts, datetime):
+    dt = whale_hist_max_ts
+    if dt.tzinfo is None:
+      dt = dt.replace(tzinfo=timezone.utc)
+    history_recent = (now - dt).total_seconds() < 3600
+
+  effective_system = "fallback"
+  if has_whale_stats and has_whale_trade_history and stats_recent:
+    effective_system = "stats_engine"
+  elif has_whale_stats and has_whale_trade_history and whale_stats_rows:
+    # tables exist but may not be recomputing on schedule
+    effective_system = "stats_engine_stale"
+
+  def _iso(dt: object) -> str | None:
+    if isinstance(dt, datetime):
+      if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+      return dt.isoformat()
+    return None
+
+  return {
+    "effective_system": effective_system,
+    "has_whale_stats": has_whale_stats,
+    "whale_stats_rows": int(whale_stats_rows) if whale_stats_rows is not None else None,
+    "whale_stats_max_updated_at": _iso(whale_stats_max_updated_at),
+    "whale_stats_recent_1h": bool(stats_recent),
+    "has_whale_trade_history": has_whale_trade_history,
+    "whale_trade_history_rows": int(whale_hist_rows) if whale_hist_rows is not None else None,
+    "whale_trade_history_max_timestamp": _iso(whale_hist_max_ts),
+    "whale_trade_history_recent_1h": bool(history_recent),
+    "note": "If effective_system is fallback or stats_engine_stale, whale scores may be computed via 30D volume/profile heuristics or using stale whale_stats.",
+  }
 
 
 @app.get("/whales/{wallet}")
