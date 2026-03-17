@@ -220,27 +220,33 @@ export default async function Home() {
     smartCollectionCount = subscriptions;
     telegramConnected = Boolean(user.telegramId);
   }
+
+  const proActivated = Boolean(
+    user &&
+      user.plan === 'PRO' &&
+      (!user.planExpireAt || !(new Date() > user.planExpireAt)),
+  );
   const steps = [
     {
-      title: 'Follow a whale',
-      description: 'Track smart money wallets and get high-conviction trade alerts.',
-      valuePoints: ['See full wallet exposure, not single trades', 'Set minimum size and score filters', 'Avoid stale “whale” prints'],
+      title: 'Follow a whale to unlock alerts',
+      description: 'Get conviction-backed wallet tracking and unlock each signal in full context.',
+      valuePoints: ['Track the wallets that move markets', 'Get conviction-backed trade signals', 'Filter by size and Whale Score'],
       done: followCount > 0,
       href: '/smart-money',
       cta: 'Follow',
     },
     {
-      title: 'Subscribe to a Smart Collection',
-      description: 'Subscribe to strategy bundles for higher signal density and consistency.',
-      valuePoints: ['Diversify across multiple whales', 'Reduce single-wallet risk', 'Higher signal-to-noise'],
-      done: smartCollectionCount > 0,
-      href: '/smart-collections',
-      cta: 'Subscribe',
+      title: 'Upgrade to Pro for Faster Alerts',
+      description: 'Pro unlocks faster, more frequent alert delivery to your Telegram bot right after activation.',
+      valuePoints: ['Receive alerts more frequently with Pro', 'Near-zero alert delay', 'Delivery starts automatically after activation'],
+      done: proActivated,
+      href: '/subscribe?plan=pro',
+      cta: 'Upgrade to Pro',
     },
     {
-      title: 'Connect Telegram',
-      description: 'Receive real-time alerts via the bot so you never miss key moves.',
-      valuePoints: ['Instant delivery to your phone', 'Faster than headlines', 'One-tap access to context'],
+      title: 'Connect Telegram to receive delivery',
+      description: 'Get real-time alerts delivered through the bot so you never miss key moves.',
+      valuePoints: ['Instant Telegram delivery', 'Faster than headlines', 'One-tap access to wallet context'],
       done: telegramConnected,
       href: TELEGRAM_DEEP_LINK_SUBSCRIBE,
       cta: 'Connect',
