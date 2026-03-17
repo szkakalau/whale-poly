@@ -94,13 +94,14 @@ const loadHomeStats = unstable_cache(
       };
     } catch {
       return {
-        trackedWhales: Number.NaN,
-        trackedVolumeUsd: Number.NaN,
-        totalUsers: Number.NaN,
-        telegramLinkedUsers: Number.NaN,
-        totalFollows: Number.NaN,
-        totalSmartSubscriptions: Number.NaN,
-        alertEvents30d: Number.NaN,
+        // On failure, return safe numeric defaults so the UI doesn't render "—".
+        trackedWhales: 0,
+        trackedVolumeUsd: 0,
+        totalUsers: 0,
+        telegramLinkedUsers: 0,
+        totalFollows: 0,
+        totalSmartSubscriptions: 0,
+        alertEvents30d: 0,
       };
     }
   },
