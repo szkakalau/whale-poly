@@ -19,9 +19,15 @@ function SubscribeForm() {
   useEffect(() => {
     const p = (searchParams.get('plan') || '').toLowerCase();
     const codeFromUrl = (searchParams.get('code') || '').trim();
+    const periodFromUrl = (searchParams.get('period') || '').toLowerCase();
     if (p === 'free') setTier('free');
     else if (p === 'elite' || p === 'institutional') setTier('elite');
     else setTier('pro');
+    if (periodFromUrl === 'yearly' || periodFromUrl === 'annual') {
+      setPeriod('yearly');
+    } else if (periodFromUrl === 'monthly') {
+      setPeriod('monthly');
+    }
     if (codeFromUrl && !code) {
       // Auto-fill activation code from deep link (e.g. Telegram -> /subscribe?code=...)
       setCode(codeFromUrl.toUpperCase());

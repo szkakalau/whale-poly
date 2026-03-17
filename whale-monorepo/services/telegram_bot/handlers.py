@@ -15,6 +15,26 @@ async def _ensure_private(update: Update) -> bool:
     return False
   return update.effective_chat.type == "private"
 
+
+def _start_arg(update: Update) -> str:
+  """
+  Telegram deep links call /start with an optional payload:
+  - /start subscribe_pro
+  - /start subscribe_elite
+  - /start site_header
+  """
+  try:
+    text = (update.effective_message.text or "").strip()
+  except Exception:
+    text = ""
+  if not text:
+    return ""
+  parts = text.split(maxsplit=1)
+  if len(parts) < 2:
+    return ""
+  return (parts[1] or "").strip()
+
+
 def _landing_base_url() -> str:
   import os
   from urllib.parse import urlparse
@@ -39,6 +59,30 @@ def _landing_base_url() -> str:
   return "https://www.sightwhale.com"
 
 
+async def _create_activation_code(*, telegram_id: str) -> str:
+  code = _new_code()
+  async with SessionLocal() as session:
+    session.add(ActivationCode(code=code, telegram_id=telegram_id, used=False))
+    await session.commit()
+  return code
+
+
+def _continue_keyboard(*, code: str):
+  base = _landing_base_url()
+  pro_monthly = f"{base}/subscribe?plan=pro&code={code}"
+  pro_yearly = f"{base}/subscribe?plan=pro&period=yearly&code={code}"
+  elite_monthly = f"{base}/subscribe?plan=elite&code={code}"
+  return InlineKeyboardMarkup(
+    [
+      [InlineKeyboardButton("Continue (Pro)", url=pro_monthly)],
+      [
+        InlineKeyboardButton("Pro Yearly", url=pro_yearly),
+        InlineKeyboardButton("Elite", url=elite_monthly),
+      ],
+    ]
+  )
+
+
 def _new_code() -> str:
   import secrets
   import string
@@ -59,6 +103,18 @@ async def start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     if not user:
       session.add(TgUser(telegram_id=telegram_id))
       await session.commit()
+
+  arg = _start_arg(update).lower().strip()
+  if arg in ("subscribe_pro", "subscribe_elite", "subscribe"):
+    code = await _create_activation_code(telegram_id=telegram_id)
+    tier = "Elite" if "elite" in arg else "Pro"
+    msg = (
+      f"✅ Activation code generated: {code}\n\n"
+      f"Next step: tap Continue ({tier}) to open checkout. "
+      "The code will be auto-filled for you."
+    )
+    await update.effective_message.reply_text(msg, reply_markup=_continue_keyboard(code=code))
+    return
 
   kb = InlineKeyboardMarkup([[InlineKeyboardButton("Generate Code", callback_data="generate_code")]])
   msg = (
@@ -119,31 +175,13 @@ async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -
     return
 
   telegram_id = str(update.effective_user.id)
-  code = _new_code()
-  async with SessionLocal() as session:
-    session.add(ActivationCode(code=code, telegram_id=telegram_id, used=False))
-    await session.commit()
-
-  base = _landing_base_url()
-  pro_monthly = f"{base}/subscribe?plan=pro&code={code}"
-  pro_yearly = f"{base}/subscribe?plan=pro&period=yearly&code={code}"
-  elite_monthly = f"{base}/subscribe?plan=elite&code={code}"
-
-  kb = InlineKeyboardMarkup(
-    [
-      [InlineKeyboardButton("Continue (Pro)", url=pro_monthly)],
-      [
-        InlineKeyboardButton("Pro Yearly", url=pro_yearly),
-        InlineKeyboardButton("Elite", url=elite_monthly),
-      ],
-    ]
-  )
+  code = await _create_activation_code(telegram_id=telegram_id)
   msg = (
     f"✅ Your activation code: {code}\n\n"
     "Next step: tap a button below to continue on the website. "
     "The code will be auto-filled for you."
   )
-  await update.callback_query.edit_message_text(msg, reply_markup=kb)
+  await update.callback_query.edit_message_text(msg, reply_markup=_continue_keyboard(code=code))
 
 
 async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
