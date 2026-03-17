@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { type LiveSignal } from '@/components/LiveSignalsFeed';
 import LiveSignalsFeed from '@/components/LiveSignalsFeedLazy';
 import { unstable_cache } from 'next/cache';
+import { Suspense } from 'react';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 const TELEGRAM_DEEP_LINK_SUBSCRIBE = `${TELEGRAM_BOT_URL}?start=subscribe_pro`;
@@ -208,7 +209,9 @@ const loadLiveSignals = unstable_cache(
 
 export default async function Home() {
   const user = await getCurrentUser();
-  const [homeStats, liveSignals] = await Promise.all([loadHomeStats(), loadLiveSignals()]);
+  // Important: do not block the first HTML on live signals fetching.
+  // This improves FCP by letting the hero render while live signals stream in later.
+  const homeStats = await loadHomeStats();
   let followCount = 0;
   let smartCollectionCount = 0;
   let telegramConnected = false;
@@ -393,7 +396,14 @@ export default async function Home() {
             </div>
           </div>
 
-          <LiveSignalsFeed signals={liveSignals} />
+          <Suspense
+            fallback={
+              // Keep the section structure stable; client component will show skeleton UI.
+              <div />
+            }
+          >
+            <HomeLiveSignals />
+          </Suspense>
           <div className="mt-3 text-[11px] text-gray-600">
             Data refreshes automatically. Sizes shown in USD. Wallets are masked for privacy.
           </div>
@@ -1074,4 +1084,9 @@ export default async function Home() {
       <Footer />
     </div>
   );
+}
+
+async function HomeLiveSignals() {
+  const liveSignals = await loadLiveSignals();
+  return <LiveSignalsFeed signals={liveSignals} />;
 }
