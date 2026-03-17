@@ -3,7 +3,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import LiveSignalsFeed, { type LiveSignal } from '@/components/LiveSignalsFeed';
+import { type LiveSignal } from '@/components/LiveSignalsFeed';
+import LiveSignalsFeed from '@/components/LiveSignalsFeedLazy';
 import { unstable_cache } from 'next/cache';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
@@ -123,6 +124,20 @@ type WhaleEngineProfile = {
   recent_trades?: unknown;
 };
 
+async function fetchJsonWithTimeout<T>(url: string, init: RequestInit, timeoutMs: number): Promise<T | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    if (!res.ok) return null;
+    return (await res.json().catch(() => null)) as T | null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const loadLiveSignals = unstable_cache(
   async (): Promise<LiveSignal[]> => {
     try {
@@ -140,12 +155,14 @@ const loadLiveSignals = unstable_cache(
       const results = await Promise.allSettled(
         wallets.map(async (row) => {
           const wallet = row.wallet_address;
-          const res = await fetch(`${base}/whales/${encodeURIComponent(wallet)}`, {
-            cache: 'force-cache',
-            next: { revalidate: 20 },
-          });
-          if (!res.ok) return null;
-          const payload = (await res.json().catch(() => null)) as WhaleEngineProfile | null;
+          const payload = await fetchJsonWithTimeout<WhaleEngineProfile>(
+            `${base}/whales/${encodeURIComponent(wallet)}`,
+            {
+              cache: 'force-cache',
+              next: { revalidate: 60 },
+            },
+            2000,
+          );
           if (!payload) return null;
 
           const recent = Array.isArray(payload.recent_trades) ? (payload.recent_trades as WhaleEngineTrade[]) : [];
@@ -184,7 +201,7 @@ const loadLiveSignals = unstable_cache(
     }
   },
   ['home-live-signals'],
-  { revalidate: 20 },
+  { revalidate: 60 },
 );
 
 export default async function Home() {
