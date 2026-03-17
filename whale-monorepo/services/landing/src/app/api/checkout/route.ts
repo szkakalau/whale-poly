@@ -25,8 +25,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
 
+  // Accept both legacy short codes (e.g. ABCD1234) and UUIDs.
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(telegram_activation_code)) {
+  const shortCodeRegex = /^[A-Z0-9]{6,16}$/;
+  const codeUpper = telegram_activation_code.toUpperCase();
+  if (!uuidRegex.test(telegram_activation_code) && !shortCodeRegex.test(codeUpper)) {
     return NextResponse.json({ detail: 'invalid telegram_activation_code format' }, { status: 400 });
   }
 
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
     upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ telegram_activation_code, plan, user_id: user?.id ?? null }),
+      body: JSON.stringify({ telegram_activation_code: codeUpper, plan, user_id: user?.id ?? null }),
       cache: 'no-store'
     });
   } catch (e: unknown) {

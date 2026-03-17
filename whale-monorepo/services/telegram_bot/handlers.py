@@ -15,6 +15,29 @@ async def _ensure_private(update: Update) -> bool:
     return False
   return update.effective_chat.type == "private"
 
+def _landing_base_url() -> str:
+  import os
+  from urllib.parse import urlparse
+
+  # Prefer explicit public base URL (e.g. https://www.sightwhale.com)
+  raw = (os.getenv("LANDING_PUBLIC_BASE_URL") or "").strip()
+  if raw:
+    return raw.rstrip("/")
+
+  # Fallback: infer from known landing URLs (success/cancel) if set
+  for candidate in (settings.landing_success_url, settings.landing_cancel_url):
+    c = (candidate or "").strip()
+    if not c:
+      continue
+    try:
+      u = urlparse(c)
+      if u.scheme and u.netloc:
+        return f"{u.scheme}://{u.netloc}"
+    except Exception:
+      continue
+
+  return "https://www.sightwhale.com"
+
 
 def _new_code() -> str:
   import secrets
@@ -101,7 +124,26 @@ async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -
     session.add(ActivationCode(code=code, telegram_id=telegram_id, used=False))
     await session.commit()
 
-  await update.callback_query.edit_message_text(f"Your activation code: {code}")
+  base = _landing_base_url()
+  pro_monthly = f"{base}/subscribe?plan=pro&code={code}"
+  pro_yearly = f"{base}/subscribe?plan=pro&period=yearly&code={code}"
+  elite_monthly = f"{base}/subscribe?plan=elite&code={code}"
+
+  kb = InlineKeyboardMarkup(
+    [
+      [InlineKeyboardButton("Continue (Pro)", url=pro_monthly)],
+      [
+        InlineKeyboardButton("Pro Yearly", url=pro_yearly),
+        InlineKeyboardButton("Elite", url=elite_monthly),
+      ],
+    ]
+  )
+  msg = (
+    f"✅ Your activation code: {code}\n\n"
+    "Next step: tap a button below to continue on the website. "
+    "The code will be auto-filled for you."
+  )
+  await update.callback_query.edit_message_text(msg, reply_markup=kb)
 
 
 async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:

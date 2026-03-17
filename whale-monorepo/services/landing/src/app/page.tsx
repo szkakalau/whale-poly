@@ -8,6 +8,7 @@ import LiveSignalsFeed from '@/components/LiveSignalsFeedLazy';
 import { unstable_cache } from 'next/cache';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
+const TELEGRAM_DEEP_LINK_SUBSCRIBE = `${TELEGRAM_BOT_URL}?start=subscribe_pro`;
 const WHALE_ENGINE_BASE =
   process.env.NEXT_PUBLIC_WHALE_ENGINE_API_BASE_URL || 'https://whale-engine-api.onrender.com';
 
@@ -241,7 +242,7 @@ export default async function Home() {
       description: 'Receive real-time alerts via the bot so you never miss key moves.',
       valuePoints: ['Instant delivery to your phone', 'Faster than headlines', 'One-tap access to context'],
       done: telegramConnected,
-      href: TELEGRAM_BOT_URL,
+      href: TELEGRAM_DEEP_LINK_SUBSCRIBE,
       cta: 'Connect',
     },
   ];
@@ -316,7 +317,7 @@ export default async function Home() {
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row justify-center items-center gap-6">
-            <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="relative group px-8 py-4 bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+            <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-8 py-4 bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 Launch Telegram Bot

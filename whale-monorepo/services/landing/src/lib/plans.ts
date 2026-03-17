@@ -22,7 +22,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   [Plan.FREE]: {
     max_alerts_per_day: 3,
     alert_delay_minutes: 10,
-    max_follow_whales: 0,
+    max_follow_whales: 1,
     max_collections: 0,
     max_smart_collections: 0,
   },

@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
+
 function SubscribeForm() {
   const searchParams = useSearchParams();
   const [code, setCode] = useState('');
@@ -16,10 +18,15 @@ function SubscribeForm() {
 
   useEffect(() => {
     const p = (searchParams.get('plan') || '').toLowerCase();
+    const codeFromUrl = (searchParams.get('code') || '').trim();
     if (p === 'free') setTier('free');
     else if (p === 'elite' || p === 'institutional') setTier('elite');
     else setTier('pro');
-  }, [searchParams]);
+    if (codeFromUrl && !code) {
+      // Auto-fill activation code from deep link (e.g. Telegram -> /subscribe?code=...)
+      setCode(codeFromUrl.toUpperCase());
+    }
+  }, [searchParams, code]);
 
   function mapCheckoutError(detail: unknown, status: number): { message: string; actions: string[] } {
     const raw = typeof detail === 'string' ? detail : '';
@@ -229,10 +236,20 @@ export default function SubscribePage() {
         <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white tracking-tight">Activate Intelligence</h1>
         <div className="space-y-6 text-gray-400 mb-10 text-lg font-light leading-relaxed">
           <p>
-            1. Open <a href="https://t.me/sightwhale_bot" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 font-medium underline decoration-violet-500/30 underline-offset-4">@sightwhale_bot</a> and run <code className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-violet-300">/start</code>
+            1. Open{' '}
+            <a
+              href={`${TELEGRAM_BOT_URL}?start=subscribe_pro`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-violet-400 hover:text-violet-300 font-medium underline decoration-violet-500/30 underline-offset-4"
+            >
+              @sightwhale_bot
+            </a>{' '}
+            and run <code className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-violet-300">/start</code>
           </p>
           <p>
-            2. Tap <span className="text-white font-medium">Generate Code</span> to receive your unique token
+            2. Tap <span className="text-white font-medium">Generate Code</span> or use the deep link from Telegram. We
+            will auto-fill the code here when you return.
           </p>
           <p>
             3. Select your plan below and proceed to secure checkout
