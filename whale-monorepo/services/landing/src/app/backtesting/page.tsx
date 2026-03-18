@@ -98,19 +98,19 @@ export default function BacktestingPage() {
               </thead>
               <tbody className="divide-y divide-white/5 text-gray-400">
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono text-gray-500">0 – 4</td>
+                  <td className="p-4 font-mono text-gray-500">0 – 40</td>
                   <td className="p-4">Low signal, mostly noise</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono text-gray-300">4 – 6</td>
+                  <td className="p-4 font-mono text-gray-300">40 – 60</td>
                   <td className="p-4">Moderate activity</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono text-violet-300 font-bold">6 – 8</td>
+                  <td className="p-4 font-mono text-violet-300 font-bold">60 – 80</td>
                   <td className="p-4 text-white">Strong whale interest</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02] bg-violet-500/5">
-                  <td className="p-4 font-mono text-cyan-300 font-bold">8 – 10</td>
+                  <td className="p-4 font-mono text-cyan-300 font-bold">80 – 100</td>
                   <td className="p-4 text-white font-medium">High conviction behavior</td>
                 </tr>
               </tbody>
@@ -134,22 +134,22 @@ export default function BacktestingPage() {
               </thead>
               <tbody className="divide-y divide-white/5 text-gray-400">
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono">0 – 4</td>
+                  <td className="p-4 font-mono">0 – 40</td>
                   <td className="p-4 text-gray-500">~0.3%</td>
                   <td className="p-4 text-gray-500">51%</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono">4 – 6</td>
+                  <td className="p-4 font-mono">40 – 60</td>
                   <td className="p-4">+1.2%</td>
                   <td className="p-4">56%</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="p-4 font-mono text-violet-300 font-bold">6 – 8</td>
+                  <td className="p-4 font-mono text-violet-300 font-bold">60 – 80</td>
                   <td className="p-4 text-emerald-400 font-bold">+3.9%</td>
                   <td className="p-4 text-white">63%</td>
                 </tr>
                 <tr className="hover:bg-white/[0.02] bg-violet-500/5">
-                  <td className="p-4 font-mono text-cyan-300 font-bold">8 – 10</td>
+                  <td className="p-4 font-mono text-cyan-300 font-bold">80 – 100</td>
                   <td className="p-4 text-emerald-400 font-bold">+7.6%</td>
                   <td className="p-4 text-white font-bold">71%</td>
                 </tr>
