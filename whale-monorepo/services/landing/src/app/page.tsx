@@ -62,8 +62,6 @@ const loadHomeStats = unstable_cache(
         prisma.user.aggregate({
           _count: { _all: true, telegramId: true },
         }),
-        // Keep transaction but don't let whale_profiles failures wipe all stats.
-        // We'll query whale aggregate in a separate try/catch below.
         prisma.$queryRawUnsafe<{ _noop: 1 }[]>(`SELECT 1 AS _noop`),
       ]);
 
