@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/images/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Sight Whale — Follow the Smart Money on Polymarket and Prediction Markets"
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
     description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
-    images: ["/images/og-image.png"]
+    images: ["/opengraph-image"]
   },
   robots: {
     index: true,
