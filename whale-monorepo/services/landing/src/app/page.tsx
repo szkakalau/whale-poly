@@ -332,7 +332,7 @@ export default async function Home() {
         {/* HERO SECTION */}
         <section className="relative px-4 sm:px-6 max-w-7xl mx-auto text-center mb-20 sm:mb-24 md:mb-32 pt-6 sm:pt-12">
               <div>
-                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-white/10 text-gray-300 text-[10px] md:text-xs hover:border-violet-500/50 transition-all cursor-default group relative overflow-hidden bg-white/[0.02]">
+                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-white/10 text-gray-300 text-[11px] md:text-sm hover:border-violet-500/50 transition-all cursor-default group relative overflow-hidden bg-white/[0.02]">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -362,7 +362,7 @@ export default async function Home() {
           <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-sm sm:text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide px-1">
             The first AI-driven intelligence layer for Polymarket. We filter millions in noise into <span className="text-white font-medium relative group cursor-help">
               high-conviction signals
-              <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-500/50 group-hover:bg-violet-400 group-hover:h-[2px] transition-all"></span>
+              <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-500/50 group-hover:bg-violet-400 group-hover:h-[1px] transition-all"></span>
             </span> using the proprietary Whale Score™.
           </p>
 
@@ -386,7 +386,7 @@ export default async function Home() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <div className="text-left">
-                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Performance</div>
+                <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Performance</div>
                 <div className="text-xs text-gray-200 font-semibold group-hover:text-white">Backtesting Results</div>
               </div>
             </Link>
@@ -396,7 +396,7 @@ export default async function Home() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div className="text-left">
-                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Deep Dive</div>
+                <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Deep Dive</div>
                 <div className="text-xs text-gray-200 font-semibold group-hover:text-white">Conviction Cases</div>
               </div>
             </Link>
@@ -406,7 +406,7 @@ export default async function Home() {
         <section id="live-signals" className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
             <div>
-              <p className="text-[10px] font-bold text-emerald-400 tracking-[0.35em] uppercase mb-4">
+              <p className="text-[11px] font-bold text-emerald-400 tracking-[0.35em] uppercase mb-4">
                 Real-Time
               </p>
               <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
@@ -418,15 +418,15 @@ export default async function Home() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
                 <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
               </div>
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
                 <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
               </div>
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
                 <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
                   {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
                 </div>
@@ -450,10 +450,10 @@ export default async function Home() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
             <div>
-              <p className="text-[10px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">
+              <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">
                 Quick Start
               </p>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
                 Complete 3 steps to receive your first smart-money alert
               </h2>
               <p className="text-sm text-gray-400 max-w-2xl">
@@ -549,7 +549,7 @@ export default async function Home() {
         {/* ONBOARDING - 3 STEPS */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
           <div className="text-center mb-10 sm:mb-16">
-            <h2 className="text-[10px] font-bold text-violet-400 tracking-[0.4em] uppercase mb-6 opacity-80">
+            <h2 className="text-[11px] font-bold text-violet-400 tracking-[0.4em] uppercase mb-6 opacity-80">
               The Protocol
             </h2>
             <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
@@ -569,7 +569,7 @@ export default async function Home() {
                   <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/20 text-${item.color}-300 flex items-center justify-center font-black text-xl group-hover:scale-110 group-hover:bg-${item.color}-500 group-hover:text-white transition-all duration-700`}>
                     {item.step}
                   </div>
-                  <div className={`text-[10px] font-black text-${item.color}-400/40 uppercase tracking-[0.3em]`}>Step {item.step === 1 ? 'One' : item.step === 2 ? 'Two' : 'Three'}</div>
+                  <div className={`text-[11px] font-black text-${item.color}-400/40 uppercase tracking-[0.3em]`}>Step {item.step === 1 ? 'One' : item.step === 2 ? 'Two' : 'Three'}</div>
                 </div>
                 <div className="space-y-4 relative z-10">
                   <h3 className="text-xl font-black text-white tracking-tight">{item.title}</h3>
@@ -670,7 +670,7 @@ export default async function Home() {
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="space-y-8">
               <div>
-                <h2 className="text-[10px] font-bold text-red-400 tracking-[0.4em] uppercase mb-5">The Market Problem</h2>
+                <h2 className="text-[11px] font-bold text-red-400 tracking-[0.4em] uppercase mb-5">The Market Problem</h2>
                 <h3 className="text-lg sm:text-xl md:text-3xl font-black tracking-tight text-white leading-[1.1]">
                   Prediction markets are <br />
                   <span className="text-gray-500 italic">distorted by noise.</span>
@@ -701,7 +701,7 @@ export default async function Home() {
               <div className="absolute -top-20 -right-20 w-[250px] h-[250px] bg-cyan-500/10 rounded-full blur-[70px] group-hover:bg-cyan-500/20 transition-all duration-1000"></div>
               
               <div className="relative z-10">
-                <h2 className="text-[10px] font-bold text-cyan-400 tracking-[0.4em] uppercase mb-5">The Solution</h2>
+                <h2 className="text-[11px] font-bold text-cyan-400 tracking-[0.4em] uppercase mb-5">The Solution</h2>
                 <h3 className="text-lg sm:text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
                 
                 <ul className="grid gap-3 mb-8">
@@ -948,7 +948,7 @@ export default async function Home() {
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 relative">
             {/* Connecting Line - Pro Max: Dynamic gradient line */}
-            <div className="hidden lg:block absolute top-[40%] left-0 w-full h-[2px] bg-[linear-gradient(to_right,transparent,rgba(139,92,246,0.2),rgba(34,211,238,0.2),transparent)]"></div>
+            <div className="hidden lg:block absolute top-[40%] left-0 w-full h-[1px] bg-[linear-gradient(to_right,transparent,rgba(139,92,246,0.2),rgba(34,211,238,0.2),transparent)]"></div>
             
             {[
               { title: "Ingest", desc: "Real-time trade & orderbook data", icon: "📡" },
@@ -974,7 +974,7 @@ export default async function Home() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
           <div className="glass rounded-2xl sm:rounded-[3rem] overflow-hidden p-6 sm:p-12 md:p-20 relative bg-white/[0.01] border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
             {/* Pro Max: Animated top border */}
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-violet-500/40 to-transparent"></div>
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-violet-500/40 to-transparent"></div>
             
             <div className="text-center mb-16">
               <h2 className="text-2xl md:text-4xl font-black tracking-tight text-white mb-4">Why We’re Different</h2>
