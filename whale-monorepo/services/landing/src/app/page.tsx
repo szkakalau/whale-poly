@@ -54,66 +54,64 @@ type HomeStats = {
 
 const loadHomeStats = unstable_cache(
   async (): Promise<HomeStats> => {
+    const now = Date.now();
+    const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    let totalUsers = 0;
+    let telegramLinkedUsers = 0;
     try {
-      const now = Date.now();
-      const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
-
-      const [counts] = await prisma.$transaction([
-        prisma.user.aggregate({
-          _count: { _all: true, telegramId: true },
-        }),
-        prisma.$queryRawUnsafe<{ _noop: 1 }[]>(`SELECT 1 AS _noop`),
+      const [allUsers, withTelegram] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { telegramId: { not: null } } }),
       ]);
+      totalUsers = allUsers;
+      telegramLinkedUsers = withTelegram;
+    } catch {
+      // users table missing or schema mismatch
+    }
 
-      let whale_count = 0;
-      let total_volume = 0;
-      try {
-        const whaleAgg = await prisma.$queryRawUnsafe<
-          { whale_count: unknown; total_volume: unknown }[]
-        >(
-          `
-          SELECT
-            COUNT(*)::bigint AS whale_count,
-            COALESCE(SUM(total_volume)::float, 0) AS total_volume
-          FROM whale_profiles
-          `,
-        );
-        const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
-        whale_count = Number(BigInt(String(whaleRow.whale_count || 0)));
-        total_volume = safeNumber(whaleRow.total_volume, 0);
-      } catch {
-        // If whale_profiles is missing or schema changed, still return user-based stats.
-        whale_count = 0;
-        total_volume = 0;
-      }
+    let whale_count = 0;
+    let total_volume = 0;
+    try {
+      const whaleAgg = await prisma.$queryRawUnsafe<
+        { whale_count: unknown; total_volume: unknown }[]
+      >(
+        `
+        SELECT
+          COUNT(*)::bigint AS whale_count,
+          COALESCE(SUM(total_volume)::float, 0) AS total_volume
+        FROM whale_profiles
+        `,
+      );
+      const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
+      whale_count = Number(BigInt(String(whaleRow.whale_count || 0)));
+      total_volume = safeNumber(whaleRow.total_volume, 0);
+    } catch {
+      // whale_profiles missing or not in this DB
+    }
 
-      const [follows, smartSubs, alertEvents] = await prisma.$transaction([
+    let follows = 0;
+    let smartSubs = 0;
+    let alertEvents = 0;
+    try {
+      [follows, smartSubs, alertEvents] = await Promise.all([
         prisma.whaleFollow.count(),
         prisma.smartCollectionSubscription.count(),
         prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } }),
       ]);
-
-      return {
-        trackedWhales: whale_count,
-        trackedVolumeUsd: total_volume,
-        totalUsers: counts._count._all,
-        telegramLinkedUsers: counts._count.telegramId,
-        totalFollows: follows,
-        totalSmartSubscriptions: smartSubs,
-        alertEvents30d: alertEvents,
-      };
     } catch {
-      return {
-        // On failure, return safe numeric defaults so the UI doesn't render "—".
-        trackedWhales: 0,
-        trackedVolumeUsd: 0,
-        totalUsers: 0,
-        telegramLinkedUsers: 0,
-        totalFollows: 0,
-        totalSmartSubscriptions: 0,
-        alertEvents30d: 0,
-      };
+      // whale_follows / smart_collection_subscriptions / alert_events missing or schema mismatch
     }
+
+    return {
+      trackedWhales: whale_count,
+      trackedVolumeUsd: total_volume,
+      totalUsers,
+      telegramLinkedUsers,
+      totalFollows: follows,
+      totalSmartSubscriptions: smartSubs,
+      alertEvents30d: alertEvents,
+    };
   },
   ['home-stats'],
   { revalidate: 60 },
