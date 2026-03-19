@@ -103,6 +103,33 @@ const loadHomeStats = unstable_cache(
       // whale_follows / smart_collection_subscriptions / alert_events missing or schema mismatch
     }
 
+    // Fallback: if alert_events is empty, use backend "alerts" table count (same DB)
+    if (alertEvents === 0) {
+      try {
+        const alertsFallback = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          `SELECT COUNT(*)::bigint AS n FROM alerts WHERE created_at >= $1`,
+          since30d,
+        );
+        const n = alertsFallback[0]?.n;
+        if (n != null) alertEvents = Number(n);
+      } catch {
+        // alerts table missing or different DB
+      }
+    }
+
+    // Fallback: if no users with telegram_id, use backend "tg_users" count (same DB)
+    if (telegramLinkedUsers === 0) {
+      try {
+        const tgFallback = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          `SELECT COUNT(*)::bigint AS n FROM tg_users`,
+        );
+        const n = tgFallback[0]?.n;
+        if (n != null) telegramLinkedUsers = Number(n);
+      } catch {
+        // tg_users table missing or different DB
+      }
+    }
+
     return {
       trackedWhales: whale_count,
       trackedVolumeUsd: total_volume,
