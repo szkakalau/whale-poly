@@ -556,9 +556,9 @@ export default async function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { step: 1, title: "Connect", color: "violet", desc: <>One-click sync with your personal intelligence dashboard via <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a>.</> },
-              { step: 2, title: "Quantify Conviction", color: "cyan", desc: <>Every trade is instantly processed through our Whale Score engine, measuring PnL history and timing precision.</> },
-              { step: 3, title: "Shadow", color: "emerald", desc: <>Mirror every move with precision <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> alerts tailored to your strategy.</> }
+              { step: 1, title: "Activate", color: "violet", desc: <>Link Telegram so delivery starts after activation via <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a>. Pro/Elite users get priority delivery rules.</> },
+              { step: 2, title: "Quantify Conviction", color: "cyan", desc: <>Whale Score ranks high-conviction bets and filters noise—so only the trades worth acting on are eligible for delivery.</> },
+              { step: 3, title: "Shadow", color: "emerald", desc: <>Mirror every move with precision. Use <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> alerts, with Pro/Elite delivering faster and more frequently after activation.</> }
             ].map((item, i) => (
               <div key={i} className={`glass rounded-2xl sm:rounded-[2rem] border border-white/5 p-5 sm:p-8 flex flex-col gap-6 sm:gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${item.color}-500/10 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-${item.color}-500/20 transition-all duration-1000`}></div>
@@ -918,6 +918,9 @@ export default async function Home() {
               The Engine
             </h2>
             <p className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight mb-6">How It Works</p>
+            <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto font-light px-1">
+              After activation, Pro and Elite users receive faster, more frequent Telegram delivery—with cooldowns that prevent spam.
+            </p>
             <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-cyan-500 mx-auto rounded-full"></div>
           </div>
           
@@ -928,8 +931,8 @@ export default async function Home() {
             {[
               { title: "Ingest", desc: "Real-time trade & orderbook data", icon: "📡" },
               { title: "Analyze", desc: "Identify abnormal capital movements", icon: "🧠" },
-              { title: "Score", desc: "Historical accuracy, timing & impact", icon: "🎯" },
-              { title: "Deliver", desc: "Signals via dashboard, Telegram & email", icon: "📬" }
+              { title: "Score", desc: "Whale Score: conviction, timing & impact", icon: "🎯" },
+              { title: "Deliver", desc: "Telegram delivery. Pro/Elite faster after activation.", icon: "📬" }
             ].map((step, i) => (
               <div key={i} className="relative group">
                 <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 h-full border-white/5 hover:border-violet-500/40 hover:bg-violet-500/[0.02] transition-all duration-700 flex flex-col items-center text-center group-hover:translate-y-[-8px] shadow-2xl">
@@ -988,6 +991,37 @@ export default async function Home() {
                 <div className="mt-12 pt-8 border-t border-white/5 relative">
                   <p className="text-gray-400 text-sm italic font-light leading-relaxed">&quot;The most transparent data in DeFi.&quot;</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Delivery Promise */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="glass rounded-[2rem] p-6 sm:p-8 relative overflow-hidden border-white/5">
+            <div className="absolute -top-16 -right-16 w-56 h-56 bg-violet-500/10 rounded-full blur-[70px]"></div>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <p className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
+                  Delivery Promise
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+                  Faster, more frequent alerts after activation
+                </h2>
+                <p className="text-sm sm:text-base text-gray-400 max-w-2xl font-light">
+                  Pro and Elite users are prioritized for conviction-backed Telegram delivery—so you spend less time watching noise and more time acting on the moments that matter.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3 w-full md:w-auto">
+                {[
+                  { title: "Pro", desc: "Faster alerts with reduced delivery delay." },
+                  { title: "Elite", desc: "Priority delivery with more frequent updates." },
+                ].map((x) => (
+                  <div key={x.title} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.25em] text-gray-500 mb-2">{x.title}</div>
+                    <div className="text-sm text-white font-semibold leading-relaxed">{x.desc}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
