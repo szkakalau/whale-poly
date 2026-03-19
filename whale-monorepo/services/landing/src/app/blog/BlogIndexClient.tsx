@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blog";
 
@@ -8,9 +8,21 @@ type Props = {
   posts: BlogPost[];
 };
 
+type LiveSignal = {
+  id: string;
+  occurredAt: string;
+  walletMasked: string;
+  market: string;
+  side: "BUY" | "SELL" | "UNKNOWN";
+  sizeUsd: number;
+  whaleScore?: number;
+  href?: string;
+};
+
 export default function BlogIndexClient({ posts }: Props) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState("All");
+  const [liveSignals, setLiveSignals] = useState<LiveSignal[]>([]);
 
   const tags = useMemo(() => {
     const set = new Set<string>();
@@ -36,6 +48,35 @@ export default function BlogIndexClient({ posts }: Props) {
 
   const spotlight = filtered.filter((post) => post.slug.startsWith("daily-spotlight-"));
   const deepDives = filtered.filter((post) => !post.slug.startsWith("daily-spotlight-"));
+
+  const spotlightNewestAt = useMemo(() => {
+    if (spotlight.length === 0) return null;
+    const t = new Date(spotlight[0]?.date || "").getTime();
+    return Number.isFinite(t) ? t : null;
+  }, [spotlight]);
+
+  const spotlightStale = useMemo(() => {
+    if (spotlight.length === 0) return true;
+    if (spotlightNewestAt === null) return true;
+    // Consider spotlight stale if the newest entry is older than 30 hours.
+    return Date.now() - spotlightNewestAt > 30 * 60 * 60 * 1000;
+  }, [spotlight.length, spotlightNewestAt]);
+
+  useEffect(() => {
+    if (!spotlightStale) return;
+    let alive = true;
+    fetch("/api/live-signals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (!alive) return;
+        const list = json && Array.isArray(json.signals) ? (json.signals as LiveSignal[]) : [];
+        setLiveSignals(list.slice(0, 8));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [spotlightStale]);
 
   return (
     <div className="space-y-12">
@@ -90,37 +131,67 @@ export default function BlogIndexClient({ posts }: Props) {
         </div>
       </div>
 
-      {spotlight.length > 0 ? (
+      {spotlight.length > 0 || (spotlightStale && liveSignals.length > 0) ? (
         <section className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Daily spotlight</p>
               <h3 className="text-xl font-semibold text-white">Recent whale signals</h3>
             </div>
-            <div className="text-xs text-gray-400">{spotlight.length} entries</div>
+            <div className="text-xs text-gray-400">
+              {spotlight.length > 0 ? `${spotlight.length} entries` : "Live feed"}
+            </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {spotlight.slice(0, 6).map((post) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="group rounded-2xl border border-white/10 bg-black/40 p-5 transition-all hover:border-violet-500/40 hover:bg-white/5"
-              >
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <time dateTime={post.date}>
-                    {new Date(post.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </time>
-                  <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em]">
-                    Spotlight
-                  </span>
-                </div>
-                <h4 className="mt-3 text-base font-semibold text-white group-hover:text-violet-200">
-                  {post.title}
-                </h4>
-                <p className="mt-2 text-sm text-gray-400 line-clamp-2">{post.excerpt}</p>
-              </Link>
-            ))}
-          </div>
+          {spotlight.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {spotlight.slice(0, 6).map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="group rounded-2xl border border-white/10 bg-black/40 p-5 transition-all hover:border-violet-500/40 hover:bg-white/5"
+                >
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <time dateTime={post.date}>
+                      {new Date(post.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </time>
+                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em]">
+                      Spotlight
+                    </span>
+                  </div>
+                  <h4 className="mt-3 text-base font-semibold text-white group-hover:text-violet-200">
+                    {post.title}
+                  </h4>
+                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">{post.excerpt}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {liveSignals.slice(0, 6).map((s) => (
+                <Link
+                  key={s.id}
+                  href={s.href || "/smart-money"}
+                  className="group rounded-2xl border border-white/10 bg-black/40 p-5 transition-all hover:border-emerald-500/40 hover:bg-white/5"
+                >
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <time dateTime={s.occurredAt}>
+                      {new Date(s.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </time>
+                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em]">
+                      Live
+                    </span>
+                  </div>
+                  <h4 className="mt-3 text-base font-semibold text-white group-hover:text-emerald-200 line-clamp-2">
+                    {s.market}
+                  </h4>
+                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">
+                    {s.side} · {s.walletMasked}
+                    {typeof s.whaleScore === "number" && Number.isFinite(s.whaleScore) ? ` · Score ${Math.round(s.whaleScore)}` : ""}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       ) : null}
 
