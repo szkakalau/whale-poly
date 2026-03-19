@@ -483,6 +483,9 @@ export default async function Home() {
               <div className="text-xs text-gray-500 mt-3">
                 {user ? 'Your progress is tracked automatically.' : 'Explore the steps below. Connect Telegram to start receiving alerts.'}
               </div>
+              <div className="text-[11px] text-violet-200/70 mt-2">
+                Pro & Elite: faster, more frequent Telegram delivery right after activation.
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -874,6 +877,14 @@ export default async function Home() {
                   </div>
                 ))}
               </div>
+              <div className="mt-6 relative z-10">
+                <Link
+                  href="/backtesting"
+                  className="inline-flex items-center justify-center w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                >
+                  Verify in Backtesting
+                </Link>
+              </div>
               <p className="mt-auto text-[10px] text-gray-500 font-medium italic pt-6 border-t border-white/5 relative z-10">
                 Derived from internal tracked data, refreshed automatically.
               </p>
@@ -906,6 +917,17 @@ export default async function Home() {
                     <div className={`${stat.color} font-mono text-xl font-black`}>{stat.value}</div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-10 relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-sm text-gray-400 font-light">
+                  Research the flows, then act with the Whale Score filter.
+                </div>
+                <Link
+                  href="/smart-money"
+                  className="inline-flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                >
+                  Explore Smart Money
+                </Link>
               </div>
             </div>
           </div>
@@ -961,9 +983,14 @@ export default async function Home() {
             
             <div className="grid md:grid-cols-2 gap-8 sm:gap-12 lg:gap-20 items-stretch">
               <div className="space-y-8 sm:space-y-10 p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-colors">
-                <p className="text-gray-600 font-black uppercase tracking-[0.4em] text-[11px]">Standard Tools</p>
+                <p className="text-gray-600 font-black uppercase tracking-[0.4em] text-[11px]">What you don’t get</p>
                 <ul className="space-y-8">
-                  {["Predictive guessing", "Anonymous chat tips", "Black-box indicators", "Opaque track records"].map((item, i) => (
+                  {[
+                    "Delayed delivery after activation",
+                    "Noise-driven alerts with weak conviction",
+                    "Opaque scoring and no Whale Score filter",
+                    "Limited on-chain evidence & unverifiable claims",
+                  ].map((item, i) => (
                     <li key={i} className="flex items-center gap-5 text-gray-600 line-through text-lg font-medium opacity-50 group">
                       <div className="w-6 h-6 rounded-full bg-gray-900 border border-white/5 flex items-center justify-center text-[10px] group-hover:border-red-500/30 transition-colors">✕</div>
                       {item}
@@ -977,10 +1004,10 @@ export default async function Home() {
                 <p className="text-violet-400 font-black uppercase tracking-[0.4em] text-[11px] mb-10 relative">Polymarket Whale Intelligence</p>
                 <ul className="space-y-8 relative">
                   {[
-                    "Verified behavior tracking", 
-                    "Full on-chain evidence", 
-                    "Explainable logic engine", 
-                    "Auditable historical performance"
+                    "Priority Telegram delivery with plan-based rules",
+                    "Whale Score filter (0-100) with verifiable evidence",
+                    "Explainable engine: timing, risk & impact signals",
+                    "Auditable performance from tracked wallet history",
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-5 text-white text-xl font-black tracking-tight group/li">
                       <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center text-white text-[10px] group-hover/li:scale-110 transition-transform">✓</div>
