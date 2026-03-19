@@ -5,9 +5,9 @@ const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#020202] py-20 relative z-10">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+    <footer className="border-t border-white/10 bg-[#020202] py-12 sm:py-20 relative z-10 pb-[calc(1.5rem+env(safe-area-inset-bottom,0))]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 sm:gap-12 mb-12 sm:mb-16">
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
@@ -23,10 +23,10 @@ export default function Footer() {
           <div className="space-y-6">
             <h4 className="text-white font-bold text-sm tracking-widest uppercase">Platform</h4>
             <ul className="space-y-4">
-              <li><Link href="/backtesting" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Whale Performance</Link></li>
-              <li><Link href="/conviction" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Conviction Analysis</Link></li>
-              <li><Link href="/blog" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Intelligence Blog</Link></li>
-              <li><Link href="/smart-collections" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">Smart Collections</Link></li>
+              <li><Link href="/backtesting" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Whale Performance</Link></li>
+              <li><Link href="/conviction" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Conviction Analysis</Link></li>
+              <li><Link href="/blog" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Intelligence Blog</Link></li>
+              <li><Link href="/smart-collections" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Smart Collections</Link></li>
             </ul>
           </div>
 

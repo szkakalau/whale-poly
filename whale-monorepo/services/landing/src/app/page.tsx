@@ -294,12 +294,12 @@ export default async function Home() {
         }}
       />
 
-      <main className="relative pt-20 pb-12">
+      <main className="relative pt-14 sm:pt-20 pb-8 sm:pb-12">
 
         {/* HERO SECTION */}
-        <section className="relative px-6 max-w-7xl mx-auto text-center mb-32 pt-12">
+        <section className="relative px-4 sm:px-6 max-w-7xl mx-auto text-center mb-20 sm:mb-24 md:mb-32 pt-6 sm:pt-12">
               <div>
-                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass mb-12 border border-white/10 text-gray-300 text-[10px] md:text-xs hover:border-violet-500/50 transition-all cursor-default group relative overflow-hidden bg-white/[0.02]">
+                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-white/10 text-gray-300 text-[10px] md:text-xs hover:border-violet-500/50 transition-all cursor-default group relative overflow-hidden bg-white/[0.02]">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -318,7 +318,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-[1.05]">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-6 sm:mb-8 leading-[1.1] sm:leading-[1.05]">
             Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
               Whale Score™
               <span className="absolute -inset-x-4 -inset-y-2 blur-[16px] bg-violet-500/10 -z-10"></span>
@@ -326,29 +326,29 @@ export default async function Home() {
             Frontrun the <span className="text-white">Market</span>.
           </h1>
           
-          <p className="mt-8 max-w-2xl mx-auto text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide">
+          <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-sm sm:text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide px-1">
             The first AI-driven intelligence layer for Polymarket. We filter millions in noise into <span className="text-white font-medium relative group cursor-help">
               high-conviction signals
               <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-500/50 group-hover:bg-violet-400 group-hover:h-[2px] transition-all"></span>
             </span> using the proprietary Whale Score™.
           </p>
 
-          <div className="mt-12 flex flex-col sm:flex-row justify-center items-center gap-6">
-            <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-8 py-4 bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+          <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-6 w-full max-w-sm sm:max-w-none mx-auto">
+            <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 Launch Telegram Bot
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7" /></svg>
               </span>
             </a>
-            <Link href="#live-signals" className="group px-8 py-4 glass border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center gap-3">
+            <Link href="#live-signals" className="group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] glass border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center justify-center gap-3">
               View Live Signals
               <div className="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:scale-[1.5] transition-all"></div>
             </Link>
           </div>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link href="/backtesting" className="group flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/30 transition-all duration-300">
+          <div className="mt-6 sm:mt-10 flex flex-wrap justify-center gap-2 sm:gap-3">
+            <Link href="/backtesting" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/30 transition-all duration-300">
               <div className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300 group-hover:scale-105 transition-transform">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
@@ -358,7 +358,7 @@ export default async function Home() {
               </div>
             </Link>
 
-            <Link href="/conviction" className="group flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all duration-300">
+            <Link href="/conviction" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all duration-300">
               <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:scale-105 transition-transform">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
@@ -370,8 +370,8 @@ export default async function Home() {
           </div>
         </section>
 
-        <section id="live-signals" className="max-w-6xl mx-auto px-6 mb-24">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 mb-10">
+        <section id="live-signals" className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
             <div>
               <p className="text-[10px] font-bold text-emerald-400 tracking-[0.35em] uppercase mb-4">
                 Real-Time
@@ -383,22 +383,22 @@ export default async function Home() {
                 This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
-                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
-                <div className="text-lg font-black text-white mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
+              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
-                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.alertEvents30d)}</div>
+              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.alertEvents30d)}</div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Telegram Linked</div>
-                <div className="text-lg font-black text-white mt-2">{formatCompactInt(homeStats.telegramLinkedUsers)}</div>
+              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Telegram Linked</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.telegramLinkedUsers)}</div>
               </div>
             </div>
           </div>
@@ -416,28 +416,28 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-6 mb-24">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
             <div>
               <p className="text-[10px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">
                 Quick Start
               </p>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
                 Complete 3 steps to receive your first smart-money alert
               </h2>
               <p className="text-sm text-gray-400 max-w-2xl">
                 Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 w-full md:w-auto">
-              <div className="flex items-center justify-between gap-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
+              <div className="flex items-center justify-between gap-4 sm:gap-6">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
-                  <div className="text-2xl font-semibold text-white mt-2">
+                  <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
                     {completedCount} / {steps.length}
                   </div>
                 </div>
-                <div className="w-40">
+                <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
                     <div
                       className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
@@ -458,7 +458,7 @@ export default async function Home() {
             {steps.map((step) => (
               <div
                 key={step.title}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -493,7 +493,7 @@ export default async function Home() {
                     href={step.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
                   >
                     {step.cta}
                     <span className="text-[10px] text-gray-400">External</span>
@@ -501,7 +501,7 @@ export default async function Home() {
                 ) : (
                   <Link
                     href={step.href}
-                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
                   >
                     {step.cta}
                     <span className="text-[10px] text-gray-400">Go</span>
@@ -513,23 +513,23 @@ export default async function Home() {
         </section>
 
         {/* ONBOARDING - 3 STEPS */}
-        <section className="max-w-6xl mx-auto px-6 mb-32">
-          <div className="text-center mb-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
+          <div className="text-center mb-10 sm:mb-16">
             <h2 className="text-[10px] font-bold text-violet-400 tracking-[0.4em] uppercase mb-6 opacity-80">
               The Protocol
             </h2>
-            <p className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
               Institutional grade data. <br />
               <span className="text-gray-500/80">Consumer simple access.</span>
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
             {[
               { step: 1, title: "Connect", color: "violet", desc: <>One-click sync with your personal intelligence dashboard via <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline decoration-violet-500/30 underline-offset-4 font-bold">@sightwhale_bot</a>.</> },
               { step: 2, title: "Quantify Conviction", color: "cyan", desc: <>Every trade is instantly processed through our Whale Score engine, measuring PnL history and timing precision.</> },
               { step: 3, title: "Shadow", color: "emerald", desc: <>Mirror every move with precision <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> alerts tailored to your strategy.</> }
             ].map((item, i) => (
-              <div key={i} className={`glass rounded-[2rem] border border-white/5 p-8 flex flex-col gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden`}>
+              <div key={i} className={`glass rounded-2xl sm:rounded-[2rem] border border-white/5 p-5 sm:p-8 flex flex-col gap-6 sm:gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${item.color}-500/10 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-${item.color}-500/20 transition-all duration-1000`}></div>
                 <div className="flex items-center justify-between relative z-10">
                   <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/20 text-${item.color}-300 flex items-center justify-center font-black text-xl group-hover:scale-110 group-hover:bg-${item.color}-500 group-hover:text-white transition-all duration-700`}>
@@ -549,10 +549,10 @@ export default async function Home() {
         </section>
 
         {/* SOCIAL PROOF */}
-        <section className="border-y border-white/5 bg-white/[0.01] py-16 mb-24 relative overflow-hidden">
+        <section className="border-y border-white/5 bg-white/[0.01] py-10 sm:py-16 mb-16 sm:mb-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/[0.02] via-transparent to-cyan-500/[0.02]"></div>
           <div className="max-w-6xl mx-auto px-6 relative z-10">
-            <blockquote className="text-2xl md:text-3xl font-black text-center text-white tracking-tight mb-12 leading-[1.2]">
+            <blockquote className="text-xl sm:text-2xl md:text-3xl font-black text-center text-white tracking-tight mb-8 sm:mb-12 leading-[1.2] px-2">
               “We don’t predict outcomes. <br className="hidden md:block" />We <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">track capital flow</span>.”
             </blockquote>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -571,8 +571,8 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-6 mb-24">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 sm:mb-10">
             <div>
               <p className="text-[10px] font-bold text-violet-400 tracking-[0.35em] uppercase mb-4">
                 Analysis & Research
@@ -632,12 +632,12 @@ export default async function Home() {
         </section>
 
         {/* THE PROBLEM & SOLUTION GRID */}
-        <section className="max-w-7xl mx-auto px-6 mb-24">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="space-y-8">
               <div>
                 <h2 className="text-[10px] font-bold text-red-400 tracking-[0.4em] uppercase mb-5">The Market Problem</h2>
-                <h3 className="text-xl md:text-3xl font-black tracking-tight text-white leading-[1.1]">
+                <h3 className="text-lg sm:text-xl md:text-3xl font-black tracking-tight text-white leading-[1.1]">
                   Prediction markets are <br />
                   <span className="text-gray-500 italic">distorted by noise.</span>
                 </h3>
@@ -663,12 +663,12 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="glass rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden group border-white/5 hover:border-cyan-500/30 transition-all duration-700 bg-white/[0.01]">
+            <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 relative overflow-hidden group border-white/5 hover:border-cyan-500/30 transition-all duration-700 bg-white/[0.01]">
               <div className="absolute -top-20 -right-20 w-[250px] h-[250px] bg-cyan-500/10 rounded-full blur-[70px] group-hover:bg-cyan-500/20 transition-all duration-1000"></div>
               
               <div className="relative z-10">
                 <h2 className="text-[10px] font-bold text-cyan-400 tracking-[0.4em] uppercase mb-5">The Solution</h2>
-                <h3 className="text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
+                <h3 className="text-lg sm:text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
                 
                 <ul className="grid gap-3 mb-8">
                   {[
@@ -694,18 +694,18 @@ export default async function Home() {
         </section>
 
         {/* FEATURES BENTO GRID */}
-        <section id="sample-signals" className="max-w-7xl mx-auto px-6 mb-32">
-          <div className="text-center mb-16">
+        <section id="sample-signals" className="max-w-7xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
+          <div className="text-center mb-10 sm:mb-16">
             <h2 className="section-title tracking-[0.2em] opacity-80 mb-4">Intelligence Platform</h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-base sm:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light px-1">
               We monitor millions of data points to surface the only ones that matter.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 auto-rows-[minmax(300px,auto)]">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-8 auto-rows-[minmax(280px,auto)]">
             
             {/* Feature 1: Alerts (Large Card) */}
-            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden p-8 md:p-10 flex flex-col justify-between border-white/5 bg-white/[0.01]">
+            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden p-5 sm:p-8 md:p-10 flex flex-col justify-between border-white/5 bg-white/[0.01]">
               <div className="relative z-10">
                 <div className="flex items-center gap-5 mb-6">
                   <div className="w-14 h-14 bg-violet-500/15 rounded-2xl flex items-center justify-center text-3xl border border-violet-500/20">🐋</div>
@@ -881,16 +881,16 @@ export default async function Home() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section className="max-w-7xl mx-auto px-6 mb-32 relative">
-          <div className="text-center mb-20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32 relative">
+          <div className="text-center mb-12 sm:mb-20">
             <h2 className="text-[11px] font-black text-violet-400 tracking-[0.5em] uppercase mb-6 opacity-80">
               The Engine
             </h2>
-            <p className="text-3xl md:text-5xl font-black text-white tracking-tight mb-6">How It Works</p>
+            <p className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight mb-6">How It Works</p>
             <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-cyan-500 mx-auto rounded-full"></div>
           </div>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 relative">
             {/* Connecting Line - Pro Max: Dynamic gradient line */}
             <div className="hidden lg:block absolute top-[40%] left-0 w-full h-[2px] bg-[linear-gradient(to_right,transparent,rgba(139,92,246,0.2),rgba(34,211,238,0.2),transparent)]"></div>
             
@@ -901,7 +901,7 @@ export default async function Home() {
               { title: "Deliver", desc: "Signals via dashboard, Telegram & email", icon: "📬" }
             ].map((step, i) => (
               <div key={i} className="relative group">
-                <div className="glass rounded-[2.5rem] p-10 h-full border-white/5 hover:border-violet-500/40 hover:bg-violet-500/[0.02] transition-all duration-700 flex flex-col items-center text-center group-hover:translate-y-[-8px] shadow-2xl">
+                <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 h-full border-white/5 hover:border-violet-500/40 hover:bg-violet-500/[0.02] transition-all duration-700 flex flex-col items-center text-center group-hover:translate-y-[-8px] shadow-2xl">
                   <div className="w-16 h-16 rounded-[1.5rem] bg-violet-500/15 text-violet-400 flex items-center justify-center text-2xl font-black mb-8 group-hover:bg-violet-500 group-hover:text-white transition-all duration-700 shadow-[0_0_30px_rgba(139,92,246,0.2)] group-hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] group-hover:rotate-6">
                     {i + 1}
                   </div>
@@ -931,8 +931,8 @@ export default async function Home() {
         </section>
 
         {/* COMPARISON */}
-        <section className="max-w-6xl mx-auto px-6 mb-32">
-          <div className="glass rounded-[3rem] overflow-hidden p-12 md:p-20 relative bg-white/[0.01] border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
+          <div className="glass rounded-2xl sm:rounded-[3rem] overflow-hidden p-6 sm:p-12 md:p-20 relative bg-white/[0.01] border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
             {/* Pro Max: Animated top border */}
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-violet-500/40 to-transparent"></div>
             
@@ -941,8 +941,8 @@ export default async function Home() {
               <p className="text-gray-500 text-lg font-light">The transparency advantage in a black-box market.</p>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-stretch">
-              <div className="space-y-10 p-10 rounded-[2.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-colors">
+            <div className="grid md:grid-cols-2 gap-8 sm:gap-12 lg:gap-20 items-stretch">
+              <div className="space-y-8 sm:space-y-10 p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-colors">
                 <p className="text-gray-600 font-black uppercase tracking-[0.4em] text-[11px]">Standard Tools</p>
                 <ul className="space-y-8">
                   {["Predictive guessing", "Anonymous chat tips", "Black-box indicators", "Opaque track records"].map((item, i) => (
@@ -954,7 +954,7 @@ export default async function Home() {
                 </ul>
               </div>
               
-              <div className="relative p-10 rounded-[2.5rem] bg-violet-600/[0.02] border border-violet-500/20 shadow-[0_0_50px_rgba(139,92,246,0.05)] overflow-hidden group">
+              <div className="relative p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-violet-600/[0.02] border border-violet-500/20 shadow-[0_0_50px_rgba(139,92,246,0.05)] overflow-hidden group">
                 <div className="absolute inset-0 bg-violet-500/[0.02] blur-3xl group-hover:bg-violet-500/[0.05] transition-colors duration-1000"></div>
                 <p className="text-violet-400 font-black uppercase tracking-[0.4em] text-[11px] mb-10 relative">Polymarket Whale Intelligence</p>
                 <ul className="space-y-8 relative">
@@ -979,19 +979,19 @@ export default async function Home() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="max-w-7xl mx-auto px-6 mb-24">
-          <div className="text-center mb-16">
+        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="text-center mb-10 sm:mb-16">
             <h2 className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
               Pricing
             </h2>
-            <p className="text-2xl md:text-4xl font-black text-white tracking-tight mb-4 leading-tight">
+            <p className="text-xl sm:text-2xl md:text-4xl font-black text-white tracking-tight mb-4 leading-tight">
               Institutional data. <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 via-gray-200 to-gray-500">Retail simplicity.</span>
             </p>
             <p className="text-base text-gray-400 font-light max-w-2xl mx-auto">Choose the intelligence level that matches your market participation.</p>
           </div>
           
-          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto items-stretch">
             
             {/* Free */}
             <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 p-7 bg-white/[0.01]">

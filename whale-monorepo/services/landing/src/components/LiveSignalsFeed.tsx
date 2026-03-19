@@ -54,8 +54,8 @@ export default function LiveSignalsFeed({ signals }: { signals: LiveSignal[] }) 
   }, [signals, cursor]);
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-white/10">
+    <div className="rounded-xl sm:rounded-[2rem] border border-white/10 bg-white/[0.02] overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           <div className="text-xs font-black tracking-[0.25em] uppercase text-emerald-300">
@@ -71,7 +71,7 @@ export default function LiveSignalsFeed({ signals }: { signals: LiveSignal[] }) 
         </Link>
       </div>
 
-      <div className="px-3 py-3">
+      <div className="px-3 sm:px-4 py-3">
         {windowed.length === 0 ? (
           <div className="px-3 py-8 text-center text-sm text-gray-500">
             No signals available right now.
