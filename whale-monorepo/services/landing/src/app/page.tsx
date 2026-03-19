@@ -42,6 +42,12 @@ function formatUsdCompact(value: number): string {
   return `${value < 0 ? '-' : ''}$${abs.toFixed(0)}`;
 }
 
+function formatMinPlus(value: number, min: number): string {
+  if (!Number.isFinite(value)) return '—';
+  if (value < min) return `${min}+`;
+  return formatCompactInt(value);
+}
+
 type HomeStats = {
   trackedWhales: number;
   trackedVolumeUsd: number;
@@ -421,11 +427,15 @@ export default async function Home() {
               </div>
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.alertEvents30d)}</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
+                  {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
+                </div>
               </div>
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Telegram Linked</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.telegramLinkedUsers)}</div>
+                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
+                  {formatMinPlus(homeStats.telegramLinkedUsers, 10)}
+                </div>
               </div>
             </div>
           </div>
@@ -947,7 +957,18 @@ export default async function Home() {
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 to-gray-600">
                 {Number.isFinite(homeStats.totalUsers) && Number.isFinite(homeStats.telegramLinkedUsers) ? (
                   <>
-                    Trusted by {formatCompactInt(homeStats.totalUsers)} traders · {formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram
+                    {homeStats.totalUsers < 50 ? (
+                      <>Trusted by active Polymarket traders · Telegram delivery live</>
+                    ) : (
+                      <>
+                        Trusted by {formatCompactInt(homeStats.totalUsers)} traders ·{' '}
+                        {homeStats.telegramLinkedUsers < 10 ? (
+                          <>Telegram delivery live</>
+                        ) : (
+                          <>{formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram</>
+                        )}
+                      </>
+                    )}
                   </>
                 ) : (
                   <>Trusted by active traders</>
