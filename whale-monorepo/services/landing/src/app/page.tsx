@@ -416,7 +416,7 @@ export default async function Home() {
                 This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
                 <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
@@ -429,12 +429,6 @@ export default async function Home() {
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
                 <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
                   {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
-                </div>
-              </div>
-              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-black">Telegram Linked</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
-                  {formatMinPlus(homeStats.telegramLinkedUsers, 10)}
                 </div>
               </div>
             </div>
