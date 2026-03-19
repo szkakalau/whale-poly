@@ -949,33 +949,6 @@ export default async function Home() {
               </div>
             ))}
           </div>
-          <div className="mt-16 flex flex-col items-center gap-6">
-            <div className="flex items-center gap-4 text-gray-500 text-sm font-bold tracking-tight">
-              <div className="flex -space-x-3">
-                {[1,2,3,4,5].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-[#020202] bg-gray-800 shadow-xl"></div>)}
-              </div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 to-gray-600">
-                {Number.isFinite(homeStats.totalUsers) && Number.isFinite(homeStats.telegramLinkedUsers) ? (
-                  <>
-                    {homeStats.totalUsers < 50 ? (
-                      <>Trusted by active Polymarket traders · Telegram delivery live</>
-                    ) : (
-                      <>
-                        Trusted by {formatCompactInt(homeStats.totalUsers)} traders ·{' '}
-                        {homeStats.telegramLinkedUsers < 10 ? (
-                          <>Telegram delivery live</>
-                        ) : (
-                          <>{formatCompactInt(homeStats.telegramLinkedUsers)} linked on Telegram</>
-                        )}
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>Trusted by active traders</>
-                )}
-              </span>
-            </div>
-          </div>
         </section>
 
         {/* COMPARISON */}
