@@ -15,8 +15,22 @@ from sqlalchemy.dialects.postgresql import insert
 from urllib.parse import urlparse
 
 from services.telegram_bot.bot import build_application
-from services.telegram_bot.templates import format_alert
+from services.telegram_bot.delivery_cooldown import (
+  CooldownAction,
+  compute_effective_score,
+  handle_cooldown_before_send,
+  record_after_digest_flush,
+  record_push_for_group,
+)
+from services.telegram_bot.elite_filters import elite_delivery_allowed
+from services.telegram_bot.templates import format_alert, format_digest_lines
 from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
+from services.telegram_bot.recipients import (
+  AlertRecipient,
+  dedupe_recipients,
+  dedupe_triples,
+  group_recipients_by_telegram,
+)
 from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
 from shared.logging import configure_logging
@@ -367,8 +381,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       else:
         kind = "entry"
 
-    telegram_ids: list[str] = []
-    recipient_plan_map: dict[str, str] = {}
+    triples: list[tuple[str, str, str]] = []
     lookup_db_ok = False
     config = get_alert_config()
     plan_cfg = config.get("user_plans", {})
@@ -393,17 +406,19 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         has_smart = await _has_smart_collection_tables(session)
 
         if not has_follows and not has_collections and not has_smart:
-          telegram_ids = (
+          broadcast_tids = (
             await session.execute(
               select(Subscription.telegram_id)
               .where(Subscription.status.in_(["active", "trialing"]))
               .where(Subscription.current_period_end > now)
             )
           ).scalars().all()
+          triples = [(str(tid), "broadcast", "*") for tid in broadcast_tids]
         else:
-          async def _lookup_ids(has_users_flag: bool) -> tuple[list[str], list[str], list[str]]:
-            follow_ids_v: list[str] = []
+          async def _lookup_triples(has_users_flag: bool) -> list[tuple[str, str, str]]:
+            out: list[tuple[str, str, str]] = []
             if has_follows:
+              follow_ids_v: list[str] = []
               if has_users_flag:
                 user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
                 follow_query = (
@@ -442,13 +457,14 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
                   follow_ids_v = []
                 else:
                   raise
+              for tid in follow_ids_v:
+                out.append((str(tid), "whale", wallet))
 
-            collection_ids_v: list[str] = []
             if has_collections:
               if has_users_flag:
                 user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
                 collection_query = (
-                  select(Subscription.telegram_id)
+                  select(Subscription.telegram_id, Collection.id)
                   .join(User, user_join)
                   .join(Collection, Collection.user_id == User.id)
                   .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
@@ -459,7 +475,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
                 )
               else:
                 collection_query = (
-                  select(Subscription.telegram_id)
+                  select(Subscription.telegram_id, Collection.id)
                   .join(Collection, Collection.user_id == Subscription.telegram_id)
                   .join(CollectionWhale, CollectionWhale.collection_id == Collection.id)
                   .where(Subscription.status.in_(["active", "trialing"]))
@@ -468,20 +484,19 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
                   .where(CollectionWhale.wallet == wallet)
                 )
               try:
-                collection_ids_v = (await session.execute(collection_query)).scalars().all()
+                for row in (await session.execute(collection_query)).all():
+                  out.append((str(row[0]), "collection", str(row[1])))
               except Exception as e:
                 if _is_missing_collections_error(e):
                   _mark_collections_tables_missing()
-                  collection_ids_v = []
                 else:
                   raise
 
-            smart_ids_v: list[str] = []
             if has_smart:
               if has_users_flag:
                 user_join = or_(User.telegram_id == Subscription.telegram_id, User.id == Subscription.telegram_id)
                 smart_query = (
-                  select(Subscription.telegram_id)
+                  select(Subscription.telegram_id, SmartCollection.id)
                   .join(User, user_join)
                   .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == User.id)
                   .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
@@ -493,7 +508,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
                 )
               else:
                 smart_query = (
-                  select(Subscription.telegram_id)
+                  select(Subscription.telegram_id, SmartCollection.id)
                   .join(SmartCollectionSubscription, SmartCollectionSubscription.user_id == Subscription.telegram_id)
                   .join(SmartCollection, SmartCollection.id == SmartCollectionSubscription.smart_collection_id)
                   .join(SmartCollectionWhale, SmartCollectionWhale.smart_collection_id == SmartCollection.id)
@@ -503,36 +518,43 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
                   .where(SmartCollectionWhale.wallet == wallet)
                 )
               try:
-                smart_ids_v = (await session.execute(smart_query)).scalars().all()
+                for row in (await session.execute(smart_query)).all():
+                  out.append((str(row[0]), "smart_collection", str(row[1])))
               except Exception as e:
                 if _is_missing_smart_collections_error(e):
                   _mark_smart_collection_tables_missing()
-                  smart_ids_v = []
                 else:
                   raise
-            return follow_ids_v, collection_ids_v, smart_ids_v
+            return out
 
           try:
             size_bucket = int(max(0.0, size_v) // 500)
             score_bucket = int(max(0.0, score_v) // 5)
-            cache_key = f"subs:{wallet}:{size_bucket}:{score_bucket}:{int(has_users)}"
+            cache_key = f"subs2:{wallet}:{size_bucket}:{score_bucket}:{int(has_users)}"
+            channel_triples: list[tuple[str, str, str]] = []
             cached_raw = await redis.get(cache_key)
             if cached_raw:
               try:
                 data = json.loads(cached_raw)
-                follow_ids = list(map(str, data.get("follow", []) or []))
-                collection_ids = list(map(str, data.get("collections", []) or []))
-                smart_ids = list(map(str, data.get("smart", []) or []))
+                if data.get("v") == 2:
+                  raw_items = data.get("items", []) or []
+                  channel_triples = [(str(x[0]), str(x[1]), str(x[2])) for x in raw_items]
+                else:
+                  channel_triples = []
+                  for tid in data.get("follow", []) or []:
+                    channel_triples.append((str(tid), "whale", wallet))
+                  for tid in data.get("collections", []) or []:
+                    channel_triples.append((str(tid), "collection", "_"))
+                  for tid in data.get("smart", []) or []:
+                    channel_triples.append((str(tid), "smart_collection", "_"))
               except Exception:
-                follow_ids = []
-                collection_ids = []
-                smart_ids = []
+                channel_triples = await _lookup_triples(has_users)
             else:
-              follow_ids, collection_ids, smart_ids = await _lookup_ids(has_users)
+              channel_triples = await _lookup_triples(has_users)
               try:
                 await redis.set(
                   cache_key,
-                  json.dumps({"follow": follow_ids, "collections": collection_ids, "smart": smart_ids}),
+                  json.dumps({"v": 2, "items": [list(t) for t in channel_triples]}),
                   ex=120,
                 )
               except Exception:
@@ -540,12 +562,10 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           except Exception as e:
             if has_users and _is_missing_users_error(e):
               _mark_users_table_missing()
-              follow_ids, collection_ids, smart_ids = await _lookup_ids(False)
+              channel_triples = await _lookup_triples(False)
             else:
               raise
 
-          # Global feed logic: if a subscriber has NO configurations, they get everything.
-          # This maintains backward compatibility for users who haven't set up follows.
           async def _get_global_ids(has_users_flag: bool) -> set[str]:
             all_active_q = (
               select(Subscription.telegram_id)
@@ -604,19 +624,27 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             else:
               global_ids = set()
 
-          telegram_ids = list(dict.fromkeys([*follow_ids, *collection_ids, *smart_ids, *list(global_ids)]))
+          merged: list[tuple[str, str, str]] = [*channel_triples]
+          for gid in global_ids:
+            merged.append((str(gid), "global", "*"))
+          triples = dedupe_triples(merged)
         lookup_db_ok = True
     except Exception:
       logger.exception("subscriber_lookup_failed")
-      telegram_ids = []
+      triples = []
       lookup_db_ok = False
 
     if settings.telegram_alert_chat_id:
-      telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_alert_chat_id]))
+      aid = str(settings.telegram_alert_chat_id)
+      triples.append((aid, "admin", aid))
 
     is_health = _is_health_market(payload)
     if is_health and settings.telegram_health_chat_id:
-      telegram_ids = list(dict.fromkeys([*telegram_ids, settings.telegram_health_chat_id]))
+      hid = str(settings.telegram_health_chat_id)
+      triples.append((hid, "health", "*"))
+
+    triples = dedupe_triples(triples)
+    telegram_ids = list(dict.fromkeys([t[0] for t in triples]))
 
     if not telegram_ids:
       logger.info("alert_no_recipients whale_trade_id=%s", whale_trade_id)
@@ -636,6 +664,18 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     except Exception:
       recipient_plan_map = {}
 
+    recipients = [
+      AlertRecipient(
+        telegram_id=t,
+        source_type=st,
+        source_id=sid,
+        plan=str(recipient_plan_map.get(t, "FREE")).upper(),
+      )
+      for t, st, sid in triples
+    ]
+    recipients = dedupe_recipients(recipients)
+    grouped_recipients = group_recipients_by_telegram(recipients)
+
     logger.info("alert_processing whale_trade_id=%s total_potential_recipients=%s", whale_trade_id, len(telegram_ids))
 
     signal_level = (payload.get("signal_level") or "").lower()
@@ -652,8 +692,8 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     market_id = str(payload.get("market_id") or payload.get("raw_token_id") or "")
     wallet_value = str(payload.get("wallet_address") or "").lower()
 
-    async def _send_one(tid: str, is_admin: bool):
-      plan_name = recipient_plan_map.get(tid, "FREE").upper()
+    async def _send_one(tid: str, plan_name: str, is_admin: bool, matched_group: list[AlertRecipient]):
+      plan_name = plan_name.upper()
       limits = PLAN_LIMITS_MAP.get(plan_name, PLAN_LIMITS_MAP["FREE"])
 
       if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
@@ -666,6 +706,54 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       if plan_name == "PRO" and not high_confidence:
         return
 
+      if plan_name == "ELITE" and settings.elite_delivery_filters_enabled:
+        try:
+          async with SessionLocal() as session:
+            if not await elite_delivery_allowed(session, tid, wallet_value, payload, plan_name, matched_group):
+              return
+        except Exception:
+          logger.exception("elite_filter_failed telegram_id=%s", tid)
+
+      cd = await handle_cooldown_before_send(
+        redis,
+        tid,
+        plan_name,
+        payload,
+        raw,
+        matched_group,
+        format_digest_lines,
+      )
+      if cd.action == CooldownAction.QUEUED:
+        return
+      if cd.action == CooldownAction.FLUSH_ONLY and cd.flush_combined_text:
+        try:
+          if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+            await _send_via_bot(settings.telegram_health_bot_token, tid, cd.flush_combined_text)
+          else:
+            await application.bot.send_message(
+              chat_id=int(tid),
+              text=cd.flush_combined_text,
+              parse_mode="HTML",
+              disable_web_page_preview=True,
+            )
+          await increment_daily_alert_count(redis, tid)
+          await record_after_digest_flush(redis, tid, matched_group, cd.flushed_raws or [])
+        except Exception:
+          logger.exception(
+            "telegram_digest_flush_failed telegram_id=%s whale_trade_id=%s",
+            tid,
+            whale_trade_id,
+          )
+        return
+
+      backlog_raws = cd.backlog_raws or []
+
+      def _message_body() -> str:
+        base = format_alert(payload, tid)
+        if backlog_raws:
+          return f"{format_digest_lines(backlog_raws, tid)}\n\n{base}"
+        return base
+
       elite_priority_key = f"elite:last:{tid}"
       elite_same_focus = False
       if plan_name == "ELITE" and market_id and wallet_value:
@@ -673,7 +761,6 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         elite_same_focus = last_focus == f"{wallet_value}|{market_id}"
 
       try:
-        # Check delivery inside its own session to avoid holding a global session
         async with SessionLocal() as session:
           result = await session.execute(
             insert(Delivery)
@@ -683,52 +770,64 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           rowcount = result.rowcount
           await session.commit()
 
-        if rowcount == 1:
-          delay_seconds = limits["alert_delay_minutes"] * 60
-          if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
-            delay_seconds = max(delay_seconds, 60)
+        if rowcount != 1:
+          return
 
-          if delay_seconds > 0:
-            async def _delayed_send():
-              try:
-                await asyncio.sleep(delay_seconds)
-                if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-                  await _send_via_bot(settings.telegram_health_bot_token, tid, format_alert(payload, tid))
-                else:
-                  await application.bot.send_message(
-                    chat_id=int(tid),
-                    text=format_alert(payload, tid),
-                    parse_mode="HTML",
-                    disable_web_page_preview=True,
-                  )
-                await increment_daily_alert_count(redis, tid)
-                if plan_name == "ELITE" and market_id and wallet_value:
-                  await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
-              except Exception:
-                logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
-            asyncio.create_task(_delayed_send())
-            return
+        delay_seconds = limits["alert_delay_minutes"] * 60
+        if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
+          delay_seconds = max(delay_seconds, 60)
 
-          # Route to specific bot if it's the health channel
-          if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-            await _send_via_bot(settings.telegram_health_bot_token, tid, format_alert(payload, tid))
-          else:
-            await application.bot.send_message(
-              chat_id=int(tid),
-              text=format_alert(payload, tid),
-              parse_mode="HTML",
-              disable_web_page_preview=True,
-            )
-          await increment_daily_alert_count(redis, tid)
-          if plan_name == "ELITE" and market_id and wallet_value:
-            await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
+        if delay_seconds > 0:
+          async def _delayed_send():
+            try:
+              await asyncio.sleep(delay_seconds)
+              body = _message_body()
+              if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+                await _send_via_bot(settings.telegram_health_bot_token, tid, body)
+              else:
+                await application.bot.send_message(
+                  chat_id=int(tid),
+                  text=body,
+                  parse_mode="HTML",
+                  disable_web_page_preview=True,
+                )
+              await increment_daily_alert_count(redis, tid)
+              await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
+              if plan_name == "ELITE" and market_id and wallet_value:
+                await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
+            except Exception:
+              logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+
+          asyncio.create_task(_delayed_send())
+          return
+
+        body = _message_body()
+        if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+          await _send_via_bot(settings.telegram_health_bot_token, tid, body)
+        else:
+          await application.bot.send_message(
+            chat_id=int(tid),
+            text=body,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+          )
+        await increment_daily_alert_count(redis, tid)
+        await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
+        if plan_name == "ELITE" and market_id and wallet_value:
+          await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
       except Exception:
         logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 
     tasks = []
-    for tid in telegram_ids:
+    for tid, plan, group in grouped_recipients:
+      logger.debug(
+        "alert_recipients tid=%s whale_trade_id=%s sources=%s",
+        tid,
+        whale_trade_id,
+        [(r.source_type, r.source_id) for r in group],
+      )
       is_admin = bool(settings.telegram_alert_chat_id and tid == settings.telegram_alert_chat_id)
-      tasks.append(_send_one(tid, is_admin))
+      tasks.append(_send_one(tid, plan, is_admin, group))
 
     if tasks:
       await asyncio.gather(*tasks)

@@ -1,4 +1,5 @@
 import hashlib
+import json
 
 from shared.config import settings
 
@@ -98,3 +99,32 @@ def format_alert(payload: dict, telegram_id: str) -> str:
     f"👛 <b>Wallet:</b> <code>{wallet_display}</code>\n\n"
     f"<code>#{wm}</code>"
   )
+
+
+def format_digest_lines(raw_json_strings: list[str], telegram_id: str) -> str:
+  """Compact multi-alert summary when cooldown digest overflows (Phase C)."""
+
+  def _one_line(p: dict) -> str:
+    w = str(p.get("wallet_address") or p.get("wallet") or "")
+    if w.startswith("0x") and len(w) > 10:
+      w = f"{w[:6]}…{w[-4:]}"
+    elif len(w) > 12:
+      w = w[:10] + "…"
+    title = str(p.get("market_title") or p.get("market_question") or p.get("market_id") or "")[:72]
+    try:
+      sc = int(float(p.get("whale_score") or p.get("score") or 0))
+    except (TypeError, ValueError):
+      sc = 0
+    return f"<code>{w}</code> score <b>{sc}</b> — {title}"
+
+  lines = [f"📋 <b>Alert digest</b> <code>#{user_hash(telegram_id)}</code>", ""]
+  for raw in raw_json_strings:
+    try:
+      payload = json.loads(raw)
+      if not isinstance(payload, dict):
+        lines.append("— <i>(invalid item)</i>")
+        continue
+      lines.append(f"— {_one_line(payload)}")
+    except (json.JSONDecodeError, TypeError):
+      lines.append("— <i>(parse error)</i>")
+  return "\n".join(lines)

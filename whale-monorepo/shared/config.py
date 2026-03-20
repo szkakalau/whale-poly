@@ -48,6 +48,19 @@ class Settings:
     self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     self.bot_user_hash_secret = os.getenv("BOT_USER_HASH_SECRET", "")
     self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "50"))
+    _env_truthy = frozenset({"1", "true", "yes", "on"})
+    self.alert_cooldown_v2_enabled = os.getenv("ALERT_COOLDOWN_V2_ENABLED", "0").strip().lower() in _env_truthy
+    self.cooldown_v2_digest_max = int(os.getenv("COOLDOWN_V2_DIGEST_MAX", "5"))
+    self.cooldown_v2_notional_cap_usd = float(os.getenv("COOLDOWN_V2_NOTIONAL_CAP_USD", "10000000"))
+    self.cooldown_v2_notional_floor_usd = float(os.getenv("COOLDOWN_V2_NOTIONAL_FLOOR_USD", "1"))
+    self.cooldown_v2_bypass_delta = float(os.getenv("COOLDOWN_V2_BYPASS_DELTA", "5"))
+    self.cooldown_v2_min_seconds = int(os.getenv("COOLDOWN_V2_MIN_SECONDS", "30"))
+    self.cooldown_v2_state_ttl_seconds = int(os.getenv("COOLDOWN_V2_STATE_TTL_SECONDS", str(7 * 86400)))
+
+    self.alert_events_dynamic_cooldown = os.getenv("ALERT_EVENTS_DYNAMIC_COOLDOWN", "0").strip().lower() in _env_truthy
+    self.elite_delivery_filters_enabled = os.getenv("ELITE_DELIVERY_FILTERS_ENABLED", "0").strip().lower() in _env_truthy
+    self.elite_min_effective_score = float(os.getenv("ELITE_MIN_EFFECTIVE_SCORE", "78"))
+    self.elite_top_percent_of_follows = float(os.getenv("ELITE_TOP_PERCENT_OF_FOLLOWS", "20"))
     self.telegram_alert_chat_id = os.getenv("TELEGRAM_ALERT_CHAT_ID") or os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
     self.admin_token = os.getenv("ADMIN_TOKEN", "")
 

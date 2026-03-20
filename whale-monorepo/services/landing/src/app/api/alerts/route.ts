@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { Prisma } from '@prisma/client';
+import { Plan, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import {
+  computeEffectiveScore,
+  cooldownSecondsForPlan,
+  isDynamicAlertEventsCooldownEnabled,
+  type BillingPlan,
+} from '@/lib/alertCooldown';
+
+function toBillingPlan(plan: Plan): BillingPlan {
+  if (plan === Plan.ELITE) return 'ELITE';
+  if (plan === Plan.PRO) return 'PRO';
+  return 'FREE';
+}
 
 export async function GET() {
   const user = await requireUser();
@@ -49,6 +61,8 @@ export async function POST(req: Request) {
     market_title?: string | null;
     market_question?: string | null;
     whale_score?: number | null;
+    size?: number | null;
+    amount?: number | null;
     alert_type?: string | null;
     outcome?: string | null;
     created_at?: string | null;
@@ -80,6 +94,12 @@ export async function POST(req: Request) {
   const whaleCooldown = Number.isFinite(whaleCooldownMinutes) ? Math.max(1, whaleCooldownMinutes) : 10;
   const collectionCooldownSince = new Date(occurredAt.getTime() - collectionCooldown * 60 * 1000);
   const whaleCooldownSince = new Date(occurredAt.getTime() - whaleCooldown * 60 * 1000);
+  const useDynamicCooldown = isDynamicAlertEventsCooldownEnabled();
+  const effectiveScore = computeEffectiveScore({
+    whaleScore: payload.whale_score,
+    size: payload.size,
+    amount: payload.amount,
+  });
   const whaleUserRows = await prisma.whaleFollow.findMany({
     where: { wallet },
     select: { userId: true }
@@ -100,8 +120,25 @@ export async function POST(req: Request) {
   if (whaleUserRows.length === 0 && collectionRows.length === 0) {
     return NextResponse.json({ ok: true, inserted: 0 });
   }
+
+  const dedupUserIds = [
+    ...new Set([...whaleUserRows.map((r) => r.userId), ...collectionRows.map((r) => r.userId)]),
+  ];
+  const dedupUsers = await prisma.user.findMany({
+    where: { id: { in: dedupUserIds } },
+    select: { id: true, plan: true },
+  });
+  const planByUserId = new Map(dedupUsers.map((u) => [u.id, u.plan]));
+
   let inserted = 0;
   for (const row of whaleUserRows) {
+    const windowStart = useDynamicCooldown
+      ? new Date(
+          occurredAt.getTime() -
+            cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
+              1000,
+        )
+      : whaleCooldownSince;
     const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT id
       FROM alert_events
@@ -109,7 +146,7 @@ export async function POST(req: Request) {
         AND source_type = 'whale'
         AND source_id = ${wallet}
         AND detail = ${detail}
-        AND occurred_at >= ${whaleCooldownSince}
+        AND occurred_at >= ${windowStart}
       LIMIT 1
     `);
     if (recent.length > 0) {
@@ -124,6 +161,13 @@ export async function POST(req: Request) {
   const collectionTitle = payload.market_title || payload.market_question || 'Smart Collection Alert';
   for (const row of collectionRows) {
     const detailText = `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`;
+    const windowStart = useDynamicCooldown
+      ? new Date(
+          occurredAt.getTime() -
+            cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
+              1000,
+        )
+      : collectionCooldownSince;
     const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT id
       FROM alert_events
@@ -131,7 +175,7 @@ export async function POST(req: Request) {
         AND source_type = 'collection'
         AND source_id = ${row.smartCollectionId}
         AND detail = ${detailText}
-        AND occurred_at >= ${collectionCooldownSince}
+        AND occurred_at >= ${windowStart}
       LIMIT 1
     `);
     if (recent.length > 0) {
