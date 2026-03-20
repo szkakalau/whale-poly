@@ -25,6 +25,7 @@ class CheckoutIn(BaseModel):
   telegram_activation_code: str
   plan: str
   user_id: str | None = None
+  customer_email: str | None = None
   
 class PlanUpsertItem(BaseModel):
   name: str
@@ -379,6 +380,22 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
       metadata = obj.get("metadata") or {}
       activation_code = str(metadata.get("activation_code") or "").upper()
       user_id = str(metadata.get("user_id") or "").strip() or None
+      if not user_id:
+        cust_details = obj.get("customer_details") or {}
+        email_hint = str(
+          cust_details.get("email")
+          or obj.get("customer_email")
+          or "",
+        ).strip()
+        if email_hint:
+          row_uid = (
+            await session.execute(
+              select(User.id).where(func.lower(User.email) == email_hint.lower())
+            )
+          ).scalars().first()
+          if row_uid:
+            user_id = str(row_uid)
+            logger.info("checkout_webhook_linked_user_by_email email_hash=%s", hashlib.sha1(email_hint.lower().encode()).hexdigest()[:12])
       if activation_code:
         ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == activation_code))).scalars().first()
         if ac and not ac.used:

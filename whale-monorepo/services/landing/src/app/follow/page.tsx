@@ -338,6 +338,7 @@ export default async function FollowPage() {
   const summaries = await Promise.all(rows.map((row) => fetchWhaleSummary(row.wallet)));
   const byWallet = new Map(summaries.map((s) => [s.wallet.toLowerCase(), s]));
   const telegramConnected = Boolean(user?.telegramId);
+  const paidPlan = user?.plan && user.plan !== 'FREE';
   const recentMoves = summaries
     .filter((summary) => summary.lastTradeTime)
     .sort((a, b) => new Date(b.lastTradeTime || 0).getTime() - new Date(a.lastTradeTime || 0).getTime())
@@ -453,10 +454,18 @@ export default async function FollowPage() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs uppercase tracking-wide text-gray-500">Telegram Status</p>
             <div className="text-2xl font-semibold text-white mt-2">
-              {telegramConnected ? 'Connected' : 'Not connected'}
+              {telegramConnected
+                ? 'Connected'
+                : paidPlan
+                  ? 'Not linked (web profile)'
+                  : 'Not connected'}
             </div>
             <div className="text-xs text-gray-500 mt-2">
-              {telegramConnected ? 'Alerts will reach your bot' : 'Connect to receive alerts'}
+              {telegramConnected
+                ? 'Alerts will reach your bot'
+                : paidPlan
+                  ? `${user?.plan} is active for delivery, but this web login has no Telegram chat ID saved. Open the bot / Mini App while logged in here, or re-checkout signed in so we can attach your chat ID.`
+                  : 'Connect to receive alerts'}
             </div>
             {!telegramConnected && (
               <div className="mt-4">

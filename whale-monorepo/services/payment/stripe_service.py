@@ -12,20 +12,30 @@ def _stripe():
   return stripe
 
 
-def create_checkout_session(*, stripe_price_id: str, activation_code: str, plan: str, user_id: str | None = None) -> str:
+def create_checkout_session(
+  *,
+  stripe_price_id: str,
+  activation_code: str,
+  plan: str,
+  user_id: str | None = None,
+  customer_email: str | None = None,
+) -> str:
   stripe = _stripe()
   metadata = {"activation_code": activation_code, "plan": plan}
   if user_id:
     metadata["user_id"] = user_id
   if not settings.landing_success_url or not settings.landing_cancel_url:
     raise RuntimeError("LANDING_SUCCESS_URL and LANDING_CANCEL_URL are required")
-  session = stripe.checkout.Session.create(
-    mode="subscription",
-    line_items=[{"price": stripe_price_id, "quantity": 1}],
-    success_url=settings.landing_success_url,
-    cancel_url=settings.landing_cancel_url,
-    metadata=metadata,
-  )
+  create_kwargs: dict = {
+    "mode": "subscription",
+    "line_items": [{"price": stripe_price_id, "quantity": 1}],
+    "success_url": settings.landing_success_url,
+    "cancel_url": settings.landing_cancel_url,
+    "metadata": metadata,
+  }
+  if customer_email and str(customer_email).strip():
+    create_kwargs["customer_email"] = str(customer_email).strip()
+  session = stripe.checkout.Session.create(**create_kwargs)
   return str(session.url)
 
 

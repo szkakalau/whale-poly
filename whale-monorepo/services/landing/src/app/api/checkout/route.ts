@@ -49,7 +49,12 @@ export async function POST(req: Request) {
     upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ telegram_activation_code: codeUpper, plan, user_id: user?.id ?? null }),
+      body: JSON.stringify({
+        telegram_activation_code: codeUpper,
+        plan,
+        user_id: user?.id ?? null,
+        customer_email: user?.email ?? null,
+      }),
       cache: 'no-store'
     });
   } catch (e: unknown) {
