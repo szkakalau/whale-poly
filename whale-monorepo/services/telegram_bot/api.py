@@ -919,7 +919,18 @@ async def debug_build():
     "RENDER_INSTANCE_ID",
   ]
   env = {k: os.getenv(k) for k in keys if os.getenv(k)}
-  return {"service": "telegram-bot", "env": env}
+  admin_present = bool(getattr(settings, "admin_token", "") or "")
+  admin_hash_prefix = (
+    hashlib.sha1((settings.admin_token or "").encode("utf-8")).hexdigest()[:8] if admin_present else None
+  )
+  return {
+    "service": "telegram-bot",
+    "env": env,
+    "admin_debug": {
+      "admin_token_present": admin_present,
+      "admin_token_hash_prefix": admin_hash_prefix,
+    },
+  }
 
 
 @app.post("/alerts/test")
