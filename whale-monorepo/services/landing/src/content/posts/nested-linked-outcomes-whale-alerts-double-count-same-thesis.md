@@ -1,6 +1,6 @@
 ---
 title: "Nested and Linked Outcomes: When Whale Alerts Quietly Double-Count the Same Thesis"
-date: "2026-03-21"
+date: "2026-03-22"
 excerpt: "Your feed can show five different markets and five different whales—and you still only have one underlying bet. This deep dive explains structural links between prediction-market contracts (nested events, mutex sets, and soft coupling), how to spot accidental concentration, and how to read alerts as a portfolio instead of a sequence of dopamine hits."
 author: "Whale Team"
 readTime: "15 min"

@@ -1,6 +1,6 @@
 ---
 title: "From Chain Event to Your Screen: Modeling the Latency Stack Behind Polymarket Whale Alerts"
-date: "2026-03-21"
+date: "2026-03-22"
 excerpt: "Signal half-life tells you how fast information decays in the market. This post tackles a different problem: the seconds-to-minutes gap between an on-chain fill and the moment you read the alert—and why treating that gap honestly changes sizing, limits, and when you skip a trade entirely."
 author: "Whale Team"
 readTime: "14 min"
