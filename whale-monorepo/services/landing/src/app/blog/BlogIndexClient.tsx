@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blog";
+import {
+  isDailySpotlightSlug,
+  newestSpotlightTimestampMs,
+  sortDailySpotlightPosts,
+} from "@/lib/blog-spotlight-utils";
 
 type Props = {
   posts: BlogPost[];
@@ -19,10 +24,14 @@ type LiveSignal = {
   href?: string;
 };
 
+const SPOTLIGHT_POLL_MS = 5 * 60 * 1000;
+
 export default function BlogIndexClient({ posts }: Props) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState("All");
   const [liveSignals, setLiveSignals] = useState<LiveSignal[]>([]);
+  /** null = use server `posts` until first successful API load */
+  const [apiSpotlight, setApiSpotlight] = useState<BlogPost[] | null>(null);
 
   const tags = useMemo(() => {
     const set = new Set<string>();
@@ -61,6 +70,30 @@ export default function BlogIndexClient({ posts }: Props) {
     // Consider spotlight stale if the newest entry is older than 30 hours.
     return Date.now() - spotlightNewestAt > 30 * 60 * 60 * 1000;
   }, [spotlight.length, spotlightNewestAt]);
+
+  useEffect(() => {
+    let alive = true;
+    const loadSpotlight = () => {
+      fetch("/api/blog/daily-spotlight", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          if (!alive || !json || !Array.isArray(json.posts)) return;
+          setApiSpotlight(json.posts as BlogPost[]);
+        })
+        .catch(() => {});
+    };
+    loadSpotlight();
+    const interval = setInterval(loadSpotlight, SPOTLIGHT_POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadSpotlight();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   useEffect(() => {
     if (!spotlightStale) return;

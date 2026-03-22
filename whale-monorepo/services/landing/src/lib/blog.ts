@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { isDailySpotlightSlug, sortDailySpotlightPosts } from './blog-spotlight-utils';
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
@@ -216,4 +217,10 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
     return null;
   }
   return normalizePost(filePost);
+}
+
+/** Daily spotlight rows (DB + any markdown files), newest calendar day first. */
+export async function getDailySpotlightPostsMerged(): Promise<BlogPost[]> {
+  const all = await getAllPosts();
+  return sortDailySpotlightPosts(all.filter((p) => isDailySpotlightSlug(p.slug)));
 }
