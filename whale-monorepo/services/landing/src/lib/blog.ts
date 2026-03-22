@@ -18,6 +18,10 @@ export interface BlogPost {
   readTime: string;
   coverImage?: string;
   tags?: string[];
+  /** Shorter `<title>` / social title (aim ~40–50 chars + brand suffix for ~60 total). */
+  metaTitle?: string;
+  /** Meta description; aim 140–160 characters for SERP snippets. */
+  metaDescription?: string;
 }
 
 function normalizePostDate(value: string): string {
@@ -70,6 +74,8 @@ export function getAllFilePosts(): BlogPost[] {
         readTime: data.readTime,
         coverImage: data.coverImage,
         tags: data.tags,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
       } as BlogPost);
     });
 
@@ -94,6 +100,8 @@ function getFilePostBySlug(slug: string): BlogPost | null {
     readTime: data.readTime,
     coverImage: data.coverImage,
     tags: data.tags,
+    metaTitle: data.metaTitle,
+    metaDescription: data.metaDescription,
   } as BlogPost);
 }
 

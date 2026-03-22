@@ -1,5 +1,7 @@
 ---
 title: "From Chain Event to Your Screen: Modeling the Latency Stack Behind Polymarket Whale Alerts"
+metaTitle: "Polymarket Whale Alerts: Chain-to-Screen Latency"
+metaDescription: "Indexing and push delivery delay Polymarket whale alerts versus half-life decay. Use a checklist: liquidity, reaction time, and when to skip. Research only."
 date: "2026-03-22"
 excerpt: "Signal half-life tells you how fast information decays in the market. This post tackles a different problem: the seconds-to-minutes gap between an on-chain fill and the moment you read the alert—and why treating that gap honestly changes sizing, limits, and when you skip a trade entirely."
 author: "Whale Team"

@@ -6,8 +6,27 @@ import { Prisma } from '@prisma/client';
 import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { getAllFilePosts, getAllPosts, getPostBySlug } from '@/lib/blog';
+import { getAllFilePosts, getAllPosts, getPostBySlug, type BlogPost } from '@/lib/blog';
 import { prisma } from '@/lib/prisma';
+
+/** Keep `<title>` near 40–60 chars including brand (common SERP guidance). */
+const TITLE_BRAND_SUFFIX = ' | SightWhale';
+const TITLE_TAG_MAX_LEN = 60;
+
+function buildBlogHtmlTitle(post: BlogPost): string {
+  const core = (post.metaTitle?.trim() || post.title.trim()) || 'Blog';
+  if (core.length + TITLE_BRAND_SUFFIX.length <= TITLE_TAG_MAX_LEN) {
+    return `${core}${TITLE_BRAND_SUFFIX}`;
+  }
+  const budget = TITLE_TAG_MAX_LEN - TITLE_BRAND_SUFFIX.length - 1;
+  const clipped = core.slice(0, Math.max(24, budget)).trimEnd();
+  return `${clipped}…${TITLE_BRAND_SUFFIX}`;
+}
+
+function blogMetaDescription(post: BlogPost): string {
+  const raw = (post.metaDescription?.trim() || post.excerpt?.trim() || '').slice(0, 320);
+  return raw || 'Polymarket whale intelligence and research from SightWhale.';
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -31,13 +50,17 @@ export async function generateMetadata({ params }: Props) {
   
   if (!post) {
     return {
-      title: 'Post Not Found - Polymarket Whale Intelligence',
+      title: 'Post Not Found | SightWhale',
     };
   }
 
+  const htmlTitle = buildBlogHtmlTitle(post);
+  const description = blogMetaDescription(post);
+  const ogTitle = post.metaTitle?.trim() || post.title;
+
   return {
-    title: `${post.title} - Polymarket Whale Intelligence`,
-    description: post.excerpt,
+    title: htmlTitle,
+    description,
     keywords: post.tags,
     authors: [{ name: post.author || 'Whale Team' }],
     robots: {
@@ -52,8 +75,8 @@ export async function generateMetadata({ params }: Props) {
       },
     },
     openGraph: {
-      title: post.title,
-      description: post.excerpt,
+      title: ogTitle,
+      description,
       type: 'article',
       publishedTime: post.date,
       tags: post.tags,
@@ -69,8 +92,8 @@ export async function generateMetadata({ params }: Props) {
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
-      description: post.excerpt,
+      title: ogTitle,
+      description,
       images: ['/images/whale-alert-biden.svg']
     },
     alternates: {
