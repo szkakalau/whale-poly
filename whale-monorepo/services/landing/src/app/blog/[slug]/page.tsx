@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 /** Keep `<title>` near 40–60 chars including brand (common SERP guidance). */
 const TITLE_BRAND_SUFFIX = ' | SightWhale';
 const TITLE_TAG_MAX_LEN = 60;
+const SITE = 'https://www.sightwhale.com';
 
 function buildBlogHtmlTitle(post: BlogPost): string {
   const core = (post.metaTitle?.trim() || post.title.trim()) || 'Blog';
@@ -99,7 +100,7 @@ export async function generateMetadata({ params }: Props) {
       images: ['/images/whale-alert-biden.svg']
     },
     alternates: {
-      canonical: `/blog/${slug}`,
+      canonical: `${SITE}/blog/${slug}`,
     },
   };
 }

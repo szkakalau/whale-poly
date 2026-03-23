@@ -7,7 +7,7 @@ export const metadata = {
   title: 'Research Series - Polymarket Whale Intelligence',
   description: 'A structured research library on whale signals, timing, and market behavior.',
   alternates: {
-    canonical: '/blog/research',
+    canonical: 'https://www.sightwhale.com/blog/research',
   },
 };
 

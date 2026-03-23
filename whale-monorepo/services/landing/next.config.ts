@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Prevent duplicate URL variants like `/blog` vs `/blog/` from being treated as separate pages.
+  trailingSlash: false,
   outputFileTracingIncludes: {
     "/*": ["src/content/posts/**/*.md"],
   },

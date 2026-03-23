@@ -38,7 +38,7 @@ export const metadata = {
     images: ['/images/whale-alert-biden.svg']
   },
   alternates: {
-    canonical: '/blog',
+    canonical: 'https://www.sightwhale.com/blog',
   },
 };
 
