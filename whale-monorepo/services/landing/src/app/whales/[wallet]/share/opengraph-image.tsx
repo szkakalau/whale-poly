@@ -2,6 +2,9 @@ import { ImageResponse } from 'next/og';
 
 // Use node runtime to keep static generation available during builds.
 export const runtime = 'nodejs';
+// Prevent Next from trying to prerender OG routes during `next build`.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
