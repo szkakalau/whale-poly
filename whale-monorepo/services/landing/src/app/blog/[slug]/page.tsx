@@ -42,7 +42,8 @@ export async function generateStaticParams() {
   } catch {
     posts = getAllFilePosts();
   }
-  return posts.slice(0, 200).map((post) => ({ slug: post.slug }));
+  // Pre-render enough paths for filesystem posts + DB spotlights (avoid truncating newer MD slugs).
+  return posts.slice(0, 1000).map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: Props) {

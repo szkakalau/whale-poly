@@ -202,10 +202,12 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
 export async function getAllPosts(): Promise<BlogPost[]> {
   const [dbPosts, filePosts] = await Promise.all([getAllDbPosts(), Promise.resolve(getAllFilePosts())]);
   const merged = new Map<string, BlogPost>();
-  for (const post of dbPosts) {
+  // Markdown in repo is the source of truth for editorial posts. DB rows (e.g. daily spotlight)
+  // must not shadow files with the same slug—otherwise Vercel can show stale/empty DB copies.
+  for (const post of filePosts) {
     merged.set(post.slug, post);
   }
-  for (const post of filePosts) {
+  for (const post of dbPosts) {
     if (!merged.has(post.slug)) {
       merged.set(post.slug, post);
     }
@@ -216,15 +218,15 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  const filePost = getFilePostBySlug(slug);
+  if (filePost) {
+    return normalizePost(filePost);
+  }
   const dbPost = await getDbPostBySlug(slug);
   if (dbPost) {
     return normalizePost(dbPost);
   }
-  const filePost = getFilePostBySlug(slug);
-  if (!filePost) {
-    return null;
-  }
-  return normalizePost(filePost);
+  return null;
 }
 
 /** Daily spotlight rows (DB + any markdown files), newest calendar day first. */

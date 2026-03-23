@@ -55,14 +55,28 @@ export default function BlogIndexClient({ posts }: Props) {
     });
   }, [posts, query, activeTag]);
 
-  const spotlight = filtered.filter((post) => post.slug.startsWith("daily-spotlight-"));
-  const deepDives = filtered.filter((post) => !post.slug.startsWith("daily-spotlight-"));
+  const spotlightPool = useMemo(() => {
+    if (apiSpotlight !== null) return apiSpotlight;
+    return posts.filter((p) => isDailySpotlightSlug(p.slug));
+  }, [apiSpotlight, posts]);
 
-  const spotlightNewestAt = useMemo(() => {
-    if (spotlight.length === 0) return null;
-    const t = new Date(spotlight[0]?.date || "").getTime();
-    return Number.isFinite(t) ? t : null;
-  }, [spotlight]);
+  const spotlight = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return sortDailySpotlightPosts(
+      spotlightPool.filter((post) => {
+        if (activeTag !== "All" && !post.tags?.includes(activeTag)) {
+          return false;
+        }
+        if (!q) return true;
+        const hay = `${post.title}\n${post.excerpt}\n${(post.tags || []).join(" ")}`.toLowerCase();
+        return hay.includes(q);
+      }),
+    );
+  }, [spotlightPool, activeTag, query]);
+
+  const deepDives = filtered.filter((post) => !isDailySpotlightSlug(post.slug));
+
+  const spotlightNewestAt = useMemo(() => newestSpotlightTimestampMs(spotlight), [spotlight]);
 
   const spotlightStale = useMemo(() => {
     if (spotlight.length === 0) return true;
