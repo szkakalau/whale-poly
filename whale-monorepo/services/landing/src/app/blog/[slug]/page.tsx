@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { blogArticleMarkdownComponents } from '@/components/blog-markdown-headings';
 import { Prisma } from '@prisma/client';
 import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import Header from '@/components/Header';
@@ -943,7 +944,7 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           ) : (
             <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-violet-200 prose-code:bg-violet-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:pr-4 prose-li:marker:text-violet-500">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogArticleMarkdownComponents}>
                 {safePost.content}
               </ReactMarkdown>
             </div>
@@ -955,7 +956,7 @@ export default async function BlogPostPage({ params }: Props) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Research Series</p>
-                <h3 className="text-lg font-semibold text-white mt-2">Continue the research chain</h3>
+                <h2 className="text-lg font-semibold text-white mt-2">Continue the research chain</h2>
                 <p className="text-xs text-gray-400 mt-2">
                   Follow related research articles or jump to the full pillar library.
                 </p>
@@ -986,7 +987,7 @@ export default async function BlogPostPage({ params }: Props) {
         ) : null}
 
         <div className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-          <h3 className="text-lg font-semibold text-white mb-2">Want the full research library?</h3>
+          <h2 className="text-lg font-semibold text-white mb-2">Want the full research library?</h2>
           <p className="text-xs text-gray-400 mb-4">Explore structured research pillars and internal link paths.</p>
           <Link
             href="/blog/research"
@@ -998,7 +999,7 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* Share/CTA Section */}
         <div className="mt-20 pt-10 border-t border-white/10 text-center">
-          <h3 className="text-xl font-bold text-white mb-4">Want real-time whale alerts?</h3>
+          <h2 className="text-xl font-bold text-white mb-4">Want real-time whale alerts?</h2>
           <p className="text-gray-400 mb-8">Get notified when smart money moves.</p>
           <Link href="/" className="btn-primary px-8 py-3">
             Start Tracking →

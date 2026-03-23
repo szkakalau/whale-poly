@@ -21,7 +21,7 @@ export default function Footer() {
 
           {/* Product Column */}
           <div className="space-y-6">
-            <h4 className="text-white font-bold text-sm tracking-widest uppercase">Platform</h4>
+            <p className="text-white font-bold text-sm tracking-widest uppercase">Platform</p>
             <ul className="space-y-4">
               <li><Link href="/backtesting" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Whale Performance</Link></li>
               <li><Link href="/conviction" className="text-gray-400 hover:text-violet-400 text-sm transition-colors py-2 block min-h-[44px] flex items-center">Conviction Analysis</Link></li>
@@ -32,7 +32,7 @@ export default function Footer() {
 
           {/* Company Column */}
           <div className="space-y-6">
-            <h4 className="text-white font-bold text-sm tracking-widest uppercase">Company</h4>
+            <p className="text-white font-bold text-sm tracking-widest uppercase">Company</p>
             <div className="flex flex-col gap-3">
               <Link href="/about" className="text-gray-400 hover:text-violet-400 text-sm transition-colors">
                 About
