@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blog";
@@ -26,9 +27,13 @@ type LiveSignal = {
 
 const SPOTLIGHT_POLL_MS = 5 * 60 * 1000;
 
+/** When collapsed, show at most this many tag pills (incl. “All”). Use “Show all” for the rest. */
+const COLLAPSED_TAG_CAP = 12;
+
 export default function BlogIndexClient({ posts }: Props) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState("All");
+  const [tagsExpanded, setTagsExpanded] = useState(false);
   const [liveSignals, setLiveSignals] = useState<LiveSignal[]>([]);
   /** null = use server `posts` until first successful API load */
   const [apiSpotlight, setApiSpotlight] = useState<BlogPost[] | null>(null);
@@ -42,6 +47,20 @@ export default function BlogIndexClient({ posts }: Props) {
     }
     return ["All", ...Array.from(set.values()).sort()];
   }, [posts]);
+
+  const tagToggleVisible = tags.length > COLLAPSED_TAG_CAP;
+
+  /** Collapsed mode lists a capped set so every chip stays clickable; current filter is always included. */
+  const displayTags = useMemo(() => {
+    if (!tagToggleVisible || tagsExpanded) return tags;
+    if (tags.length <= COLLAPSED_TAG_CAP) return tags;
+    const nonAll = tags.filter((t) => t !== "All");
+    let base: string[] = ["All", ...nonAll.slice(0, COLLAPSED_TAG_CAP - 1)];
+    if (!base.includes(activeTag)) {
+      base = ["All", activeTag, ...nonAll.filter((t) => t !== activeTag).slice(0, COLLAPSED_TAG_CAP - 2)];
+    }
+    return base;
+  }, [tags, tagToggleVisible, tagsExpanded, activeTag]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -152,28 +171,57 @@ export default function BlogIndexClient({ posts }: Props) {
             {filtered.length} posts • {spotlight.length} spotlight
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-[1.2fr,1fr]">
+        <div className="flex flex-col gap-3">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search markets, themes, or tags"
             className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-violet-500/60 transition-all"
           />
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
+          <div className="flex flex-col gap-2">
+            <div className="relative flex flex-wrap gap-2">
+              {displayTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setActiveTag(tag)}
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    activeTag === tag
+                      ? "border-violet-500/60 bg-violet-500/15 text-violet-100"
+                      : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {tagToggleVisible && !tagsExpanded ? (
+                <span
+                  className="inline-flex items-center rounded-full border border-dashed border-white/15 bg-black/20 px-3 py-1 text-[11px] text-gray-500"
+                  title="More tags available — expand the list"
+                >
+                  +{tags.length - displayTags.length} more
+                </span>
+              ) : null}
+            </div>
+            {tagToggleVisible ? (
               <button
-                key={tag}
                 type="button"
-                onClick={() => setActiveTag(tag)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  activeTag === tag
-                    ? "border-violet-500/60 bg-violet-500/15 text-violet-100"
-                    : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
-                }`}
+                onClick={() => setTagsExpanded((v) => !v)}
+                aria-expanded={tagsExpanded}
+                className="group inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-cyan-200/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500/50"
               >
-                {tag}
+                <span>
+                  {tagsExpanded ? "Show fewer tags" : `Show all ${tags.length} tags`}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 shrink-0 text-cyan-400/80 transition-transform duration-300 ease-out group-hover:text-cyan-300 ${
+                    tagsExpanded ? "rotate-180" : ""
+                  }`}
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
               </button>
-            ))}
+            ) : null}
           </div>
         </div>
       </div>
