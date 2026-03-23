@@ -2,20 +2,26 @@
 title: "How to Identify Smart Money in Prediction Markets"
 metaTitle: "Identify Smart Money in Prediction Markets"
 metaDescription: "Polymarket Smart Money needs win rate, ROI, sample size, and consistency—not one score. Whale flow surfaces names; history verifies. Tools and mistakes inside."
-date: "2026-03-25"
+date: "2026-03-23"
 excerpt: "A data-oriented guide to spotting Smart Money on Polymarket and similar markets: metrics that matter, behavioral tells, a Whale-flow case pattern, SightWhale tooling, pitfalls, and FAQ."
 author: "Whale Team"
 readTime: "12 min"
 tags: ["Polymarket", "Smart Money", "Whale", "Prediction Markets", "Analysis", "Trading Education", "Research"]
 ---
 
-## TL;DR
+## TL;DR (quick summary)
 
 **Smart Money** in **prediction markets** is best defined as **wallets with repeatable edge signals**—not “one big trade” and not a single headline number.  
 Use a **small metric bundle**: **win rate + ROI (or PnL) + sample size + time window + consistency**, then sanity-check with **behavior** (sizing, timing, market types).  
 **Whale** prints can **surface candidates**; **Smart Money** is what remains **after** you filter luck, hedges, and thin samples.
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+---
+
+## Live Whale Data (Powered by SightWhale)
+
+Use **SightWhale** for **live whale** flow, **Smart Money** views, and **alerts** in one place: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 

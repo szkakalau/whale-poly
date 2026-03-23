@@ -2,20 +2,26 @@
 title: "How Can Beginners Start Using Polymarket?"
 metaTitle: "Polymarket for Beginners: Start Here"
 metaDescription: "Polymarket beginners: fund small, read resolution rules first, log trades. Steps, starter strategies, Whale homework, Smart Money tools, mistakes, FAQ."
-date: "2026-03-28"
+date: "2026-03-23"
 excerpt: "A very beginner-friendly, step-by-step guide to getting started on Polymarket: what it is, setup flow, simple strategies, a whale-reference example, SightWhale tools, pitfalls, and FAQ."
 author: "Whale Team"
 readTime: "11 min"
 tags: ["Polymarket", "Beginner", "Whale", "Smart Money", "Prediction Markets", "Tutorial", "Trading Education"]
 ---
 
-## TL;DR
+## TL;DR (quick summary)
 
 **Polymarket** is a **prediction market**: you trade priced outcome shares on real-world events—**read the rules first**, then size small.  
 Beginners should **start with education, limits, and logs**—not with max leverage or “copy everything.”  
 Use **Whale** and **Smart Money** signals as **research prompts** on **SightWhale**, not as guaranteed trades.
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+---
+
+## Live Whale Data (Powered by SightWhale)
+
+Use **SightWhale** for **live whale** flow, **Smart Money** views, and **alerts** in one place: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 

@@ -9,13 +9,19 @@ readTime: "12 min"
 tags: ["Polymarket", "Beginner", "Trading Education", "Smart Money", "Whale", "Prediction Markets", "Analysis"]
 ---
 
-## TL;DR
+## TL;DR (quick summary)
 
 **Polymarket** is a **prediction market**: you trade priced “Yes/No” (or similar) outcome shares on real events—odds move with information and order flow.  
 **Regular people** only “make money” sustainably with **process**: research, contract rules, liquidity, risk limits, and patience—most casual participants still lose after timing and costs.  
 **Whale** and **Smart Money** are **clues**, not commands: verify context before you size.
 
 👉 **Want live Whale signals?** **SightWhale** offers **real-time Whale tracking**, **Smart Money scoring**, and **high-win-rate-style alerts** (tooling, not advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+---
+
+## Live Whale Data (Powered by SightWhale)
+
+Use **SightWhale** for **live whale** flow, **Smart Money** views, and **alerts** in one place: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 

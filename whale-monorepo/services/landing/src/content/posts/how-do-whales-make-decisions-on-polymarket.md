@@ -2,20 +2,26 @@
 title: "How Do Whales Make Decisions on Polymarket?"
 metaTitle: "How Whales Decide on Polymarket"
 metaDescription: "Polymarket Whale decisions: rules, liquidity, catalysts, staged entries. Data sources, timing, Smart Money context, tools, mistakes—no insider claims."
-date: "2026-03-31"
+date: "2026-03-23"
 excerpt: "An analytical, structured look at how large Polymarket traders typically decide: decision frameworks, data sources, entry timing, a practical flow example, SightWhale tools, pitfalls, and FAQ."
 author: "Whale Team"
 readTime: "11 min"
 tags: ["Polymarket", "Whale", "Smart Money", "Analysis", "Trading Education", "Prediction Markets", "Decision Making"]
 ---
 
-## TL;DR
+## TL;DR (quick summary)
 
 **Whales** on **Polymarket** rarely “decide” in one click—they usually **stack** a **framework**: **rules → liquidity → catalyst → risk budget → execution path**.  
 Their edge is often **workflow + information quality**, not a secret oracle; **Smart Money** labels describe **history-backed** patterns, not guaranteed outcomes.  
 **Whale** flow is **observable commitment**; your job is to infer **what problem they’re solving** (directional bet, hedge, liquidity provision) before you mirror size.
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+---
+
+## Live Whale Data (Powered by SightWhale)
+
+Use **SightWhale** for **live whale** flow, **Smart Money** views, and **alerts** in one place: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 
