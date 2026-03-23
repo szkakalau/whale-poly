@@ -2,7 +2,9 @@ import { MetadataRoute } from 'next';
 
 /**
  * Public marketing / blog content: allow mainstream search + AI citation crawlers.
- * API routes stay disallowed for all agents (no indexing / no bulk scraping of endpoints).
+ * Disallowed for every listed agent (and `*`):
+ * - /api/ — endpoints not meant for indexing or bulk scraping
+ * - /admin/, /login/, /dashboard/ — auth / control surfaces if routed on this host
  *
  * Reference user-agents (vendors publish these; update if vendors rename bots):
  * - OpenAI: GPTBot, ChatGPT-User, OAI-SearchBot
@@ -18,39 +20,40 @@ import { MetadataRoute } from 'next';
  * special-case it here—`*` applies unless you add a dedicated block.
  */
 const SITE = 'https://www.sightwhale.com';
-const DISALLOW_PATHS = ['/api/'];
 
-function allowSiteExceptApi(userAgent: string) {
+const DISALLOW_PATHS: string[] = ['/api/', '/admin/', '/login/', '/dashboard/'];
+
+function crawlerRule(userAgent: string) {
   return {
     userAgent,
     allow: '/',
     disallow: DISALLOW_PATHS,
-  } as const;
+  };
 }
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       // OpenAI
-      allowSiteExceptApi('GPTBot'),
-      allowSiteExceptApi('ChatGPT-User'),
-      allowSiteExceptApi('OAI-SearchBot'),
+      crawlerRule('GPTBot'),
+      crawlerRule('ChatGPT-User'),
+      crawlerRule('OAI-SearchBot'),
       // Google (search + AI Overviews / Gemini indexing)
-      allowSiteExceptApi('Googlebot'),
-      allowSiteExceptApi('Google-Extended'),
-      // Microsoft (Bing / Copilot)
-      allowSiteExceptApi('Bingbot'),
+      crawlerRule('Googlebot'),
+      crawlerRule('Google-Extended'),
+      // Microsoft (Bing / Copilot) — official UA is Bingbot
+      crawlerRule('Bingbot'),
       // Anthropic
-      allowSiteExceptApi('ClaudeBot'),
-      allowSiteExceptApi('anthropic-ai'),
+      crawlerRule('ClaudeBot'),
+      crawlerRule('anthropic-ai'),
       // Perplexity
-      allowSiteExceptApi('PerplexityBot'),
+      crawlerRule('PerplexityBot'),
       // Apple Intelligence / Applebot extended
-      allowSiteExceptApi('Applebot-Extended'),
+      crawlerRule('Applebot-Extended'),
       // Meta AI
-      allowSiteExceptApi('Meta-ExternalAgent'),
+      crawlerRule('Meta-ExternalAgent'),
       // Cohere
-      allowSiteExceptApi('cohere-ai'),
+      crawlerRule('cohere-ai'),
       // Default: same policy for everyone else
       {
         userAgent: '*',
