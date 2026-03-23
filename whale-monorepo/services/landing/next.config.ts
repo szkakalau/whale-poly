@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Consolidate thin duplicate vs Polymarket vs TradFi topic → single canonical article (SEO + AI citation).
+      {
+        source: "/blog/understanding-prediction-markets-vs-traditional-finance",
+        destination: "/blog/polymarket-vs-traditional-trading-markets-differences",
+        permanent: true,
+      },
       {
         source: "/:path*",
         has: [{ type: "header", key: "x-forwarded-proto", value: "http" }],
