@@ -15,7 +15,7 @@ On **Polymarket**, a **Whale** usually means a wallet (or cluster) placing **lar
 **Whales** matter because their flow can **move prices**, **signal conviction or hedging**, and **reveal who is willing to size when others won’t**—but flow is never proof of correctness.  
 **Smart Money** adds context: history, win rates, and patterns—so “big” does not automatically mean “good.”
 
-👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://sightwhale.com](https://sightwhale.com)**
+👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 
@@ -86,7 +86,7 @@ If you follow **Polymarket** seriously, you want tooling that answers:
 
 **SightWhale** is built around that stack: **Whale** flow surfacing, **Smart Money** scoring and leaderboards, and alerts oriented toward **high win-rate-style** patterns (still: **no guarantees**; markets are risky).
 
-Start here: **[https://sightwhale.com](https://sightwhale.com)**
+Start here: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
 
