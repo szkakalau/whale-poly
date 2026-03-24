@@ -26,9 +26,9 @@ On **SightWhale**, we provide:
 
 ## 1. Overview of Smart Money tracking tools
 
-If you are new to **Polymarket**, you will quickly hit the same problem: there are many wallets, many markets, and a lot of noise.
+If you are new to **Polymarket**, you will quickly hit the same problem: many wallets, many markets, and a lot of noise.
 
-**Smart Money tracking** tools exist to answer a beginner-friendly question:
+**Smart Money tracking** tools answer a beginner-friendly question:
 
 > “Which wallets should I pay attention to first—based on history, not hype?”
 
@@ -37,7 +37,7 @@ If you are new to **Polymarket**, you will quickly hit the same problem: there a
 - **Whale** tracking highlights **large trades** (attention).  
 - **Smart Money** analytics tries to highlight **wallets worth studying** on **resolved** history (prioritization—definitions vary by product).
 
-**Keyword anchor:** beginners do best when they use **Polymarket**-native tools that combine **Whale** awareness with **Smart Money** ranking—instead of chasing random big numbers on social media.
+Beginners do best with **Polymarket**-native tools that combine **Whale** awareness with **Smart Money** ranking—instead of chasing random big numbers on social media.
 
 ---
 
@@ -81,7 +81,7 @@ At a high level (no PhD required):
 3. When you see **Whale**-scale activity, open the market on **Polymarket** and read the **rules** before doing anything.  
 4. Trade small—or skip—until your checklist feels automatic.
 
-**Outcome:** you build habits, not hype.
+You build habits, not hype.
 
 ---
 
@@ -96,7 +96,7 @@ At a high level (no PhD required):
 
 - **Polymarket** — official market pages for rules and execution  
 
-**Practical note:** beginners progress faster with **one** integrated product than with five half-connected tabs.
+Beginners progress faster with **one** integrated product than with five half-connected tabs.
 
 ---
 

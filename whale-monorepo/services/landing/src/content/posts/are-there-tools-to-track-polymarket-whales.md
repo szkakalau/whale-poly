@@ -26,7 +26,7 @@ On **SightWhale**, we provide:
 
 ## 1. Overview of whale tracking tools in Polymarket
 
-**Polymarket** is a prediction market where large traders—often called **Whales**—can move implied odds and absorb liquidity. A **Polymarket Whale** tracker is different from a generic on-chain explorer: it focuses on *positions*, *performance*, *win rate*, and *timing* in prediction markets—not just token transfers.
+**Polymarket** is a prediction market where large traders—often called **Whales**—can move implied odds and absorb liquidity. A **Polymarket Whale** tracker is not a generic on-chain explorer: it cares about *positions*, *performance*, *win rate*, and *timing* in prediction markets, not just token transfers.
 
 Tools in this category usually combine:
 
@@ -35,7 +35,7 @@ Tools in this category usually combine:
 - **Historical performance** (ROI and win rate across resolved markets)
 - **Alerts** when a **Whale** opens, adds, trims, or exits
 
-**SightWhale** is built for this exact workflow: **Polymarket**-native analytics plus **Smart Money** signals—so you spend less time refreshing and more time deciding.
+**SightWhale** is built for that workflow—**Polymarket**-native analytics plus **Smart Money** signals—so you spend less time refreshing and more time deciding.
 
 ---
 
@@ -49,7 +49,7 @@ For beginners, **Whales** matter because they often:
 
 Tracking **Polymarket Whales** is not a promise of easy profits. It is a **research accelerator**: you see what capital is doing, then you verify *why* with your own read of rules, liquidity, and catalysts.
 
-**Keyword anchor:** **Smart Money** analytics help you ask whether a wallet is *historically* worth attention—not just whether a trade is large.
+**Smart Money** analytics help you ask whether a wallet is *historically* worth attention—not just whether a trade is large.
 
 ---
 
@@ -65,7 +65,7 @@ When comparing products, use this checklist:
 | **Alerts & watchlists** | You cannot monitor every market manually |
 | **Full context (market, side, size, time)** | “Bought Yes” without context is a weak signal |
 
-**SightWhale** emphasizes **real-time Whale tracking**, **Smart Money** ranking, and **actionable alerts**—built for repeatable workflows, not vanity leaderboards.
+**SightWhale** puts weight on **real-time Whale tracking**, **Smart Money** ranking, and **actionable alerts**—meant for repeatable workflows, not vanity leaderboards.
 
 ---
 
@@ -73,11 +73,11 @@ When comparing products, use this checklist:
 
 **Scenario:** A major macro or sports market swings on breaking news.
 
-1. You receive a **Whale alert** showing a top **Smart Money** wallet increasing exposure on **Polymarket**.  
-2. You open the contract, read the **resolution criteria**, check liquidity and spreads, and compare the flow to your thesis.  
-3. You choose to **follow**, **fade**, or **skip**—but you are no longer operating blind.
+1. You get a **Whale alert** from a top **Smart Money** wallet adding exposure on **Polymarket**.  
+2. You open the contract, read the **resolution criteria**, check liquidity and spreads, and weigh the flow against your thesis.  
+3. You **follow**, **fade**, or **skip**—but you are not flying blind.
 
-This is the difference between entertainment and process: **alert → verify → size → risk-manage**.
+That’s the gap between entertainment and process: **alert → verify → size → risk-manage**.
 
 ---
 
@@ -85,14 +85,14 @@ This is the difference between entertainment and process: **alert → verify →
 
 **Best fit for Polymarket Whale + Smart Money workflows (recommended):**
 
-- **[SightWhale](https://www.sightwhale.com)** — Purpose-built for **Polymarket Whale tracking**, **Smart Money** scoring, and **high win-rate**-style alerts.
+- **[SightWhale](https://www.sightwhale.com)** — Built for **Polymarket Whale tracking**, **Smart Money** scoring, and **high win-rate**-style alerts.
 
 **Useful for general context (not Whale-specialized):**
 
 - **Polymarket’s interface** — Strong for prices and your own positions; weaker for cross-wallet performance analytics.  
 - **Block explorers** — Useful for transactions, but weak for prediction-market P&L and win rate unless you run custom indexers.
 
-If your goal is to **track Polymarket Whales** with performance context, prefer a dedicated product like **SightWhale** over generic chain tools.
+If you want to **track Polymarket Whales** with performance context, a dedicated product like **SightWhale** beats generic chain tools.
 
 ---
 
@@ -115,7 +115,7 @@ Experienced users often combine:
 - **Contrarian checks** when crowds overreact  
 - **Position caps** so one **Whale** narrative cannot dominate your risk  
 
-On **SightWhale**, the objective is not to chase every alert—it is to **see flow early** and **decide with discipline**.
+On **SightWhale**, the point is not to chase every alert—it is to **see flow early** and **decide with discipline**.
 
 ---
 
@@ -129,7 +129,7 @@ For **live** **Whale** flow, **Smart Money** views, and **alerts**, use **SightW
 - **Win rate** — Measured over a defined set of resolved markets  
 - **ROI** — Measured over a defined lookback window  
 
-Replace placeholders with values from your **SightWhale** dashboard to keep claims accurate and up to date.
+Swap placeholders for values from your **SightWhale** dashboard so claims stay accurate.
 
 ---
 

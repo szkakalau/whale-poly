@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { Prisma } from '@prisma/client';
+import { unstable_cache } from 'next/cache';
 import { prisma } from './prisma';
 import { isDailySpotlightSlug, sortDailySpotlightPosts } from './blog-spotlight-utils';
 
@@ -50,7 +51,7 @@ function isHealthMonitorPost(post: BlogPost): boolean {
   return hay.includes("health market");
 }
 
-export function getAllFilePosts(): BlogPost[] {
+function getAllFilePostsUncached(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
   }
@@ -81,6 +82,12 @@ export function getAllFilePosts(): BlogPost[] {
 
   return allPosts.sort((a, b) => (a.date > b.date ? -1 : 1));
 }
+
+export const getAllFilePosts = unstable_cache(
+  async () => getAllFilePostsUncached(),
+  ['file-posts-all'],
+  { revalidate: 3600 },
+);
 
 function getFilePostBySlug(slug: string): BlogPost | null {
   const fullPath = path.join(postsDirectory, `${slug}.md`);
@@ -117,7 +124,7 @@ type DbBlogPost = {
   published_at: Date;
 };
 
-async function resolveBlogPostsSchema(): Promise<string | null> {
+async function resolveBlogPostsSchemaUncached(): Promise<string | null> {
   if (!hasDatabaseUrl) {
     return null;
   }
@@ -133,6 +140,13 @@ async function resolveBlogPostsSchema(): Promise<string | null> {
   }
   return schema;
 }
+
+/** Schema lookup is identical for all posts; cache to avoid extra DB round-trips on DB-backed slugs. */
+const resolveBlogPostsSchema = unstable_cache(
+  async () => resolveBlogPostsSchemaUncached(),
+  ['blog-posts-schema'],
+  { revalidate: 3600 },
+);
 
 async function getAllDbPosts(): Promise<BlogPost[]> {
   if (!hasDatabaseUrl) {
@@ -200,7 +214,7 @@ async function getDbPostBySlug(slug: string): Promise<BlogPost | null> {
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {
-  const [dbPosts, filePosts] = await Promise.all([getAllDbPosts(), Promise.resolve(getAllFilePosts())]);
+  const [dbPosts, filePosts] = await Promise.all([getAllDbPosts(), getAllFilePosts()]);
   const merged = new Map<string, BlogPost>();
   // Markdown in repo is the source of truth for editorial posts. DB rows (e.g. daily spotlight)
   // must not shadow files with the same slug—otherwise Vercel can show stale/empty DB copies.

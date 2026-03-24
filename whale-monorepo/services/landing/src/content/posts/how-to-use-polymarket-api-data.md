@@ -1,7 +1,7 @@
 ---
 title: "How to Use Polymarket API Data?"
 metaTitle: "How to Use Polymarket API Data: Gamma, CLOB & Whale Analytics"
-metaDescription: "Technical but clear guide to Polymarket API data—Gamma vs CLOB vs Data API, what each is for, effective workflows, Whale and Smart Money with SightWhale, risks, FAQ."
+metaDescription: "Clear guide to Polymarket API data—Gamma vs CLOB vs Data API, what each is for, effective workflows, Whale and Smart Money with SightWhale, risks, FAQ."
 date: "2026-03-24"
 excerpt: "Informational guide to using Polymarket public APIs: types of data, practical pipelines, example requests, when to use SightWhale for Whale and Smart Money, limitations, FAQ."
 author: "Whale Team"
@@ -26,17 +26,17 @@ On **SightWhale**, we provide:
 
 ## 1. Overview of Polymarket API
 
-**Polymarket** exposes multiple **public HTTP APIs** that serve different jobs: **market discovery and metadata**, **order-book trading (CLOB)**, and **aggregated activity / trades** for analysis.
+**Polymarket** exposes multiple **public HTTP APIs** for different jobs: **market discovery and metadata**, **order-book trading (CLOB)**, and **aggregated activity / trades** for analysis.
 
-**Technical but clear mental model:**
+Simple mental model:
 
-- If you need **what the market is** (titles, slugs, outcomes, token IDs) → start with **Gamma**-style market APIs.  
-- If you need **what the book looks like** (bids/asks, mid, spread) → use the **CLOB** endpoints.  
-- If you need **what happened** (fills/trades at a higher level for research) → use the **Data API** patterns documented by Polymarket.
+- Need **what the market is** (titles, slugs, outcomes, token IDs) → start with **Gamma**-style market APIs.  
+- Need **what the book looks like** (bids/asks, mid, spread) → use the **CLOB** endpoints.  
+- Need **what happened** (fills/trades at a higher level for research) → use the **Data API** patterns documented by Polymarket.
 
 Official orientation (endpoints overview): [Polymarket API endpoints reference](https://docs.polymarket.com/quickstart/reference/endpoints)
 
-**Keyword anchor:** raw **API** access gives you **building blocks**; **Whale** intelligence and **Smart Money** scoring still require **wallet-level history**, **resolution alignment**, and **noise control**—often easier via a dedicated product (**SightWhale**) than DIY alone.
+Raw **API** access gives you **building blocks**. **Whale** intelligence and **Smart Money** scoring still need **wallet-level history**, **resolution alignment**, and **noise control**—often easier with a dedicated product (**SightWhale**) than DIY alone.
 
 ---
 
@@ -49,7 +49,7 @@ Official orientation (endpoints overview): [Polymarket API endpoints reference](
 | **Trades / activity (Data API)** | Recent trades with filters (as documented) | Flow analysis, prototyping alerts |
 | **On-chain verification** | Transactions via explorers | Reconcile API delays or edge cases |
 
-**Informational note:** Gamma market objects often include **`clobTokenIds`** (YES/NO token IDs) when order-book trading is enabled—see [Get markets (Gamma)](https://docs.polymarket.com/developers/gamma-markets-api/get-markets).
+Gamma market objects often include **`clobTokenIds`** (YES/NO token IDs) when order-book trading is enabled—see [Get markets (Gamma)](https://docs.polymarket.com/developers/gamma-markets-api/get-markets).
 
 Example pattern (illustrative):
 
@@ -85,7 +85,7 @@ API shapes change. Pin your integration to **official docs** and log unknown fie
 
 ## 4. Practical example
 
-**Goal:** Monitor a single **Polymarket** market’s tradability before you act on a **Whale** signal.
+**Goal:** Check a single **Polymarket** market’s tradability before you act on a **Whale** signal.
 
 **Steps:**
 
@@ -94,7 +94,7 @@ API shapes change. Pin your integration to **official docs** and log unknown fie
 3. Compare **top-of-book depth** to your intended notional.  
 4. If you also track wallets, correlate large prints with **Smart Money** history (productized on **SightWhale**).
 
-**Outcome:** you separate **information** (odds moved) from **execution** (you can actually get filled).
+You separate **information** (odds moved) from **execution** (you can actually get filled).
 
 ---
 
@@ -104,7 +104,7 @@ API shapes change. Pin your integration to **official docs** and log unknown fie
 
 - **Polymarket official docs** — [Endpoints overview](https://docs.polymarket.com/quickstart/reference/endpoints)
 
-**When you want **Whale** + **Smart Money** without operating a full analytics stack:**
+**When you want **Whale** + **Smart Money** without running a full analytics stack:**
 
 - **[SightWhale](https://www.sightwhale.com)** — **Real-time Whale tracking**, **Smart Money** scoring, and **high win-rate trade alerts** on **Polymarket**.
 
@@ -112,7 +112,7 @@ API shapes change. Pin your integration to **official docs** and log unknown fie
 
 - **Block explorers** — hash-level verification when needed  
 
-**Analytical split:** use **Polymarket** APIs for **market mechanics**; use **SightWhale** for **wallet prioritization** at scale.
+Use **Polymarket** APIs for **market mechanics**; use **SightWhale** for **wallet prioritization** at scale.
 
 ---
 

@@ -3,7 +3,7 @@ title: "Are There Websites That Score or Rank Whales on Polymarket?"
 metaTitle: "Polymarket Whale Rankings & Scores: Smart Money Leaderboards"
 metaDescription: "Yes—specialized sites rank and score Polymarket whales using win rate, ROI, consistency, and Smart Money layers. SightWhale leaderboards, metrics, risks, FAQ."
 date: "2026-03-24"
-excerpt: "Analytical, informational guide to Polymarket whale scoring and rankings: how metrics work, why leaderboards matter, SightWhale Smart Money and Whale profiles, pitfalls, FAQ."
+excerpt: "Guide to Polymarket whale scoring and rankings: how metrics work, why leaderboards matter, SightWhale Smart Money and Whale profiles, pitfalls, FAQ."
 author: "Whale Team"
 readTime: "11 min"
 tags: ["Polymarket", "Whale", "Smart Money", "Rankings", "Scores", "Tools", "Trading Education"]
@@ -28,12 +28,10 @@ On **SightWhale**, we provide:
 
 **Whale scoring** on **Polymarket** is the practice of converting wallet activity into **ranked lists** or **scores**—so traders can prioritize which large participants are worth studying.
 
-**Analytical distinction:**
-
 - **Whale detection** answers “who is big *right now*?” (flow / notional / impact).  
 - **Scoring / ranking** answers “who has historically behaved like **Smart Money** on resolved markets—under explicit definitions?”
 
-**Keyword anchor:** size alone is a weak ranking target; credible systems pair **Whale** flow with **performance** and **consistency** signals.
+Size alone is a weak ranking target; credible systems pair **Whale** flow with **performance** and **consistency** signals.
 
 ---
 
@@ -48,7 +46,7 @@ Most serious scoring stacks combine:
 | **Consistency** | Stability across time and categories | Regime change breaks old edge |
 | **Activity / exposure** | Whether the wallet trades enough to matter | High churn can add noise |
 
-**Informational requirement:** any leaderboard is only as honest as its **population definition** (which markets count) and **time window**.
+Any leaderboard is only as honest as its **population definition** (which markets count) and **time window**.
 
 **SightWhale** provides **Polymarket**-native **Whale** intelligence with **Smart Money**-style ranking surfaces—see **[https://www.sightwhale.com/smart-money](https://www.sightwhale.com/smart-money)** and wallet pages under the **Whales** section of the product.
 
@@ -77,7 +75,7 @@ On **Polymarket**, attention is scarce. Without ranking:
 2. Check **consistency** (is one wallet a one-cycle wonder?).  
 3. Only then interpret today’s **Whale** flow as “worth deep work.”
 
-**Outcome:** fewer false narratives, faster verification.
+Fewer false narratives, faster verification.
 
 ---
 
@@ -93,7 +91,7 @@ On **Polymarket**, attention is scarce. Without ranking:
 - **Polymarket** official UI — markets and execution  
 - **Explorers** — transaction-level verification  
 
-**Analytical takeaway:** if you want **websites that score or rank whales** with **Polymarket** context, use specialized analytics—not generic chain explorers alone.
+If you want **websites that score or rank whales** with **Polymarket** context, use specialized analytics—not generic chain explorers alone.
 
 ---
 

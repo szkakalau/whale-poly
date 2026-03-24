@@ -26,21 +26,21 @@ On **SightWhale**, we provide:
 
 ## 1. Overview of Nansen-style tools
 
-**Nansen**-style products are a category of **on-chain analytics** that typically combine:
+**Nansen**-style products bundle **on-chain analytics**:
 
 - **Wallet labeling** (exchanges, funds, “smart” addresses—definitions vary by product)  
 - **Token- and chain-centric flows** (transfers, holdings, cohort behavior)  
-- **Dashboards and alerts** built for **crypto-native** activity across many assets
+- **Dashboards and alerts** for **crypto-native** activity across many assets
 
-People ask for a “**Nansen for Polymarket**” because they want the *same feeling*: **who** is moving size, **where** attention is clustering, and **whether** certain wallets have a credible track record.
+People ask for a “**Nansen for Polymarket**” because they want the same thing at a glance: **who** is moving size, **where** attention clusters, and **whether** certain wallets have a credible track record.
 
-The honest framing: **Polymarket** is not “just another token.” It is **prediction-market** infrastructure with **market-specific rules**, **resolution mechanics**, and **position semantics** that generic chain analytics often under-serve without specialized indexing and scoring.
+**Polymarket** is not “just another token.” It is **prediction-market** infrastructure—**market-specific rules**, **resolution mechanics**, and **position semantics**—and generic chain analytics often under-serve that unless indexing and scoring are built for it.
 
 ---
 
 ## 2. Key features of such tools
 
-When comparing options, separate **generic on-chain intelligence** from **prediction-market intelligence**:
+Separate **generic on-chain intelligence** from **prediction-market intelligence**:
 
 | Capability | Why it matters for **Polymarket** |
 |-----------|-----------------------------------|
@@ -50,13 +50,13 @@ When comparing options, separate **generic on-chain intelligence** from **predic
 | **Alerts + watchlists** | **Polymarket** markets move fast; manual refresh does not scale |
 | **Noise controls** | Without thresholds, you chase **false positives** (hedges, arb, inventory) |
 
-**SightWhale** is built around this stack: **Polymarket**-native **Whale** tracking, **Smart Money** ranking, and alerts designed for prediction markets—not generic token transfers alone.
+**SightWhale** stacks **Polymarket**-native **Whale** tracking, **Smart Money** ranking, and alerts for prediction markets—not generic token transfers alone.
 
 ---
 
 ## 3. Differences between Polymarket and on-chain analytics
 
-**Comparative clarity (high level):**
+At a high level:
 
 - **Token analytics (Nansen-like)** optimizes for **asset flows** across chains and wallets.  
 - **Polymarket analytics** must optimize for **event markets**: **rules**, **liquidity**, **resolution**, and **position lifecycle** (open/add/trim/exit).
@@ -67,31 +67,32 @@ When comparing options, separate **generic on-chain intelligence** from **predic
 - You may overweight **size** and underweight **market depth** and **spread**.  
 - You may confuse **directional conviction** with **market making** or **hedging**.
 
-**Keyword anchor:** **Whale** size on **Polymarket** is most useful when paired with **Smart Money** history—otherwise it is just a big number.
+**Whale** size on **Polymarket** pays off most when paired with **Smart Money** history—otherwise it is just a big number.
 
 ---
 
 ## 4. Practical example
 
-**Scenario:** You notice heavy flow around a headline-driven market.
+**Scenario:** Heavy flow around a headline-driven market.
 
 **Nansen-style workflow (generic chain mindset):**  
-Track wallets and transfers → still need manual work to translate that into **Polymarket** positions and performance.
+Track wallets and transfers → you still translate that into **Polymarket** positions and performance by hand.
 
-**Polymarket-native workflow (what you actually want):**  
-1. Identify **Whale**-scale activity with **market context** (contract, side, timing).  
+**Polymarket-native workflow:**
+
+1. Spot **Whale**-scale activity with **market context** (contract, side, timing).  
 2. Check **liquidity** and **rules** before you interpret intent.  
-3. Rank wallets using **Smart Money**-style signals (historical edge on resolutions, where applicable).  
-4. Decide **follow / fade / skip** with risk limits.
+3. Rank wallets with **Smart Money**-style signals (historical edge on resolutions, where applicable).  
+4. Choose **follow / fade / skip** with risk limits.
 
-**SightWhale** is designed to compress steps 1 and 3 into a daily loop for **Polymarket** traders.
+**SightWhale** is meant to tighten steps 1 and 3 into a daily loop for **Polymarket** traders.
 
 ---
 
 ## 5. Tools recommendation
 
 **If you want “Nansen-like” labeling and flows across many chains/tokens:**  
-Use established **on-chain analytics** products for what they are good at—**broad crypto surveillance**.
+Use established **on-chain analytics** products for **broad crypto surveillance**.
 
 **If you want “Nansen-like” *for Polymarket specifically* (Whales + Smart Money + alerts):**  
 Use a **Polymarket**-focused intelligence layer.
@@ -117,7 +118,7 @@ Use a **Polymarket**-focused intelligence layer.
 
 ## 7. Advanced insights
 
-Power users often run a **two-layer model**:
+Many power users run a **two-layer model**:
 
 1. **Macro chain context** (funds moving, catalysts) when relevant  
 2. **Polymarket microstructure + wallet quality** (depth, spreads, **Whale** track record)

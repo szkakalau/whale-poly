@@ -35,6 +35,7 @@ export default function BlogIndexClient({ posts }: Props) {
   const [activeTag, setActiveTag] = useState("All");
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const [liveSignals, setLiveSignals] = useState<LiveSignal[]>([]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   /** null = use server `posts` until first successful API load */
   const [apiSpotlight, setApiSpotlight] = useState<BlogPost[] | null>(null);
 
@@ -101,8 +102,15 @@ export default function BlogIndexClient({ posts }: Props) {
     if (spotlight.length === 0) return true;
     if (spotlightNewestAt === null) return true;
     // Consider spotlight stale if the newest entry is older than 30 hours.
-    return Date.now() - spotlightNewestAt > 30 * 60 * 60 * 1000;
-  }, [spotlight.length, spotlightNewestAt]);
+    return nowMs - spotlightNewestAt > 30 * 60 * 60 * 1000;
+  }, [spotlight.length, spotlightNewestAt, nowMs]);
+
+  useEffect(() => {
+    // Keep "now" stable during renders to satisfy React render purity.
+    // Also refresh at the same cadence as spotlight polling.
+    const id = window.setInterval(() => setNowMs(Date.now()), SPOTLIGHT_POLL_MS);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     let alive = true;

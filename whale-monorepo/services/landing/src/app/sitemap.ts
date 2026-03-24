@@ -3,11 +3,11 @@ import { getAllFilePosts, getAllPosts } from '@/lib/blog';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.sightwhale.com';
-  let posts = getAllFilePosts();
+  let posts = await getAllFilePosts();
   try {
     posts = await getAllPosts();
   } catch {
-    posts = getAllFilePosts();
+    posts = await getAllFilePosts();
   }
 
   const blogUrls = posts.map((post) => {

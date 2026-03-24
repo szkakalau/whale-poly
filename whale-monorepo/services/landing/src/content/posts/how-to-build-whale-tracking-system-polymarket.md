@@ -1,9 +1,9 @@
 ---
 title: "How to Build a Whale Tracking System for Polymarket?"
 metaTitle: "Build a Polymarket Whale Tracking System: Data, Alerts & Smart Money"
-metaDescription: "Analytical guide to building a Polymarket whale tracking system—data sources, processing, Smart Money scoring, alerting, buy vs build with SightWhale, risks, FAQ."
+metaDescription: "Guide to building a Polymarket whale tracking system—data sources, processing, Smart Money scoring, alerting, buy vs build with SightWhale, risks, FAQ."
 date: "2026-03-24"
-excerpt: "Informational blueprint for Polymarket whale tracking: core components, how pipelines work, practical MVP vs production example, SightWhale recommendation, limitations, FAQ."
+excerpt: "Blueprint for Polymarket whale tracking: core components, how pipelines work, practical MVP vs production example, SightWhale recommendation, limitations, FAQ."
 author: "Whale Team"
 readTime: "12 min"
 tags: ["Polymarket", "Whale", "Smart Money", "Data", "Alerts", "Engineering", "Trading Education"]
@@ -33,7 +33,7 @@ A **Whale tracking system** for **Polymarket** is not a single script—it is a 
 - **Enrich** with liquidity context and (optionally) **Smart Money** performance history  
 - **Deliver** alerts with noise controls (thresholds, cooldowns, ranking)
 
-**Analytical framing:** “**Whale**” is an operational label (size / notional / impact). **Smart Money** is an **analytics layer** (historical edge on resolutions—definitions vary). A strong system tracks **Whales** *and* scores **wallets** so you do not chase random large prints.
+“**Whale**” is an operational label (size / notional / impact). **Smart Money** is an **analytics layer** (historical edge on resolutions—definitions vary). A strong system tracks **Whales** *and* scores **wallets** so you do not chase random large prints.
 
 ---
 
@@ -58,7 +58,7 @@ A **Whale tracking system** for **Polymarket** is not a single script—it is a 
 - **Delivery:** in-app, email, **Telegram**, webhooks  
 - **Guardrails:** deduplication, rate limits, and “same thesis” clustering to reduce spam
 
-**Keyword anchor:** without **Smart Money** discipline, most DIY **Whale** trackers become **notification firehoses**.
+Without **Smart Money** discipline, most DIY **Whale** trackers become **notification firehoses**.
 
 ---
 
@@ -72,7 +72,7 @@ End-to-end, the system usually loops like this:
 4. **Emit events** to an alert queue with structured payloads (market link, side, size, wallet).  
 5. **Observe & tune** latency, false positives, and missed prints.
 
-**Informational truth:** the hardest part is not “detecting big numbers”—it is **correct mapping**, **stable uptime**, and **trustworthy performance metrics** after resolutions.
+The hardest part is not “detecting big numbers”—it is **correct mapping**, **stable uptime**, and **trustworthy performance metrics** after resolutions.
 
 ---
 
@@ -91,7 +91,7 @@ End-to-end, the system usually loops like this:
 - Mislabeled markets after schema changes  
 - **Smart Money** metrics that drift because resolution backfills are hard
 
-**Outcome:** most teams eventually choose **buy** for the full stack—**SightWhale**—or invest heavily in data engineering.
+Most teams eventually choose **buy** for the full stack—**SightWhale**—or invest heavily in data engineering.
 
 ---
 
@@ -112,7 +112,7 @@ End-to-end, the system usually loops like this:
 - **Polymarket** UI — truth-checking rules and execution  
 - **Explorers** — chain-level verification  
 
-**Analytical takeaway:** if your goal is *trading workflow*, buying **SightWhale** is usually cheaper than maintaining a correct pipeline.
+If your goal is *trading workflow*, buying **SightWhale** is usually cheaper than maintaining a correct pipeline.
 
 ---
 

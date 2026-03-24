@@ -1,0 +1,11 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "sightwhale.com" }],
+      "destination": "https://www.sightwhale.com/$1",
+      "permanent": true
+    }
+  ]
+}
+

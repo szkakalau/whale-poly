@@ -3,7 +3,7 @@ title: "How to Evaluate a Trader’s Quality Using Historical Data?"
 metaTitle: "Evaluate Polymarket Trader Quality: Historical Data, ROI & Smart Money"
 metaDescription: "Data-driven framework to evaluate trader quality on Polymarket—win rate, ROI, drawdown, sample size, regime checks, Whale vs Smart Money, SightWhale tools, risks, FAQ."
 date: "2026-03-24"
-excerpt: "Analytical guide to judging traders from history: key metrics, how to read Polymarket outcomes, practical workflow, SightWhale for Whale and Smart Money context, limitations, FAQ."
+excerpt: "Guide to judging traders from history: key metrics, how to read Polymarket outcomes, practical workflow, SightWhale for Whale and Smart Money context, limitations, FAQ."
 author: "Whale Team"
 readTime: "12 min"
 tags: ["Polymarket", "Whale", "Smart Money", "Historical Data", "ROI", "Win Rate", "Trading Education"]
@@ -30,12 +30,10 @@ On **SightWhale**, we provide:
 
 On **Polymarket**, “history” must be anchored to **resolved markets** (where outcomes are known) and to **economically meaningful** metrics (ROI/P&L), not just screenshots of winning tickets.
 
-**Analytical split:**
-
 - **Whale** labels describe **size** (attention).  
 - **Smart Money** analytics describe **ranked performance** (prioritization)—definitions vary by product; transparency matters.
 
-**Keyword anchor:** evaluate **Polymarket** traders like you would evaluate any forecasting system: **calibration**, **robustness**, and **implementation realism**.
+Evaluate **Polymarket** traders like you would evaluate any forecasting system: **calibration**, **robustness**, and **implementation realism**.
 
 ---
 
@@ -86,7 +84,7 @@ Separate **directional** patterns from hedging/rotation when inferable—raw **W
 3. Stress-test mentally: if that market type disappears, does the wallet still have edge?  
 4. Only then treat new flow as “worth fast verification” on **Polymarket** (rules + liquidity).
 
-**Outcome:** you judge **process**, not one viral trade.
+You judge **process**, not one viral trade.
 
 ---
 

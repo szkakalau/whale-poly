@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { blogArticleMarkdownComponents } from '@/components/blog-markdown-headings';
 import { Prisma } from '@prisma/client';
-import { PHASE_PRODUCTION_BUILD } from 'next/constants';
+import { Suspense } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getAllFilePosts, getAllPosts, getPostBySlug, type BlogPost } from '@/lib/blog';
@@ -35,13 +35,15 @@ interface Props {
 }
 
 export const revalidate = 3600;
+// Prefer CDN-served static HTML for markdown posts (major TTFB win vs always-on Lambda SSR).
+export const dynamic = 'force-static';
 
 export async function generateStaticParams() {
-  let posts = getAllFilePosts();
+  let posts = await getAllFilePosts();
   try {
     posts = await getAllPosts();
   } catch {
-    posts = getAllFilePosts();
+    posts = await getAllFilePosts();
   }
   // Pre-render enough paths for filesystem posts + DB spotlights (avoid truncating newer MD slugs).
   return posts.slice(0, 1000).map((post) => ({ slug: post.slug }));
@@ -266,6 +268,102 @@ function isFullWallet(value: string): boolean {
   return /^0x[a-f0-9]{40}$/.test((value || '').trim().toLowerCase());
 }
 
+function BlogMarkdownSkeleton() {
+  return (
+    <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-li:marker:text-violet-500">
+      <div className="h-5 w-3/4 rounded bg-white/10 animate-pulse" />
+      <div className="mt-3 h-4 w-full rounded bg-white/10 animate-pulse" />
+      <div className="mt-3 h-4 w-5/6 rounded bg-white/10 animate-pulse" />
+      <div className="mt-8 h-10 w-full rounded bg-white/10 animate-pulse" />
+    </div>
+  );
+}
+
+async function BlogMarkdownContent({ content }: { content: string }) {
+  // Yield before doing the heavy markdown rendering so the page shell can flush first.
+  await new Promise((r) => setTimeout(r, 0));
+  return (
+    <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-violet-200 prose-code:bg-violet-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:pr-4 prose-li:marker:text-violet-500">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogArticleMarkdownComponents}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+function RelatedResearchSkeleton() {
+  return (
+    <section className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8" aria-hidden>
+      <div className="h-5 w-48 rounded bg-white/10 animate-pulse mb-6" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-28 rounded-2xl border border-white/10 bg-black/20 animate-pulse" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+async function BlogRelatedResearch({ slug, tags }: { slug: string; tags?: string[] }) {
+  let allPosts = await getAllFilePosts();
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      allPosts = await getAllPosts();
+    } catch {
+      allPosts = await getAllFilePosts();
+    }
+  }
+  const researchPosts = allPosts.filter((p) =>
+    (p.tags || []).some((t) => ['research', 'analysis'].includes(String(t).toLowerCase())),
+  );
+  const normalizedTags = (tags || []).map((t) => String(t).toLowerCase());
+  const relatedResearch = researchPosts
+    .filter((p) => p.slug !== slug)
+    .filter((p) =>
+      normalizedTags.length === 0
+        ? true
+        : (p.tags || []).some((t) => normalizedTags.includes(String(t).toLowerCase())),
+    )
+    .slice(0, 3);
+
+  if (relatedResearch.length === 0) return null;
+
+  return (
+    <section className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Research Series</p>
+          <h2 className="text-lg font-semibold text-white mt-2">Continue the research chain</h2>
+          <p className="text-xs text-gray-400 mt-2">
+            Follow related research articles or jump to the full pillar library.
+          </p>
+        </div>
+        <Link
+          href="/blog/research"
+          className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-4 py-2 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
+        >
+          Open Research Series
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {relatedResearch.map((post) => (
+          <Link
+            key={post.slug}
+            href={`/blog/${post.slug}`}
+            className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
+          >
+            <div className="text-xs text-gray-500">
+              {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+            <div className="text-sm font-semibold text-white mt-2">{post.title}</div>
+            <div className="text-xs text-gray-400 mt-2 line-clamp-2">{post.excerpt}</div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 async function resolveOutcomeFromDb(params: {
   windowLine: string | null;
   market: string | null;
@@ -275,9 +373,9 @@ async function resolveOutcomeFromDb(params: {
   notionalText: string | null;
   priceText: string | null;
 }): Promise<{ wallet: string | null; outcome: string | null } | null> {
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return null;
-  }
+  // Performance: avoid extra DB lookups during production runtime.
+  // If a markdown post doesn't include outcome details, fall back to the best-effort placeholders.
+  if (process.env.NODE_ENV === 'production') return null;
   const window = parseBeijingWindow(params.windowLine);
   if (!window) return null;
   const market = (params.market || '').trim();
@@ -423,26 +521,6 @@ export default async function BlogPostPage({ params }: Props) {
   const spotlightSignalsCount = spotlight
     ? spotlight.sections.filter((section) => section.title !== 'Market Read' && section.title !== 'Disclaimer').length
     : 0;
-  let allPosts = getAllFilePosts();
-  if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
-    try {
-      allPosts = await getAllPosts();
-    } catch {
-      allPosts = getAllFilePosts();
-    }
-  }
-  const researchPosts = allPosts.filter((p) =>
-    (p.tags || []).some((t) => ['research', 'analysis'].includes(String(t).toLowerCase())),
-  );
-  const normalizedTags = (safePost.tags || []).map((t) => String(t).toLowerCase());
-  const relatedResearch = researchPosts
-    .filter((p) => p.slug !== safePost.slug)
-    .filter((p) =>
-      normalizedTags.length === 0
-        ? true
-        : (p.tags || []).some((t) => normalizedTags.includes(String(t).toLowerCase())),
-    )
-    .slice(0, 3);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -945,47 +1023,20 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
             </div>
           ) : (
-            <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-violet-200 prose-code:bg-violet-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10 prose-blockquote:border-l-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:pr-4 prose-li:marker:text-violet-500">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogArticleMarkdownComponents}>
-                {safePost.content}
-              </ReactMarkdown>
-            </div>
+            <Suspense
+              fallback={
+                <BlogMarkdownSkeleton />
+              }
+            >
+              <BlogMarkdownContent content={safePost.content} />
+            </Suspense>
           )}
         </article>
 
-        {!isDailySpotlight && relatedResearch.length > 0 ? (
-          <section className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Research Series</p>
-                <h2 className="text-lg font-semibold text-white mt-2">Continue the research chain</h2>
-                <p className="text-xs text-gray-400 mt-2">
-                  Follow related research articles or jump to the full pillar library.
-                </p>
-              </div>
-              <Link
-                href="/blog/research"
-                className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/10 px-4 py-2 text-xs font-medium text-violet-100 hover:bg-violet-500/20"
-              >
-                Open Research Series
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {relatedResearch.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  className="rounded-2xl border border-white/10 bg-black/30 p-4 hover:bg-white/5 transition-colors"
-                >
-                  <div className="text-xs text-gray-500">
-                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                  <div className="text-sm font-semibold text-white mt-2">{post.title}</div>
-                  <div className="text-xs text-gray-400 mt-2 line-clamp-2">{post.excerpt}</div>
-                </Link>
-              ))}
-            </div>
-          </section>
+        {!isDailySpotlight ? (
+          <Suspense fallback={<RelatedResearchSkeleton />}>
+            <BlogRelatedResearch slug={safePost.slug} tags={safePost.tags} />
+          </Suspense>
         ) : null}
 
         <div className="mt-14 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">

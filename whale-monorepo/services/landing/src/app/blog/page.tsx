@@ -1,7 +1,8 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { getAllPosts } from '@/lib/blog';
+import { getAllFilePosts } from '@/lib/blog';
 import BlogIndexClient from './BlogIndexClient';
+import { Suspense } from 'react';
 
 export const metadata = {
   title: 'Blog - Polymarket Whale Intelligence',
@@ -42,12 +43,12 @@ export const metadata = {
   },
 };
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
+// ISR: blog listing content changes slowly, but we still want freshness.
+export const revalidate = 3600;
+// Prefer static HTML from the CDN (lower TTFB) + periodic revalidation.
+export const dynamic = 'force-static';
 
-export default async function BlogIndexPage() {
-  const posts = await getAllPosts();
-
+function BlogIndexSkeleton() {
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       {/* Background Effects */}
@@ -68,10 +69,32 @@ export default async function BlogIndexPage() {
           </p>
         </div>
 
-        <BlogIndexClient posts={posts} />
+        <div className="space-y-8">
+          <div className="h-16 rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+          <div className="grid md:grid-cols-2 gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-[340px] rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        </div>
       </main>
 
       <Footer />
     </div>
+  );
+}
+
+async function BlogIndexClientWithData() {
+  // Yield once so the parent shell can flush quickly.
+  await new Promise((r) => setTimeout(r, 0));
+  const posts = (await getAllFilePosts()).slice(0, 60);
+  return <BlogIndexClient posts={posts} />;
+}
+
+export default function BlogIndexPage() {
+  return (
+    <Suspense fallback={<BlogIndexSkeleton />}>
+      <BlogIndexClientWithData />
+    </Suspense>
   );
 }

@@ -42,12 +42,6 @@ function formatUsdCompact(value: number): string {
   return `${value < 0 ? '-' : ''}$${abs.toFixed(0)}`;
 }
 
-function formatMinPlus(value: number, min: number): string {
-  if (!Number.isFinite(value)) return '—';
-  if (value < min) return `${min}+`;
-  return formatCompactInt(value);
-}
-
 type HomeStats = {
   trackedWhales: number;
   trackedVolumeUsd: number;
@@ -150,6 +144,378 @@ const loadHomeStats = unstable_cache(
   { revalidate: 60 },
 );
 
+function HomeStatsHeroTrackingSkeleton() {
+  return <>Tracking verifiable whale signals in real time</>;
+}
+
+async function HomeStatsHeroTracking() {
+  const homeStats = await loadHomeStats();
+  return Number.isFinite(homeStats.trackedVolumeUsd) && Number.isFinite(homeStats.trackedWhales) ? (
+    <>
+      Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
+      across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
+    </>
+  ) : (
+    <HomeStatsHeroTrackingSkeleton />
+  );
+}
+
+function HomeStatsLiveCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">—</div>
+      </div>
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">—</div>
+      </div>
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">New</div>
+      </div>
+    </div>
+  );
+}
+
+async function HomeStatsLiveCards() {
+  const homeStats = await loadHomeStats();
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
+      </div>
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
+      </div>
+      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
+        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
+          {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeStatsResultsListSkeleton() {
+  return (
+    <div className="space-y-5 relative z-10">
+      {[
+        { label: 'Tracked Whales', value: '—', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        { label: 'Tracked Volume', value: '—', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+        { label: 'Alerts (30D)', value: '—', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+      ].map((stat, i) => (
+        <div key={i} className="flex justify-between items-center">
+          <span className={`text-gray-500 text-[10px] font-black uppercase tracking-widest`}>{stat.label}</span>
+          <div className="flex items-center gap-3">
+            <span className={`${stat.color} font-black text-lg font-mono tracking-tighter`}>{stat.value}</span>
+            <div className={`w-2 h-2 rounded-full ${stat.bg}`}></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function HomeStatsResultsList() {
+  const homeStats = await loadHomeStats();
+  return (
+    <div className="space-y-5 relative z-10">
+      {[
+        { label: 'Tracked Whales', value: formatCompactInt(homeStats.trackedWhales), color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        { label: 'Tracked Volume', value: formatUsdCompact(homeStats.trackedVolumeUsd), color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+        { label: 'Alerts (30D)', value: formatCompactInt(homeStats.alertEvents30d), color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+      ].map((stat, i) => (
+        <div key={i} className="flex justify-between items-center">
+          <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
+          <div className="flex items-center gap-3">
+            <span className={`${stat.color} font-black text-lg font-mono tracking-tighter`}>{stat.value}</span>
+            <div className={`w-2 h-2 rounded-full ${stat.bg}`}></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type HomeQuickStartStep = {
+  title: string;
+  description: string;
+  valuePoints: string[];
+  href: string;
+  cta: string;
+  done: boolean;
+};
+
+function HomeQuickStartSectionSkeleton() {
+  const steps: HomeQuickStartStep[] = [
+    {
+      title: 'Follow a whale to unlock alerts',
+      description: 'Get conviction-backed wallet tracking and unlock each signal in full context.',
+      valuePoints: ['Track the wallets that move markets', 'Get conviction-backed trade signals', 'Filter by size and Whale Score'],
+      done: false,
+      href: '/smart-money',
+      cta: 'Follow',
+    },
+    {
+      title: 'Upgrade to Pro for Faster Alerts',
+      description: 'Pro unlocks faster, more frequent alert delivery to your Telegram bot right after activation.',
+      valuePoints: ['Receive alerts more frequently with Pro', 'Near-zero alert delay', 'Delivery starts automatically after activation'],
+      done: false,
+      href: '/subscribe?plan=pro',
+      cta: 'Upgrade to Pro',
+    },
+    {
+      title: 'Connect Telegram to receive delivery',
+      description: 'Get real-time alerts delivered through the bot so you never miss key moves.',
+      valuePoints: ['Instant Telegram delivery', 'Faster than headlines', 'One-tap access to wallet context'],
+      done: false,
+      href: TELEGRAM_DEEP_LINK_SUBSCRIBE,
+      cta: 'Connect',
+    },
+  ];
+
+  const completedCount = 0;
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
+        <div>
+          <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">Quick Start</p>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
+            Complete 3 steps to receive your first smart-money alert
+          </h2>
+          <p className="text-sm text-gray-400 max-w-2xl">
+            Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
+          <div className="flex items-center justify-between gap-4 sm:gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
+              <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
+                {completedCount} / {steps.length}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
+                  style={{ width: `${(completedCount / steps.length) * 100}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-gray-500 mt-2">Not signed in.</div>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 mt-3">
+            Explore the steps below. Connect Telegram to start receiving alerts.
+          </div>
+          <div className="text-[11px] text-violet-200/70 mt-2">Pro & Elite: faster, more frequent Telegram delivery right after activation.</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {steps.map((step) => (
+          <div
+            key={step.title}
+            className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                <span
+                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                    step.done
+                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                      : 'border-white/15 bg-white/5 text-gray-400'
+                  }`}
+                >
+                  {step.done ? 'Completed' : 'Pending'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+              <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
+                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
+                  <ul className="space-y-1">
+                    {step.valuePoints.map((p) => (
+                      <li key={p} className="flex items-start gap-2">
+                        <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-violet-400" />
+                        <span className="leading-snug">{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {step.href.startsWith('http') ? (
+              <a
+                href={step.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+              >
+                {step.cta}
+                <span className="text-[10px] text-gray-400">External</span>
+              </a>
+            ) : (
+              <Link
+                href={step.href}
+                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+              >
+                {step.cta}
+                <span className="text-[10px] text-gray-400">Go</span>
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+async function HomeQuickStartSection() {
+  const user = await getCurrentUser();
+
+  let followCount = 0;
+  let telegramConnected = false;
+  let proActivated = false;
+
+  if (user) {
+    followCount = await prisma.whaleFollow.count({ where: { userId: user.id } });
+    telegramConnected = Boolean(user.telegramId);
+    proActivated =
+      user.plan === 'PRO' &&
+      (!user.planExpireAt || !(new Date() > user.planExpireAt));
+  }
+
+  const steps: HomeQuickStartStep[] = [
+    {
+      title: 'Follow a whale to unlock alerts',
+      description: 'Get conviction-backed wallet tracking and unlock each signal in full context.',
+      valuePoints: ['Track the wallets that move markets', 'Get conviction-backed trade signals', 'Filter by size and Whale Score'],
+      done: followCount > 0,
+      href: '/smart-money',
+      cta: 'Follow',
+    },
+    {
+      title: 'Upgrade to Pro for Faster Alerts',
+      description: 'Pro unlocks faster, more frequent alert delivery to your Telegram bot right after activation.',
+      valuePoints: ['Receive alerts more frequently with Pro', 'Near-zero alert delay', 'Delivery starts automatically after activation'],
+      done: proActivated,
+      href: '/subscribe?plan=pro',
+      cta: 'Upgrade to Pro',
+    },
+    {
+      title: 'Connect Telegram to receive delivery',
+      description: 'Get real-time alerts delivered through the bot so you never miss key moves.',
+      valuePoints: ['Instant Telegram delivery', 'Faster than headlines', 'One-tap access to wallet context'],
+      done: telegramConnected,
+      href: TELEGRAM_DEEP_LINK_SUBSCRIBE,
+      cta: 'Connect',
+    },
+  ];
+
+  const completedCount = steps.filter((step) => step.done).length;
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
+        <div>
+          <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">Quick Start</p>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
+            Complete 3 steps to receive your first smart-money alert
+          </h2>
+          <p className="text-sm text-gray-400 max-w-2xl">
+            Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
+          <div className="flex items-center justify-between gap-4 sm:gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
+              <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
+                {completedCount} / {steps.length}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
+                  style={{ width: `${(completedCount / steps.length) * 100}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-gray-500 mt-2">{user ? 'Saved to your account.' : 'Not signed in.'}</div>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 mt-3">
+            {user ? 'Your progress is tracked automatically.' : 'Explore the steps below. Connect Telegram to start receiving alerts.'}
+          </div>
+          <div className="text-[11px] text-violet-200/70 mt-2">Pro & Elite: faster, more frequent Telegram delivery right after activation.</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {steps.map((step) => (
+          <div
+            key={step.title}
+            className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                <span
+                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                    step.done
+                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+                      : 'border-white/15 bg-white/5 text-gray-400'
+                  }`}
+                >
+                  {step.done ? 'Completed' : 'Pending'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+              <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
+                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
+                  <ul className="space-y-1">
+                    {step.valuePoints.map((p) => (
+                      <li key={p} className="flex items-start gap-2">
+                        <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-violet-400" />
+                        <span className="leading-snug">{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {step.href.startsWith('http') ? (
+              <a
+                href={step.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+              >
+                {step.cta}
+                <span className="text-[10px] text-gray-400">External</span>
+              </a>
+            ) : (
+              <Link
+                href={step.href}
+                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+              >
+                {step.cta}
+                <span className="text-[10px] text-gray-400">Go</span>
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 type WhaleEngineTrade = {
   time?: unknown;
   created_at?: unknown;
@@ -247,56 +613,8 @@ const loadLiveSignals = unstable_cache(
   { revalidate: 60 },
 );
 
-export default async function Home() {
-  const user = await getCurrentUser();
-  // Important: do not block the first HTML on live signals fetching.
-  // This improves FCP by letting the hero render while live signals stream in later.
-  const homeStats = await loadHomeStats();
-  let followCount = 0;
-  let smartCollectionCount = 0;
-  let telegramConnected = false;
-  if (user) {
-    const [follows, subscriptions] = await prisma.$transaction([
-      prisma.whaleFollow.count({ where: { userId: user.id } }),
-      prisma.smartCollectionSubscription.count({ where: { userId: user.id } }),
-    ]);
-    followCount = follows;
-    smartCollectionCount = subscriptions;
-    telegramConnected = Boolean(user.telegramId);
-  }
-
-  const proActivated = Boolean(
-    user &&
-      user.plan === 'PRO' &&
-      (!user.planExpireAt || !(new Date() > user.planExpireAt)),
-  );
-  const steps = [
-    {
-      title: 'Follow a whale to unlock alerts',
-      description: 'Get conviction-backed wallet tracking and unlock each signal in full context.',
-      valuePoints: ['Track the wallets that move markets', 'Get conviction-backed trade signals', 'Filter by size and Whale Score'],
-      done: followCount > 0,
-      href: '/smart-money',
-      cta: 'Follow',
-    },
-    {
-      title: 'Upgrade to Pro for Faster Alerts',
-      description: 'Pro unlocks faster, more frequent alert delivery to your Telegram bot right after activation.',
-      valuePoints: ['Receive alerts more frequently with Pro', 'Near-zero alert delay', 'Delivery starts automatically after activation'],
-      done: proActivated,
-      href: '/subscribe?plan=pro',
-      cta: 'Upgrade to Pro',
-    },
-    {
-      title: 'Connect Telegram to receive delivery',
-      description: 'Get real-time alerts delivered through the bot so you never miss key moves.',
-      valuePoints: ['Instant Telegram delivery', 'Faster than headlines', 'One-tap access to wallet context'],
-      done: telegramConnected,
-      href: TELEGRAM_DEEP_LINK_SUBSCRIBE,
-      cta: 'Connect',
-    },
-  ];
-  const completedCount = steps.filter((step) => step.done).length;
+export default function Home() {
+  // Keep first HTML fast: personalization (Quick Start progress) streams later.
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden">
       {/* Background Effects */}
@@ -338,14 +656,9 @@ export default async function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
               </span>
               <span className="tracking-[0.05em]">
-                {Number.isFinite(homeStats.trackedVolumeUsd) && Number.isFinite(homeStats.trackedWhales) ? (
-                  <>
-                    Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
-                    across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
-                  </>
-                ) : (
-                  <>Tracking verifiable whale signals in real time</>
-                )}
+                <Suspense fallback={<HomeStatsHeroTrackingSkeleton />}>
+                  <HomeStatsHeroTracking />
+                </Suspense>
               </span>
               <svg className="w-3 h-3 text-gray-500 group-hover:text-violet-400 transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
@@ -416,22 +729,9 @@ export default async function Home() {
                 This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
-              </div>
-              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
-              </div>
-              <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
-                <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
-                  {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
-                </div>
-              </div>
-            </div>
+            <Suspense fallback={<HomeStatsLiveCardsSkeleton />}>
+              <HomeStatsLiveCards />
+            </Suspense>
           </div>
 
           <Suspense
@@ -447,104 +747,9 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
-            <div>
-              <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">
-                Quick Start
-              </p>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
-                Complete 3 steps to receive your first smart-money alert
-              </h2>
-              <p className="text-sm text-gray-400 max-w-2xl">
-                Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
-              <div className="flex items-center justify-between gap-4 sm:gap-6">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
-                  <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
-                    {completedCount} / {steps.length}
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
-                      style={{ width: `${(completedCount / steps.length) * 100}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-2">
-                    {user ? 'Saved to your account.' : 'Not signed in.'}
-                  </div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-3">
-                {user ? 'Your progress is tracked automatically.' : 'Explore the steps below. Connect Telegram to start receiving alerts.'}
-              </div>
-              <div className="text-[11px] text-violet-200/70 mt-2">
-                Pro & Elite: faster, more frequent Telegram delivery right after activation.
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {steps.map((step) => (
-              <div
-                key={step.title}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-base font-semibold text-white">{step.title}</h3>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
-                        step.done
-                          ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
-                          : 'border-white/15 bg-white/5 text-gray-400'
-                      }`}
-                    >
-                      {step.done ? 'Completed' : 'Pending'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
-                  <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
-                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
-                      <ul className="space-y-1">
-                        {step.valuePoints.map((p) => (
-                          <li key={p} className="flex items-start gap-2">
-                            <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-violet-400" />
-                            <span className="leading-snug">{p}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                {step.href.startsWith('http') ? (
-                  <a
-                    href={step.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
-                  >
-                    {step.cta}
-                    <span className="text-[10px] text-gray-400">External</span>
-                  </a>
-                ) : (
-                  <Link
-                    href={step.href}
-                    className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
-                  >
-                    {step.cta}
-                    <span className="text-[10px] text-gray-400">Go</span>
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+        <Suspense fallback={<HomeQuickStartSectionSkeleton />}>
+          <HomeQuickStartSection />
+        </Suspense>
 
         {/* ONBOARDING - 3 STEPS */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
@@ -862,21 +1067,9 @@ export default async function Home() {
                 <div className="px-3 py-1 rounded-full text-[10px] bg-indigo-500 text-white font-black tracking-[0.2em]">STATS</div>
               </div>
               
-              <div className="space-y-5 relative z-10">
-                {[
-                  { label: "Tracked Whales", value: formatCompactInt(homeStats.trackedWhales), color: "text-emerald-400", bg: "bg-emerald-500/10" },
-                  { label: "Tracked Volume", value: formatUsdCompact(homeStats.trackedVolumeUsd), color: "text-cyan-400", bg: "bg-cyan-500/10" },
-                  { label: "Alerts (30D)", value: formatCompactInt(homeStats.alertEvents30d), color: "text-indigo-400", bg: "bg-indigo-500/10" }
-                ].map((stat, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
-                    <div className="flex items-center gap-3">
-                      <span className={`${stat.color} font-black text-lg font-mono tracking-tighter`}>{stat.value}</span>
-                      <div className={`w-2 h-2 rounded-full ${stat.bg}`}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Suspense fallback={<HomeStatsResultsListSkeleton />}>
+                <HomeStatsResultsList />
+              </Suspense>
               <div className="mt-6 relative z-10">
                 <Link
                   href="/backtesting"
