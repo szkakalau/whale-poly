@@ -1,5 +1,4 @@
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import BlogIndexShell from '@/components/BlogIndexShell';
 import { getAllFilePosts } from '@/lib/blog';
 import BlogIndexClient from './BlogIndexClient';
 import { Suspense } from 'react';
@@ -50,37 +49,19 @@ export const dynamic = 'force-static';
 
 function BlogIndexSkeleton() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
-      {/* Background Effects */}
-      <div className="fixed inset-0 z-[-1]">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-600/10 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/5 rounded-full blur-[120px]"></div>
+    <BlogIndexShell>
+      <div className="space-y-8">
+        <div className="h-16 animate-pulse rounded-2xl border border-white/10 bg-white/5" />
+        <div className="grid gap-8 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[340px] animate-pulse rounded-2xl border border-white/10 bg-white/5"
+            />
+          ))}
+        </div>
       </div>
-
-      <Header />
-
-      <main className="mx-auto max-w-5xl px-6 py-32 relative">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-            Intelligence Log
-          </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Deep dives into market mechanics, signal analysis, and platform updates.
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          <div className="h-16 rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
-          <div className="grid md:grid-cols-2 gap-8">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-[340px] rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+    </BlogIndexShell>
   );
 }
 
@@ -88,7 +69,11 @@ async function BlogIndexClientWithData() {
   // Yield once so the parent shell can flush quickly.
   await new Promise((r) => setTimeout(r, 0));
   const posts = (await getAllFilePosts()).slice(0, 60);
-  return <BlogIndexClient posts={posts} />;
+  return (
+    <BlogIndexShell>
+      <BlogIndexClient posts={posts} />
+    </BlogIndexShell>
+  );
 }
 
 export default function BlogIndexPage() {
