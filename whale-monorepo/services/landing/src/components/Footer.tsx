@@ -11,7 +11,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
-              <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_rgba(56,189,248,0.28)]" />
+              <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.32)]" />
               <span className="font-bold text-foreground text-xl tracking-tight font-display">Sight Whale</span>
             </div>
             <p className="text-muted text-sm leading-relaxed max-w-sm font-light">
@@ -23,10 +23,10 @@ export default function Footer() {
           <div className="space-y-6">
             <p className="text-foreground font-bold text-sm tracking-widest uppercase">Platform</p>
             <ul className="space-y-4">
-              <li><Link href="/backtesting" className="text-muted hover:text-accent text-sm transition-colors py-2 block min-h-[44px] flex items-center">Whale Performance</Link></li>
-              <li><Link href="/conviction" className="text-muted hover:text-accent text-sm transition-colors py-2 block min-h-[44px] flex items-center">Conviction Analysis</Link></li>
-              <li><Link href="/blog" className="text-muted hover:text-accent text-sm transition-colors py-2 block min-h-[44px] flex items-center">Intelligence Blog</Link></li>
-              <li><Link href="/smart-collections" className="text-muted hover:text-accent text-sm transition-colors py-2 block min-h-[44px] flex items-center">Smart Collections</Link></li>
+              <li><Link href="/backtesting" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Whale Performance</Link></li>
+              <li><Link href="/conviction" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Conviction Analysis</Link></li>
+              <li><Link href="/blog" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Intelligence Blog</Link></li>
+              <li><Link href="/smart-collections" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Smart Collections</Link></li>
             </ul>
           </div>
 
@@ -34,22 +34,22 @@ export default function Footer() {
           <div className="space-y-6">
             <p className="text-foreground font-bold text-sm tracking-widest uppercase">Company</p>
             <div className="flex flex-col gap-3">
-              <Link href="/about" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/about" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 About
               </Link>
-              <Link href="/methodology" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/methodology" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 Methodology
               </Link>
-              <Link href="/editorial-policy" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/editorial-policy" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 Editorial Policy
               </Link>
-              <Link href="/contact" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/contact" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 Contact
               </Link>
-              <Link href="/disclosures" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/disclosures" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 Disclosures
               </Link>
-              <Link href="/security" className="text-muted hover:text-accent text-sm transition-colors">
+              <Link href="/security" className="text-muted hover:text-accent-hover text-sm transition-colors">
                 Security
               </Link>
               <a 

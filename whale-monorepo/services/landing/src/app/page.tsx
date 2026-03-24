@@ -616,7 +616,7 @@ const loadLiveSignals = unstable_cache(
 export default function Home() {
   // Keep first HTML fast: personalization (Quick Start progress) streams later.
   return (
-    <div className="min-h-screen text-foreground selection:bg-sky-500/25 overflow-hidden">
+    <div className="min-h-screen text-foreground selection:bg-[#5B8CFF]/25 overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 z-[-1] bg-background" />
 
@@ -660,7 +660,7 @@ export default function Home() {
                   <HomeStatsHeroTracking />
                 </Suspense>
               </span>
-              <svg className="w-3 h-3 text-subtle group-hover:text-accent transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-3 h-3 text-subtle group-hover:text-accent-hover transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
           </div>
 
@@ -681,7 +681,7 @@ export default function Home() {
 
           <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-6 w-full max-w-sm sm:max-w-none mx-auto">
             <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#E8EFFF] to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 Launch Telegram Bot
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7" /></svg>

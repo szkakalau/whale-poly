@@ -24,7 +24,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300 pt-[env(safe-area-inset-top,0)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-5 h-14 min-h-[3.5rem] flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center gap-2 min-w-0" title="Sight Whale Home">
-          <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(56,189,248,0.35)]" />
+          <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.38)]" />
           <span className="font-bold tracking-tight text-base sm:text-lg text-foreground truncate font-display">
             <span className="md:hidden">Sight Whale</span>
             <span className="hidden md:inline">Polymarket Whale Intelligence</span>
@@ -44,7 +44,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          <a href={CTA_URL} className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center shadow-[0_0_16px_rgba(56,189,248,0.22)] hover:shadow-[0_0_26px_rgba(56,189,248,0.38)] hidden sm:inline-flex">
+          <a href={CTA_URL} className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center shadow-[0_0_18px_rgba(91,140,255,0.28)] hover:shadow-[0_0_28px_rgba(91,140,255,0.45)] hidden sm:inline-flex">
             Get Alerts
           </a>
           <button
