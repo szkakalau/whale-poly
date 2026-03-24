@@ -152,8 +152,8 @@ async function HomeStatsHeroTracking() {
   const homeStats = await loadHomeStats();
   return Number.isFinite(homeStats.trackedVolumeUsd) && Number.isFinite(homeStats.trackedWhales) ? (
     <>
-      Tracking <span className="font-black text-white px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
-      across <span className="font-black text-white px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
+      Tracking <span className="font-black text-foreground px-0.5">{formatUsdCompact(homeStats.trackedVolumeUsd)}</span>{' '}
+      across <span className="font-black text-foreground px-0.5">{formatCompactInt(homeStats.trackedWhales)}</span> whales
     </>
   ) : (
     <HomeStatsHeroTrackingSkeleton />
@@ -163,17 +163,17 @@ async function HomeStatsHeroTracking() {
 function HomeStatsLiveCardsSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">—</div>
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Whales</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">—</div>
       </div>
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">—</div>
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Volume</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">—</div>
       </div>
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">New</div>
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Alerts (30D)</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">New</div>
       </div>
     </div>
   );
@@ -183,17 +183,17 @@ async function HomeStatsLiveCards() {
   const homeStats = await loadHomeStats();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Whales</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Whales</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
       </div>
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Tracked Volume</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Volume</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
       </div>
-      <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500 font-black">Alerts (30D)</div>
-        <div className="text-base sm:text-lg font-black text-white mt-1 sm:mt-2">
+      <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Alerts (30D)</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">
           {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
         </div>
       </div>
@@ -210,7 +210,7 @@ function HomeStatsResultsListSkeleton() {
         { label: 'Alerts (30D)', value: '—', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
       ].map((stat, i) => (
         <div key={i} className="flex justify-between items-center">
-          <span className={`text-gray-500 text-[10px] font-black uppercase tracking-widest`}>{stat.label}</span>
+          <span className={`text-subtle text-[10px] font-black uppercase tracking-widest`}>{stat.label}</span>
           <div className="flex items-center gap-3">
             <span className={`${stat.color} font-black text-lg font-mono tracking-tighter`}>{stat.value}</span>
             <div className={`w-2 h-2 rounded-full ${stat.bg}`}></div>
@@ -231,7 +231,7 @@ async function HomeStatsResultsList() {
         { label: 'Alerts (30D)', value: formatCompactInt(homeStats.alertEvents30d), color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
       ].map((stat, i) => (
         <div key={i} className="flex justify-between items-center">
-          <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
+          <span className="text-subtle text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
           <div className="flex items-center gap-3">
             <span className={`${stat.color} font-black text-lg font-mono tracking-tighter`}>{stat.value}</span>
             <div className={`w-2 h-2 rounded-full ${stat.bg}`}></div>
@@ -285,32 +285,32 @@ function HomeQuickStartSectionSkeleton() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
         <div>
           <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">Quick Start</p>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight mb-3 leading-[1.15]">
             Complete 3 steps to receive your first smart-money alert
           </h2>
-          <p className="text-sm text-gray-400 max-w-2xl">
+          <p className="text-sm text-muted max-w-2xl">
             Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
+        <div className="rounded-2xl border border-border bg-surface px-4 sm:px-5 py-4 w-full md:w-auto">
           <div className="flex items-center justify-between gap-4 sm:gap-6">
             <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
-              <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
+              <p className="text-xs uppercase tracking-wide text-subtle">Progress</p>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground mt-2">
                 {completedCount} / {steps.length}
               </div>
             </div>
             <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
+              <div className="h-2 w-full bg-surface rounded-full overflow-hidden ring-1 ring-border">
                 <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
                   style={{ width: `${(completedCount / steps.length) * 100}%` }}
                 />
               </div>
-              <div className="text-[10px] text-gray-500 mt-2">Not signed in.</div>
+              <div className="text-[10px] text-subtle mt-2">Not signed in.</div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mt-3">
+          <div className="text-xs text-subtle mt-3">
             Explore the steps below. Connect Telegram to start receiving alerts.
           </div>
           <div className="text-[11px] text-violet-200/70 mt-2">Pro & Elite: faster, more frequent Telegram delivery right after activation.</div>
@@ -320,25 +320,25 @@ function HomeQuickStartSectionSkeleton() {
         {steps.map((step) => (
           <div
             key={step.title}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
+            className="rounded-2xl border border-border bg-surface p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-surface-hover transition-colors"
           >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
                 <span
                   className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
                     step.done
                       ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
-                      : 'border-white/15 bg-white/5 text-gray-400'
+                      : 'border-border bg-surface text-muted'
                   }`}
                 >
                   {step.done ? 'Completed' : 'Pending'}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+              <p className="text-xs text-muted leading-relaxed">{step.description}</p>
               <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
+                <div className="rounded-xl border border-border bg-surface backdrop-blur px-3 py-2 text-[11px] text-muted">
+                  <div className="text-[10px] uppercase tracking-widest text-subtle font-black mb-1">Why it matters</div>
                   <ul className="space-y-1">
                     {step.valuePoints.map((p) => (
                       <li key={p} className="flex items-start gap-2">
@@ -355,18 +355,18 @@ function HomeQuickStartSectionSkeleton() {
                 href={step.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+                className="inline-flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 min-h-[44px] text-xs font-semibold text-foreground hover:bg-surface-hover"
               >
                 {step.cta}
-                <span className="text-[10px] text-gray-400">External</span>
+                <span className="text-[10px] text-muted">External</span>
               </a>
             ) : (
               <Link
                 href={step.href}
-                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+                className="inline-flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 min-h-[44px] text-xs font-semibold text-foreground hover:bg-surface-hover"
               >
                 {step.cta}
-                <span className="text-[10px] text-gray-400">Go</span>
+                <span className="text-[10px] text-muted">Go</span>
               </Link>
             )}
           </div>
@@ -425,32 +425,32 @@ async function HomeQuickStartSection() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-6 sm:mb-8">
         <div>
           <p className="text-[11px] font-bold text-cyan-400 tracking-[0.35em] uppercase mb-4">Quick Start</p>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight mb-3 leading-[1.15]">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight mb-3 leading-[1.15]">
             Complete 3 steps to receive your first smart-money alert
           </h2>
-          <p className="text-sm text-gray-400 max-w-2xl">
+          <p className="text-sm text-muted max-w-2xl">
             Follow whales, subscribe to collections, and connect Telegram for the shortest loop from discovery to delivery.
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 sm:px-5 py-4 w-full md:w-auto">
+        <div className="rounded-2xl border border-border bg-surface px-4 sm:px-5 py-4 w-full md:w-auto">
           <div className="flex items-center justify-between gap-4 sm:gap-6">
             <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">Progress</p>
-              <div className="text-xl sm:text-2xl font-semibold text-white mt-2">
+              <p className="text-xs uppercase tracking-wide text-subtle">Progress</p>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground mt-2">
                 {completedCount} / {steps.length}
               </div>
             </div>
             <div className="min-w-0 flex-1 max-w-[10rem] sm:max-w-none sm:w-40">
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden ring-1 ring-white/10">
+              <div className="h-2 w-full bg-surface rounded-full overflow-hidden ring-1 ring-border">
                 <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-violet-500"
                   style={{ width: `${(completedCount / steps.length) * 100}%` }}
                 />
               </div>
-              <div className="text-[10px] text-gray-500 mt-2">{user ? 'Saved to your account.' : 'Not signed in.'}</div>
+              <div className="text-[10px] text-subtle mt-2">{user ? 'Saved to your account.' : 'Not signed in.'}</div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mt-3">
+          <div className="text-xs text-subtle mt-3">
             {user ? 'Your progress is tracked automatically.' : 'Explore the steps below. Connect Telegram to start receiving alerts.'}
           </div>
           <div className="text-[11px] text-violet-200/70 mt-2">Pro & Elite: faster, more frequent Telegram delivery right after activation.</div>
@@ -460,25 +460,25 @@ async function HomeQuickStartSection() {
         {steps.map((step) => (
           <div
             key={step.title}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-white/[0.06] transition-colors"
+            className="rounded-2xl border border-border bg-surface p-4 sm:p-5 flex flex-col justify-between gap-4 relative group hover:bg-surface-hover transition-colors"
           >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
                 <span
                   className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${
                     step.done
                       ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
-                      : 'border-white/15 bg-white/5 text-gray-400'
+                      : 'border-border bg-surface text-muted'
                   }`}
                 >
                   {step.done ? 'Completed' : 'Pending'}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+              <p className="text-xs text-muted leading-relaxed">{step.description}</p>
               <div className="absolute left-5 right-5 top-[4.25rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="rounded-xl border border-white/10 bg-[#050505]/90 backdrop-blur px-3 py-2 text-[11px] text-gray-300">
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500 font-black mb-1">Why it matters</div>
+                <div className="rounded-xl border border-border bg-surface backdrop-blur px-3 py-2 text-[11px] text-muted">
+                  <div className="text-[10px] uppercase tracking-widest text-subtle font-black mb-1">Why it matters</div>
                   <ul className="space-y-1">
                     {step.valuePoints.map((p) => (
                       <li key={p} className="flex items-start gap-2">
@@ -495,18 +495,18 @@ async function HomeQuickStartSection() {
                 href={step.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+                className="inline-flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 min-h-[44px] text-xs font-semibold text-foreground hover:bg-surface-hover"
               >
                 {step.cta}
-                <span className="text-[10px] text-gray-400">External</span>
+                <span className="text-[10px] text-muted">External</span>
               </a>
             ) : (
               <Link
                 href={step.href}
-                className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 min-h-[44px] text-xs font-semibold text-white hover:bg-white/10"
+                className="inline-flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 min-h-[44px] text-xs font-semibold text-foreground hover:bg-surface-hover"
               >
                 {step.cta}
-                <span className="text-[10px] text-gray-400">Go</span>
+                <span className="text-[10px] text-muted">Go</span>
               </Link>
             )}
           </div>
@@ -616,9 +616,9 @@ const loadLiveSignals = unstable_cache(
 export default function Home() {
   // Keep first HTML fast: personalization (Quick Start progress) streams later.
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden">
+    <div className="min-h-screen text-foreground selection:bg-sky-500/25 overflow-hidden">
       {/* Background Effects */}
-      <div className="fixed inset-0 z-[-1] bg-[#020202]" />
+      <div className="fixed inset-0 z-[-1] bg-background" />
 
       {/* Navigation */}
       <Header />
@@ -650,7 +650,7 @@ export default function Home() {
         {/* HERO SECTION */}
         <section className="relative px-4 sm:px-6 max-w-7xl mx-auto text-center mb-20 sm:mb-24 md:mb-32 pt-6 sm:pt-12">
               <div>
-                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-white/10 text-gray-300 text-[11px] md:text-sm hover:border-violet-500/50 transition-all cursor-default group relative overflow-hidden bg-white/[0.02]">
+                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-border text-muted text-[11px] md:text-sm hover:border-accent/45 transition-all cursor-default group relative overflow-hidden bg-surface/85">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -660,57 +660,57 @@ export default function Home() {
                   <HomeStatsHeroTracking />
                 </Suspense>
               </span>
-              <svg className="w-3 h-3 text-gray-500 group-hover:text-violet-400 transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-3 h-3 text-subtle group-hover:text-accent transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-6 sm:mb-8 leading-[1.1] sm:leading-[1.05]">
-            Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 relative inline-block">
+            Follow the <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400 relative inline-block">
               Whale Score™
-              <span className="absolute -inset-x-4 -inset-y-2 blur-[16px] bg-violet-500/10 -z-10"></span>
+              <span className="absolute -inset-x-4 -inset-y-2 blur-[16px] bg-sky-500/10 -z-10"></span>
             </span>. <br />
-            Frontrun the <span className="text-white">Market</span>.
+            Frontrun the <span className="text-foreground">Market</span>.
           </h1>
           
-          <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-sm sm:text-base md:text-xl text-gray-400 leading-relaxed font-light tracking-wide px-1">
-            The first AI-driven intelligence layer for Polymarket. We filter millions in noise into <span className="text-white font-medium relative group cursor-help">
+          <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-sm sm:text-base md:text-xl text-muted leading-relaxed font-light tracking-wide px-1">
+            The first AI-driven intelligence layer for Polymarket. We filter millions in noise into <span className="text-foreground font-medium relative group cursor-help">
               high-conviction signals
-              <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-violet-500/50 group-hover:bg-violet-400 group-hover:h-[1px] transition-all"></span>
+              <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-accent/45 group-hover:bg-accent group-hover:h-[1px] transition-all"></span>
             </span> using the proprietary Whale Score™.
           </p>
 
           <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-6 w-full max-w-sm sm:max-w-none mx-auto">
             <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-sky-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 Launch Telegram Bot
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7" /></svg>
               </span>
             </a>
-            <Link href="#live-signals" className="group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] glass border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center justify-center gap-3">
+            <Link href="#live-signals" className="group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] glass border border-border text-foreground font-bold rounded-2xl hover:bg-surface transition-all flex items-center justify-center gap-3">
               View Live Signals
-              <div className="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:scale-[1.5] transition-all"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-accent group-hover:scale-[1.5] transition-all"></div>
             </Link>
           </div>
 
           <div className="mt-6 sm:mt-10 flex flex-wrap justify-center gap-2 sm:gap-3">
-            <Link href="/backtesting" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/30 transition-all duration-300">
+            <Link href="/backtesting" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-surface border border-border hover:bg-surface-hover hover:border-violet-500/30 transition-all duration-300">
               <div className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300 group-hover:scale-105 transition-transform">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <div className="text-left">
-                <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Performance</div>
-                <div className="text-xs text-gray-200 font-semibold group-hover:text-white">Backtesting Results</div>
+                <div className="text-[11px] text-muted font-medium uppercase tracking-wider">Performance</div>
+                <div className="text-xs text-foreground font-semibold group-hover:text-foreground">Backtesting Results</div>
               </div>
             </Link>
 
-            <Link href="/conviction" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all duration-300">
+            <Link href="/conviction" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-surface border border-border hover:bg-surface-hover hover:border-cyan-500/30 transition-all duration-300">
               <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:scale-105 transition-transform">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div className="text-left">
-                <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Deep Dive</div>
-                <div className="text-xs text-gray-200 font-semibold group-hover:text-white">Conviction Cases</div>
+                <div className="text-[11px] text-muted font-medium uppercase tracking-wider">Deep Dive</div>
+                <div className="text-xs text-foreground font-semibold group-hover:text-foreground">Conviction Cases</div>
               </div>
             </Link>
           </div>
@@ -722,10 +722,10 @@ export default function Home() {
               <p className="text-[11px] font-bold text-emerald-400 tracking-[0.35em] uppercase mb-4">
                 Real-Time
               </p>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+              <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight mb-3">
                 Recent whale signals, anonymized
               </h2>
-              <p className="text-sm text-gray-400 max-w-2xl">
+              <p className="text-sm text-muted max-w-2xl">
                 This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
               </p>
             </div>
@@ -742,7 +742,7 @@ export default function Home() {
           >
             <HomeLiveSignals />
           </Suspense>
-          <div className="mt-3 text-[11px] text-gray-600">
+          <div className="mt-3 text-[11px] text-subtle">
             Data refreshes automatically. Sizes shown in USD. Wallets are masked for privacy.
           </div>
         </section>
@@ -757,9 +757,9 @@ export default function Home() {
             <h2 className="text-[11px] font-bold text-violet-400 tracking-[0.4em] uppercase mb-6 opacity-80">
               The Protocol
             </h2>
-            <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-tight">
               Institutional grade data. <br />
-              <span className="text-gray-500/80">Consumer simple access.</span>
+              <span className="text-subtle/80">Consumer simple access.</span>
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
@@ -768,17 +768,17 @@ export default function Home() {
               { step: 2, title: "Quantify Conviction", color: "cyan", desc: <>Whale Score ranks high-conviction bets and filters noise—so only the trades worth acting on are eligible for delivery.</> },
               { step: 3, title: "Shadow", color: "emerald", desc: <>Mirror every move with precision. Use <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">/follow</span> alerts, with Pro/Elite delivering faster and more frequently after activation.</> }
             ].map((item, i) => (
-              <div key={i} className={`glass rounded-2xl sm:rounded-[2rem] border border-white/5 p-5 sm:p-8 flex flex-col gap-6 sm:gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden`}>
+              <div key={i} className={`glass rounded-2xl sm:rounded-[2rem] border border-border-muted p-5 sm:p-8 flex flex-col gap-6 sm:gap-8 hover:border-${item.color}-500/40 hover:bg-${item.color}-500/[0.03] transition-all duration-700 group relative overflow-hidden`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${item.color}-500/10 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-${item.color}-500/20 transition-all duration-1000`}></div>
                 <div className="flex items-center justify-between relative z-10">
-                  <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/20 text-${item.color}-300 flex items-center justify-center font-black text-xl group-hover:scale-110 group-hover:bg-${item.color}-500 group-hover:text-white transition-all duration-700`}>
+                  <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/20 text-${item.color}-300 flex items-center justify-center font-black text-xl group-hover:scale-110 group-hover:bg-${item.color}-500 group-hover:text-foreground transition-all duration-700`}>
                     {item.step}
                   </div>
                   <div className={`text-[11px] font-black text-${item.color}-400/40 uppercase tracking-[0.3em]`}>Step {item.step === 1 ? 'One' : item.step === 2 ? 'Two' : 'Three'}</div>
                 </div>
                 <div className="space-y-4 relative z-10">
-                  <h3 className="text-xl font-black text-white tracking-tight">{item.title}</h3>
-                  <p className="text-gray-400 leading-relaxed text-sm font-light">
+                  <h3 className="text-xl font-black text-foreground tracking-tight">{item.title}</h3>
+                  <p className="text-muted leading-relaxed text-sm font-light">
                     {item.desc}
                   </p>
                 </div>
@@ -788,10 +788,10 @@ export default function Home() {
         </section>
 
         {/* SOCIAL PROOF */}
-        <section className="border-y border-white/5 bg-white/[0.01] py-10 sm:py-16 mb-16 sm:mb-24 relative overflow-hidden">
+        <section className="border-y border-border-muted bg-surface/45 py-10 sm:py-16 mb-16 sm:mb-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/[0.02] via-transparent to-cyan-500/[0.02]"></div>
           <div className="max-w-6xl mx-auto px-6 relative z-10">
-            <blockquote className="text-xl sm:text-2xl md:text-3xl font-black text-center text-white tracking-tight mb-8 sm:mb-12 leading-[1.2] px-2">
+            <blockquote className="text-xl sm:text-2xl md:text-3xl font-black text-center text-foreground tracking-tight mb-8 sm:mb-12 leading-[1.2] px-2">
               “We don’t predict outcomes. <br className="hidden md:block" />We <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">track capital flow</span>.”
             </blockquote>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -802,8 +802,8 @@ export default function Home() {
               ].map((item, i) => (
                 <div key={i} className="flex flex-col items-center text-center gap-3 group">
                   <div className="text-4xl mb-1 group-hover:scale-110 transition-transform duration-500">{item.icon}</div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">{item.title}</h3>
-                  <p className="text-gray-400 font-light leading-relaxed text-sm">{item.desc}</p>
+                  <h3 className="text-lg font-bold text-foreground tracking-tight">{item.title}</h3>
+                  <p className="text-muted font-light leading-relaxed text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -816,16 +816,16 @@ export default function Home() {
               <p className="text-[10px] font-bold text-violet-400 tracking-[0.35em] uppercase mb-4">
                 Analysis & Research
               </p>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
+              <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight mb-3">
                 Proof you can click into
               </h2>
-              <p className="text-sm text-gray-400 max-w-2xl">
+              <p className="text-sm text-muted max-w-2xl">
                 We publish the framework behind the product so you can verify signals, not just consume them.
               </p>
             </div>
             <Link
               href="/blog/research"
-              className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-bold text-white hover:bg-white/10"
+              className="inline-flex items-center rounded-2xl border border-border bg-surface px-5 py-3 text-xs font-bold text-foreground hover:bg-surface-hover"
             >
               Browse Research
             </Link>
@@ -855,16 +855,16 @@ export default function Home() {
               <Link
                 key={card.href}
                 href={card.href}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors"
+                className="rounded-2xl border border-border bg-surface p-6 hover:bg-surface-hover transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-black tracking-[0.25em] uppercase text-gray-500">{card.tag}</div>
+                  <div className="text-xs font-black tracking-[0.25em] uppercase text-subtle">{card.tag}</div>
                   <div className="text-[10px] text-violet-200/80 border border-violet-500/20 bg-violet-500/10 rounded-full px-2 py-0.5">
                     Read
                   </div>
                 </div>
-                <div className="mt-4 text-lg font-black text-white tracking-tight">{card.title}</div>
-                <div className="mt-2 text-sm text-gray-400 leading-relaxed">{card.desc}</div>
+                <div className="mt-4 text-lg font-black text-foreground tracking-tight">{card.title}</div>
+                <div className="mt-2 text-sm text-muted leading-relaxed">{card.desc}</div>
               </Link>
             ))}
           </div>
@@ -876,9 +876,9 @@ export default function Home() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-[11px] font-bold text-red-400 tracking-[0.4em] uppercase mb-5">The Market Problem</h2>
-                <h3 className="text-lg sm:text-xl md:text-3xl font-black tracking-tight text-white leading-[1.1]">
+                <h3 className="text-lg sm:text-xl md:text-3xl font-black tracking-tight text-foreground leading-[1.1]">
                   Prediction markets are <br />
-                  <span className="text-gray-500 italic">distorted by noise.</span>
+                  <span className="text-subtle italic">distorted by noise.</span>
                 </h3>
               </div>
               
@@ -890,24 +890,24 @@ export default function Home() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-4 group">
                     <div className="mt-2 w-1.5 h-1.5 rounded-full bg-red-500/40 border border-red-500/60 group-hover:bg-red-500 transition-all"></div>
-                    <span className="text-base text-gray-400 group-hover:text-gray-200 transition-colors font-light">{item}</span>
+                    <span className="text-base text-muted group-hover:text-foreground transition-colors font-light">{item}</span>
                   </div>
                 ))}
               </div>
               
               <div className="glass p-7 rounded-[1.5rem] border-l-4 border-l-violet-500 bg-violet-500/[0.02]">
-                <p className="text-base text-gray-300 font-light leading-relaxed">
-                  While the crowd follows the news, <strong className="text-white font-bold tracking-tight">smart money</strong> acts quietly — early, with size, and with verifiable conviction.
+                <p className="text-base text-muted font-light leading-relaxed">
+                  While the crowd follows the news, <strong className="text-foreground font-bold tracking-tight">smart money</strong> acts quietly — early, with size, and with verifiable conviction.
                 </p>
               </div>
             </div>
 
-            <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 relative overflow-hidden group border-white/5 hover:border-cyan-500/30 transition-all duration-700 bg-white/[0.01]">
+            <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 relative overflow-hidden group border-border-muted hover:border-cyan-500/30 transition-all duration-700 bg-surface/45">
               <div className="absolute -top-20 -right-20 w-[250px] h-[250px] bg-cyan-500/10 rounded-full blur-[70px] group-hover:bg-cyan-500/20 transition-all duration-1000"></div>
               
               <div className="relative z-10">
                 <h2 className="text-[11px] font-bold text-cyan-400 tracking-[0.4em] uppercase mb-5">The Solution</h2>
-                <h3 className="text-lg sm:text-xl md:text-3xl font-black text-white mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
+                <h3 className="text-lg sm:text-xl md:text-3xl font-black text-foreground mb-6 tracking-tight leading-tight">We surface the <br /><span className="text-gradient-accent">Unfair Advantage</span>.</h3>
                 
                 <ul className="grid gap-3 mb-8">
                   {[
@@ -916,16 +916,16 @@ export default function Home() {
                     "Repeated accumulation clusters",
                     "Capital flows before market breakouts"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-200 bg-white/[0.03] p-3.5 rounded-xl border border-white/5 group/item hover:bg-white/[0.06] transition-all">
-                      <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover/item:scale-110 group-hover/item:bg-cyan-500 group-hover/item:text-white transition-all duration-500">
+                    <li key={i} className="flex items-center gap-3 text-foreground bg-surface-hover/75 p-3.5 rounded-xl border border-border-muted group/item hover:bg-surface-hover transition-all">
+                      <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover/item:scale-110 group-hover/item:bg-cyan-500 group-hover/item:text-foreground transition-all duration-500">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                       </div>
                       <span className="text-sm font-medium tracking-tight">{item}</span>
                     </li>
                   ))}
                 </ul>
-                <p className="text-sm text-gray-500 border-t border-white/5 pt-6 leading-relaxed font-light">
-                  Transparency on <span className="text-white font-bold">who</span> is betting, <span className="text-white font-bold text-glow">how much</span>, and with what level of conviction.
+                <p className="text-sm text-subtle border-t border-border-muted pt-6 leading-relaxed font-light">
+                  Transparency on <span className="text-foreground font-bold">who</span> is betting, <span className="text-foreground font-bold text-glow">how much</span>, and with what level of conviction.
                 </p>
               </div>
             </div>
@@ -936,7 +936,7 @@ export default function Home() {
         <section id="sample-signals" className="max-w-7xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
           <div className="text-center mb-10 sm:mb-16">
             <h2 className="section-title tracking-[0.2em] opacity-80 mb-4">Intelligence Platform</h2>
-            <p className="text-base sm:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light px-1">
+            <p className="text-base sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed font-light px-1">
               We monitor millions of data points to surface the only ones that matter.
             </p>
           </div>
@@ -944,43 +944,43 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-4 sm:gap-8 auto-rows-[minmax(280px,auto)]">
             
             {/* Feature 1: Alerts (Large Card) */}
-            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden p-5 sm:p-8 md:p-10 flex flex-col justify-between border-white/5 bg-white/[0.01]">
+            <div className="card md:col-span-2 md:row-span-2 relative overflow-hidden p-5 sm:p-8 md:p-10 flex flex-col justify-between border-border-muted bg-surface/45">
               <div className="relative z-10">
                 <div className="flex items-center gap-5 mb-6">
                   <div className="w-14 h-14 bg-violet-500/15 rounded-2xl flex items-center justify-center text-3xl border border-violet-500/20">🐋</div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight text-white mb-1">Whale Score Filter</h3>
+                    <h3 className="text-2xl font-black tracking-tight text-foreground mb-1">Whale Score Filter</h3>
                     <div className="text-violet-400 font-bold text-[10px] uppercase tracking-[0.3em]">Kill the Noise. Only Follow the 70+.</div>
                   </div>
                 </div>
-                <p className="text-gray-400 text-base mb-8 max-w-xl leading-relaxed font-light">
+                <p className="text-muted text-base mb-8 max-w-xl leading-relaxed font-light">
                   Stop chasing every $10k bet. Our scoring system (0-100) separates &quot;Dumb Large Money&quot; from the elite 1% who actually move the needle.
                 </p>
                 
-                <div className="bg-[#010101] border border-white/10 rounded-2xl p-6 font-mono text-sm leading-relaxed relative overflow-hidden">
+                <div className="bg-background border border-border rounded-2xl p-6 font-mono text-sm leading-relaxed relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-violet-500 via-indigo-500 to-cyan-500"></div>
                   
-                  <div className="flex justify-between text-[8px] text-gray-500 mb-3.5 border-b border-white/5 pb-2.5">
+                  <div className="flex justify-between text-[8px] text-subtle mb-3.5 border-b border-border-muted pb-2.5">
                     <span className="flex items-center gap-2 font-black tracking-[0.2em] text-violet-400"><span className="w-1 h-1 rounded-full bg-red-500"></span> LIVE SIGNAL</span>
                     <span className="font-bold tracking-widest opacity-50 font-sans uppercase">Processing...</span>
                   </div>
                   <div className="grid grid-cols-2 gap-y-2.5 relative z-10">
-                    <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Market</span>
-                    <span className="text-white font-black truncate text-xs">US Election – Trump Wins</span>
+                    <span className="text-subtle font-bold uppercase text-[8px] tracking-widest">Market</span>
+                    <span className="text-foreground font-black truncate text-xs">US Election – Trump Wins</span>
                     
-                    <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Outcome</span>
+                    <span className="text-subtle font-bold uppercase text-[8px] tracking-widest">Outcome</span>
                     <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md w-fit font-black text-[9px] ring-1 ring-emerald-400/20">YES</span>
                     
-                    <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Action</span>
+                    <span className="text-subtle font-bold uppercase text-[8px] tracking-widest">Action</span>
                     <span className="text-emerald-400 font-black tracking-tighter text-sm">AGGRESSIVE BUY</span>
                     
-                    <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Size</span>
-                    <span className="text-white font-black text-sm">$182,400.00</span>
+                    <span className="text-subtle font-bold uppercase text-[8px] tracking-widest">Size</span>
+                    <span className="text-foreground font-black text-sm">$182,400.00</span>
                     
-                    <span className="text-gray-500 font-bold uppercase text-[8px] tracking-widest">Whale Score</span>
+                    <span className="text-subtle font-bold uppercase text-[8px] tracking-widest">Whale Score</span>
                     <div className="flex items-center gap-3">
                       <span className="text-violet-400 font-black text-xs">84</span>
-                      <div className="h-1 w-16 bg-gray-900 rounded-full overflow-hidden ring-1 ring-white/5">
+                      <div className="h-1 w-16 bg-gray-900 rounded-full overflow-hidden ring-1 ring-border-muted">
                       <div className="h-full w-[84%] bg-gradient-to-r from-violet-600 to-violet-400"></div>
                       </div>
                     </div>
@@ -990,19 +990,19 @@ export default function Home() {
             </div>
 
             {/* Feature 2: Smart Collections */}
-            <div className="card relative overflow-hidden p-8 flex flex-col justify-between border-white/5 bg-white/[0.01]">
+            <div className="card relative overflow-hidden p-8 flex flex-col justify-between border-border-muted bg-surface/45">
               <div className="relative z-10">
                 <div className="w-14 h-14 bg-cyan-500/15 rounded-2xl flex items-center justify-center text-3xl mb-6 border border-cyan-500/20">💎</div>
-                <h3 className="text-xl font-black text-white mb-3 tracking-tight">Smart Collections</h3>
-                <p className="text-gray-400 text-sm leading-relaxed font-light">
+                <h3 className="text-xl font-black text-foreground mb-3 tracking-tight">Smart Collections</h3>
+                <p className="text-muted text-sm leading-relaxed font-light">
                   Automated grouping of whales by strategy, win rate, and market bias.
                 </p>
               </div>
               <div className="mt-8 space-y-3 relative z-10">
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden">
                   <div className="h-full w-[65%] bg-gradient-to-r from-cyan-600 to-cyan-400"></div>
                 </div>
-                <div className="flex justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                <div className="flex justify-between text-[10px] font-black text-subtle uppercase tracking-widest">
                   <span>Clustering Data</span>
                   <span className="text-cyan-400">Active</span>
                 </div>
@@ -1010,33 +1010,33 @@ export default function Home() {
             </div>
 
             {/* Feature 3: Alpha Tracking */}
-            <div className="card relative overflow-hidden p-8 flex flex-col justify-between border-white/5 bg-white/[0.01]">
+            <div className="card relative overflow-hidden p-8 flex flex-col justify-between border-border-muted bg-surface/45">
               <div className="relative z-10">
                 <div className="w-14 h-14 bg-emerald-500/15 rounded-2xl flex items-center justify-center text-3xl mb-6 border border-emerald-500/20">🚀</div>
-                <h3 className="text-xl font-black text-white mb-3 tracking-tight">Alpha Tracking</h3>
-                <p className="text-gray-400 text-sm leading-relaxed font-light">
+                <h3 className="text-xl font-black text-foreground mb-3 tracking-tight">Alpha Tracking</h3>
+                <p className="text-muted text-sm leading-relaxed font-light">
                   Discover hidden wallets before they hit the leaderboard rankings.
                 </p>
               </div>
               <div className="mt-8 flex items-center gap-2 relative z-10">
                 <div className="flex -space-x-3">
-                  {[1,2,3].map(i => <div key={i} className="w-9 h-9 rounded-full border-2 border-[#050505] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400">W{i}</div>)}
+                  {[1,2,3].map(i => <div key={i} className="w-9 h-9 rounded-full border-2 border-background bg-gray-800 flex items-center justify-center text-[10px] font-bold text-muted">W{i}</div>)}
                 </div>
                 <div className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter ml-2">+42 New Whales</div>
               </div>
             </div>
 
             {/* Feature 4: Conviction */}
-            <div className="card border-violet-500/20 p-8 flex flex-col md:col-span-2 relative overflow-hidden bg-white/[0.01]">
+            <div className="card border-violet-500/20 p-8 flex flex-col md:col-span-2 relative overflow-hidden bg-surface/45">
               <div className="flex justify-between items-start mb-8 relative z-10">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🔥</span>
-                  <h3 className="text-xl font-black text-white tracking-tight">Conviction</h3>
+                  <h3 className="text-xl font-black text-foreground tracking-tight">Conviction</h3>
                 </div>
-                <div className="px-3 py-1 rounded-full text-[10px] bg-violet-500 text-white font-black tracking-[0.2em]">ELITE</div>
+                <div className="px-3 py-1 rounded-full text-[10px] bg-violet-500 text-foreground font-black tracking-[0.2em]">ELITE</div>
               </div>
               
-              <ul className="grid md:grid-cols-2 gap-x-10 gap-y-5 text-sm text-gray-300 mb-10 relative z-10">
+              <ul className="grid md:grid-cols-2 gap-x-10 gap-y-5 text-sm text-muted mb-10 relative z-10">
                 {[
                   "Multiple smart money addresses align",
                   "Capital size is significant",
@@ -1045,11 +1045,11 @@ export default function Home() {
                 ].map((item, i) => (
                   <li key={i} className="flex gap-4">
                     <span className="text-violet-400 font-black font-mono">0{i+1}</span>
-                    <span className="text-gray-400 font-light">{item}</span>
+                    <span className="text-muted font-light">{item}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-6 relative z-10">
+              <div className="mt-auto flex items-center justify-between border-t border-border-muted pt-6 relative z-10">
                 <p className="text-[11px] text-violet-200/50 font-medium">Reflecting <strong className="text-violet-400 font-black tracking-wide">strong belief</strong>, not just speculation.</p>
                 <div className="flex gap-1">
                   {[1,2,3,4,5].map(i => <div key={i} className="w-1 h-3 rounded-full bg-violet-500/20"></div>)}
@@ -1058,13 +1058,13 @@ export default function Home() {
             </div>
 
             {/* Feature 5: Results */}
-            <div className="card border-indigo-500/20 p-8 flex flex-col relative overflow-hidden bg-white/[0.01]">
+            <div className="card border-indigo-500/20 p-8 flex flex-col relative overflow-hidden bg-surface/45">
               <div className="flex justify-between items-start mb-8 relative z-10">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">📈</span>
-                  <h3 className="text-xl font-black text-white tracking-tight">Results</h3>
+                  <h3 className="text-xl font-black text-foreground tracking-tight">Results</h3>
                 </div>
-                <div className="px-3 py-1 rounded-full text-[10px] bg-indigo-500 text-white font-black tracking-[0.2em]">STATS</div>
+                <div className="px-3 py-1 rounded-full text-[10px] bg-indigo-500 text-foreground font-black tracking-[0.2em]">STATS</div>
               </div>
               
               <Suspense fallback={<HomeStatsResultsListSkeleton />}>
@@ -1073,28 +1073,28 @@ export default function Home() {
               <div className="mt-6 relative z-10">
                 <Link
                   href="/backtesting"
-                  className="inline-flex items-center justify-center w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center w-full rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-foreground hover:bg-surface-hover transition-colors"
                 >
                   Verify in Backtesting
                 </Link>
               </div>
-              <p className="mt-auto text-[10px] text-gray-500 font-medium italic pt-6 border-t border-white/5 relative z-10">
+              <p className="mt-auto text-[10px] text-subtle font-medium italic pt-6 border-t border-border-muted relative z-10">
                 Derived from internal tracked data, refreshed automatically.
               </p>
             </div>
 
             {/* Feature 6: Heatmap (Wide) */}
-            <div className="card md:col-span-3 p-10 md:p-12 bg-white/[0.01] relative overflow-hidden border-white/5">
+            <div className="card md:col-span-3 p-10 md:p-12 bg-surface/45 relative overflow-hidden border-border-muted">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12 relative z-10">
                 <div>
-                  <h3 className="text-3xl font-black flex items-center gap-4 text-white tracking-tight">
+                  <h3 className="text-3xl font-black flex items-center gap-4 text-foreground tracking-tight">
                     <span className="text-4xl">📊</span> Market Heatmap
                   </h3>
-                  <p className="text-gray-400 text-lg mt-2 font-light">Perfect for research and market discovery.</p>
+                  <p className="text-muted text-lg mt-2 font-light">Perfect for research and market discovery.</p>
                 </div>
                 <div className="flex gap-3">
                   {['Volume', 'Flow', 'Trend'].map((tag) => (
-                    <span key={tag} className="px-5 py-2 rounded-xl bg-white/5 text-[11px] font-black text-gray-500 border border-white/5 cursor-default uppercase tracking-widest">{tag}</span>
+                    <span key={tag} className="px-5 py-2 rounded-xl bg-surface text-[11px] font-black text-subtle border border-border-muted cursor-default uppercase tracking-widest">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -1105,19 +1105,19 @@ export default function Home() {
                   { label: "Flow", value: "Net Inflow", color: "text-emerald-400" },
                   { label: "Trend", value: "Momentum", color: "text-violet-400" }
                 ].map((stat, i) => (
-                  <div key={i} className="p-8 bg-white/[0.02] rounded-[2rem] border border-white/5">
-                    <div className="text-[10px] text-gray-500 mb-4 uppercase tracking-[0.3em] font-black">{stat.label}</div>
+                  <div key={i} className="p-8 bg-surface/85 rounded-[2rem] border border-border-muted">
+                    <div className="text-[10px] text-subtle mb-4 uppercase tracking-[0.3em] font-black">{stat.label}</div>
                     <div className={`${stat.color} font-mono text-xl font-black`}>{stat.value}</div>
                   </div>
                 ))}
               </div>
               <div className="mt-10 relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="text-sm text-gray-400 font-light">
+                <div className="text-sm text-muted font-light">
                   Research the flows, then act with the Whale Score filter.
                 </div>
                 <Link
                   href="/smart-money"
-                  className="inline-flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center rounded-2xl bg-surface border border-border px-6 py-3 text-xs font-bold text-foreground hover:bg-surface-hover transition-colors"
                 >
                   Explore Smart Money
                 </Link>
@@ -1132,8 +1132,8 @@ export default function Home() {
             <h2 className="text-[11px] font-black text-violet-400 tracking-[0.5em] uppercase mb-6 opacity-80">
               The Engine
             </h2>
-            <p className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight mb-6">How It Works</p>
-            <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto font-light px-1">
+            <p className="text-2xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight mb-6">How It Works</p>
+            <p className="text-sm sm:text-base text-muted max-w-2xl mx-auto font-light px-1">
               After activation, Pro and Elite users receive faster, more frequent Telegram delivery—with cooldowns that prevent spam.
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-cyan-500 mx-auto rounded-full"></div>
@@ -1150,13 +1150,13 @@ export default function Home() {
               { title: "Deliver", desc: "Telegram delivery. Pro/Elite faster after activation.", icon: "📬" }
             ].map((step, i) => (
               <div key={i} className="relative group">
-                <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 h-full border-white/5 hover:border-violet-500/40 hover:bg-violet-500/[0.02] transition-all duration-700 flex flex-col items-center text-center group-hover:translate-y-[-8px] shadow-2xl">
-                  <div className="w-16 h-16 rounded-[1.5rem] bg-violet-500/15 text-violet-400 flex items-center justify-center text-2xl font-black mb-8 group-hover:bg-violet-500 group-hover:text-white transition-all duration-700 shadow-[0_0_30px_rgba(139,92,246,0.2)] group-hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] group-hover:rotate-6">
+                <div className="glass rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 h-full border-border-muted hover:border-violet-500/40 hover:bg-violet-500/[0.02] transition-all duration-700 flex flex-col items-center text-center group-hover:translate-y-[-8px] shadow-2xl">
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-violet-500/15 text-violet-400 flex items-center justify-center text-2xl font-black mb-8 group-hover:bg-violet-500 group-hover:text-foreground transition-all duration-700 shadow-[0_0_30px_rgba(139,92,246,0.2)] group-hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] group-hover:rotate-6">
                     {i + 1}
                   </div>
                   <div className="text-3xl mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700">{step.icon}</div>
-                  <h4 className="font-black text-2xl mb-4 text-white tracking-tight">{step.title}</h4>
-                  <p className="text-gray-400 leading-relaxed text-sm font-light">{step.desc}</p>
+                  <h4 className="font-black text-2xl mb-4 text-foreground tracking-tight">{step.title}</h4>
+                  <p className="text-muted leading-relaxed text-sm font-light">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -1165,18 +1165,18 @@ export default function Home() {
 
         {/* COMPARISON */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-20 sm:mb-32">
-          <div className="glass rounded-2xl sm:rounded-[3rem] overflow-hidden p-6 sm:p-12 md:p-20 relative bg-white/[0.01] border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+          <div className="glass rounded-2xl sm:rounded-[3rem] overflow-hidden p-6 sm:p-12 md:p-20 relative bg-surface/45 border-border-muted shadow-[0_0_100px_rgba(0,0,0,0.5)]">
             {/* Pro Max: Animated top border */}
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-violet-500/40 to-transparent"></div>
             
             <div className="text-center mb-16">
-              <h2 className="text-2xl md:text-4xl font-black tracking-tight text-white mb-4">Why We’re Different</h2>
-              <p className="text-gray-500 text-lg font-light">The transparency advantage in a black-box market.</p>
+              <h2 className="text-2xl md:text-4xl font-black tracking-tight text-foreground mb-4">Why We’re Different</h2>
+              <p className="text-subtle text-lg font-light">The transparency advantage in a black-box market.</p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8 sm:gap-12 lg:gap-20 items-stretch">
-              <div className="space-y-8 sm:space-y-10 p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-colors">
-                <p className="text-gray-600 font-black uppercase tracking-[0.4em] text-[11px]">What you don’t get</p>
+              <div className="space-y-8 sm:space-y-10 p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] bg-surface/45 border border-border-muted hover:border-border transition-colors">
+                <p className="text-subtle font-black uppercase tracking-[0.4em] text-[11px]">What you don’t get</p>
                 <ul className="space-y-8">
                   {[
                     "Delayed delivery after activation",
@@ -1184,8 +1184,8 @@ export default function Home() {
                     "Opaque scoring and no Whale Score filter",
                     "Limited on-chain evidence & unverifiable claims",
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-5 text-gray-600 line-through text-lg font-medium opacity-50 group">
-                      <div className="w-6 h-6 rounded-full bg-gray-900 border border-white/5 flex items-center justify-center text-[10px] group-hover:border-red-500/30 transition-colors">✕</div>
+                    <li key={i} className="flex items-center gap-5 text-subtle line-through text-lg font-medium opacity-50 group">
+                      <div className="w-6 h-6 rounded-full bg-gray-900 border border-border-muted flex items-center justify-center text-[10px] group-hover:border-red-500/30 transition-colors">✕</div>
                       {item}
                     </li>
                   ))}
@@ -1202,14 +1202,14 @@ export default function Home() {
                     "Explainable engine: timing, risk & impact signals",
                     "Auditable performance from tracked wallet history",
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-5 text-white text-xl font-black tracking-tight group/li">
-                      <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center text-white text-[10px] group-hover/li:scale-110 transition-transform">✓</div>
+                    <li key={i} className="flex items-center gap-5 text-foreground text-xl font-black tracking-tight group/li">
+                      <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center text-foreground text-[10px] group-hover/li:scale-110 transition-transform">✓</div>
                       {item}
                     </li>
                   ))}
                 </ul>
-                <div className="mt-12 pt-8 border-t border-white/5 relative">
-                  <p className="text-gray-400 text-sm italic font-light leading-relaxed">&quot;The most transparent data in DeFi.&quot;</p>
+                <div className="mt-12 pt-8 border-t border-border-muted relative">
+                  <p className="text-muted text-sm italic font-light leading-relaxed">&quot;The most transparent data in DeFi.&quot;</p>
                 </div>
               </div>
             </div>
@@ -1218,17 +1218,17 @@ export default function Home() {
 
         {/* Delivery Promise */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
-          <div className="glass rounded-[2rem] p-6 sm:p-8 relative overflow-hidden border-white/5">
+          <div className="glass rounded-[2rem] p-6 sm:p-8 relative overflow-hidden border-border-muted">
             <div className="absolute -top-16 -right-16 w-56 h-56 bg-violet-500/10 rounded-full blur-[70px]"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <p className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
                   Delivery Promise
                 </p>
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+                <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-3">
                   Faster, more frequent alerts after activation
                 </h2>
-                <p className="text-sm sm:text-base text-gray-400 max-w-2xl font-light">
+                <p className="text-sm sm:text-base text-muted max-w-2xl font-light">
                   Pro and Elite users are prioritized for conviction-backed Telegram delivery—so you spend less time watching noise and more time acting on the moments that matter.
                 </p>
               </div>
@@ -1237,9 +1237,9 @@ export default function Home() {
                   { title: "Pro", desc: "Faster alerts with reduced delivery delay." },
                   { title: "Elite", desc: "Priority delivery with more frequent updates." },
                 ].map((x) => (
-                  <div key={x.title} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-                    <div className="text-xs font-black uppercase tracking-[0.25em] text-gray-500 mb-2">{x.title}</div>
-                    <div className="text-sm text-white font-semibold leading-relaxed">{x.desc}</div>
+                  <div key={x.title} className="rounded-xl border border-border bg-surface/85 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.25em] text-subtle mb-2">{x.title}</div>
+                    <div className="text-sm text-foreground font-semibold leading-relaxed">{x.desc}</div>
                   </div>
                 ))}
               </div>
@@ -1253,20 +1253,20 @@ export default function Home() {
             <h2 className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
               Pricing
             </h2>
-            <p className="text-xl sm:text-2xl md:text-4xl font-black text-white tracking-tight mb-4 leading-tight">
+            <p className="text-xl sm:text-2xl md:text-4xl font-black text-foreground tracking-tight mb-4 leading-tight">
               Institutional data. <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 via-gray-200 to-gray-500">Retail simplicity.</span>
             </p>
-            <p className="text-base text-gray-400 font-light max-w-2xl mx-auto">Choose the intelligence level that matches your market participation.</p>
+            <p className="text-base text-muted font-light max-w-2xl mx-auto">Choose the intelligence level that matches your market participation.</p>
           </div>
           
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto items-stretch">
             
             {/* Free */}
-            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 p-7 bg-white/[0.01]">
-              <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Free</h3>
-              <div className="text-4xl font-black mb-5 text-white tracking-tighter">$0<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
-              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">Basic intelligence for casual observers.</p>
+            <div className="glass rounded-[2rem] h-full flex flex-col border-border-muted p-7 bg-surface/45">
+              <h3 className="text-xs font-bold text-subtle tracking-tight uppercase mb-5">Free</h3>
+              <div className="text-4xl font-black mb-5 text-foreground tracking-tighter">$0<span className="text-base font-normal text-subtle tracking-normal ml-1.5">/mo</span></div>
+              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">Basic intelligence for casual observers.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
                   "3 alerts per day",
@@ -1276,25 +1276,25 @@ export default function Home() {
                   "No custom collections",
                   "No smart collections access"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs">
+                  <li key={i} className="flex items-center gap-3 text-muted font-medium text-xs">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-700"></div>
                     {item}
                   </li>
                 ))}
               </ul>
-              <a href="/subscribe?plan=free" className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs">Get started free</a>
+              <a href="/subscribe?plan=free" className="w-full py-3.5 rounded-xl bg-surface border border-border text-foreground font-bold text-center text-xs">Get started free</a>
             </div>
 
             {/* Pro - Most Popular (Center Reinforcement) */}
-            <div className="glass rounded-[2.5rem] h-full flex flex-col border-violet-500/40 p-8 relative overflow-hidden bg-white/[0.01]">
-              <div className="absolute top-0 right-0 px-6 py-2 bg-violet-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-bl-2xl z-20">Most Popular</div>
+            <div className="glass rounded-[2.5rem] h-full flex flex-col border-violet-500/40 p-8 relative overflow-hidden bg-surface/45">
+              <div className="absolute top-0 right-0 px-6 py-2 bg-violet-600 text-foreground text-[9px] font-black uppercase tracking-[0.2em] rounded-bl-2xl z-20">Most Popular</div>
               
               <h3 className="text-xs font-bold text-violet-400 tracking-tight uppercase mb-6">Pro</h3>
               <div className="mb-6">
-                <div className="text-6xl font-black text-white tracking-tighter">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
+                <div className="text-6xl font-black text-foreground tracking-tighter">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
                 <div className="text-sm font-medium text-violet-300/60 mt-1">or $290/yr</div>
               </div>
-              <p className="text-gray-200 mb-8 text-sm font-light leading-relaxed">For professional traders who need immediate edges.</p>
+              <p className="text-foreground mb-8 text-sm font-light leading-relaxed">For professional traders who need immediate edges.</p>
               
               <ul className="space-y-4 mb-10 flex-1">
                 {[
@@ -1305,7 +1305,7 @@ export default function Home() {
                   "Full Whale Score visibility",
                   "Full Telegram Bot features"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-gray-100 font-bold text-xs">
+                  <li key={i} className="flex items-center gap-4 text-foreground font-bold text-xs">
                     <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
                       <svg className="w-3 h-3 text-violet-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
                     </div>
@@ -1316,20 +1316,20 @@ export default function Home() {
               
               <a 
                 href="/subscribe?plan=pro"
-                className="w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-base text-center"
+                className="w-full py-4 rounded-2xl bg-violet-600 text-foreground font-black text-base text-center"
               >
                 Upgrade to Pro
               </a>
             </div>
 
             {/* Elite */}
-            <div className="glass rounded-[2rem] h-full flex flex-col border-white/5 p-7 bg-white/[0.01]">
-              <h3 className="text-xs font-bold text-gray-500 tracking-tight uppercase mb-5">Elite</h3>
+            <div className="glass rounded-[2rem] h-full flex flex-col border-border-muted p-7 bg-surface/45">
+              <h3 className="text-xs font-bold text-subtle tracking-tight uppercase mb-5">Elite</h3>
               <div className="mb-5">
-                <div className="text-4xl font-black text-white tracking-tighter">$59<span className="text-base font-normal text-gray-600 tracking-normal ml-1.5">/mo</span></div>
-                <div className="text-xs font-medium text-gray-500 mt-1">or $590/yr</div>
+                <div className="text-4xl font-black text-foreground tracking-tighter">$59<span className="text-base font-normal text-subtle tracking-normal ml-1.5">/mo</span></div>
+                <div className="text-xs font-medium text-subtle mt-1">or $590/yr</div>
               </div>
-              <p className="text-gray-500 mb-8 text-sm font-light leading-relaxed">The ultimate toolkit for high-net-worth operators.</p>
+              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">The ultimate toolkit for high-net-worth operators.</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
                   "Unlimited real-time alerts",
@@ -1339,7 +1339,7 @@ export default function Home() {
                   "Priority Whale Score updates",
                   "Exclusive alpha channel access"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-400 font-medium text-xs">
+                  <li key={i} className="flex items-center gap-3 text-muted font-medium text-xs">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30"></div>
                     {item}
                   </li>
@@ -1347,7 +1347,7 @@ export default function Home() {
               </ul>
               <a 
                 href="/subscribe?plan=elite"
-                className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-center text-xs"
+                className="w-full py-3.5 rounded-xl bg-surface border border-border text-foreground font-bold text-center text-xs"
               >
                 Go Elite
               </a>

@@ -1,7 +1,27 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DM_Sans, JetBrains_Mono, Sora } from "next/font/google";
 import "./globals.css";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const viewport = {
   width: "device-width",
@@ -73,10 +93,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className="antialiased"
-      >
+    <html
+      lang="en"
+      className={`${dmSans.variable} ${sora.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className={`${dmSans.className} antialiased`}>
         {children}
         <Analytics />
         <SpeedInsights />
