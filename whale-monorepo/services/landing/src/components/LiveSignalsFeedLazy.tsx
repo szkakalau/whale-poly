@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { LiveSignal } from './LiveSignalsFeed';
+import type { LiveSignal } from '@/lib/live-signals';
 
 function LiveSignalsSkeleton() {
   return (
