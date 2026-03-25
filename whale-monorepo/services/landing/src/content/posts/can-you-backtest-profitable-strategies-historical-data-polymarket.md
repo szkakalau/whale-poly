@@ -25,75 +25,60 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of backtesting in Polymarket
 
-**Backtesting** means simulating a strategy on **historical** prices, trades, and outcomes under explicit rules—ideally with **realistic** costs and **time-consistent** information.
+**Backtesting** is replay: historical prices, trades, outcomes, under **written** rules—with **realistic** friction and **no time travel**.
 
-On **Polymarket**, backtesting is **possible and necessary**, but “**profitable** in backtest” is **not** the same as “**profitable** live.” Prediction markets combine **sparse events**, **non-stationary** regimes, and **resolution complexity**—classic sources of **overfitting** and **look-ahead bias**.
+You can and should do it on **Polymarket**. But “**made money** in sample” ≠ “**makes money** next month.” These markets mix **sparse** one-off events, **shifting** regimes, and nasty **resolution** details—perfect fuel for **overfitting** and **look-ahead**.
 
-You *can* estimate whether a rule would have worked **conditional** on:
+A serious estimate needs:
 
-- Correct **labels** (resolution aligned to contract text)  
-- Correct **timestamps** (signals knowable at decision time)  
-- Correct **execution** (spread, fees, depth, partial fills)
+- Labels that match **contract** text  
+- Features knowable **at the timestamp**  
+- Execution that includes spread, fees, depth, **partial fills**
 
-**Whale** and **Smart Money** histories are valuable as **features** or **filters** in backtests—if you treat wallet identity and tiering as **time-evolving** (what you would have known *then*), not as **oracle knowledge** from the future.
+**Whale** / **Smart Money** series are fair game as **features**—only if wallet labels **evolve** in time: what you could have known **then**, not leaderboard truth **from the future**.
 
 ---
 
 ## 2. Data requirements
 
-Minimum inputs for a serious **Polymarket** backtest:
-
 | Data | Role |
 |------|------|
-| **Time-indexed prices or trades** | Entry/exit simulation |
-| **Bid/ask or spread proxies** | Cost model; “mid-only” backtests often lie |
-| **Resolution outcomes + timestamps** | PnL and labeling |
-| **Market metadata** | Category, deadline, resolution criteria |
-| **Wallet-level history (optional)** | **Whale** flow, **Smart Money** tiers, clustering |
+| Time-stamped prices/trades | Simulate entries/exits |
+| Bid/ask or spread proxy | Cost model—**mid-only** lies |
+| Resolutions + times | PnL and labels |
+| Market metadata | Category, deadline, rules |
+| Wallet history (optional) | **Whale** flow, **Smart Money**, clusters |
 
-For **flow-based** strategies, you also need **aggressor side** (or a reliable proxy) and rules for **how** size would have been detected **without** future information—e.g., rolling wallet scores updated only with **resolved** markets available by that date.
+Flow strategies need **aggressor** where possible, and rules for **detecting** size **without** peeking ahead—e.g. wallet scores that update only with **past** resolved markets.
 
-Internal methodology pages on backtesting discipline are linked from the site’s **[backtesting](/backtesting)** hub; use them as a checklist against leakage.
+Use the site **[backtesting](/backtesting)** notes as an anti-leakage checklist.
 
 ---
 
 ## 3. How backtesting works
 
-A defensible loop looks like this:
+1. **Code the strategy** — entries, exits, sizing, universe (liquidity, time-to-resolution).  
+2. **Point-in-time rows** — each decision uses **only** info available **then**.  
+3. **Simulate execution** — fees, crossing, slippage by depth bucket.  
+4. **PnL paths** — mark sensibly through exit/resolution; binary payoffs done right.  
+5. **Out-of-sample** — walk-forward in **time**; embargo overlapping events when labels correlate.  
+6. **Stress costs** — bump fees/slippage **50%**; if the edge vanishes, it was thin.
 
-1. **Define the strategy in code**  
-   Precise entry, exit, sizing, and universe filters (liquidity, time-to-resolution).
-
-2. **Build a point-in-time dataset**  
-   Each row is a decision moment with only **information available at that timestamp**.
-
-3. **Simulate execution**  
-   Apply spread crossing rules, fee assumptions, and **slippage** as a function of depth (bucketed if needed).
-
-4. **Compute PnL paths**  
-   Mark-to-market until exit or resolution; handle **binary payoff** mechanics correctly.
-
-5. **Validate out-of-sample**  
-   Prefer **walk-forward** splits by calendar time; embargo overlapping events when labels correlate.
-
-6. **Stress scenarios**  
-   Vary cost assumptions ±50%; if profitability disappears, you have **no robust edge**.
-
-**Whale** features example: “Enter when **Smart Money** net flow exceeds *x* in 30 minutes” requires historical flow reconstruction and a rule for **wallet tier** that does **not** use post-sample performance to label the same wallet earlier in time—otherwise you leak information.
+**Whale** example: “Buy when **Smart Money** net flow > *x* in 30m” needs **reconstructed** flow **and** tier rules that don’t use **future** wallet performance to score the **past**—otherwise you’ve leaked.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative (not a live strategy):**
+**Illustrative:**
 
-- **Universe**: **Polymarket** markets above *$Y* depth and 7+ days to resolution.  
-- **Signal**: Long Yes when rolling **whale** net buy pressure (defined mechanically) exceeds a threshold **and** a **Smart Money** composite (frozen monthly) is positive.  
-- **Exit**: Time stop at *T* days or stop if opposing flow exceeds threshold.  
-- **Costs**: Taker fee model + half-spread + fixed slippage penalty.  
-- **Evaluation**: Walk-forward by month; report distribution of returns, not just the best window.
+- **Universe**: **Polymarket** markets with depth > *Y*, 7+ days to resolution.  
+- **Signal**: Long Yes when mechanical **whale** buy pressure clears a bar **and** a **monthly frozen** **Smart Money** composite > 0.  
+- **Exit**: Time stop *T* or opposing flow trip.  
+- **Costs**: taker fee + half-spread + slippage fudge.  
+- **Test**: Walk-forward by **month**; report the **distribution** of outcomes, not the best cherry-picked window.
 
-If the strategy only “works” in one regime (e.g., a single election cycle), treat it as **case study**, not production.
+If it only “works” in one election cycle, file it under **case study**, not **production**.
 
 ---
 
@@ -101,12 +86,12 @@ If the strategy only “works” in one regime (e.g., a single election cycle), 
 
 | Layer | Technical purpose |
 |-------|-------------------|
-| Clean historical pulls | Reproducible CSV/Parquet with schema |
-| Feature engineering | Wallet flows, rolling stats, category tags |
-| **Whale** / **Smart Money** analytics | Compress wallet complexity into testable signals |
-| Monitoring | Live drift vs backtest assumptions |
+| Historical store | Reproducible schema |
+| Features | Flow, rolls, categories |
+| **Whale** / **Smart Money** | Compress wallets into testable signals |
+| Monitoring | Live vs backtest drift |
 
-**SightWhale** supports **real-time whale tracking** and **Smart Money** scoring for **forward** testing and alert calibration; pair it with your own stored history for **offline** research.
+**SightWhale** gives live **whale** tracking and **Smart Money** scoring for **forward** testing and alert tuning; pair with your own archives for offline work.
 
 👉 https://www.sightwhale.com
 
@@ -114,24 +99,24 @@ If the strategy only “works” in one regime (e.g., a single election cycle), 
 
 ## 6. Risks and limitations
 
-- **Look-ahead bias**: Using final **wallet leaderboards** to label past trades.  
-- **Survivorship**: Ignoring delisted/illiquid markets that would have trapped you.  
-- **Resolution mismatch**: Your simulated PnL assumes outcomes you would not have predicted from text risk.  
-- **Thin samples**: Statistical significance is hard across one-off events.  
-- **Microstructure non-stationarity**: Depth and fee regimes change; **Polymarket** evolves.  
-- **Whale mirages**: Historical **whale** prints can be hedges—PnL attribution is fragile without full books.
+- **Look-ahead** via final leaderboards  
+- **Survivorship** in universe choice  
+- **Resolution** text you didn’t model  
+- **Tiny N** per regime  
+- **Microstructure** drift as **Polymarket** changes  
+- **Whale** prints as **hedges**—attribution breaks without full books
 
-**Profitable** backtests are easy; **honest** backtests are rare.
+Pretty equity curves are cheap; **honest** ones are not.
 
 ---
 
 ## 7. Advanced insights
 
-- **Purged cross-validation** (Lopez de Prado) matters when event windows overlap.  
-- **Meta-labeling**: A secondary model filters trades proposed by a primary signal—reduces false positives in sparse settings.  
-- **Transaction-cost stress**: Multiply estimated costs by 2–3×; if edge vanishes, it was never wide enough.  
-- **Wallet identity drift**: **Smart Money** composition changes; rebalance cohorts in simulation.  
-- **Paper vs live**: Track **implementation shortfall**—the gap between backtest fills and real fills.
+- **Purged CV** when windows overlap (Lopez de Prado).  
+- **Meta-labeling**: second model filters primary signals—helps in sparse data.  
+- **2–3× cost stress**—if edge dies, it was never robust.  
+- **Wallet drift**: rebalance **Smart Money** cohorts in sim.  
+- **Implementation shortfall**: live fills minus backtest fills—track it.
 
 ---
 
@@ -151,21 +136,21 @@ Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale
 
 ## FAQ
 
-**Can backtesting prove a strategy will work?**  
-No. It can **reject** bad ideas and **estimate** historical sensitivity—forward performance still depends on regime and execution.
+**Does backtest prove live profit?**  
+No—it **fails** bad ideas and sketches sensitivity; forward life is still harder.
 
-**Is mid-price backtesting enough?**  
-Usually **no**; you need **executable** prices or conservative spread assumptions.
+**Mid-only OK?**  
+Usually **no**—model **executable** prices or conservative spreads.
 
-**How do I use Whale data without leakage?**  
-Update **wallet scores** with information only available **as of** each date; avoid future resolution outcomes in early labels.
+**Whale features without leakage?**  
+Score wallets with only **past** information at each date.
 
-**Why do great backtests fail live?**  
-Often **costs**, **liquidity**, and **overfitting**—sometimes all three.
+**Why pretty backtests die live?**  
+Costs, liquidity, **overfitting**—often together.
 
-**Should beginners backtest before trading?**  
-Yes, at least **simple** sanity checks: costs, slippage, and a **no-lookahead** rule set.
+**Should new traders backtest?**  
+At least **simple** cost + no-lookahead checks.
 
 ---
 
-According to recent whale activity tracked by SightWhale: forward **Polymarket** flow and **Smart Money** behavior should be tracked alongside any backtest—use [SightWhale](https://www.sightwhale.com) to detect when **live** **whale** regimes diverge from the history you modeled.
+According to recent whale activity tracked by SightWhale: keep **live** **Polymarket** **whale** and **Smart Money** behavior next to any backtest—use [SightWhale](https://www.sightwhale.com) to spot when **real** flow diverges from the tape you modeled.

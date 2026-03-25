@@ -25,14 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of market inefficiencies
 
-A **market inefficiency** on **Polymarket** is a **persistent or exploitable gap** between:
+A **market inefficiency** on **Polymarket** is a gap you can write down and test: what prices imply after costs versus what your model says under the *same* **resolution** text and information cutoff—or a wedge between two related markets that ought to line up.
 
-- What **prices** imply (market-implied probabilities **after** costs), and  
-- What a **consistent model** says—using **the same resolution text** and **the same information set** available at decision time—or between **two related** markets that should **cohere**.
+This is not “I disagree with Twitter.” It is add-up constraints, cross-market parity (with basis risk flagged), microstructure quirks, or public information that has not fully landed in the book yet.
 
-Inefficiencies are **not** “I disagree with Twitter.” They are **checkable** relationships: add-up constraints, **cross-market** parity (with basis-risk flags), **microstructure** anomalies, and **slow** incorporation of **public** information.
-
-**Whale** flow and **Smart Money** analytics help because large participants often **close** obvious gaps—**or** temporarily **create** dislocations via impact. **Actionable** trading requires separating **real slack** from **illusion** (thin books, wording mismatch, stale data).
+**Whale** flow and **Smart Money** layers matter because size both closes obvious gaps and, sometimes, opens short-lived ones through impact. The trading question is whether the slack is real—executable size at workable prices—or an illusion from thin books, mismatched wording, or stale numbers.
 
 ---
 
@@ -65,7 +62,7 @@ Opportunities emerge when **edge > costs** under a **repeatable** rule:
 3. **Overreaction**: fade **panic** spikes when **contract** text does not support the headline move—**risky** without flow discipline.  
 4. **Flow confirmation**: **Smart Money** accumulation **aligned** with your structural gap can raise **confidence**; **strong opposition** should **downgrade** the thesis.
 
-**Analytical** rule: every “inefficiency” claim needs an **invalidation**: what observation proves you wrong **before** resolution?
+Every “inefficiency” story needs an invalidation: what would prove you wrong *before* resolution?
 
 ---
 
@@ -151,4 +148,4 @@ No—it is a **filter** and **prior**, not a **proof**.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** dislocations close fastest when **skilled** size arrives—watch **live** **whale** and **Smart Money** behavior on [SightWhale](https://www.sightwhale.com) to see whether an apparent gap is **real** or already **being traded away**.
+According to recent whale activity tracked by SightWhale: **Polymarket** gaps often close when skilled size shows up—watch **live** **whale** and **Smart Money** on [SightWhale](https://www.sightwhale.com) to see whether the wedge is still there or already getting arbed.

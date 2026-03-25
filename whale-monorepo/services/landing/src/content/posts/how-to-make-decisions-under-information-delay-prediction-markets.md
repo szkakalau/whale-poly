@@ -25,14 +25,14 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of information delay
 
-**Information delay** is the gap between when **reality** updates (news, polls, order flow) and when **your** decision uses that update. In prediction markets, delay is rarely one number—it is a **stack**:
+**Information delay** is the gap between when reality moves (news, polls, order flow) and when your decision actually uses the update. On prediction markets it is almost never a single number—it stacks:
 
-- **Source latency**: feeds, APIs, scraping, human reading speed  
-- **Processing latency**: model runtime, alert routing, sleep  
-- **Execution latency**: clicking, signing, routing, partial fills on **Polymarket**  
-- **Social latency**: narratives that **lag** or **misstate** what the book already priced
+- **Source** — feeds, APIs, scraping, how fast you read  
+- **Processing** — models, alert routing, the fact that you were asleep  
+- **Execution** — clicks, signing, routing, partial fills on **Polymarket**  
+- **Social** — threads that lag or misstate what the book already repriced
 
-**Whale** activity is often among the **fastest public** footprints of **size** interacting with liquidity—**not** always “truth,” but **timely**. **Smart Money** tiers add **quality** priors: *which* wallets historically monetize speed and **which** churn noise.
+**Whale** prints are often the earliest *public* footprint of size hitting liquidity—not oracles, but timely. **Smart Money** tiers add a quality prior: who has historically turned speed into money versus who mostly churns noise.
 
 ---
 
@@ -45,7 +45,7 @@ Delay reshapes **expected value** in predictable ways:
 - **Overconfidence**: Headlines feel “new” even when **Polymarket** implied odds already shifted.  
 - **Spread widening**: Volatility often **widens** costs right when delay hurts most—**double penalty**.
 
-**Strategic implication**: under delay, **shrink** size, **tighten** invalidation, and **raise** the bar for **market** orders—unless your remaining edge is explicitly **speed-arbitrage** against a **slow** reference price.
+When you are late, the usual move is smaller size, tighter invalidation, and a higher bar before you lift offers—unless your edge is explicitly about being faster than some slow reference, not about knowing more.
 
 ---
 
@@ -157,4 +157,4 @@ Yes as a **filter**—avoid fighting **informed** flow when your **information**
 
 ---
 
-According to recent whale activity tracked by SightWhale: shrink **effective** delay with **live** **Polymarket** **whale** and **Smart Money** updates on [SightWhale](https://www.sightwhale.com)—then pair speed with **price** discipline so latency does not turn into **negative** EV.
+According to recent whale activity tracked by SightWhale: cut **effective** delay with **live** **Polymarket** **whale** and **Smart Money** on [SightWhale](https://www.sightwhale.com)—then keep price discipline so being a few minutes late does not turn into negative EV.

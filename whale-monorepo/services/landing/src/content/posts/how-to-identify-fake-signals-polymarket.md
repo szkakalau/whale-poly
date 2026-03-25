@@ -25,24 +25,19 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of trading signals
 
-A **trading signal** is any rule or alert that suggests **buying**, **selling**, or **sizing** differently—often from **price**, **volume**, **order flow**, **news**, or **wallet** activity.
+A **trading signal** is any rule or alert that nudges you toward buying, selling, or sizing differently. It might come from price, volume, order flow, headlines, or wallet activity.
 
-On **Polymarket**, signals compete with:
+On **Polymarket**, that signal rarely arrives in a vacuum. It sits next to thin books and flickering mids, alerts that land after the book has moved, trades that are really inventory or hedges (or someone trying to steer the narrative), and your own habit of fitting a story first and the tape second.
 
-- **Microstructure noise** (thin books, flickering mids)  
-- **Latency** (stale alerts after the book has moved)  
-- **Strategic behavior** (inventory, hedging, or attempts to **move perception**)  
-- **Human bias** (narrative-first thinking)
+“Fake” here does not mean someone committed fraud. It means the print *looked* predictive until you priced in fees, slippage, and how stale the alert was—then the edge vanished.
 
-A **fake signal** (in the practical trader sense) is not always criminal fraud—it is often **information that looks predictive but fails** under cost-aware, time-consistent scrutiny.
-
-**Whale** prints and **Smart Money** tiers are **high-salience** signals: they attract attention, so they are exactly where **false positives** concentrate.
+**Whale** prints and **Smart Money** labels are loud on purpose: they draw eyeballs, which is why false positives cluster there more than in obscure corners of the book.
 
 ---
 
 ## 2. Characteristics of fake signals
 
-Watch for these **red flags**:
+Red flags to keep in mind:
 
 ### A. Price moves without follow-through
 
@@ -72,42 +67,42 @@ Screenshots and threads can **lag** or **misrepresent** what is still executable
 
 ## 3. How to detect manipulation
 
-Use **process**, not paranoia:
+Lean on a checklist, not vibes.
 
 1. **Cross-check flow vs mid**  
-   If “everyone says” a move happened but the **executable** price disagrees, treat the signal as **suspect**.
+   If the crowd insists a move happened but the price you can actually trade disagrees, downgrade the signal.
 
 2. **Look for symmetry**  
-   Rapid **round-tripping**, repeated buys/sells in short windows, or prints that **do not change** net positioning meaningfully can indicate **non-directional** motives—**risk-aware** traders downgrade such signals.
+   Round-trips, rapid buy/sell flurries, or size that never really shifts net exposure often point to non-directional motives. Risk-aware traders treat those prints as weaker directional evidence.
 
 3. **Cluster addresses**  
-   Many coordinated small wallets can imitate one **whale**; good analytics **cluster** entities when evidence supports it.
+   A swarm of small wallets can mimic one **whale**; clustering helps you see whether you are watching one thesis or coordinated noise.
 
 4. **Require Smart Money context**  
-   **Smart Money** scoring emphasizes **resolved-market** skill. A loud wallet with **no** track record is **higher risk** than a quiet one with **consistent** history.
+   **Smart Money** scoring weights resolved-market track records. A flashy wallet with no history can be riskier than a quieter one with a boring, repeatable edge.
 
 5. **Measure adverse selection**  
-   If your fills systematically arrive **after** informed flow, your “signal” may be **you**.
+   If your fills keep landing *after* informed flow, the “signal” might be your own lateness.
 
 6. **Resolution sanity check**  
-   Manipulation narratives often break on **rules**—if the contract does not support the story, the signal is **fake** for trading purposes regardless of social traction.
+   Narratives that ignore the contract text fail first on the rules. If the wording does not support the story, the trade thesis is weak even if the thread goes viral.
 
-**Important**: Labeling something “manipulation” legally requires evidence and jurisdiction-specific analysis. For trading, your job is **risk control**, not prosecution.
+**Important**: Calling something “manipulation” in a legal sense needs evidence and jurisdiction-specific analysis. As a trader, your job is risk control, not prosecution.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative scenario:** A viral post claims a **whale** “knows something” on a **Polymarket** market. Price is up **6¢** from yesterday.
+**Illustrative scenario:** A thread claims a **whale** “knows something” on a **Polymarket** market. The mid is up **6¢** from yesterday.
 
-**Risk-aware verification checklist:**
+Before you size up, run a quick pass:
 
-- Is the print **fresh** or **hours old**?  
-- Did **depth** support the move, or was it **one** sweep?  
-- Does **Smart Money** **confirm** or **fade** the move afterward?  
-- Does the **resolution** text actually match the rumor?
+- Is the print still fresh, or are you reacting to a stale screenshot?  
+- Did depth back the move, or was it one sweep through a thin book?  
+- After the print, does **Smart Money** lean into the move or fade it?  
+- Does the **resolution** text line up with what the post claims?
 
-If three checks fail, treat the signal as **entertainment**, not a trade.
+If most of those fail, file it under entertainment—not a live trade.
 
 ---
 
@@ -178,4 +173,4 @@ No. It **raises average quality**; it does not eliminate **wrong** trades.
 
 ---
 
-According to recent whale activity tracked by SightWhale: validate viral **Polymarket** claims against **live** **whale** flow and **Smart Money** behavior on [SightWhale](https://www.sightwhale.com)—screenshots age in minutes when books are moving.
+According to recent whale activity tracked by SightWhale: when **Polymarket** narratives spike on social, cross-check them against **live** **whale** flow and **Smart Money** on [SightWhale](https://www.sightwhale.com)—a screenshot from ten minutes ago is not the same book.

@@ -25,75 +25,66 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of Smart Money timing
 
-**Smart Money** is not a single actor—it is a **label** for wallets that historically show skill on resolved markets, disciplined sizing, or persistent edge in specific categories. On **Polymarket**, “when they enter” therefore varies by **strategy**, **liquidity**, and **information regime**.
+**Smart Money** isn’t one person—it’s a **tag** for wallets that have shown skill on resolved markets, sane sizing, or an edge in certain buckets. On **Polymarket**, “when they show up” depends on **strategy**, how **liquid** the book is, and what **information** regime you’re in.
 
-What empirical flow analysis usually studies is not a universal clock, but **clustering**:
+Research usually looks for **clustering**, not a magic hour on the clock:
 
-- **Bursts** of net accumulation after new public information  
-- **Steady participation** during liquid windows when execution costs are lower  
-- **Late-stage convergence** trades as resolution approaches and uncertainty collapses  
-- **Cross-market coordination** when the same thesis appears across related contracts
+- **Bursts** of net buying/selling right after public info lands  
+- **Steady** participation when depth is there so execution doesn’t eat the idea  
+- **Late** trades as resolution nears and uncertainty collapses  
+- **Coordinated** flow across related markets when one thesis shows up in several contracts
 
-**Whale**-level monitoring matters because **timing signals** often show up first as **size** interacting with the book—before mid prices fully reflect a new posterior.
+**Whale**-level data helps because **timing** often shows up first as **size** hitting the book—before the mid has fully digested a new posterior.
 
 ---
 
 ## 2. Key entry patterns
 
-These are **common patterns** in prediction-market microstructure research and practitioner playbooks—not guarantees for any single wallet.
+Common shapes from microstructure work and desk habit—not a promise for every wallet.
 
-### A. Post-information repricing windows
+### A. After the headline
 
-Large repricing frequently follows **scheduled releases** (polls, macro prints, injury reports) and **unscheduled headlines**. **Smart Money** entries often cluster in the **minutes to hours** after the market’s implied probability adjusts—but not always in the same direction as the headline.
+Big repricing often follows **scheduled** stuff (polls, prints, injuries) and **surprise** headlines. **Smart Money** often clusters in the **minutes to hours** after odds move—not always **with** the headline direction.
 
-### B. Liquidity-thick sessions
+### B. When the book can take size
 
-Skilled flow tends to favor moments when **depth** can absorb size without extreme impact. On **Polymarket**, that often correlates with U.S. and global macro attention hours for macro/political markets—**empirically**, not universally.
+Skilled flow likes moments where **depth** soaks up size without insane impact. On **Polymarket**, macro/political attention hours **often** overlap with thicker books—**empirically**, not as a law of nature.
 
-### C. “Second wave” entries after initial panic
+### C. Second wave
 
-Retail-heavy markets sometimes **overshoot** on the first pass. Patient **Smart Money** may scale in after the initial volatility when the book stabilizes—this shows up as **sustained net buying/selling** rather than one market order.
+Retail sometimes **overshoots** the first move. Patient wallets may add **after** the first spike, when spreads calm—look for **sustained** one-way flow, not one fat market order.
 
-### D. Pre-resolution convergence trades
+### D. Late convergence
 
-As deadlines approach, probabilities should drift toward **0%** or **100%** unless new information arrives. Some wallets specialize in **late** mispricing correction—tight spreads permitting.
+Near the deadline, probabilities should **drift** to 0 or 100 unless news keeps dropping. Some players hunt **late** mispricing—if the spread allows.
 
-### E. Related-market leadership
+### E. Lead market
 
-**Whale** flow may appear first in the **most liquid** sibling market, then propagate to thinner related markets—**lead–lag** is a timing object in itself.
+**Whale** prints may hit the **most liquid** sibling market first, then bleed into thinner ones—**lead–lag** is part of “when.”
 
 ---
 
 ## 3. How to detect entry timing
 
-Treat detection as **measurement**, not mind-reading:
+Measure; don’t guess motives.
 
-1. **Wallet-level time series**  
-   Plot cumulative net flow vs mid price. **Smart Money** entries often show as **persistent slope** in cumulative flow, not a single tick.
-
-2. **Burst detection**  
-   Compare short-window volume to a rolling baseline; flag **abnormal participation** with aggressor-side context when available.
-
-3. **Price–flow divergence**  
-   If flow is strongly one-sided but price does not move, investigate **limit absorption**, hidden liquidity, or cross-venue hedging.
-
-4. **Cross-check categories**  
-   The same wallet may time **sports** differently than **politics**—segment your analytics.
-
-5. **Whale vs skill separation**  
-   Size alone is noisy; combine **whale** prints with **Smart Money** tiering to reduce false positives from tourist wallets.
+1. **Cumulative flow vs price** — **Smart Money** adds often show as a **steady slope** in cumulative net flow, not one blip.  
+2. **Bursts** — compare short-window volume to a rolling baseline; note aggressor side when you have it.  
+3. **Flow vs price** — heavy one-way flow with a flat mid: **absorption**, hidden liquidity, or hedging off-platform.  
+4. **Segment by category** — same wallet may behave differently in **sports** vs **politics**.  
+5. **Size ≠ skill** — pair **whale** prints with **Smart Money** tiers to cut noise from tourists.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative (not live data):** A political market spikes from **38¢** to **47¢** within minutes after a headline. You observe:
+**Illustrative:** A political market rips **38¢ → 47¢** on a headline.
 
-- **Minute 0–5**: High volume, chaotic spreads—many small prints.  
-- **Minute 5–30**: **Smart Money** wallets (pre-scored tier) begin **accumulating** on one side in repeated clips, not one giant sweep.  
-- **Hour 2+**: Flow remains net directional while volatility cools.
+- **0–5 min**: messy volume, ugly spreads, lots of small prints.  
+- **5–30 min**: tiered **Smart Money** wallets **stack** one side in clips—not one giant sweep.  
+- **Later**: flow stays directional while vol cools.
 
-A **data-driven** interpretation: this may represent **second-wave** informed accumulation rather than headline panic—*if* the contract text supports the thesis and costs are acceptable. Always validate resolution criteria before trading.
+That **pattern** can look like a **second-wave** build **if** the contract actually matches the story and you can pay the spread. Always re-read resolution text before you trade.
 
 ---
 
@@ -101,12 +92,12 @@ A **data-driven** interpretation: this may represent **second-wave** informed ac
 
 | Capability | Why timing matters |
 |------------|--------------------|
-| Real-time **whale** tracking | Large prints are the earliest observable footprint of urgency |
-| **Smart Money** scoring | Separates persistent skill from one-off large bets |
-| Alerts | You cannot manually watch every market during release calendars |
-| Historical context | Compare today’s burst to that wallet’s typical behavior |
+| Live **whale** tracking | Urgency shows up as **size** first |
+| **Smart Money** scoring | One-off punt vs repeatable skill |
+| Alerts | You can’t watch every release calendar by hand |
+| History | Today’s burst vs **this wallet’s** normal cadence |
 
-**SightWhale** is built around **real-time whale tracking**, **Smart Money** scoring, and alerts—aligned with **Polymarket** traders who care about **when** informed flow shows up, not only **what** the price is.
+**SightWhale** combines live **whale** tracking, **Smart Money** scoring, and alerts—for anyone on **Polymarket** who cares about **when** flow lands, not only **where** price closed.
 
 👉 https://www.sightwhale.com
 
@@ -114,21 +105,21 @@ A **data-driven** interpretation: this may represent **second-wave** informed ac
 
 ## 6. Risks and limitations
 
-- **Heterogeneity**: Top wallets follow different clocks; “typical” is a **distribution**, not a schedule.  
-- **Survivorship**: Wallets you notice are often the most active, not necessarily the best.  
-- **Pseudo-patterns**: Clustering can reflect **liquidity auctions**, not information.  
-- **Adverse selection**: Late entries can be **distribution** into strength.  
-- **Regime shifts**: Election seasons, sports playoffs, and macro shocks change flow dynamics.  
-- **Latency**: Public dashboards lag; **Polymarket** can reprice before you finish analyzing.
+- **Different wallets, different clocks**—“typical” is a **distribution**.  
+- **Loud ≠ best**: active addresses get noticed; quiet killers don’t.  
+- **Clustering** can be liquidity games, not “news.”  
+- **Late** can mean **distribution** into strength.  
+- **Regimes change**: playoffs, elections, macro shocks rewrite flow.  
+- **Latency**: screens lag; **Polymarket** can move before your tab refreshes.
 
 ---
 
 ## 7. Advanced insights
 
-- **Execution game**: Sometimes **Smart Money** enters **slowly** on purpose to minimize impact; burst detection alone undercounts informed accumulation.  
-- **Inventory and hedging**: A **whale** buy may hedge risk elsewhere; timing looks “smart” but is **orthogonal** to your thesis.  
-- **Meta-strategy**: The durable edge is updating your **wallet cohorts** and **category base rates**—static rules decay.  
-- **Multi-horizon timing**: Short-horizon flow can disagree with longer-horizon fair value—specify which horizon you trade.
+- **Slow entries** on purpose = less impact; burst-only screens **undercount** that.  
+- A **whale** buy can be an off-platform **hedge**—timing looks “smart” for the wrong reason.  
+- **Refresh** wallet cohorts and category base rates—static rules rot.  
+- Short-horizon flow can **fight** longer fair value—know which horizon you trade.
 
 ---
 
@@ -142,27 +133,27 @@ A **data-driven** interpretation: this may represent **second-wave** informed ac
 | Win rate (resolved sample) | 58% over last N resolved positions (hypothetical) |
 | ROI (time-windowed) | +12% over 90d on tracked closes (hypothetical) |
 
-See live **Polymarket** **whale** positioning and **Smart Money** tiers at [SightWhale](https://www.sightwhale.com).
+Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale](https://www.sightwhale.com).
 
 ---
 
 ## FAQ
 
-**Is there a single best hour for Smart Money entries?**  
-Generally no—category, liquidity, and event calendars dominate clock time.
+**One best hour for Smart Money?**  
+Usually **no**—category, liquidity, and the calendar matter more than the clock.
 
-**Do whales always enter before price moves?**  
-Sometimes they **cause** the move; sometimes they **chase**. Measure **flow vs price** jointly.
+**Do whales always lead price?**  
+Sometimes they **are** the move; sometimes they **chase**. Plot **flow and price** together.
 
-**Can I copy Smart Money timing blindly?**  
-Risky. You may be **late** or **adversely selected** without your own thesis and cost model.
+**Copy Smart Money timing blindly?**  
+Risky without **your** thesis and a **cost** model—you may be **late** or **picked off**.
 
-**Why do entries cluster after news?**  
-Information updates posteriors; skilled participants also wait for **tradeable liquidity**.
+**Why cluster after news?**  
+Posteriors update; skilled traders also wait until they can **actually** trade size.
 
-**Does Smart Money avoid thin markets?**  
-Often, because impact costs can destroy edge—exceptions exist for specialists.
+**Avoid thin books?**  
+Often—impact can erase edge. Specialists sometimes still play.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** **Smart Money** participation and **whale** prints update continuously—use [SightWhale](https://www.sightwhale.com) to study **entry timing** with live flow rather than static charts.
+According to recent whale activity tracked by SightWhale: **Polymarket** **Smart Money** and **whale** prints update live—use [SightWhale](https://www.sightwhale.com) to study **entry timing** on **current** flow, not a frozen chart.

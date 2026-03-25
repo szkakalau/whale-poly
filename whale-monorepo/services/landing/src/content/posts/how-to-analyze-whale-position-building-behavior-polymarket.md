@@ -25,76 +25,57 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of whale positioning
 
-On **Polymarket**, a **whale** is typically identified by **size** relative to the book: trades that materially move implied odds, consume depth, or show up as a persistent footprint over time. **Position building** is the **process** by which a wallet (or a **cluster** of wallets) moves from flat or small exposure to a **meaningful** stake—not a single click.
+On **Polymarket**, “**whale**” usually means **size** vs the book: prints that move implied odds, chew depth, or leave a **footprint** over time. **Building** a position is the **path** from small or flat to **meaningful** risk—not a single fill.
 
-Behavioral analysis asks: *Is this trader acting with urgency or patience? Are they paying for immediacy or working orders? Is flow consistent with conviction, or consistent with inventory and hedging?*
+Behavioral questions: urgency or patience? Paying the spread or working orders? Does the flow **look** like conviction—or like inventory, hedging, scratch trades?
 
-**Smart Money** labels add a second dimension: **historical skill** on resolved markets. A large **whale** print is not automatically “smart”; it is **salient**. Pairing **whale** mechanics with **Smart Money** tiers helps separate **noisy size** from **repeatable behavior**.
+**Smart Money** adds history: resolved-market skill. A fat **whale** tick is **loud**, not automatically **right**. Pair **mechanics** with **Smart Money** tiers to split **noise** from something that **repeats**.
 
 ---
 
 ## 2. Key behavioral patterns
 
-### A. The “iceberg” build (slow accumulation)
+### A. Iceberg build
 
-Many skilled participants **scale in** over minutes to days to **minimize impact**. Observable signatures include:
+Scaling in over minutes or days to **limit impact**. Clues: repeated clips on one side, price **drifting** with rising cumulative volume, spreads **tightening** after each wave.
 
-- Repeated small-to-medium fills on one side  
-- Price drift with **rising** cumulative volume (not one vertical candle)  
-- Spreads that **tighten** as liquidity returns after each wave
+### B. Sweep
 
-### B. The sweep (urgency)
+Aggressive **crossing**—deadline, headline, or race to a dislocation. Can be **informed** or **panic**.
 
-Aggressive **crossing** suggests time sensitivity: news, deadline pressure, or a race to capture a dislocation. **Behaviorally**, urgency can be **informed**—or **panic**.
+### C. Two-sided chop
 
-### C. Two-sided “noise”
+Buys and sells alternating quickly: **MM**, **scratch**, or **repair**—not always one clean thesis.
 
-**Whale** activity that alternates between buys and sells may indicate **market making**, **scratch trading**, or **position repair** rather than a single directional thesis.
+### D. Cross-market builds
 
-### D. Correlated builds across markets
+Stories often span several contracts. One **whale** might be building a **book**: main leg + hedges or related legs—if you watch **one** ticker you misread **intent**.
 
-**Polymarket** narratives often span multiple contracts. **Whale** positioning may **build a portfolio**: a primary leg plus hedges or related outcomes—**behavior** looks like coordinated flow if you only watch one ticker.
+### E. Early vs late adds
 
-### E. Late-stage adds vs early entries
-
-**Early** builds often tolerate wider uncertainty; **late** adds near resolution can be **convergence** trades or **distribution**—**timing** relative to the event path matters as much as size.
+Early builds sit with more uncertainty; **late** adds near resolution can be **convergence** or **distribution**—**when** matters as much as **how big**.
 
 ---
 
 ## 3. How to interpret whale accumulation
 
-Treat accumulation as a **hypothesis test**, not a slogan.
+Treat it like a **hypothesis**, not a brand slogan.
 
-1. **Map flow to price**  
-   If net buying is strong but **mid** barely moves, ask whether **liquidity is absorbing** flow or whether the **whale** is **passing** through without leaving inventory.
-
-2. **Separate aggressor vs passive**  
-   **Taker** flow often signals conviction or urgency; **maker** flow can be **earning spread** or **patiently** building.
-
-3. **Check wallet history**  
-   **Smart Money** scores and resolved-market track records answer: *Does this trader usually monetize this pattern?*
-
-4. **Watch for cluster behavior**  
-   Multiple addresses with similar timing may be one entity—**whale** analysis should **cluster** when evidence supports it.
-
-5. **Invalidate with regime breaks**  
-   **New information**, rule clarifications, or a correlated market shock can flip the meaning of prior accumulation.
+1. **Flow vs price** — Strong net buying but a flat mid: is liquidity **eating** the flow, or is the wallet **in and out** without leaving inventory?  
+2. **Taker vs maker** — **Taker** often means urgency; **maker** can be **spread farming** or **patient** stacking.  
+3. **Wallet history** — Do **Smart Money** stats say this trader usually **makes money** on this pattern?  
+4. **Clusters** — Similar timing across addresses → maybe **one** entity; **cluster** when the evidence supports it.  
+5. **Invalidation** — New facts, rule tweaks, or a shock in a **correlated** market can change what yesterday’s accumulation **meant**.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative scenario:** A macro market on **Polymarket** shows **Yes** drifting from **41¢** to **44¢** over two hours. On-chain / feed analytics show a **whale** wallet repeatedly buying **Yes** in clips, **not** in one large sweep.
+**Illustrative:** **Yes** drifts **41¢ → 44¢** over two hours; a **whale** keeps lifting **Yes** in **clips**, not one vertical bar.
 
-**Behavioral read (hypothesis):** This may resemble an **iceberg build**—the trader is **paying** some impact cost but **avoiding** a single shock that telegraphs full size.
+**Possible read:** **Iceberg**—they’re paying **some** impact to avoid telegraphing full size in one shot.
 
-**What to verify before trusting the narrative:**
-
-- Is the wallet **Smart Money**-tiered historically, or a one-off tourist?  
-- Is **cross-market** flow hedging the same thesis?  
-- Does **resolution text** remain aligned with the thesis?
-
-If the same wallet later **reverses** aggressively without a public catalyst, downgrade the “conviction” story—**behavior changed**.
+**Verify:** **Smart Money** history or tourist? **Cross-market** hedge? Still aligned with **resolution** text? If the same wallet **reverses** hard without a public reason, downgrade the “conviction” story—**behavior** changed.
 
 ---
 
@@ -102,12 +83,12 @@ If the same wallet later **reverses** aggressively without a public catalyst, do
 
 | Need | Behavioral angle |
 |------|-------------------|
-| **Whale** tracking | See **how** size arrives, not only **that** it arrived |
-| **Smart Money** scoring | Contextualize **skill** vs **luck** |
-| Alerts | Catch **build phases** while they unfold |
-| History | Compare today’s pattern to **this wallet’s** past builds |
+| **Whale** tracking | **Sequence** beats a screenshot |
+| **Smart Money** scoring | Skill vs luck |
+| Alerts | Catch **builds** while they’re live |
+| History | Today vs **this wallet’s** past |
 
-**SightWhale** focuses on **real-time whale tracking**, **Smart Money** scoring, and actionable alerts—aligned with traders who read **Polymarket** flow as **behavior**, not just price.
+**SightWhale** does live **whale** tracking, **Smart Money** scoring, and alerts—for reading **Polymarket** as **flow**, not only candles.
 
 👉 https://www.sightwhale.com
 
@@ -115,20 +96,20 @@ If the same wallet later **reverses** aggressively without a public catalyst, do
 
 ## 6. Risks and limitations
 
-- **Intent is not observable**: Accumulation can be **hedging**, **inventory**, or **cross-venue** risk management.  
-- **Selection bias**: Loud **whale** prints attract attention; **quiet** skilled flow may be undercounted.  
-- **Adverse selection**: You may enter when **smart** whales are **distributing**.  
-- **Thin books**: Small **whales** look huge; **massive** markets dilute apparent size.  
-- **Regime shifts**: The same behavioral signature can mean different things pre- and post-news.
+- You **can’t** see intent directly—hedges and off-book risk exist.  
+- **Loud** prints get attention; **quiet** skill may not.  
+- You can buy when **smart** wallets **sell**.  
+- Thin books inflate how “big” a wallet looks; huge universes dilute it.  
+- The **same** footprint can mean different things **before** and **after** news.
 
 ---
 
 ## 7. Advanced insights
 
-- **Participation rate**: Relate **whale** volume to **total** market volume—**dominance** matters as much as notional.  
-- **Impact elasticity**: If price moves **less** than implied by flow, suspect **hidden liquidity** or **offsetting** flow elsewhere.  
-- **Lifecycle framing**: Position building is only one phase—**defense**, **unwind**, and **resolution** are separate **behavioral** chapters.  
-- **Meta-game**: If everyone watches the same **whale** list, the **edge** in *reacting* decays—combine public flow with **private** research.
+- **Whale** volume / **total** volume = **dominance**—notional alone lies.  
+- Price barely moving on big flow → **hidden** liquidity or **offsetting** flow somewhere else.  
+- Building is **one** phase—**defense**, **unwind**, **resolution** are different chapters.  
+- If **everyone** watches the same **whale** list, reaction **edge** shrinks—keep **private** work in the mix.
 
 ---
 
@@ -142,27 +123,27 @@ If the same wallet later **reverses** aggressively without a public catalyst, do
 | Win rate (resolved sample) | 61% over last N resolved trades (hypothetical) |
 | ROI (time-windowed) | +14% over 90d on tracked closes (hypothetical) |
 
-View live **Polymarket** **whale** positioning and **Smart Money** tiers at [SightWhale](https://www.sightwhale.com).
+Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale](https://www.sightwhale.com).
 
 ---
 
 ## FAQ
 
-**Does slow accumulation always mean smart money?**  
-No. Patience can be **informed**—or **stubbornness**. Use **track record** and **invalidation** rules.
+**Slow build = smart?**  
+Not always—could be discipline or **stubbornness**. Use **history** and **invalidation**.
 
-**Why do whales sometimes buy in one sweep?**  
-**Urgency**, thin liquidity, or a belief the edge will disappear quickly.
+**Why one sweep?**  
+Urgency, thin book, or “edge disappears in a minute.”
 
-**What is the biggest misinterpretation?**  
-Confusing **size** with **edge**. **Whale** flow is **salient**; it is not automatically **correct**.
+**Biggest misread?**  
+Confusing **size** with **being right**.
 
-**Should I copy whale builds?**  
-Only with a thesis, costs, and risk limits—**you** may be **late** or **adversely selected**.
+**Copy builds?**  
+Only with thesis, costs, limits—you may be **late** or **adversely selected**.
 
-**How do I cluster wallets?**  
-Look for coordinated timing, funding patterns, and platform-specific heuristics—**clustering** is probabilistic.
+**Cluster wallets how?**  
+Timing, funding patterns, heuristics—**probabilistic**, not court-proof.
 
 ---
 
-According to recent whale activity tracked by SightWhale: live **Polymarket** **whale** flows and **Smart Money** context update continuously—use [SightWhale](https://www.sightwhale.com) to study **how** positions are built, not only **where** prices closed.
+According to recent whale activity tracked by SightWhale: live **Polymarket** **whale** flow and **Smart Money** context update continuously—use [SightWhale](https://www.sightwhale.com) to see **how** positions are built, not just where the **mid** landed.

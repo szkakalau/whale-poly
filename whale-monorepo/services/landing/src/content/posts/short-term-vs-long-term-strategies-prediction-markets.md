@@ -25,12 +25,12 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of short-term vs long-term strategies
 
-There is **no universal winner**. “Better” depends on your **edge source**, **time budget**, **risk tolerance**, and **execution quality** on **Polymarket**.
+There’s **no** single winner. What’s “better” rides on **where your edge lives**, how much **time** you have, **risk** appetite, and how well you **execute** on **Polymarket**.
 
-- **Short-term** (roughly **hours to days**) emphasizes **microstructure**, **catalysts**, and **fast repricing**. Success is often **operational**: tight costs, quick invalidation, and good liquidity timing.  
-- **Long-term** (roughly **weeks to resolution**) emphasizes **fundamental forecasting**, **contract literacy**, and **carrying** uncertainty. Success is often **epistemic**: better models, patience, and capital that survives variance.
+- **Short-term** (~**hours–days**): microstructure, catalysts, fast repricing. Winning is often **operational**—tight costs, fast invalidation, good liquidity timing.  
+- **Long-term** (~**weeks–resolution**): forecasting, **contract** reading, sitting through variance. Winning is often **epistemic**—models, patience, bankroll that survives path risk.
 
-**Whale** flow and **Smart Money** analytics tilt **comparatively** toward **short-horizon** usefulness—because **order flow** is a **high-frequency** signal—but **Smart Money** *track records* also matter for **long-horizon** selection of *who* to learn from.
+**Whale** flow helps **most** at short horizons—order flow is a **fast** signal. **Smart Money** **track records** still matter for long holds: **who** you learn from, not only **when** you click.
 
 ---
 
@@ -38,54 +38,38 @@ There is **no universal winner**. “Better” depends on your **edge source**, 
 
 | Dimension | Short-term | Long-term |
 |-----------|------------|-----------|
-| **Risk profile** | Tail risk from **gaps**, thin books, and **headline** shocks | Tail risk from **resolution** surprises and **slow** narrative drift |
-| **Timing** | **Half-life** of signals dominates; latency hurts | **Time-to-resolution** and **information arrival** dominate |
-| **Information** | **Flow**, liquidity, and **immediate** news matter most | **Base rates**, polls, fundamentals, and **rules text** matter most |
-| **Costs** | **Fees/spread** compound with **turnover** | Fewer round-trips; **opportunity cost** and **mark-to-market** pain rise |
-| **Whale relevance** | **High** for bursts, unwinds, and **intraday** positioning | **Moderate** as **conviction** context—not always as an entry trigger |
+| **Risk** | Gap risk, thin books, headline whipsaw | Resolution surprises, slow narrative drift |
+| **Timing** | Signal **half-life**; latency hurts | Time-to-resolution + **how** info arrives |
+| **Information** | Flow, liquidity, **now** news | Base rates, polls, fundamentals, **rules text** |
+| **Costs** | Turnover **taxes** you | Fewer round-trips; mark-to-market **pain** |
+| **Whale** | **High** for bursts / intraday | **Moderate** as **context**—not always your entry trigger |
 
-On **Polymarket**, both horizons share one hard constraint: **resolution mechanics** can invalidate a trade that looked “right” on narrative alone.
+Both share one hard thing on **Polymarket**: **resolution** can nuke a trade that “felt” right on narrative.
 
 ---
 
 ## 3. Pros and cons of each approach
 
-### Short-term — pros
+**Short-term — pros:** fast feedback; sometimes exit before the thesis fully breaks; flow edges if you process catalysts quickly.
 
-- **Rapid feedback loops** for learning and calibration  
-- Ability to **exit** before a thesis fully breaks (sometimes)  
-- **Flow-based** edges when you process catalysts quickly  
+**Short-term — cons:** adverse selection, slippage, overtrading, crowded **whale** reactions.
 
-### Short-term — cons
+**Long-term — pros:** room for real **model** edge if you read contracts; less pure **latency** war; depth compounds in a category.
 
-- **Adverse selection** and **slippage** eat fragile edges  
-- **Overtrading** and **fatigue**  
-- **Crowded** reactions to public **whale** alerts  
+**Long-term — cons:** capital tied up; path risk; news before resolution; skill attribution needs **long** samples.
 
-### Long-term — pros
-
-- More room for **fundamental** edge if you read contracts well  
-- Less dependence on **millisecond** execution  
-- Can **compound** research depth in a category  
-
-### Long-term — cons
-
-- **Capital lock-up** and **path risk** (price can move against you for a long time)  
-- **New information** can arrive **before** resolution  
-- Harder to attribute PnL to skill without **long samples**  
-
-**Analytical takeaway**: Short-term is **not** “easier”—it is **different**. Long-term is **not** “safer”—**resolution** and **narrative** risk can dominate.
+Short ≠ easier; long ≠ safer—**resolution** and narrative risk can dominate either way.
 
 ---
 
 ## 4. Practical example
 
-**Comparative scenario (illustrative):** Two traders watch the same **Polymarket** political market.
+Two traders, same **Polymarket** political market.
 
-- **Trader A (short-term)** trades the **first hour** after a poll drop: tight stops, **limits**, watches **Smart Money** for **confirmation** or **fade** signals. PnL driver: **microstructure** + **speed**.  
-- **Trader B (long-term)** builds a position over **days** using a **model** of turnout and **resolution** text; ignores **intraday** noise unless **rules** change. PnL driver: **forecast accuracy** + **patience**.
+- **A (short)** trades the first hour after a poll: tight stops, **limits**, watches **Smart Money** for confirm or fade. Edge lives in **microstructure + speed**.  
+- **B (long)** scales over days with a turnout + **rules** model; ignores intraday noise unless text changes. Edge lives in **forecast + patience**.
 
-Neither is “better” **a priori**—**Trader A** needs **operational** excellence; **Trader B** needs **model** excellence. **Whale** prints matter more to **A** in real time; **B** may use **whale** context only as a **secondary** check on **crowding**.
+Neither is “better” in the abstract—**A** needs **ops** excellence, **B** needs **model** excellence. **Whale** prints matter **live** to **A**; **B** might use flow only as a **crowding** check.
 
 ---
 
@@ -93,10 +77,10 @@ Neither is “better” **a priori**—**Trader A** needs **operational** excell
 
 | Horizon | What helps |
 |---------|------------|
-| Short-term | **Real-time whale** tracking, **Smart Money** flow, alerts, spread/depth awareness |
-| Long-term | Research notes, **resolution** archives, slower **wallet** track records |
+| Short | Live **whale** tracking, **Smart Money** flow, alerts, spread/depth awareness |
+| Long | Research notes, **resolution** archive, slower wallet stats |
 
-**SightWhale** is strongest for the **short- to medium-term flow** layer: **real-time whale tracking**, **Smart Money** scoring, and alerts—while still supporting **long-term** users who want **quality** context on **who** is moving **Polymarket** odds.
+**SightWhale** leans **short–medium flow**: live **whale** tracking, **Smart Money** scoring, alerts—still useful long-term for **who** is moving **Polymarket** odds.
 
 👉 https://www.sightwhale.com
 
@@ -104,20 +88,20 @@ Neither is “better” **a priori**—**Trader A** needs **operational** excell
 
 ## 6. Risks and limitations
 
-- **Horizon mismatch**: Using **long-term** conviction with **short-term** leverage on volatility is a common failure mode.  
-- **False dichotomy**: Many successful traders blend **core long** with **tactical trims**.  
-- **Sample bias**: Comparing “short vs long” using one event type (e.g., sports only) **misgeneralizes**.  
-- **Whale mirages**: **Flow** can mislead **long-term** holders if the **whale** is hedging.  
-- **Platform evolution**: Liquidity and fee regimes shift—what worked **last season** may not transfer.
+- **Horizon mismatch** — long thesis + short-term leverage on vol = bad fit.  
+- Many people blend **core long** + **tactical** trims—false “either/or.”  
+- Comparing horizons on **one** event type **overgeneralizes**.  
+- **Whale** flow can mislead **long** holders if it’s **hedge** flow.  
+- Liquidity / fee **regimes** change—last season ≠ next.
 
 ---
 
 ## 7. Advanced insights
 
-- **Edge decomposition**: Split PnL into **catalyst timing**, **fair value drift**, and **resolution** outcome—your “best horizon” is where **your** component is largest.  
-- **Carry vs convexity**: Long holds carry **theta-like** pain from mark-to-market; short holds buy **gamma-like** exposure to headlines—**metaphorically**, not options math.  
-- **Portfolio layering**: A **long-term** core plus **short-term** hedges can be optimal—if correlations are modeled honestly.  
-- **Meta-strategy**: If everyone chases **short-term** **whale** signals, **long-term** **mispricings** may **persist** longer—**comparative** advantage can rotate by **crowding**.
+- **Decompose** PnL: catalyst timing vs fair-value drift vs **resolution** luck—your “best” horizon is where **your** piece is biggest.  
+- Long holds **hurt** on mark-to-market; short holds **buy** headline convexity—metaphorically, not options homework.  
+- **Layer** long core + short hedges if correlations are honest.  
+- If everyone chases **short-term whale** screens, **long-term** mispricings may **linger**—**crowding** rotates where advantage lives.
 
 ---
 
@@ -137,21 +121,21 @@ Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale
 
 ## FAQ
 
-**Should beginners start short-term or long-term?**  
-Often **long-term** with **small size**—fewer decisions, more time to read **rules**—unless they have strong **execution** discipline for **short-term**.
+**Beginners: short or long?**  
+Often **long** + **small**—fewer decisions, more time for **rules**—unless execution discipline is already strong.
 
-**Which has higher ROI potential?**  
-**Unknowable** in general; both can win or blow up depending on skill and costs.
+**Higher ROI potential?**  
+**Unknowable** in general; both paths can work or blow up.
 
-**Do whales trade short-term or long-term?**  
-**Both**; behavior is **wallet-specific**. **Smart Money** tiers help you **compare** actors, not assume one style.
+**Whales: short or long?**  
+**Both**—wallet-specific; **Smart Money** tiers help **compare**, not stereotype.
 
-**Can I use SightWhale only for long-term investing?**  
-Yes, as **context** on positioning and **crowding**—even if you rarely trade intraday.
+**SightWhale only for long-term?**  
+Fine as **crowding / positioning** context even if you rarely day-trade.
 
-**Is hybrid the answer?**  
-Often yes: **long** thesis + **short** risk management—if you document rules and avoid **double leverage** on the same narrative.
+**Hybrid?**  
+Often: long thesis + short risk tools—if you don’t **double-leverage** the same narrative.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** **whale** flow is most actionable for **short-horizon** decisions, while **Smart Money** history also informs **longer** holding choices—see live data on [SightWhale](https://www.sightwhale.com) and match alerts to **your** chosen time frame.
+According to recent whale activity tracked by SightWhale: **whale** flow is loudest for **short-horizon** choices; **Smart Money** history still informs **longer** holds—see live data on [SightWhale](https://www.sightwhale.com) and match alerts to **your** time frame.

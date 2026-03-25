@@ -25,15 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of cross-market arbitrage
 
-**Cross-market arbitrage** means exploiting a **pricing inconsistency** between **two or more** related contracts—on the **same** platform (e.g., multiple **Polymarket** markets) or across **venues** (prediction market vs sportsbook vs other derivatives)—**after** fees, spreads, and **resolution** alignment.
+**Cross-market arbitrage** is trying to profit when two or more related contracts disagree—on the same venue (several **Polymarket** markets) or across venues—after fees, spreads, and an honest read of how each contract resolves.
 
-In practice, most “arbs” are **relative-value** trades with **basis risk**, not textbook **risk-free** locks. The market can be “wrong” relative to your map between contracts—and still **not** be safe to trade if:
+Most real-world “arbs” are relative-value trades with basis risk, not risk-free textbook locks. The map in your head can be “right” and the trade still unsafe if the **resolution** text does not actually match, you cannot fill every leg at the prices you assumed, or leg two moves against you while leg one is already on (**leg risk**).
 
-- The contracts are **not** truly equivalent under **resolution** text  
-- You cannot complete **all legs** at advertised prices  
-- **Timing** moves the second leg against you (**leg risk**)
-
-**Whale** activity and **Smart Money** flow matter because **cross-market** edges are **competitive**: large traders often monitor **related** markets and **close** gaps quickly—sometimes **before** retail traders finish the second click.
+**Whale** prints and **Smart Money** flow matter because these edges are competitive: skilled size often watches related books and closes gaps fast—sometimes before a second click lands.
 
 ---
 
@@ -47,7 +43,7 @@ You need a **mapping function**: what relationship **should** hold between marke
 - Same candidate in **different** market wordings  
 - Complementary probabilities that should **add up** within a partition
 
-**Actionable** step: write the mapping as an **equation** with explicit **tolerance** for fees.
+Write the mapping as an equation with explicit fee tolerance—if you cannot state the relationship in symbols, you probably do not know what you are trading.
 
 ### Timing
 
@@ -164,4 +160,4 @@ They often **compete** for the same gaps—**flow** shows **arrival** and **clos
 
 ---
 
-According to recent whale activity tracked by SightWhale: **cross-market** edges on **Polymarket** move when **skilled** size bridges related contracts—track **live** **whale** and **Smart Money** flow on [SightWhale](https://www.sightwhale.com) to see whether a spread is **actionable** or already **arbed**.
+According to recent whale activity tracked by SightWhale: **cross-market** edges on **Polymarket** move when skilled size bridges related contracts—watch **live** **whale** and **Smart Money** on [SightWhale](https://www.sightwhale.com) to see whether the spread is still tradable or already gone.

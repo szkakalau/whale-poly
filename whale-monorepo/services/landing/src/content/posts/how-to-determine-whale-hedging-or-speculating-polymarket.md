@@ -25,11 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of whale trading behavior
 
-On **Polymarket**, a **whale** is usually defined by **relative size**: trades that move or dominate local liquidity. **Behavior**—how size arrives, how it correlates with other markets, and how it unwinds—is more informative than a single screenshot.
+On **Polymarket**, people usually call someone a **whale** when size is large *relative* to the book—enough to move or dominate local liquidity. One screenshot rarely tells the story; you learn more from *how* size arrives, whether it lines up with related markets, and how it unwinds.
 
-You **cannot** read minds on-chain. **Hedging** and **speculation** can produce **identical** prints in isolation. What you can do is assign **probabilities** using **consistent heuristics** and update them as new flow appears.
+You cannot read intent off-chain. A hedge and a directional bet can look identical in a single print. What you can do is hold a set of heuristics, assign rough probabilities, and revise them as more tape appears.
 
-**Smart Money** labels help because they summarize **historical** resolved-market performance: wallets that repeatedly monetize **directional** views may behave differently on average from wallets that mostly provide **liquidity** or run **paired** structures—**but** exceptions abound.
+**Smart Money** labels compress history: wallets that have repeatedly monetized directional views often look different, on average, from wallets that mostly provide liquidity or run paired structures. Averages are not verdicts on any one trade—exceptions are normal.
 
 ---
 
@@ -49,7 +49,7 @@ Neither column is proof. **Hedgers** can speculate on the hedge ratio; **specula
 
 ## 3. Indicators to distinguish behavior
 
-Use **multiple** weak signals—not one smoking gun.
+Stack several weak clues instead of hunting one smoking gun.
 
 ### A. Cross-market coherence
 
@@ -80,20 +80,17 @@ If the trade **only** makes sense as **insurance** against a specific wording ou
 
 ## 4. Practical example
 
-**Illustrative scenario:** A **whale** aggressively buys **No** on a **Polymarket** election market.
+**Illustrative scenario:** A **whale** lifts **No** aggressively on a **Polymarket** election market.
 
-**Behavioral hypotheses:**
+Three stories fit the tape:
 
-1. **Speculation**: They believe **No** is **underpriced** vs their model.  
-2. **Hedge**: They hold **Yes** exposure elsewhere (another market, another wallet, or off-platform) and are **flattening** basis risk.  
-3. **Arb / structure**: They are completing a **bundle** or **relative-value** trade you only see half of.
+1. **Speculation** — they think **No** is cheap versus their model.  
+2. **Hedge** — they are offsetting **Yes** risk somewhere else (another contract, another wallet, or off-platform).  
+3. **Structure** — they are finishing a bundle or relative-value book and you are only seeing one leg.
 
-**What to do:**  
-- Scan **related markets** for **offsetting** flow in the same window.  
-- Check whether the wallet historically **holds** through resolution or **churns** (**Smart Money** stats + cadence).  
-- Avoid **hero narratives** until **cross-market** checks pass.
+**What to do:** scan related markets for offsetting flow in the same window; look at whether this wallet usually holds into resolution or churns (combine cadence with **Smart Money** stats); resist hero narratives until those checks pass.
 
-Default stance when uncertain: label the print **“intent unknown”** and size **down**.
+If you still do not know, call the print “intent unknown” and cut size.
 
 ---
 
@@ -164,4 +161,4 @@ Not necessarily—it means **historical** skill signals; style still varies.
 
 ---
 
-According to recent whale activity tracked by SightWhale: see **live** **Polymarket** **whale** sequences and **Smart Money** context on [SightWhale](https://www.sightwhale.com) to test **hedge vs speculation** hypotheses against **current** flow—not a single stale print.
+According to recent whale activity tracked by SightWhale: test hedge-versus-speculation guesses against **live** **Polymarket** sequences and **Smart Money** on [SightWhale](https://www.sightwhale.com)—one stale print is not a portfolio.

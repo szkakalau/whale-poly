@@ -25,15 +25,15 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of arbitrage in Polymarket
 
-On **Polymarket**, “arbitrage” usually means **locking in a positive edge** when prices across related outcomes (or related venues) imply a mispricing relative to a no-arbitrage condition—most simply, when the **sum of implied probabilities** across mutually exclusive outcomes deviates from 100% after fees, or when **equivalent claims** trade at different prices.
+People often say “arbitrage” on **Polymarket** when they mean: prices across related outcomes (or venues) don’t line up with a no-arbitrage story—e.g. mutually exclusive legs summing away from 100% after fees, or two **equivalent** claims trading at different levels.
 
-What is “proven” in practice is narrower than marketing language suggests:
+“Proven” in the wild is narrower than ads make it sound:
 
-- **Structural relationships** (complements, partitions, logical links) are real and checkable.  
-- **Risk-free** arbitrage is rare and brief; most “arbs” are **statistical** or **execution-constrained** (you can lose to fees, partial fills, or resolution surprises).  
-- **Whale** and **Smart Money** activity often **competes away** obvious dislocations quickly—sometimes **before** retail traders can finish clicking.
+- **Structural ties**—partitions, complements, logic between outcomes—are real; you can actually check them.  
+- **Risk-free** arb is scarce and short-lived. Most real trades are **statistical** or **execution-heavy**: fees, partial fills, or a resolution surprise eat the textbook profit.  
+- **Whale** and **Smart Money** flow tends to **arbitrage away** obvious gaps—sometimes before retail finishes the second leg.
 
-So the durable question is not “is arbitrage possible?” (yes, episodically), but “what is your edge versus other professional flow?”
+So the useful question isn’t only “does arb exist?” (it does, in bursts). It’s “what’s **your** edge against everyone else watching the same screen?”
 
 ---
 
@@ -41,68 +41,68 @@ So the durable question is not “is arbitrage possible?” (yes, episodically),
 
 ### A. Intra-market / basket consistency
 
-When a set of outcomes should partition state space (for example, exhaustive and mutually exclusive candidates), prices should satisfy add-up constraints. Deviations can create **repair trades** (buy/sell bundles) *if* you can trade all legs at quoted prices.
+If outcomes are exhaustive and mutually exclusive, prices should roughly add up. When they don’t, you might **repair** the book with bundle trades—**if** every leg fills at the numbers you assumed.
 
 ### B. Cross-market equivalence
 
-The same economic event may appear in multiple **Polymarket** markets with different wording, deadlines, or resolution sources. When contracts are *truly* equivalent, price gaps can be arbed—when they are *not* equivalent, what looks like an arb is often **resolution basis risk**.
+One event can show up in several **Polymarket** markets with different text, deadlines, or resolution sources. True equivalence → gaps can trade; fake equivalence → you’re holding **basis risk**, not arb.
 
 ### C. Cross-venue / external reference
 
-Traders sometimes compare **Polymarket** implied odds to sportsbooks, polls, or other prediction venues. This is less “pure arb” than **relative value**: you are betting your mapping between instruments is correct.
+People line **Polymarket** odds against sportsbooks, polls, or other prediction sites. That’s usually **relative value**: you’re betting the **mapping** between instruments is right.
 
 ### D. Latency / flow-driven dislocations
 
-Short-lived mispricings appear around news, large orders, or liquidity vacuums. This overlaps with **microstructure** trading; **Smart Money** wallets are often fast participants here.
+News, huge orders, or empty books create short mispricings. That blends into microstructure; **Smart Money** wallets are often quick here.
 
 ### E. Complement / hedge relationships
 
-Pairs like correlated outcomes, nested events, or “almost duplicates” can be traded as spreads. The edge is modeling **correlation and resolution alignment**, not spotting a single mispriced cent.
+Correlated outcomes, nested events, “almost the same” markets—trade them as spreads. The work is **correlation + resolution alignment**, not spotting one stray cent.
 
 ---
 
 ## 3. How arbitrage works
 
-Mechanically, an arbitrage attempt on **Polymarket** is a **portfolio construction problem**:
+On **Polymarket**, trying to arb is basically **portfolio construction**:
 
-1. **Define the no-arbitrage condition** (what must be true if markets are consistent).  
-2. **Measure all-in costs**: fees, spread, expected slippage, and time to complete every leg.  
-3. **Check resolution alignment**: same asset? same cutoff time? same oracle logic?  
-4. **Execute with minimal leg risk**: partial fills are how “risk-free” becomes “very risky.”  
-5. **Monitor unwinds**: liquidity can disappear before you finish the second leg.
+1. Write down the **no-arbitrage** condition—what “consistent” means for your set of contracts.  
+2. Stack **all-in costs**: fees, half-spreads, slippage, and time to finish every leg.  
+3. **Resolution alignment**: same event definition? same cutoff? same oracle path?  
+4. **Execute** to minimize leg risk—partial fills turn “risk-free” into “risk everywhere.”  
+5. Watch **unwinds**: the second leg can vanish while you’re still filling the first.
 
-**Whale** flow matters because large trades can **create** temporary dislocations *or* **close** them. **Smart Money** labels help you ask: is this flow informed, inventory-driven, or hedging from elsewhere?
+**Whale** size can **open** a temporary gap or **shut** it. **Smart Money** tags help you ask: is this flow about a view, inventory, or a hedge from off-platform?
 
 ---
 
 ## 4. Practical example
 
-**Illustrative (not live prices):** Suppose three mutually exclusive outcomes in the same event should sum to ~100¢, but the order book simultaneously quotes **48¢ + 33¢ + 25¢ = 106¢** before your costs.
+**Illustrative (not live prices):** Three mutually exclusive outcomes in one event should sum to ~100¢, but the book shows **48¢ + 33¢ + 25¢ = 106¢** before your costs.
 
-A trader might attempt to **sell** the overpriced combination *or* **buy** underpriced legs—*but only if* all legs can be filled at those levels and the contracts truly partition the event.
+You might try to **fade** the rich side or buy the cheap legs—**only** if every leg is actually fillable at those levels and the contracts truly partition the event.
 
-In reality, the “edge” often vanishes when:
+Usually the “edge” dies because:
 
-- One leg moves as you trade (especially if a **whale** lifts offers).  
-- The markets are not perfectly equivalent under the resolution rules.  
-- Fees and crossing spreads consume the apparent gap.
+- A leg moves while you trade (a **whale** lifts offers, you’re last in line).  
+- The markets aren’t equivalent under the rules.  
+- Fees and crossing the spread eat what looked like free money.
 
-This is why professionals treat many “arbs” as **small, competitive, and operational**, not a guaranteed paycheck.
+Pros tend to treat these as **small, crowded, operational** trades—not a salary machine.
 
 ---
 
 ## 5. Tools recommendation
 
-Arbitrage-style trading on **Polymarket** benefits from speed, clarity, and context:
+Arb-style work on **Polymarket** wants speed, clarity, and context:
 
 | Need | Why |
 |------|-----|
-| Fast monitoring | Dislocations can last seconds |
-| Wallet intelligence | See whether **Smart Money** is causing the move or fading it |
-| Historical behavior | Some **whale** wallets systematically provide liquidity; others systematically take |
-| Alerts | You cannot stare at every related market |
+| Fast monitoring | Gaps can live for seconds |
+| Wallet intelligence | See if **Smart Money** is **making** the move or **fading** it |
+| History | Some **whale** wallets mostly quote; others mostly lift |
+| Alerts | You can’t watch every related market by hand |
 
-**SightWhale** focuses on **real-time whale tracking**, **Smart Money** scoring, and actionable alerts—useful when you are trying to separate **noise** from **informed flow** during fast repricing.
+**SightWhale** puts **real-time whale tracking**, **Smart Money** scoring, and alerts in one place—handy when you’re trying to tell **noise** from **informed** flow during a fast repricing.
 
 👉 https://www.sightwhale.com
 
@@ -110,23 +110,23 @@ Arbitrage-style trading on **Polymarket** benefits from speed, clarity, and cont
 
 ## 6. Risks and limitations
 
-- **Resolution risk**: The killer blow for “looks like free money” trades—wording differences matter more than price differences.  
-- **Leg risk**: You complete one side; the other moves against you.  
-- **Liquidity risk**: Quoted depth is not guaranteed at size.  
-- **Fee and slippage**: Small edges are often negative after costs.  
-- **Competition**: Other traders, bots, and **whale** desks react to the same screens.  
-- **Model risk**: Your equivalence map across markets can be wrong in subtle ways.
+- **Resolution risk**: The usual killer for “free money”—wording beats price.  
+- **Leg risk**: One side fills; the other runs away.  
+- **Liquidity**: Depth on screen ≠ depth at your size.  
+- **Fees / slippage**: Thin edges flip negative fast.  
+- **Competition**: Bots, desks, and **whales** share your scanner.  
+- **Model risk**: Your “these two are the same” map can be subtly wrong.
 
-Treat advertised “arb” as a **hypothesis** until you have a full cost and rules audit.
+Treat every “arb” tweet as a **hypothesis** until you’ve audited costs and rules.
 
 ---
 
 ## 7. Advanced insights
 
-- **Oracle and UMA mechanics** can dominate economics: the trade is “right” in probability space but fragile in resolution space.  
-- **Nested-linked outcomes** can double-count narratives; “arbs” may be accidental double exposure.  
-- **Inventory and market making**: Large participants may move prices for reasons unrelated to fair value; **Smart Money** tracking helps infer intent.  
-- **Stationarity**: Edges decay as more capital hunts the same structural relationships.
+- **Oracle / UMA** details can dominate: you’re “right” in probability space but fragile at settlement.  
+- **Nested-linked** markets can double-count the same story; some “arbs” are accidental double exposure.  
+- **Inventory / MM behavior**: size sometimes moves price for non-fundamental reasons; **Smart Money** tooling helps you guess **intent**.  
+- **Stationarity**: when everyone runs the same partition check, the edge **shrinks**.
 
 ---
 
@@ -140,27 +140,27 @@ Treat advertised “arb” as a **hypothesis** until you have a full cost and ru
 | Win rate (resolved sample) | 61% over last N resolved trades (hypothetical) |
 | ROI (time-windowed) | +9% over 60d on tracked activity (hypothetical) |
 
-See current **Polymarket** **whale** positioning and **Smart Money** rankings at [SightWhale](https://www.sightwhale.com).
+Current **Polymarket** **whale** positioning and **Smart Money** rankings: [SightWhale](https://www.sightwhale.com).
 
 ---
 
 ## FAQ
 
 **Are prediction market arbitrages truly risk-free?**  
-Rarely. Most real-world attempts have leg risk, fee drag, or resolution basis risk.
+Rarely. Leg risk, fees, and basis between contracts are the norm.
 
-**What is the most “proven” idea?**  
-**Consistency checks**—partition math and equivalence mapping—are structurally sound; profits are not guaranteed because execution and rules matter more than the textbook diagram.
+**What’s the most “proven” building block?**  
+**Consistency checks**—partition math and honest equivalence mapping. The textbook diagram is easy; execution and rules are not.
 
-**Do whales arbitrage Polymarket?**  
-Some large wallets behave like fast relative-value traders; others provide liquidity. **Whale** labels describe size and flow, not a single strategy.
+**Do whales arb Polymarket?**  
+Some big wallets behave like fast RV traders; others mostly provide liquidity. “**Whale**” says size and flow, not one strategy.
 
-**Is cross-venue arbitrage easy?**  
-Usually no: different fees, delays, and contract definitions turn “arb” into a modeling exercise.
+**Is cross-venue arb easy?**  
+Usually no—fees, latency, and different contract text turn it into a modeling problem.
 
-**Should beginners start with arbitrage?**  
-Begin with **small size**, strict checklists, and a obsession with resolution text—then consider tools that show **Smart Money** context during volatile repricing.
+**Should beginners start here?**  
+Small size, tight checklists, obsession with resolution copy—then add tools that show **Smart Money** context when things get volatile.
 
 ---
 
-According to recent whale activity tracked by SightWhale: live **Polymarket** flow, **whale** positioning, and **Smart Money** rankings update continuously—use [SightWhale](https://www.sightwhale.com) to contextualize dislocations with current order flow rather than static screenshots.
+According to recent whale activity tracked by SightWhale: **Polymarket** flow, **whale** positioning, and **Smart Money** rankings refresh continuously—use [SightWhale](https://www.sightwhale.com) to read dislocations against **live** order flow, not a frozen screengrab.

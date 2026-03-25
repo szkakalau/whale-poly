@@ -25,13 +25,13 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of AI in prediction markets
 
-**AI** can assist **prediction market** decisions in three distinct layers—often confused:
+People blur three layers when they say “AI for markets.” Keeping them separate saves you pain:
 
-1. **Information layer**: summarize news, parse long documents, translate sources, draft structured notes.  
-2. **Inference layer**: estimate probabilities from features (classical ML, calibrated regressions, gradient boosting, etc.).  
-3. **Action layer**: map forecasts + risk rules to **orders** (semi- or fully automated).
+1. **Information** — summarize documents, pull facts into tables, translate, draft structured notes.  
+2. **Inference** — turn features into probabilities (logistic models, boosted trees, whatever you trust after calibration).  
+3. **Action** — map forecasts plus risk rules to actual orders, with a human in the loop or not.
 
-On **Polymarket**, the hard part is rarely “call an API.” It is **grounding**: tying model outputs to **resolution text**, **timestamps**, **liquidity**, and **costs**. **Whale** flow and **Smart Money** scores are **structured features** that pair well with models because they are **numeric** and **time-series**-friendly—unlike raw narrative alone.
+On **Polymarket**, the bottleneck is rarely “we called an API.” It is **grounding**: do your outputs respect **resolution** text, timestamps, the book you can trade, and all-in costs? **Whale** flow and **Smart Money** scores behave like structured, time-stamped features—easier to pair with models than a pile of unstructured narrative alone.
 
 ---
 
@@ -120,7 +120,7 @@ The AI is split: **language** for parsing, **numbers** for forecasting, **code**
 - **Adverse selection** versus **informed whales**  
 - **Compliance**: automated trading may face **policy** and **jurisdictional** constraints
 
-Treat “AI decided” as **marketing** unless you can **replay** decisions with logs.
+Treat “the AI decided” as marketing unless you can replay decisions from logs and defend each step.
 
 ---
 
@@ -167,4 +167,4 @@ Yes—**Whale** and **Smart Money** features are ideal **numeric** inputs if tim
 
 ---
 
-According to recent whale activity tracked by SightWhale: **AI** models need **fresh** **Polymarket** flow inputs—pair your stack with live **whale** and **Smart Money** data from [SightWhale](https://www.sightwhale.com) so decisions are grounded in **current** liquidity, not stale narratives.
+According to recent whale activity tracked by SightWhale: models need **fresh** **Polymarket** flow—wire live **whale** and **Smart Money** from [SightWhale](https://www.sightwhale.com) so your stack sees the book as it is now, not the story from an hour ago.

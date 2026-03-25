@@ -25,11 +25,7 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of ROI in Polymarket
 
-**ROI** (return on investment) in **Polymarket** trading is **not** one universal number—it depends on:
-
-- **Numerator**: realized PnL (including resolution payoffs and trading PnL)  
-- **Denominator**: capital **at risk** (bankroll, deployed margin, or average exposure—pick one and **stay consistent**)  
-- **Time window**: 30-day ROI ≠ annualized ROI; short windows are **noisy**
+**ROI** is not one universal dial. It depends on what you put in the numerator (realized PnL, including resolutions), what you call capital at risk in the denominator (bankroll, deployed margin, average exposure—pick a definition and stop switching), and the window you measure (30-day ROI is not annualized ROI; short samples get loud).
 
 A useful mental model:
 
@@ -37,9 +33,9 @@ A useful mental model:
 \text{ROI} \approx \frac{\sum (\text{edge after costs}) \times (\text{size})}{\text{capital base}} - \text{drag from churn, fees, and tail events}
 \]
 
-Improving ROI is therefore **not** “more trades.” It is **raising** per-trade **quality**, **cutting** structural **leaks**, and **avoiding** outcomes that dominate returns (resolution surprises, forced exits).
+Improving ROI is usually not “trade more.” It is lifting per-trade quality, plugging structural leaks, and dodging the single outcome that erases a month of small wins.
 
-**Whale** flow and **Smart Money** tiers help **actionably** by improving **which** opportunities you take and **when**—if used as **filters**, not autopilot.
+**Whale** flow and **Smart Money** tiers help when they tighten *which* trades you take and *when*—as filters and context, not as an autopilot button.
 
 ---
 
@@ -181,4 +177,4 @@ No—they **amplify** or **protect** skill.
 
 ---
 
-According to recent whale activity tracked by SightWhale: improve **ROI** by pairing disciplined **selection** with **live** **Polymarket** **whale** and **Smart Money** context from [SightWhale](https://www.sightwhale.com)—better inputs **plus** fewer **unforced** errors compound.
+According to recent whale activity tracked by SightWhale: better **ROI** usually comes from tighter selection plus fewer unforced errors—use **live** **Polymarket** **whale** and **Smart Money** from [SightWhale](https://www.sightwhale.com) so your filters see current flow, not yesterday’s guess.

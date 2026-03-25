@@ -25,93 +25,74 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of copy trading risks
 
-**Copy trading** on **Polymarket** means taking (or mirroring) positions after observing **whale**-sized flow or public alerts. The core risk is **information and timing asymmetry**: the **whale** may be hedging, exiting, or trading a **portfolio** you do not see—while you only see **one** leg.
+**Copy trading** here means mirroring trades after you see **whale**-sized flow or a public alert. The core problem is **asymmetry**: the originator might be **hedging**, **unwinding**, or running a **portfolio** you can’t see—you only catch **one** leg.
 
-Even when flow is “real,” you can still lose because:
+Even “real” flow can lose you money because:
 
-- You enter **after** the best prices are gone (**slippage**).  
-- You hold **longer** than the originator’s plan (**no shared exit**).  
-- You misunderstand **resolution** text (**contract trap**).  
-- You are the **liquidity** someone else needed (**adverse selection**).
+- You’re **late**—slippage eats the idea.  
+- You **hold** longer than they planned—no shared exit.  
+- You misread **resolution**—headline ≠ contract.  
+- You’re **liquidity** for someone else’s exit—**adverse selection**.
 
-**Smart Money** scoring does not eliminate these risks, but it helps you **filter** which wallets deserve attention and **how** aggressively to follow them.
+**Smart Money** tiers don’t delete those risks; they help you **choose** which wallets to respect and how **hard** to lean on them.
 
 ---
 
 ## 2. Common traps in whale following
 
-### A. The distribution trap
+### A. Distribution
 
-A **whale** buys early, then **sells into strength** when followers arrive. Your “signal” is their **exit liquidity**.
+They buy early, **sell into** the rally when followers pile in. Your “signal” is their **exit**.
 
-### B. The hedge leg you cannot see
+### B. Hidden hedge leg
 
-Large prints can be **risk transfers** from another venue or asset. On **Polymarket**, the visible trade may be the **hedge**, not the “bet.”
+Big prints can move risk **from** another venue. What you see on **Polymarket** may be the **hedge**, not the “bet.”
 
-### C. Latency and stale alerts
+### C. Stale alerts
 
-By the time a **whale** move is public, the book may already reflect it. Chasing **mid** after the fact is often **negative EV**.
+By the time it’s public, the book may already reflect it. Chasing **mid** after the fact is often −EV.
 
-### D. Thin-book traps
+### D. Thin book
 
-A modest **whale** order can **move** implied odds. Copying **after** impact means you pay for **their** edge and **your** slippage.
+A modest sweep **moves** the odds. Copying **after** impact means you pay **their** edge and **your** slippage.
 
-### E. Resolution and wording traps
+### E. Rules vs headline
 
-You copy the **direction** but not the **contract nuance**—the market resolves on **rules**, not headlines.
+You copied **direction**, not the **exact** resolution question.
 
-### F. Crowded-copy decay
+### F. Crowded list
 
-If thousands watch the same **whale** list, **alpha** in *reacting* decays; you compete for the same **asks**.
+If everyone reacts to the same **whale** feed, you’re all lunging for the same **asks**.
 
-### G. Confusing makers with takers
+### G. Maker vs taker
 
-Passive **whale** quotes can mean **market making**, not conviction—copying both sides over time can churn you.
+Passive **whale** size can be **MM** or inventory—not a directional “call.” Churning both sides burns you.
 
 ---
 
 ## 3. How to avoid being exploited
 
-**Practical rules:**
-
-1. **Never copy without a thesis**  
-   If you cannot state *why* the trade could be +EV **after costs**, skip it—even if a **whale** bought.
-
-2. **Define entry quality**  
-   Use **limits** when not racing news; refuse entries beyond **X** ticks of the observed print.
-
-3. **Size down by default**  
-   Copy trades should usually be **smaller** than your discretionary trades unless **confluence** is extreme.
-
-4. **Use Smart Money as a gate**  
-   Prefer wallets with **resolved-market** track records; treat unknown large wallets as **high suspicion**.
-
-5. **Watch for reversal flow**  
-   If the same **whale** starts **unwinding** shortly after your entry, treat that as **invalidation**, not “noise.”
-
-6. **Time-box the trade**  
-   If your edge was **speed**, do not convert it into a **long hold** without new evidence.
-
-7. **Read the contract**  
-   Five minutes on resolution criteria beats hours of regret.
-
-8. **Diversify narratives**  
-   Avoid copying three “different” markets that are really **one** macro story—**one** shock traps them together.
+1. **No thesis, no trade** — If you can’t say why it’s +EV **after costs**, skip it—even if size just hit.  
+2. **Entry band** — **Limits** when you’re not racing news; hard pass beyond *X* ticks from the observed print.  
+3. **Default smaller** on copies than on your own ideas—unless confluence is extreme.  
+4. **Smart Money gate** — Prefer wallets with a **resolved** track record; unknown big size = **suspicion**.  
+5. **Reversal = invalidation** — Same wallet **unwinds** soon after you? That’s not “noise”—rethink.  
+6. **Time-box** — If the edge was **speed**, don’t morph it into a **long hold** without new info.  
+7. **Read the contract** — five minutes on rules beats hours of cope.  
+8. **One story** — three “different” markets, same macro shock = **one** trap if you’re overexposed.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative scenario:** An alert shows a **whale** buying **Yes** on a **Polymarket** macro market. Price jumps from **36¢** to **41¢** in minutes.
+Alert: **whale** buys **Yes**; price **36¢ → 41¢** in minutes.
 
-**Risk-aware response:**
+- **Who** is the wallet—**Smart Money** history or tourist?  
+- **Execute** near **40¢** or **small** size—don’t pay **44¢** “because whale.”  
+- **Abort** if opposing flow shows up or spreads **blow out**—you were late, not stupid forever.  
+- If the whole thesis was **flow**, **leave** when flow **stops** supporting it.
 
-- **Check**: Is the wallet **Smart Money**-tiered historically, or a one-off?  
-- **Execute**: Limit near **40¢** or smaller market **participation**—do not pay **44¢** “because whale.”  
-- **Invalidation**: If opposing **whale** flow appears or spreads **widen**, **abort**—you were late, not wrong forever.  
-- **Exit plan**: If the thesis was **flow**, exit when flow **stops** supporting the move.
-
-This template prioritizes **not being exit liquidity**.
+Goal: **don’t** be the exit liquidity.
 
 ---
 
@@ -119,12 +100,12 @@ This template prioritizes **not being exit liquidity**.
 
 | Tooling | Practical benefit |
 |---------|-------------------|
-| **Whale** tracking | See **sequence** (build vs unwind), not only one print |
-| **Smart Money** scoring | Reduces follow-trades on **tourist** wallets |
-| Alerts | Faster reaction **only** if paired with rules |
-| Note-taking | Track **your** slippage vs the **whale**’s apparent price |
+| **Whale** tracking | **Sequence** (build vs unwind), not one screenshot |
+| **Smart Money** scoring | Fewer copy-trades on **tourist** wallets |
+| Alerts | Faster **only** with rules attached |
+| Notes | Your **slippage** vs the print everyone saw |
 
-**SightWhale** focuses on **real-time whale tracking**, **Smart Money** scoring, and high-signal alerts—use them as **inputs** to a risk checklist, not a buy button.
+**SightWhale**: live **whale** tracking, **Smart Money** scoring, alerts—**inputs** to a checklist, not a buy button.
 
 👉 https://www.sightwhale.com
 
@@ -132,22 +113,22 @@ This template prioritizes **not being exit liquidity**.
 
 ## 6. Risks and limitations
 
-- **You cannot see full portfolios** on-chain in one glance—**inference** is imperfect.  
-- **Past whale skill** does not guarantee the next trade is for the same reason.  
-- **Platform risk** and **resolution disputes** can dominate PnL.  
-- **Behavior changes**: Successful wallets may **size down**, **retire**, or **change style**.  
-- **Legal/compliance**: Follow venue rules; copying is not a free pass on diligence.
+- You don’t see **full** books off-platform.  
+- Past skill ≠ same motive **next** trade.  
+- **Resolution** / platform issues can swamp copy-PnL.  
+- Wallets **change** behavior—size down, retire, new style.  
+- Follow venue rules; copying isn’t diligence-free.
 
-Copy trading is **risk transfer**. Assume you are **last** in line until proven otherwise.
+Assume you’re **last** in line until the tape proves otherwise.
 
 ---
 
 ## 7. Advanced insights
 
-- **Implementation shortfall**: Measure **your** average fill minus **alert** reference price—if it is large, your “edge” is negative.  
-- **Meta-games**: Some flow is **designed** to be watched—treat **sudden** public size with extra skepticism.  
-- **Cross-market checks**: If related markets disagree, **whale** flow in one leg may be **arbitrage**, not direction.  
-- **Dynamic position limits**: Tighten copy size when volatility and **whale** turnover spike.
+- **Implementation shortfall**: your avg fill minus alert reference—if huge, you have no edge.  
+- **Staged** public size → extra skepticism.  
+- Related markets **disagree**? One leg might be **arb**, not “direction.”  
+- Tighten copy size when vol and **whale** turnover spike.
 
 ---
 
@@ -167,21 +148,21 @@ Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale
 
 ## FAQ
 
-**Is copy trading whales ever safe?**  
-Nothing is “safe” in trading—but **rules**, **sizing**, and **Smart Money** filters reduce traps.
+**Ever “safe” copy trading?**  
+Nothing’s safe—**rules + sizing + Smart Money** cuts traps.
 
-**What is the #1 mistake?**  
-Paying any price **after** the print without a **thesis** and **slippage** cap.
+**#1 mistake?**  
+Paying **any** price post-print with no thesis or slippage cap.
 
-**Should I copy every large wallet?**  
-No. **Size** is salient; **skill** and **intent** are not.
+**Copy every large wallet?**  
+**Size** is loud; **skill** and **intent** aren’t.
 
-**How do I know if I’m exit liquidity?**  
-Watch for **quick reversals**, widening spreads, and **distribution**-shaped flow after your entry.
+**Exit liquidity?**  
+Fast **reversals**, wider spreads, **distribution-shaped** flow after you buy.
 
-**Can alerts help if I’m slow?**  
-Only if your process **accepts** fewer trades and **better** prices—speed without rules increases traps.
+**Alerts if I’m slow?**  
+Only if you accept **fewer** trades and **better** prices—speed without rules = traps.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** **whale** flow and **Smart Money** context change intraday—use [SightWhale](https://www.sightwhale.com) to see **who** is still holding and **who** may be distributing before you mirror the next print.
+According to recent whale activity tracked by SightWhale: **Polymarket** **whale** flow and **Smart Money** context move all day—check [SightWhale](https://www.sightwhale.com) for **who** still holds vs **who** may be **dumping** before you mirror the next print.

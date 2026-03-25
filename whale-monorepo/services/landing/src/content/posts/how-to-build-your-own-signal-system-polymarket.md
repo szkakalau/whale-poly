@@ -25,16 +25,16 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of signal systems
 
-A **signal system** is an end-to-end **pipeline**: it ingests **Polymarket** data, transforms it into **features**, applies **decision rules** (or models), emits **alerts**, and (optionally) connects to **execution**—all under **observability** and **risk limits**.
+A **signal system** is the whole pipeline: pull **Polymarket** data, turn it into **features**, run rules or models, fire **alerts**, and optionally hand off to execution—while you can actually observe what broke and cap how bad a bad day gets.
 
-Good systems are boring on purpose:
+The good ones are deliberately boring:
 
-- **Deterministic** definitions (same inputs → same signal state)  
-- **Versioned** rules (you can replay history)  
-- **Measurable** quality (precision/recall, PnL attribution, false-positive rate)  
-- **Bounded** blast radius (rate limits, caps, kill switches)
+- Definitions that behave the same way every time the inputs repeat  
+- Rules you can version and replay  
+- Quality you can measure (precision/recall, false positives, PnL attribution)  
+- Hard limits on blast radius—throttles, caps, kill switches
 
-**Whale** flow and **Smart Money** scores are natural **inputs** to such a system—usually as **filters** or **boosters** on top of price, liquidity, and resolution-aware metadata.
+**Whale** flow and **Smart Money** scores slot in naturally as inputs—usually as filters or score boosts on top of price, liquidity, and anything tied to how the contract resolves.
 
 ---
 
@@ -59,13 +59,13 @@ Good systems are boring on purpose:
 - **Semi-automated**: pre-filled orders with manual confirm.  
 - **Automated**: requires robust **risk** modules (position limits, halt conditions, compliance).
 
-Internal discipline for evaluation belongs in your **[backtesting](/backtesting)** workflow—signals without measurement are **opinions** shipped to production.
+Evaluation discipline belongs in your **[backtesting](/backtesting)** habit—signals you never measure are just opinions with notifications.
 
 ---
 
 ## 3. How to design a signal system
 
-**System-oriented** recipe:
+A practical build order:
 
 1. **Define the job**  
    Examples: “surface **mispricing** vs my model,” “flag **Smart Money** accumulation,” “warn on **resolution** risk changes.” One primary objective per v1.
@@ -103,7 +103,7 @@ Internal discipline for evaluation belongs in your **[backtesting](/backtesting)
 - **Payload**: market, side, observed flow stats, link, **invalidation** hints (opposing flow rule).  
 - **Review**: tag each alert outcome after *24h* and at resolution.
 
-Ship **small**, measure **honestly**, then add complexity.
+Ship a thin slice, measure honestly, then let complexity earn its keep.
 
 ---
 
@@ -175,4 +175,4 @@ Usually as a **gate** or **score boost**, not the only trigger.
 
 ---
 
-According to recent whale activity tracked by SightWhale: calibrate custom rules against **live** **Polymarket** **whale** flow and **Smart Money** context on [SightWhale](https://www.sightwhale.com)—your system should ingest **current** tape behavior, not yesterday’s exports.
+According to recent whale activity tracked by SightWhale: calibrate your stack on **live** **Polymarket** **whale** flow and **Smart Money** from [SightWhale](https://www.sightwhale.com)—rules fed yesterday’s tape are not the same product.

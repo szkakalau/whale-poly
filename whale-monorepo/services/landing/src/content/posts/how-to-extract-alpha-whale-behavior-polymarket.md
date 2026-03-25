@@ -25,16 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of alpha extraction from whale activity
 
-**Alpha** is **incremental return** after risk and costs—something you earn because your process sees **information** or **execution** others misprice. **Whale** behavior on **Polymarket** can contain alpha **only** when you convert **raw size** into **testable hypotheses** about **information**, **urgency**, or **liquidity**.
+**Alpha** is incremental return after risk and costs—money you make because your process catches information or execution others misprice. **Whale** tape on **Polymarket** only turns into alpha when you turn raw size into testable claims about information, urgency, or liquidity.
 
-Blind copying is usually **not** alpha—it is **latency** and **adverse selection** dressed up as “smart money.” Extraction requires:
+Blind copying is usually not alpha; it is latency and adverse selection wearing a “smart money” hoodie. You need definitions (what counts as a **whale** event in *your* stack), filters (who you listen to—**Smart Money**, clustering), economics (fees, spread, slippage), and invalidation rules (when the idea is dead).
 
-- **Definitions** (what counts as a **whale** event in *your* system)  
-- **Filters** (who you listen to—**Smart Money** tiers, clustering)  
-- **Economics** (fees, spread, slippage)  
-- **Invalidation** (when the signal is **void**)
-
-Treat **whale** flow as a **sensor**, not a **boss**.
+Treat **whale** flow as a sensor, not a boss.
 
 ---
 
@@ -70,7 +65,7 @@ Alpha emerges when **whale** information is **not** fully embedded in **executab
 3. **Cross-market coordination**: **whale** activity leads in **liquid** leg A while **leg B** lags—**lead–lag** extraction.  
 4. **Meta-selection**: you trade **only** when **Smart Money** **and** your model agree—**precision** over **volume**.
 
-**Actionable** mantra: **alpha = edge after costs**, where “edge” is **measurable** and **repeatable** across a **defined** universe.
+Useful mantra: **alpha = edge after costs**, and “edge” should be measurable and repeatable in a universe you can name.
 
 ---
 
@@ -157,4 +152,4 @@ Yes—**refresh** wallet tiers and **thresholds** as markets evolve.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** **whale** behavior is only as valuable as your **filtering** and **execution**—monitor **live** flow and **Smart Money** context on [SightWhale](https://www.sightwhale.com) and convert prints into **tested** rules, not reflex trades.
+According to recent whale activity tracked by SightWhale: **Polymarket** **whale** tape is only as good as your filters and execution—watch **live** flow and **Smart Money** on [SightWhale](https://www.sightwhale.com) and turn prints into rules you have actually tested, not reflex clicks.

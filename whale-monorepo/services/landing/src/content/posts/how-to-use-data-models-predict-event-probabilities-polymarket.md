@@ -25,15 +25,15 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of probability modeling
 
-On **Polymarket**, traded prices approximate **market-implied probabilities** for contract resolutions. A **data model** tries to produce your own probability estimate \(\hat{p}\) for the **same event definition** so you can compare:
+On **Polymarket**, prices approximate **market-implied** probabilities for how a contract will resolve. A **data model** is your own estimate \(\hat{p}\) for that *same* event definition—so you can line it up against the market and costs:
 
 \[
 \text{edge} \approx \hat{p} - p_{\text{market}} \quad (\text{after costs})
 \]
 
-Good modeling is not only “accuracy.” It requires **calibration** (when you say 60%, you are right ~60% of the time over many similar calls), **sharpness** where justified, and **honest uncertainty** when data is thin.
+“Accurate” is not enough. You want **calibration** (when you say 60%, you are right about that often across similar calls), **sharpness** where the data supports it, and explicit humility when the sample is thin.
 
-**Whale** aggregates and **Smart Money** scores are **observable inputs**—they behave like **features** in a supervised problem: they summarize order-flow state and historical wallet skill, respectively, at a point in time.
+**Whale** aggregates and **Smart Money** scores are observable inputs—order-flow state and a prior on wallet skill, both stamped in time like any other feature row.
 
 ---
 
@@ -171,4 +171,4 @@ Partially—**risk flags** more than point probabilities; treat as **tail** risk
 
 ---
 
-According to recent whale activity tracked by SightWhale: probability models need **current** microstructure and flow—feed **live** **Polymarket** **whale** and **Smart Money** inputs from [SightWhale](https://www.sightwhale.com) into your feature pipeline instead of relying on stale snapshots.
+According to recent whale activity tracked by SightWhale: probability work needs **current** microstructure—pipe **live** **Polymarket** **whale** and **Smart Money** from [SightWhale](https://www.sightwhale.com) into your features instead of snapshotting the tape by hand.

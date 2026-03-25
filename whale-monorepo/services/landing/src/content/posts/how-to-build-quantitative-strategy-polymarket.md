@@ -25,17 +25,17 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of quantitative strategies
 
-A **quantitative strategy** on **Polymarket** is a rule-based or model-based process that turns **structured data** (prices, volumes, order books, time to resolution, external signals, and wallet-level flow) into **repeatable trading decisions** with explicit risk limits.
+A **quantitative strategy** on **Polymarket** is rules + data: prices, volume, books, time to resolution, externals, wallet flow—fed into decisions with explicit risk limits.
 
-Unlike discretionary trading, the goal is **process clarity**: every signal has a definition, every trade has a pre-specified size and invalidation path, and performance is measured with **honest backtests** that respect market microstructure and resolution timing.
+Discretionary traders improvise; quant work aims for **clarity**: every signal has a definition, every trade has size and invalidation, and you judge yourself with **backtests** that respect microstructure and resolution timing—not fantasy fills.
 
-**Polymarket** adds domain-specific constraints:
+**Polymarket** adds friction you can’t ignore:
 
-- Payoffs are **contractual** (resolution rules dominate “model says 60%” if the wording disagrees).  
-- Liquidity is **event- and time-varying**; edges are often small versus fees and slippage.  
-- **Whale** and **Smart Money** flow is a first-class feature set: large participants can move prices quickly and may carry information—or inventory motives—you must model.
+- Payoffs follow **contracts**—if the wording disagrees with your model, the model loses.  
+- Liquidity jumps around by event and time of day; edge after fees is often tiny.  
+- **Whale** and **Smart Money** flow belongs in the feature set: big wallets move price fast, and sometimes they’re informed—sometimes they’re hedging or warehousing.
 
-Quant work here is closer to **sports betting / market making research** than to classical equity momentum: labels are often **binary outcomes**, samples are **non-stationary**, and your dataset is **sparse** across many unrelated events.
+This is closer to **sports betting or MM research** than to stock momentum: labels are often **binary**, samples **non-stationary**, and your history is **sparse** across unrelated events.
 
 ---
 
@@ -43,76 +43,69 @@ Quant work here is closer to **sports betting / market making research** than to
 
 ### Data
 
-Minimum viable inputs:
+Minimum inputs:
 
-- **Market metadata**: categories, resolution criteria, deadlines, related markets.  
-- **Trade tape and/or mid prices**: timestamps, direction, size, and aggressor side when available.  
-- **Order book snapshots** (if accessible): depth, spread, imbalance.  
-- **Wallet-level features**: rolling PnL proxies, win rates on resolved markets, trade frequency, clustering hints.  
+- **Market metadata**: category, resolution text, deadline, links to related markets.  
+- **Tape and/or mids**: time, direction, size, aggressor when you have it.  
+- **Book snapshots** if you can get them: depth, spread, imbalance.  
+- **Wallet features**: rolling stats, win rates on resolved markets, clustering hints.  
 
-**Whale** aggregates and **Smart Money** scores are high-signal compressions of the wallet layer—useful when you cannot maintain a full proprietary address graph on day one.
+**Whale** aggregates and **Smart Money** scores compress the wallet layer—handy when you don’t yet run your own full address graph.
 
 ### Models
 
-Common families (often combined):
+People often mix:
 
-- **Calibration models**: map your features to probability estimates; compare to market price to find perceived mispricing.  
-- **Ranking / classification**: predict directional moves over the next horizon (minutes to days) or “which markets reprice next.”  
-- **Relative value**: spreads between **Polymarket** outcomes and external references (polls, sports lines, other venues)—with explicit basis-risk controls.  
-- **Meta-labeling** (Lopez de Prado style): a primary model proposes candidates; a secondary model decides *whether to trade* them after costs.
+- **Calibration**: features → probability; compare to **Polymarket** price.  
+- **Ranking / classification**: next-hour move, or “which market reprices next.”  
+- **Relative value**: spreads vs polls, lines, other venues—with **basis** flags.  
+- **Meta-labeling**: model A proposes trades; model B says **trade or skip** after costs.
 
 ### Execution
 
-Quant PnL is often won or lost in execution:
+This is where quant PnL often dies:
 
-- **Limit vs market** rules tied to book depth.  
-- **Participation limits** so you do not become the signal you are trading.  
-- **Leg-risk rules** for multi-outcome or cross-market structures.  
-- **Kill switches** around known event windows (debates, prints, oracle updates).
+- **Limit vs market** tied to depth.  
+- **Participation caps** so you don’t **become** the signal.  
+- **Leg-risk** rules for multi-outcome or cross-market books.  
+- **Kill switches** around debates, prints, oracle drama.
 
 ---
 
 ## 3. How to design a strategy
 
-Use a staged research template:
+Walk it in order:
 
-1. **Economic hypothesis**  
-   Example: “After large informed flow, short-horizon drift exists *when* liquidity is deep enough to trade.”
+1. **Economic hypothesis** — e.g. “After heavy informed flow, there’s short-horizon drift **when** the book is thick enough to trade.”
 
-2. **Precise feature definitions**  
-   Examples: z-scored volume, order-book imbalance, time-to-resolution buckets, **Smart Money** net flow in the prior *k* minutes (with leakage checks).
+2. **Feature definitions** — z-scored volume, book imbalance, time-to-resolution buckets, **Smart Money** net flow in the last *k* minutes—with **leakage** checks.
 
-3. **Label / objective**  
-   Choose what you optimize: next-interval return, probability of favorable move, or post-resolution outcome (with careful alignment to information available *at decision time*).
+3. **Label / objective** — next-interval return, probability of a favorable move, or resolution outcome—using only what you’d know **at decision time**.
 
-4. **Validation that respects time**  
-   Prefer **walk-forward** evaluation, **purged/embargoed splits**, and stress by regime (election vs sports vs crypto).
+4. **Time-safe validation** — walk-forward, purged splits, stress by regime (election vs sports vs crypto).
 
-5. **Transaction-cost model**  
-   Include spread, fees, partial fills, and “missed trade” scenarios when liquidity vanishes.
+5. **Cost model** — spread, fees, partial fills, “couldn’t get filled” when the book evaporates.
 
-6. **Risk and sizing**  
-   Convert forecasts into positions with caps per market, per category, and per day; define drawdown stops.
+6. **Risk and sizing** — per market, category, day; drawdown stops.
 
-7. **Live monitoring**  
-   Track feature drift, fill quality, and decay versus backtest expectations; **Whale** behavior regimes can shift without warning.
+7. **Live monitoring** — feature drift, fill quality, decay vs backtest; **whale** regimes **do** flip without warning.
 
-If you cannot write down steps 1–3 in one paragraph, you do not yet have a strategy— you have an idea.
+If you can’t explain steps 1–3 in one short paragraph, you have an **idea**, not a strategy.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative research sketch (not a recommendation):**
+**Research sketch (not a recommendation):**
 
-- **Universe**: liquid **Polymarket** markets with > *X* USD depth and > *Y* days to resolution.  
-- **Signal**: When **Smart Money** wallets (predefined tier) accumulate on one side over 15 minutes, compute **net flow / rolling volume**.  
-- **Entry rule**: Trigger only if flow persists *and* book imbalance does not contradict (simple microstructure filter).  
-- **Exit rule**: Time stop + stop if opposing **whale** flow exceeds threshold.  
-- **Sizing**: Fixed fractional bankroll with per-market cap.  
-- **Evaluation**: Walk-forward by week; compare to a “buy-and-hold implied odds” baseline.
+- **Universe**: liquid **Polymarket** markets with depth > *X* and > *Y* days to resolution.  
+- **Signal**: **Smart Money** tier wallets accumulate one side over 15 minutes—track **net flow / rolling volume**.  
+- **Entry**: Only if flow **persists** and a simple imbalance filter doesn’t contradict.  
+- **Exit**: Time stop, or bail if opposing **whale** flow crosses a line.  
+- **Sizing**: Fixed fraction of bankroll, hard per-market cap.  
+- **Evaluation**: Walk-forward weekly vs a dumb “hold implied odds” baseline.
 
-The point is structure: every knob is measurable, and **Whale** data enters as **features**, not as vibes.
+Everything is a number; **whale** data is **input**, not mood.
 
 ---
 
@@ -120,12 +113,12 @@ The point is structure: every knob is measurable, and **Whale** data enters as *
 
 | Layer | What to prioritize |
 |-------|--------------------|
-| Data | Clean timestamps, reproducible pulls, stored resolution outcomes |
-| Analytics | Feature store mindset—even a spreadsheet schema beats ad hoc notes |
-| Flow intelligence | **Whale** tracking and **Smart Money** scoring to compress wallet complexity |
-| Alerts | Human-in-the-loop execution benefits from timely notifications |
+| Data | Clean timestamps, reproducible pulls, stored resolutions |
+| Analytics | Treat features like a schema—even a spreadsheet beats memory |
+| Flow | **Whale** + **Smart Money** to shrink wallet complexity |
+| Alerts | Humans still click—timing matters |
 
-**SightWhale** fits the **flow** layer: **real-time whale tracking**, **Smart Money** scoring, and alerts that pair well with a quant stack when your models need timely order-flow context.
+**SightWhale** covers the flow layer: live **whale** tracking, **Smart Money** scoring, alerts—useful when models need **current** order flow, not yesterday’s export.
 
 👉 https://www.sightwhale.com
 
@@ -133,24 +126,24 @@ The point is structure: every knob is measurable, and **Whale** data enters as *
 
 ## 6. Risks and limitations
 
-- **Look-ahead bias**: Accidentally training on information not knowable at trade time (classic quant failure mode).  
-- **Overfitting** sparse events: many **Polymarket** markets are one-offs; sample size is brutal.  
-- **Non-stationarity**: What worked pre-regime may invert post-regime.  
-- **Resolution risk dominates**: A “good model” can lose to a single ambiguous resolution.  
-- **Adverse selection**: You may systematically trade when **smart whales** are exiting into you.  
-- **Operational risk**: API changes, downtime, and partial automation bugs.
+- **Look-ahead**: Training on stuff you couldn’t know at trade time—the classic quant foot-gun.  
+- **Overfitting** rare events: many **Polymarket** markets happen once; N is tiny.  
+- **Regime change**: pre- and post-election aren’t the same process.  
+- **Resolution risk**: one ambiguous settlement beats a pretty backtest.  
+- **Adverse selection**: you may systematically buy when **smart** wallets sell into you.  
+- **Ops**: APIs change, bots half-fill, automation bites.
 
-Quantify skepticism as aggressively as you quantify returns.
+Skepticism deserves the same rigor as your Sharpe fantasy.
 
 ---
 
 ## 7. Advanced insights
 
-- **Embargoed cross-validation** is not optional when labels overlap in time (resolution windows correlate).  
-- **Meta-labeling** helps when your primary signal is noisy but contains information *sometimes*.  
-- **Microstructure features** (spread slope, depth elasticity) often beat “social sentiment” for short horizons.  
-- **Portfolio thinking**: diversify across *independent* event drivers, not just many markets about the same narrative.  
-- **Whale decomposition**: treat **whale** flow as **multi-agent**—market makers, hedgers, informed bettors—then build features that separate behaviors where possible.
+- **Embargoed CV** matters when resolution windows overlap.  
+- **Meta-labeling** helps when the primary signal is noisy but **sometimes** right.  
+- **Microstructure features** (spread slope, depth elasticity) often beat “sentiment” at short horizons.  
+- **Portfolio**: diversify **drivers**, not ten tickers about the same headline.  
+- **Decompose whale flow**: MM, hedger, directional—different agents, different features.
 
 ---
 
@@ -164,27 +157,27 @@ Quantify skepticism as aggressively as you quantify returns.
 | Win rate (resolved sample) | 57% over last N resolved positions (hypothetical) |
 | ROI (time-windowed) | +11% over 90d on tracked closes (hypothetical) |
 
-View live **Polymarket** **whale** positioning and **Smart Money** tiers at [SightWhale](https://www.sightwhale.com).
+Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale](https://www.sightwhale.com).
 
 ---
 
 ## FAQ
 
-**Do I need machine learning to be “quant” on Polymarket?**  
-No. Many robust systems start with linear models, calibrated heuristics, and strict execution rules.
+**Do I need ML to be “quant” on Polymarket?**  
+No. Linear models + calibration + strict execution often go further than a fancy net.
 
-**What is the hardest part?**  
-Usually **honest evaluation** and **resolution-aligned labeling**, not fitting a fancier model.
+**What’s hardest?**  
+Usually **honest labels** and **resolution alignment**, not the model class.
 
-**Should I include Whale data in features?**  
-Often yes—**Whale** and **Smart Money** metrics are strong compressions of order flow—but treat them like any other feature: test, don’t trust.
+**Put Whale in features?**  
+Often yes—test it like anything else; don’t worship it.
 
-**How much data is enough?**  
-More than intuition suggests. Prefer many *weakly related* observations over a few heroic backtests on one event type.
+**How much data?**  
+More than feels comfortable; many weakly related events beat one epic backtest.
 
-**Can I fully automate execution?**  
-You can, but most teams keep a human gate until cost models and kill switches are battle-tested.
+**Full auto-execution?**  
+Possible in theory; most teams keep a human in the loop until costs and kill switches are proven.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** order flow and **Smart Money** positioning shift intraday—use [SightWhale](https://www.sightwhale.com) to align live **whale** context with your quantitative signals instead of relying on stale snapshots.
+According to recent whale activity tracked by SightWhale: **Polymarket** flow and **Smart Money** positioning move all day—use [SightWhale](https://www.sightwhale.com) so your models see **live** **whale** context, not stale snapshots.

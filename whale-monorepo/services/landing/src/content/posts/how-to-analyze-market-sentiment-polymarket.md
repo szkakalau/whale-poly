@@ -25,11 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of market sentiment analysis
 
-**Market sentiment** is the **aggregate mood** of participants—optimism, fear, urgency, complacency—expressed through **prices**, **liquidity**, and **order flow**. On **Polymarket**, sentiment is **not** a separate mystical force: it is mostly **observable** as **implied probability** moves, **trading intensity**, and **who** is willing to **pay** to move the book.
+**Market sentiment** is the crowd’s mood—hope, fear, urgency, complacency—showing up in prices, liquidity, and who is paying to move the book. On **Polymarket**, that is mostly observable: implied probability, how hard the tape is working, and whether size is hitting bids or offers.
 
-**Analytical** discipline: separate **sentiment** (what people are doing) from **fair value** (what you believe the contract deserves). Sentiment can be **wrong** for a long time—or **right** but **overextended** in the short run.
+Keep two ideas separate: what people are doing (sentiment) versus what you think the contract is worth (fair value). Sentiment can be wrong for a long stretch, or directionally right but stretched in the near term.
 
-**Whale** activity and **Smart Money** scores help you split **crowd heat** from **informed** pressure: not all bullish flow is equal.
+**Whale** prints and **Smart Money** scores help you tell **crowd heat** from flow that has a skill prior behind it—not all “bullish” tape is the same trade.
 
 ---
 
@@ -63,9 +63,9 @@ Sentiment influences **Polymarket** through **three** channels:
 2. **Liquidity cycles**: **crowded** narratives attract depth; **shocks** drain it—**execution** changes.  
 3. **Reflexivity**: rising odds can **attract** momentum buyers; falling odds can **accelerate** exits—**feedback** loops.
 
-**Actionable** implication: sentiment is a **timing** and **risk** input. Trade **against** extreme sentiment only when you have **independent** fair-value work and a **resolution**-aligned thesis—otherwise you are **fighting** flow without an edge.
+Treat sentiment as timing and risk, not a moral verdict. Fade extremes only when you have independent fair-value work and a thesis that survives the **resolution** text—otherwise you are just picking fights with flow.
 
-**Smart Money** flow helps answer: *Is informed capital leaning into this sentiment or distributing into it?*
+**Smart Money** flow helps answer a narrower question: is informed capital leaning into this move or distributing into it?
 
 ---
 
@@ -150,4 +150,4 @@ Executable **book** changes + **whale** **sequence**—usually ahead of **social
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** sentiment lives in **live** prices and **flow**—use [SightWhale](https://www.sightwhale.com) to pair **whale** behavior with **Smart Money** quality instead of guessing mood from delayed posts.
+According to recent whale activity tracked by SightWhale: **Polymarket** sentiment lives in live prices and flow—use [SightWhale](https://www.sightwhale.com) to pair **whale** behavior with **Smart Money** quality instead of inferring mood from a lagging thread.

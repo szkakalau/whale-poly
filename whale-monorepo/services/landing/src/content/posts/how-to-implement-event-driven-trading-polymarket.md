@@ -25,15 +25,15 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of event-driven trading strategies
 
-**Event-driven trading** means your **Polymarket** decisions are **triggered** by **discrete catalysts**: scheduled releases (polls, macro prints, injury reports), debates, court rulings, or sudden headlines. The strategy is not “always on”—it is **idle → prepare → react → exit**.
+**Event-driven trading** means your **Polymarket** book lights up around discrete catalysts—scheduled prints, debates, rulings, injuries, sudden headlines. You are not “always on”; you run idle → prepare → react → exit.
 
-Successful implementation requires three explicit artifacts:
+To do that without improvising, keep three artifacts in writing:
 
-1. **Event calendar** (what, when, which markets move)  
-2. **Reaction ladder** (what you do in minute 0, 5, 30)  
-3. **Risk envelope** (max size, max slippage, kill switch)
+1. A calendar: what happens, when, and which contracts actually move.  
+2. A reaction ladder: what you do at minute 0, 5, and 30.  
+3. A risk envelope: max size, max slippage, when you pull the plug.
 
-**Whale** activity and **Smart Money** flow are **secondary triggers** and **quality checks**: they tell you whether **size** is **confirming** your read or **fighting** it **after** the event lands.
+**Whale** prints and **Smart Money** flow sit downstream as secondary checks—does size confirm your post-event read or lean the other way once the catalyst hits?
 
 ---
 
@@ -170,4 +170,4 @@ Largely yes on **Polymarket**—but **scheduled** events allow **cleaner** prepa
 
 ---
 
-According to recent whale activity tracked by SightWhale: around **live** catalysts, **Polymarket** **whale** flow and **Smart Money** behavior change fast—monitor [SightWhale](https://www.sightwhale.com) during **event windows** so your **reaction ladder** uses **current** tape, not delayed screenshots.
+According to recent whale activity tracked by SightWhale: around live catalysts, **Polymarket** **whale** flow and **Smart Money** move quickly—keep [SightWhale](https://www.sightwhale.com) open in event windows so your reaction ladder reads the tape as it is now, not a screenshot from five minutes ago.

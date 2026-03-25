@@ -25,15 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of trading edge
 
-**Edge** is a **repeatable** advantage: after **fees**, **spreads**, and **slippage**, your process yields **positive expected value** (or superior **risk-adjusted** returns) versus naive participation.
+**Edge** is a repeatable advantage: after fees, spreads, and slippage, your process still clears the bar—positive expected value or better risk-adjusted outcomes than trading on autopilot.
 
-In prediction markets, edge is rarely one secret—it is usually a **stack**:
+In prediction markets it is rarely one secret. More often it is a stack: you see better information *or* you process the same public information faster and with less self-deception; you execute without stepping on your own feet; you stay out of corners where you are structurally outmatched.
 
-- You see **better information** *or* process the same information **faster** and **cleaner**.  
-- You **execute** with fewer self-inflicted wounds.  
-- You **avoid** categories where you are structurally outgunned.
-
-On **Polymarket**, many traders **overestimate** informational edge and **underestimate** **resolution literacy** and **microstructure**. **Whale** flow and **Smart Money** analytics are **force multipliers** when they sharpen **timing** and **selection**—they are not a substitute for a **thesis** you can defend in plain language.
+On **Polymarket**, people often overweight “secret facts” and underweight **resolution** literacy and the book itself. **Whale** flow and **Smart Money** layers can sharpen timing and selection—but they do not replace a thesis you could explain out loud to a skeptical friend.
 
 ---
 
@@ -58,13 +54,13 @@ On **Polymarket**, many traders **overestimate** informational edge and **undere
 - **Whale** tracking to detect **crowding** and **informed flow**  
 - **Smart Money** scoring to **filter** low-skill noise wallets
 
-**Strategic point**: tools rarely create edge **alone**—they **unlock** edge you already built in research and process.
+Tools rarely invent edge by themselves—they amplify work you already did in research and execution hygiene.
 
 ---
 
 ## 3. How to develop an edge
 
-Treat edge-building like **product development**:
+Treat it like shipping a product:
 
 1. **Pick a narrow arena**  
    One **Polymarket** category where you can sustain curiosity and data collection.
@@ -169,4 +165,4 @@ Yes—**repeatedly** underrated versus headline trading.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** **whale** flow and **Smart Money** positioning are moving inputs to any serious edge stack—monitor them live on [SightWhale](https://www.sightwhale.com) while your **process** does the thinking.
+According to recent whale activity tracked by SightWhale: **Polymarket** **whale** flow and **Smart Money** shift in real time—watch them live on [SightWhale](https://www.sightwhale.com) while your process does the actual thinking.

@@ -25,88 +25,79 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of pricing in Polymarket
 
-On **Polymarket**, traded prices are best interpreted as **implied probabilities** for the contract’s resolution (subject to fees, spreads, and liquidity). Calling a market “**underpriced**” or “**overpriced**” means: **your estimated true probability** for the same event—under the same resolution rules—differs materially from the **market-implied probability** you can actually trade at.
+Traded prices on **Polymarket** read best as **implied probabilities** for how the contract resolves—always net of fees, spreads, and how much size the book can take. Saying something is “**underpriced**” or “**overpriced**” means: **your** estimate of true probability—for **this** resolution text—sits far enough from the **price you can actually hit** to matter after costs.
 
-Formally, you are comparing two objects:
+You’re really comparing two things:
 
 | Object | What it is |
 |--------|------------|
-| **Market-implied \(p\)** | Executable price(s) on the book, adjusted for bid/ask and costs |
-| **Model-implied \(p\)** | Your forecast from data + domain knowledge, aligned to the contract text |
+| **Market-implied \(p\)** | What you’d pay or get on the book, bid/ask and costs included |
+| **Model-implied \(p\)** | Your forecast, tied to the same contract language |
 
-“Mispricing” is not a vibe; it is a **gap** between those two numbers **after** you account for uncertainty and execution.
+“Mispricing” isn’t a gut feel—it’s a **gap** between those two, once you bake in uncertainty and execution.
 
-**Whale** and **Smart Money** data matter because large, informed flow can **move** implied odds toward fundamentals—or temporarily **away** from them if liquidity is thin or flow is hedging/inventory-driven.
+**Whale** and **Smart Money** matter because size can **drag** implied odds toward or away from “fundamentals.” Thin books and hedge flow can make price look silly for a few minutes without giving you a free lunch.
 
 ---
 
 ## 2. Key indicators of mispricing
 
-Use multiple independent checks; no single indicator is sufficient.
+Stack a few checks; one indicator rarely holds up alone.
 
-### A. External calibration benchmarks
+### A. External calibration
 
-Compare **Polymarket** to **independent forecasts** that map to the same event definition:
+Line **Polymarket** up against forecasts that mean the **same** thing: poll aggregates (elections), closing lines (sports), nowcasts (macro)—with **matching** rules and timestamps.
 
-- High-quality polling aggregates (for elections), where applicable  
-- Sports models / closing lines (for sports markets), with careful rule matching  
-- Macro nowcasts (for economic releases), with timestamp alignment  
+A gap that survives fees might be real inefficiency—or **basis** you haven’t modeled (wording, timing, oracle).
 
-A persistent gap **after** fees may indicate inefficiency—or a **basis risk** you have not modeled (different wording, timing, or resolution source).
+### B. Internal consistency
 
-### B. Internal consistency (partition / add-up checks)
+Mutually exclusive, exhaustive outcomes should roughly **add up**. Big misses can mean cross-leg opportunity—or liquidity stuck in one leg while others catch up.
 
-For mutually exclusive and exhaustive outcomes, implied probabilities should approximately sum to **100%** (plus crossing costs). Large deviations can signal **cross-outcome mispricing** or segmentation (liquidity trapped in one leg).
+### C. Microstructure
 
-### C. Microstructure stress
+Wide spread, thin depth, one-sided book: there is no single “the price”—only **ranges**. You can be “rich” on the ask and “cheap” on the bid at once.
 
-Wide spreads, thin depth, and one-sided books mean the “price” is not a single number—it is a **range**. A market can look **overpriced** at the ask and **underpriced** at the bid simultaneously.
+### D. Time and information
 
-### D. Time-to-resolution and information flow
+Near resolution, probabilities should **creep** toward 0 or 100 unless news keeps arriving. Odds that stay **sticky** while the outside world moves deserve a second look.
 
-As deadlines approach, probabilities should **compress** toward 0% or 100% unless new information arrives. Odds that look “sticky” versus public data updates deserve scrutiny.
+### E. Wallet flow
 
-### E. Wallet-level flow (Whale / Smart Money)
+Flow stats help answer: is informed capital **fighting** the crowd or **joining** it?
 
-**Data-driven** flow metrics help answer: *Is informed capital leaning against the crowd, or piling into the same side?*
-
-- **Smart Money** accumulation on one side is **evidence** (not proof) that sophisticated participants see value.  
-- **Whale** selling into strength can mean **distribution**, not disagreement with the thesis—context matters.
+- **Smart Money** leaning one way is a clue, not proof.  
+- **Whale** selling into a rally might be **distribution**, not “the thesis is wrong”—you need context.
 
 ---
 
 ## 3. How to identify inefficiencies
 
-Treat inefficiency discovery as a **process**:
+Make it a **process**:
 
-1. **Lock the contract**  
-   Read resolution criteria and edge cases. If your model is for a different question than the market asks, you are not measuring mispricing.
+1. **Lock the contract** — Read resolution and edge cases. If your model answers a different question than the market, you’re not spotting mispricing—you’re confused.
 
-2. **Build a probability band, not a point**  
-   Report \(p \pm\) uncertainty from data limitations. Trade only if the edge **exceeds** the band **plus** costs.
+2. **Use a band, not a dot** — Give \(p \pm\) uncertainty. Trade only if edge clears the band **and** costs.
 
-3. **Cross-validate**  
-   If external benchmarks, partition math, and microstructure disagree, slow down. The market is often telling you about a hidden constraint.
+3. **Cross-check** — If polls, partition math, and the book all tell different stories, pause. Often there’s a constraint you haven’t named.
 
-4. **Score flow quality**  
-   Separate **size** from **skill**. Track records on resolved markets and **Smart Money** tiers reduce the chance you are reacting to **one noisy whale**.
+4. **Score flow** — Separate **size** from **skill**; **Smart Money** tiers and resolved history beat reacting to one loud **whale**.
 
-5. **Re-test after large prints**  
-   **Whale** trades can move price; your “edge” may disappear after the next few fills.
+5. **Re-check after prints** — Big flow moves price; your edge might be gone after the next few trades.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative (not live prices):** Suppose a Yes contract is **44¢** mid, but you estimate **52%** true probability **for the same resolution text**, with a **±4%** model error band.
+**Illustrative (not live prices):** Yes mid is **44¢**; your model says **52%** for the **same** text, with about **±4%** uncertainty.
 
-- **Gross gap**: ~8 percentage points.  
-- **Subtract**: half-spread + expected slippage + fees.  
-- **Subtract**: model risk if your external benchmark uses a slightly different definition.
+- Rough gap: ~8 points.  
+- Peel off half-spread, slippage, fees.  
+- Peel off extra doubt if your outside benchmark isn’t quite the same event.
 
-If the net edge is still positive *and* you can execute size without moving the market, you might label Yes as **underpriced** **conditional** on your model assumptions.
+If anything’s left **and** you can trade size without moving the world, you might call Yes **cheap**—**given** your assumptions.
 
-If **Smart Money** is aggressively buying No at the same time, treat that as a **conflict signal**: your model may be missing a catalyst, or the flow may be hedging—update your checklist before sizing up.
+If **Smart Money** is **hammering** No in parallel, slow down: you might be missing a catalyst, or that flow might be a hedge.
 
 ---
 
@@ -114,12 +105,12 @@ If **Smart Money** is aggressively buying No at the same time, treat that as a *
 
 | Need | Why it helps |
 |------|----------------|
-| Fast market monitoring | Mispricing windows close quickly |
-| **Whale** tracking | See whether large flow confirms or fights your thesis |
-| **Smart Money** scoring | Filters for persistent skill vs one-off luck |
-| Alerts | You cannot manually refresh every market |
+| Fast monitoring | Mispricing windows don’t wait |
+| **Whale** tracking | See if big flow **backs** or **fights** your read |
+| **Smart Money** scoring | Skill vs one-off luck |
+| Alerts | No human refreshes every book |
 
-**SightWhale** focuses on **real-time whale tracking**, **Smart Money** scoring, and actionable alerts—useful when you are validating **price vs flow** in real time.
+**SightWhale** does live **whale** tracking, **Smart Money** scoring, and alerts—handy when you’re juggling **price** and **flow** at the same time.
 
 👉 https://www.sightwhale.com
 
@@ -127,22 +118,22 @@ If **Smart Money** is aggressively buying No at the same time, treat that as a *
 
 ## 6. Risks and limitations
 
-- **Resolution risk**: The dominant risk in prediction markets—**mispricing** in your head is irrelevant if the oracle outcome differs from your interpretation.  
-- **Stale benchmarks**: Your external reference may update slower than **Polymarket**.  
-- **Adverse selection**: You may trade when informed **whales** are exiting.  
-- **Thin liquidity**: Apparent edges vanish in the actual book.  
-- **Regime shifts**: Polls, injuries, news—**fair value** jumps discontinuously.
+- **Resolution risk** still runs the table—being “right” in your head doesn’t beat a different oracle read.  
+- **Stale externals**: your benchmark can lag **Polymarket**.  
+- **Adverse selection**: you buy when informed sellers are done.  
+- **Thin books**: paper edge ≠ fillable edge.  
+- **Shocks**: polls, injuries, headlines—fair value **jumps**.
 
-Always separate **forecast error** from **market inefficiency**.
+Keep **forecast error** separate from “the market is wrong.”
 
 ---
 
 ## 7. Advanced insights
 
-- **Correlated outcomes**: “Cheap” Yes in one market may be redundant with exposure elsewhere—price **portfolios**, not isolated ticks.  
-- **Lead–lag**: If **Polymarket** lags another venue with a cleaner signal, **edge** may be **temporal**; measure latency explicitly.  
-- **Liquidity elasticity**: Repeated **whale** buys can **create** temporary overpricing in the short run via impact.  
-- **Bayesian updating**: Combine **prior** (base rates) with **market price** and **flow signals**; do not let one headline dominate.
+- **Portfolio view**: cheap Yes here might duplicate risk you already have elsewhere.  
+- **Lead–lag**: if another venue leads and **Polymarket** follows, edge can be **speed**—measure delay.  
+- **Impact**: repeated **whale** buys can **inflate** short-run price without changing the long-run story.  
+- **Bayes**: blend base rate, market price, and flow—don’t let one headline own your posterior.
 
 ---
 
@@ -156,27 +147,27 @@ Always separate **forecast error** from **market inefficiency**.
 | Win rate (resolved sample) | 59% over last N resolved trades (hypothetical) |
 | ROI (time-windowed) | +10% over 90d on tracked closes (hypothetical) |
 
-See live **Polymarket** **whale** positioning and **Smart Money** tiers at [SightWhale](https://www.sightwhale.com).
+Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale](https://www.sightwhale.com).
 
 ---
 
 ## FAQ
 
-**Is “price = probability” always true on Polymarket?**  
-It is a useful first pass, but executable probability depends on **which side** you trade and **all-in costs**.
+**Is price always probability on Polymarket?**  
+Good first guess; **executable** probability depends on side and **all-in** costs.
 
-**Can a market be underpriced and overpriced at the same time?**  
-In practice, yes—**bid/ask** and **depth** mean different traders face different implied probabilities.
+**Can a market be cheap and rich at once?**  
+In practice, yes—bid/ask and depth split traders into different implied \(p\)s.
 
-**Do whales always know the fair price?**  
-No. **Whale** size is informative about **flow**, not omniscience; combine with **Smart Money** history and your own thesis.
+**Do whales know the truth?**  
+They show you **flow** and urgency—not omniscience. Layer **Smart Money** history and your own work.
 
-**What is the most common mistake?**  
-Confusing **“I disagree with the crowd”** with **a positive-expectancy trade** after costs and resolution alignment.
+**Common mistake?**  
+Confusing “I disagree with Twitter” with “+EV after costs and rules.”
 
-**Should I ignore fundamentals and only follow flow?**  
-Flow-only systems can work tactically, but they are vulnerable to **adverse selection** unless you score **wallet quality** seriously.
+**Fundamentals vs flow only?**  
+Pure flow can work short-term; without wallet quality scoring you eat **adverse selection**.
 
 ---
 
-According to recent whale activity tracked by SightWhale: **Polymarket** implied odds and **Smart Money** positioning shift intraday—use [SightWhale](https://www.sightwhale.com) to align **whale** flow with your fair-value model instead of relying on stale prints.
+According to recent whale activity tracked by SightWhale: **Polymarket** implieds and **Smart Money** positioning move through the session—use [SightWhale](https://www.sightwhale.com) to line up **whale** flow with your fair-value work instead of trusting stale prints.

@@ -25,11 +25,11 @@ On [SightWhale](https://www.sightwhale.com), we provide:
 
 ## 1. Overview of short-term trading strategies
 
-**Short-term** on **Polymarket** usually means **hours to a few days**: you aim to monetize **fast repricing**—news, order flow, liquidity gaps, or post-headline **mean reversion**—rather than holding to resolution.
+**Short-term** on **Polymarket** usually means **hours to a few days**: you’re trying to catch **fast repricing**—news, flow, thin books, post-headline mean reversion—not necessarily riding to resolution.
 
-Such strategies **do exist** and are widely discussed by active traders, but they are **competitive**. Edges are often **small**, **brief**, and **execution-sensitive**. What works in one category (sports injury windows) may fail in another (slow political grind).
+Those strategies **exist**; they’re also **crowded**. Edges are often **small**, **short-lived**, and **fill-sensitive**. What works around **injury** windows may flop in a **slow** political grind.
 
-**Whale** prints and **Smart Money** tiers are especially relevant here: short horizons are where **flow** and **speed** matter most, and where **adverse selection** punishes sloppy copying.
+**Whale** prints and **Smart Money** matter most here: short horizons are where **speed** and **flow** dominate—and where sloppy copying gets **picked off**.
 
 ---
 
@@ -37,46 +37,45 @@ Such strategies **do exist** and are widely discussed by active traders, but the
 
 ### Timing
 
-- **Event clocks**: debates, data releases, injury reports, polls—**scheduled** catalysts create predictable liquidity surges.  
-- **Signal half-life**: Short-term edges decay when the book **reprices**; your process needs **pre-defined** holds or stops.  
-- **Session effects**: **Polymarket** depth often clusters when global macro attention is high—not universal, but **actionable** to measure in your journal.
+- **Scheduled catalysts** — debates, prints, injuries, polls → liquidity **spikes** you can plan around.  
+- **Half-life** — short signals decay as the book **reprices**; you need **stops** or time rules.  
+- **Sessions** — depth often clusters when macro attention is high—**measure** it in your journal, don’t assume.
 
 ### Liquidity
 
-- **Depth and spread**: Tight mids with **no size** are traps; size your trades to **participation limits**.  
-- **Impact**: Short-term strategies fail if your entry **is** the move—especially when chasing **whale** alerts.
+- Tight **mid**, no **size** = trap; cap **participation** to what the book can take.  
+- If **your** order **is** the move, you don’t have an edge—especially chasing late **whale** alerts.
 
 ### Volatility
 
-- **Implied jump risk**: Headlines create **discontinuous** moves; **volatility** is opportunity **and** hazard.  
-- **Regime shifts**: Pre- and post-news **microstructure** behave differently—tune rules by regime.
+- Headlines **jump** prices—that’s **opportunity** and **risk**.  
+- Pre- vs post-news **microstructure** isn’t the same animal—**tag** regimes in your rules.
 
 ---
 
 ## 3. How short-term trading works in Polymarket
 
-Mechanically, short-term trading is a loop:
+Loop it:
 
-1. **Define a catalyst or flow trigger** (time-boxed).  
-2. **Pre-state costs**: fees, half-spread, expected slippage at your size.  
-3. **Enter with an execution style** (limit vs market) matched to urgency.  
-4. **Exit rule**: time stop, flow reversal, opposing **Smart Money** prints, or price invalidation.  
-5. **Review**: separate **alpha** from **luck** using categorized stats.
+1. **Trigger** — catalyst or flow, with a **time box**.  
+2. **Costs** — fees, half-spread, slippage at **your** size.  
+3. **How you enter** — limit vs market matches **urgency**.  
+4. **Exit** — time stop, flow flip, opposing **Smart Money**, or price invalidation.  
+5. **Review** — tag **alpha** vs **luck** by category.
 
-**Whale** data enters as **early warning** and **invalidation**: persistent **Smart Money** accumulation can support a **momentum** leg; rapid **unwind** can flag **mean reversion** or **distribution**.
+**Whale** data = **early warning** and **invalidation**: sustained **Smart Money** with the move can support momentum; fast **unwind** can mean reversion or distribution.
 
 ---
 
 ## 4. Practical example
 
-**Illustrative playbook (not financial advice):**
+**Playbook (not advice):** Liquid market, known release in ~60 minutes.
 
-- **Setup**: Liquid **Polymarket** market, known release window in the next 60 minutes.  
-- **Pre-positioning rule**: No blind pre-bets—wait for **initial** repricing to clear **panic** spreads when possible.  
-- **Entry**: Scale in on **limits** if the book stabilizes **and** **Smart Money** flow is **not** aggressively against your thesis.  
-- **Exit**: Close or cut if **whale** flow **reverses** within *X* minutes **or** if your **invalidation** price trades.
+- No **blind** pre-bets—let the first **panic** spread clear if you can.  
+- **Limits** if the book **stabilizes** and **Smart Money** isn’t **fighting** you.  
+- **Out** if **whale** flow **reverses** in *X* minutes or your **invalidation** trades.
 
-**Actionable discipline**: If you cannot monitor the book during the window, **do not** run this style—short-term is **operational**, not passive.
+If you **can’t** watch the book in that window, **don’t** run this style—short-term is **operational**.
 
 ---
 
@@ -84,12 +83,12 @@ Mechanically, short-term trading is a loop:
 
 | Need | Short-term angle |
 |------|------------------|
-| **Real-time whale** tracking | Catch **bursts** and **unwinds** early |
-| **Smart Money** scoring | Filter noise wallets on fast tape |
-| Alerts | Reduce **latency** versus manual refresh |
-| Journaling | Measure **half-life** of your own signals |
+| Live **whale** tracking | **Bursts** and **unwinds** |
+| **Smart Money** scoring | Noise vs skill on a fast tape |
+| Alerts | Less **latency** than manual refresh |
+| Journal | **Half-life** of **your** rules |
 
-**SightWhale** provides **real-time whale tracking**, **Smart Money** scoring, and actionable alerts—aligned with **Polymarket** traders who operate on **minutes-to-days** horizons.
+**SightWhale**: live **whale** tracking, **Smart Money** scoring, alerts—for **minutes-to-days** horizons on **Polymarket**.
 
 👉 https://www.sightwhale.com
 
@@ -97,20 +96,20 @@ Mechanically, short-term trading is a loop:
 
 ## 6. Risks and limitations
 
-- **Fees and spread** can exceed **gross** edge on short holds.  
-- **Adverse selection**: You often buy from **informed** sellers after headlines.  
-- **Resolution surprises** still apply—even “short” trades can gap on rule clarifications.  
-- **Overtrading**: More clicks ≠ more edge; **transaction costs** compound.  
-- **Crowded strategies**: Public **whale** lists **decay** as more capital copies the same triggers.
+- **Fees + spread** can eat the whole gross edge on short holds.  
+- **Adverse selection** after headlines.  
+- **Resolution** curveballs even on “short” trades.  
+- **Overtrading** — more clicks, not more edge.  
+- **Crowded** public **whale** triggers **decay**.
 
 ---
 
 ## 7. Advanced insights
 
-- **Lead–lag across related markets**: Short-term edge sometimes lives in the **second** market, not the first headline mover.  
-- **Maker/taker mix**: Patient posts earn spread; **taker** urgency pays for speed—match style to **alpha** source.  
-- **Volatility targeting**: Scale size **down** when spreads blow out unless your edge widens proportionally.  
-- **Meta-labeling**: Use a second filter (“trade this impulse **only if** **Smart Money** agrees”) to cut false positives.
+- **Lead–lag** across related markets — edge sometimes in the **second** contract.  
+- **Maker/taker** mix should match where your alpha **comes from**.  
+- **Vol targeting** — shrink size when spreads **widen** unless edge scales too.  
+- **Meta-label**: only trade the impulse if **Smart Money** **confirms**—cuts false positives.
 
 ---
 
@@ -130,21 +129,21 @@ Live **Polymarket** **whale** positioning and **Smart Money** tiers: [SightWhale
 
 ## FAQ
 
-**Is Polymarket good for day trading?**  
-It can be, in **liquid** markets with clear catalysts—but costs and **liquidity** vary; **test** don’t assume.
+**Good for day trading?**  
+Can be—in **liquid** markets with real catalysts; **test**, don’t assume.
 
-**What horizon counts as short-term?**  
-Commonly **intraday to a few days**; definitions differ—pick one and **journal** consistently.
+**What counts as short-term?**  
+Often **intraday to a few days**—pick a definition and **stick** to it in the journal.
 
-**Do whales dominate short-term price action?**  
-Often **locally**, yes—**whale** flow moves books fast; **interpretation** still matters.
+**Whales own short-term price?**  
+**Locally**, often—interpretation still matters.
 
-**Can I automate short-term strategies?**  
-Possible in theory; in practice you need robust **cost models**, **risk limits**, and compliance with platform rules.
+**Automate?**  
+Possible; you need solid **cost** models, **risk** caps, and rule compliance.
 
-**Is following Smart Money enough?**  
-Usually **no**—use **Smart Money** as a **filter** plus **your** catalyst and **exit** rules.
+**Smart Money enough?**  
+Usually **no**—use it as a **filter** plus **your** catalyst and exit.
 
 ---
 
-According to recent whale activity tracked by SightWhale: short-horizon opportunities on **Polymarket** move with **whale** flow and **Smart Money** participation—monitor live tape on [SightWhale](https://www.sightwhale.com) so your **timing** matches current liquidity, not stale alerts.
+According to recent whale activity tracked by SightWhale: short-horizon **Polymarket** setups move with **whale** flow and **Smart Money**—watch live tape on [SightWhale](https://www.sightwhale.com) so **timing** matches **current** liquidity, not stale alerts.
