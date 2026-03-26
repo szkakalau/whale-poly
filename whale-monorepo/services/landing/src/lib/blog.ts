@@ -13,6 +13,8 @@ export interface BlogPost {
   slug: string;
   title: string;
   date: string;
+  /** Optional updated timestamp separate from publish date. */
+  lastModified?: string;
   excerpt: string;
   content: string;
   author: string;
@@ -40,6 +42,7 @@ function normalizePost(post: BlogPost): BlogPost {
   return {
     ...post,
     date: normalizePostDate(post.date),
+    lastModified: post.lastModified ? normalizePostDate(post.lastModified) : undefined,
   };
 }
 
@@ -69,6 +72,7 @@ function getAllFilePostsUncached(): BlogPost[] {
         slug,
         title: data.title,
         date: data.date,
+        lastModified: data.lastModified,
         excerpt: data.excerpt,
         content,
         author: data.author,
@@ -101,6 +105,7 @@ function getFilePostBySlug(slug: string): BlogPost | null {
     slug,
     title: data.title,
     date: data.date,
+    lastModified: data.lastModified,
     excerpt: data.excerpt,
     content,
     author: data.author,

@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const blogUrls = posts.map((post) => {
-    const lastModifiedDate = new Date(post.date);
+    const lastModifiedDate = new Date(post.lastModified ?? post.date);
     const lastModified = Number.isFinite(lastModifiedDate.getTime()) ? lastModifiedDate : undefined;
     return {
       url: `${baseUrl}/blog/${post.slug}`,

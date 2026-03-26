@@ -2,6 +2,7 @@
 title: "NYC Snowstorm 2026: Will Central Park See 10-12 Inches? Polymarket Weather Alpha"
 excerpt: "As the January 24-26 weekend storm hits New York, Polymarket traders are betting on exact snowfall totals. We analyze the NOAA data, weather models, and whale positioning."
 date: "2026-01-26"
+lastModified: "2026-03-26"
 author: "Whale Team"
 readTime: "3 min"
 tags: ["NYC Weather", "Snowstorm", "Polymarket", "Prediction Markets", "Whale Intelligence"]
@@ -10,6 +11,21 @@ tags: ["NYC Weather", "Snowstorm", "Polymarket", "Prediction Markets", "Whale In
 Weather markets are among the most ruthless and data-driven sectors on Polymarket. As a significant winter storm moves through the Northeast this weekend (Jan 24-26, 2026), traders are glued to radar and model runs. The specific contract in focus: **Will there be 10-12 inches of snow in NYC this weekend?**
 
 At **SightWhale**, we treat meteorology as a financial asset class. Here is how the smart money is trading the blizzard.
+
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+
+## Quick execution checklist (weather markets)
+
+Weather contracts can be brutally narrow. Before you follow a Whale print:
+
+- **Rules first**: confirm the exact NOAA metric and the exact time window.
+- **Bracket risk**: understand how edge cases around boundaries are treated.
+- **Size small**: narrow ranges can lose even when “directionally right.”
+- **Avoid double-counting**: multiple brackets can represent one underlying view; cap exposure per driver.
+
+Related guides:
+- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
+- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 
 ## Market Rules: The NOAA Verdict
 

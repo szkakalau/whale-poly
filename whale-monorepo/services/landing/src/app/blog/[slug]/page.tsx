@@ -84,6 +84,7 @@ export async function generateMetadata({ params }: Props) {
       description,
       type: 'article',
       publishedTime: post.date,
+      modifiedTime: post.lastModified || post.date,
       tags: post.tags,
       url: `https://www.sightwhale.com/blog/${slug}`,
       images: [
@@ -509,6 +510,7 @@ export default async function BlogPostPage({ params }: Props) {
   }
 
   const safePost = post as NonNullable<typeof post>;
+  const modified = safePost.lastModified || safePost.date;
   const isDailySpotlight = safePost.slug.startsWith('daily-spotlight-');
   const spotlight = isDailySpotlight ? parseDailySpotlight(safePost.content) : null;
   const allSpotlightWallets = spotlight ? extractWallets(spotlight) : [];
@@ -528,7 +530,7 @@ export default async function BlogPostPage({ params }: Props) {
     headline: safePost.title,
     description: safePost.excerpt,
     datePublished: safePost.date,
-    dateModified: safePost.date,
+    dateModified: modified,
     author: [
       {
         "@type": "Organization",

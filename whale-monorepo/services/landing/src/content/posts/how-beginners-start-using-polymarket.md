@@ -3,6 +3,7 @@ title: "How Can Beginners Start Using Polymarket?"
 metaTitle: "Polymarket for Beginners: Start Here"
 metaDescription: "Polymarket beginners: fund small, read resolution rules first, log trades. Steps, starter strategies, Whale homework, Smart Money tools, mistakes, FAQ."
 date: "2026-03-23"
+lastModified: "2026-03-26"
 excerpt: "A very beginner-friendly, step-by-step guide to getting started on Polymarket: what it is, setup flow, simple strategies, a whale-reference example, SightWhale tools, pitfalls, and FAQ."
 author: "Whale Team"
 readTime: "11 min"
@@ -15,9 +16,27 @@ tags: ["Polymarket", "Beginner", "Whale", "Smart Money", "Prediction Markets", "
 Beginners should **start with education, limits, and logs**—not with max leverage or “copy everything.”  
 Use **Whale** and **Smart Money** signals as **research prompts** on **SightWhale**, not as guaranteed trades.
 
-👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+👉 **Want real-time Whale signals?** With **SightWhale**, you get **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
 
 ---
+
+## A beginner 7-day setup (process-first)
+
+If you want a realistic “first week” plan:
+
+- **Day 1**: read rules on 5 markets; place no trades.
+- **Day 2**: pick 1 category; follow 3–5 markets and log prices.
+- **Day 3**: set a max-loss rule and decide your “skip” criteria.
+- **Day 4**: watch 1 Whale event and write down what you would do (no action).
+- **Day 5**: take one small trade only if rules + liquidity gates pass.
+- **Day 6**: review fills and whether you chased.
+- **Day 7**: refine your filters (Smart Money threshold + alert intensity).
+
+Related guides:
+- [What does a Whale mean on Polymarket?](/blog/what-does-whale-mean-on-polymarket)
+- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
 
 ## Live Whale Data (Powered by SightWhale)
 

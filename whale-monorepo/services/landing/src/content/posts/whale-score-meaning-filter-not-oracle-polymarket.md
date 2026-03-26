@@ -1,6 +1,7 @@
 ---
 title: "What Whale Score Actually Is (and Why Treating It Like an Oracle Will Burn You)"
 date: "2026-03-20"
+lastModified: "2026-03-26"
 excerpt: "Whale Score is a ranking lens: it compresses behavior, timing, and impact into something you can scan quickly. This article separates what that compression can justify from what it cannot—so you use the score as a filter, not a substitute for thinking."
 author: "Whale Team"
 readTime: "13 min"
@@ -26,7 +27,22 @@ Internal links:
 - Methodology (limits and interpretation): [/methodology](/methodology)  
 - Plans that unlock deeper delivery and tooling: [/subscribe](/subscribe)  
 
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+
 ---
+
+## A practical way to use Whale Score (without over-reading it)
+
+Use Whale Score as triage, then force yourself through two additional checks:
+
+1. **Contract clarity**: does the resolution text match the thesis?
+2. **Tradability**: would you realistically get filled at your size without paying huge spread?
+
+If either fails, the correct action is often “watch, don’t trade.”
+
+Related guides:
+- [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
+- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
 
 ## 1. Scores Exist Because Attention Is Scarce
 

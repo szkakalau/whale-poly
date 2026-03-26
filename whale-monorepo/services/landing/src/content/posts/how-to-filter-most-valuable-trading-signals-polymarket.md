@@ -3,6 +3,7 @@ title: "How to Filter the Most Valuable Trading Signals in Polymarket?"
 metaTitle: "Filter Valuable Polymarket Signals: Smart Money, Whale & Quality Checks"
 metaDescription: "Data-driven framework to filter valuable Polymarket trading signals—liquidity, rules, Smart Money, Whale context, alert calibration, SightWhale stack, risks, FAQ."
 date: "2026-03-24"
+lastModified: "2026-03-26"
 excerpt: "Guide to filtering Polymarket signals: what makes a signal high-quality, step-by-step filters, practical example, SightWhale for Whale and Smart Money, limitations, FAQ."
 author: "Whale Team"
 readTime: "11 min"
@@ -21,6 +22,8 @@ On **SightWhale**, we provide:
 - **High win-rate trade alerts**
 
 👉 **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
 
 ---
 
@@ -53,6 +56,19 @@ Use a **checklist** (treat as a scoring rubric, not superstition):
 
 A high-quality **Polymarket** signal should be **actionable** under your constraints (size, time, jurisdiction), not just “interesting.”
 
+### Minimal filter pipeline (fast, repeatable)
+
+If you want a simple workflow you can run in under 2 minutes per alert:
+
+1. **Rules first**: confirm resolution criteria is unambiguous.
+2. **Liquidity check**: if spread is wide or depth is thin, down-rank or skip.
+3. **Smart Money credibility**: require a minimum credibility window (not just a headline score).
+4. **Acceptance vs fade**: wait for short acceptance when volatility is high.
+5. **Only then**: decide entry zone + invalidation.
+
+Related guides:
+- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
+- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 ---
 
 ## 3. How to filter signals effectively

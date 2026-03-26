@@ -3,6 +3,7 @@ title: "How Do Whales Make Decisions on Polymarket?"
 metaTitle: "How Whales Decide on Polymarket"
 metaDescription: "Polymarket Whale decisions: rules, liquidity, catalysts, staged entries. Data sources, timing, Smart Money context, tools, mistakes—no insider claims."
 date: "2026-03-23"
+lastModified: "2026-03-26"
 excerpt: "An analytical, structured look at how large Polymarket traders typically decide: decision frameworks, data sources, entry timing, a practical flow example, SightWhale tools, pitfalls, and FAQ."
 author: "Whale Team"
 readTime: "11 min"
@@ -15,9 +16,28 @@ tags: ["Polymarket", "Whale", "Smart Money", "Analysis", "Trading Education", "P
 Their edge is often **workflow + information quality**, not a secret oracle; **Smart Money** labels describe **history-backed** patterns, not guaranteed outcomes.  
 **Whale** flow is **observable commitment**; your job is to infer **what problem they’re solving** (directional bet, hedge, liquidity provision) before you mirror size.
 
-👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+👉 **Want real-time Whale signals?** With **SightWhale**, you get **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
 
 ---
+
+## Quick decision tree (directional vs hedge vs liquidity)
+
+This is a practical way to avoid copying a Whale for the wrong reason:
+
+1. **Does the Whale build exposure across multiple related markets?**
+   - If yes, consider “portfolio construction” rather than a single-market directional bet.
+2. **Do they add when price moves against them (defense) or only when it moves with them (momentum)?**
+   - Defense patterns can signal hedging or mean-reversion style.
+3. **Do they unwind quickly after a repricing, or hold into resolution?**
+   - Fast unwinds often imply tactical execution; long holds imply thesis conviction.
+4. **Does Smart Money history show consistency in this category?**
+   - If not, treat the Whale event as a research prompt, not a trigger.
+
+Related guides:
+- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
+- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 
 ## Live Whale Data (Powered by SightWhale)
 

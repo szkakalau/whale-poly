@@ -3,6 +3,7 @@ title: "Can You Make Money Consistently in Prediction Markets?"
 metaTitle: "Consistent Profit in Prediction Markets?"
 metaDescription: "Consistent prediction-market profits are uncommon: expectancy, sample size, liquidity. Smart Money and Whale signals help research—not promises. Tools, FAQ."
 date: "2026-03-23"
+lastModified: "2026-03-26"
 excerpt: "A balanced, data-minded take on consistent profits in prediction markets and on Polymarket-style venues: what “edge” requires, how Smart Money and Whale signals help (and fail), tooling, and FAQ."
 author: "Whale Team"
 readTime: "12 min"
@@ -15,9 +16,25 @@ tags: ["Polymarket", "Prediction Markets", "Smart Money", "Whale", "Trading Educ
 “Consistency” usually means **positive expectancy over many trades** with **controlled drawdowns**, not winning every week.  
 **Smart Money** metrics and **Whale** flow can **raise research quality**—they do **not** remove risk or guarantee repeatability.
 
-👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+👉 **Want real-time Whale signals?** With **SightWhale**, you get **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
+
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
 
 ---
+
+## A consistency scorecard (what to track weekly)
+
+If you care about consistent performance, measure inputs and process—not just outcomes.
+
+- **Selection discipline**: % of trades that met your Smart Money + liquidity gates
+- **Execution quality**: did you get filled inside your intended entry zone?
+- **Risk limits**: did you respect max loss per day/week?
+- **Overload control**: did alert volume push you into impulsive entries?
+- **Review cadence**: did you run a post-mortem and adjust rules?
+
+Related guides:
+- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
+- [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
 
 ## Live Whale Data (Powered by SightWhale)
 

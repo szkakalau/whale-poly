@@ -3,6 +3,7 @@ title: "Nested and Linked Outcomes: When Whale Alerts Quietly Double-Count the S
 metaTitle: "Polymarket: Nested Markets, One Underlying Bet"
 metaDescription: "Nested Polymarket contracts can make many whale alerts one thesis. Group by driver, cap exposure per driver, and avoid accidental double-counting. Not advice."
 date: "2026-03-22"
+lastModified: "2026-03-26"
 excerpt: "Your feed can show five different markets and five different whales—and you still only have one underlying bet. This deep dive explains structural links between prediction-market contracts (nested events, mutex sets, and soft coupling), how to spot accidental concentration, and how to read alerts as a portfolio instead of a sequence of dopamine hits."
 author: "Whale Team"
 readTime: "15 min"
@@ -27,7 +28,19 @@ Internal links:
 - Hedging vs directional misconceptions: [/blog/whale-trading-misconceptions-hedging-vs-directional](/blog/whale-trading-misconceptions-hedging-vs-directional)  
 - Follow tools: [/follow](/follow)  
 
+Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+
 ---
+
+## Quick anti-double-count checklist (when alerts spike)
+
+Use this before you take multiple “separate” positions triggered by multiple Whale alerts:
+
+- **Driver check**: do these markets resolve off the same underlying event or data source?
+- **Mutex check**: are these outcomes mutually exclusive (winner sets) that create a “lottery basket”?
+- **Nested check**: is one market a subset of another (leaf node vs parent node)?
+- **Exposure cap**: set a maximum risk budget per underlying driver, not per market.
+- **Smart Money sanity check**: if multiple Whales align, treat it as confluence—but still verify structure.
 
 ## 1) Three families of “sameness”
 

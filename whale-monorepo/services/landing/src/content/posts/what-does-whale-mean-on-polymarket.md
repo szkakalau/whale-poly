@@ -3,6 +3,7 @@ title: "What Does a Whale Mean on Polymarket?"
 metaTitle: "What a Whale Means on Polymarket"
 metaDescription: "Polymarket Whales are large flow versus that market liquidity—not one dollar rule. Types, price impact, Smart Money context, and mistakes when copying trades."
 date: "2026-03-23"
+lastModified: "2026-03-26"
 excerpt: "A clear, beginner-friendly definition of Whale on Polymarket: size vs. behavior, why order flow matters, a practical behavior-analysis example, tools like Smart Money scoring, and FAQs—without hype."
 author: "Whale Team"
 readTime: "11 min"
@@ -17,6 +18,8 @@ On **Polymarket**, a **Whale** usually means a wallet (or cluster) placing **lar
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
+**Start here:** [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+
 ---
 
 ## Live Whale Data (Powered by SightWhale)
@@ -24,6 +27,20 @@ On **Polymarket**, a **Whale** usually means a wallet (or cluster) placing **lar
 Use **SightWhale** for **live whale** flow, **Smart Money** views, and **alerts** in one place: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
 ---
+
+## Quick “Is this a Whale?” checklist (short-term)
+
+Use this to avoid the two common mistakes: assuming a universal dollar threshold, or assuming size implies correctness.
+
+- **Relative size**: is the trade large *for this market’s liquidity right now*?
+- **Price impact**: did it move levels or clear visible depth?
+- **Persistence**: is it one print, or a laddered accumulation/unwind?
+- **Context**: is this market headline-driven (high volatility) or stable (better for confirmation)?
+- **Credibility**: does Smart Money history suggest this wallet/entity is worth attention?
+
+Related guides:
+- [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
+- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
 
 ## 1. What is a whale on Polymarket (simple explanation)
 
