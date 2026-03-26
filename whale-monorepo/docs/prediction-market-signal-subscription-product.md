@@ -3,7 +3,7 @@
 ## TL;DR
 
 👉 Want real-time whale signals?  
-On SightWhale, we provide:
+With SightWhale, you get:
 - Real-time whale tracking
 - Smart Money scoring
 - High win-rate trade alerts
