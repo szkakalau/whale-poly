@@ -164,7 +164,7 @@ export default async function PolymarketAlertsTlPage() {
           <p className="mt-3 text-gray-200">Live usage signals from the platform pipeline.</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.linkedTraders)}+</p>
+              <p className="text-2xl font-black text-white">300+</p>
               <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Traders Linked</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
