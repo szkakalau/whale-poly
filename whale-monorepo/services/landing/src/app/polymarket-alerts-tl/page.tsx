@@ -80,24 +80,38 @@ export default function PolymarketAlertsTlPage() {
               href="/subscribe"
               className="inline-flex items-center justify-center rounded-xl bg-violet-500 px-6 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors"
             >
-              Get Real-Time Whale Alerts
+              Get My Timing Edge
             </Link>
           </div>
           <p className="mt-4 text-sm text-gray-400">Cancel anytime. No contracts.</p>
         </section>
 
         <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">WHAT THIS MEANS IN PRACTICE</h2>
-          <div className="mt-5 space-y-4 text-gray-300 leading-relaxed">
-            <p>Most traders discover big bets after markets already moved.</p>
-            <ul className="space-y-2">
-              <li>• You stop discovering big bets after the move already started</li>
-              <li>• You stop spending hours scanning markets manually</li>
-              <li>• You start seeing where large capital is positioning early</li>
-              <li>• You make faster decisions with more context</li>
-            </ul>
-            <p className="text-white font-medium">This is about speed and visibility.</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">What This Actually Changes For You</h2>
+          <p className="mt-4 text-gray-200 leading-relaxed">
+            This is the practical outcome, not theory. You stop reacting to moves after they start and begin operating with earlier visibility.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Before</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-300">
+                <li>• You discover big bets after price already moved</li>
+                <li>• You enter late and chase worse entries</li>
+                <li>• You spend hours manually scanning markets</li>
+                <li>• You make rushed decisions with limited context</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">With SightWhale</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+                <li>• You see large positioning earlier</li>
+                <li>• You stop chasing entries after the move starts</li>
+                <li>• You save daily monitoring time</li>
+                <li>• You decide faster with better timing and visibility</li>
+              </ul>
+            </div>
           </div>
+          <p className="mt-5 text-white font-medium">Outcome: less chasing, less noise, better timing windows.</p>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
@@ -144,16 +158,33 @@ export default function PolymarketAlertsTlPage() {
         </section>
 
         <section className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">WHO IS ALREADY USING THIS</h2>
-          <p className="mt-4 text-gray-300">SightWhale is built for:</p>
-          <ul className="mt-5 space-y-2 text-gray-200">
-            <li>• Active Polymarket traders</li>
-            <li>• Crypto bettors</li>
-            <li>• Sports betting users</li>
-            <li>• Information-edge focused traders</li>
-            <li>• People who already risk capital on prediction markets</li>
-          </ul>
-          <p className="mt-5 text-white font-medium">You don&apos;t need to trade more. You just need better timing and visibility.</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">PROOF: WHO IS ALREADY USING THIS</h2>
+          <p className="mt-4 text-gray-200">
+            This is already used by traders who are actively placing bets and need faster visibility, not passive market spectators.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">User Types</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+                <li>• Active Polymarket traders</li>
+                <li>• Crypto bettors rotating across fast markets</li>
+                <li>• Sports bettors using event-driven timing</li>
+                <li>• Information-edge traders managing multiple markets</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">How They Use It</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+                <li>• Pre-event positioning before momentum expands</li>
+                <li>• Intraday reaction when whale flow appears suddenly</li>
+                <li>• Cross-checking entries instead of blind market chasing</li>
+                <li>• Reducing manual scan time during volatile windows</li>
+              </ul>
+            </div>
+          </div>
+          <p className="mt-5 text-white font-medium">
+            Social signal matters: serious traders already pay for timing visibility because late information is expensive.
+          </p>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
@@ -177,13 +208,30 @@ export default function PolymarketAlertsTlPage() {
 
         <section className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">WHO THIS IS NOT FOR</h2>
-          <p className="mt-4 text-gray-300">This is NOT for you if:</p>
-          <ul className="mt-4 space-y-2 text-gray-200">
-            <li>• You never trade on Polymarket</li>
-            <li>• You are looking for guaranteed profits</li>
-            <li>• You don&apos;t want to make your own decisions</li>
-          </ul>
-          <p className="mt-5 text-white font-medium">This is for traders who want better information.</p>
+          <p className="mt-4 text-gray-200">
+            If this section describes you, do not subscribe. This product is intentionally narrow.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Not A Fit</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+                <li>• You never trade on Polymarket</li>
+                <li>• You want guaranteed profits</li>
+                <li>• You don&apos;t make your own decisions</li>
+                <li>• You won&apos;t act on time-sensitive information</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Good Fit</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+                <li>• You already risk capital on prediction markets</li>
+                <li>• You care about entry timing and visibility</li>
+                <li>• You want signal speed, not hype</li>
+                <li>• You prefer data alerts over emotional decision-making</li>
+              </ul>
+            </div>
+          </div>
+          <p className="mt-5 text-white font-medium">This is for traders who want better information, not promises.</p>
         </section>
 
         <section className="rounded-2xl border border-violet-400/30 bg-violet-500/10 p-7 md:p-10 text-center">
@@ -193,7 +241,7 @@ export default function PolymarketAlertsTlPage() {
           <p className="mt-4 text-gray-200">Try it for one month. If it doesn&apos;t provide value, cancel anytime.</p>
           <p className="mt-2 text-sm text-gray-300">No contracts. No lock-in.</p>
           <Link href="/subscribe" className="mt-6 inline-flex items-center justify-center rounded-xl bg-violet-500 px-7 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors">
-            Start Seeing Whale Bets
+            Start With Better Timing
           </Link>
         </section>
 
@@ -207,14 +255,22 @@ export default function PolymarketAlertsTlPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-7 md:p-8 text-center">
+        <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-7 md:p-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white">TIMING MATTERS</h2>
           <div className="mt-5 space-y-3 text-gray-200">
             <p>Markets move 24/7.</p>
             <p>Whales don&apos;t wait.</p>
             <p>Opportunities don&apos;t repeat.</p>
           </div>
-          <p className="mt-5 text-white font-medium">The earlier you see the move, the more options you have.</p>
+          <div className="mt-6 rounded-xl border border-amber-200/20 bg-black/30 p-5 text-left max-w-3xl mx-auto">
+            <p className="text-sm text-amber-100">Every day you trade without early whale visibility:</p>
+            <ul className="mt-3 space-y-2 text-sm text-gray-200">
+              <li>• You enter after the first probability shift</li>
+              <li>• You accept tighter entries and fewer options</li>
+              <li>• You keep competing with traders who saw the move earlier</li>
+            </ul>
+          </div>
+          <p className="mt-5 text-white font-semibold">Delay compounds. Early visibility does not.</p>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
@@ -238,9 +294,9 @@ export default function PolymarketAlertsTlPage() {
             href="/subscribe"
             className="mt-7 inline-flex items-center justify-center rounded-xl bg-cyan-400 px-8 py-3 text-sm font-bold text-black hover:bg-cyan-300 transition-colors"
           >
-            Get Real-Time Whale Alerts
+            Give Me The Edge
           </Link>
-          <p className="mt-3 text-xs text-gray-300">Cancel anytime.</p>
+          <p className="mt-3 text-xs text-gray-300">Next markets won&apos;t wait. Cancel anytime.</p>
         </section>
       </main>
 
