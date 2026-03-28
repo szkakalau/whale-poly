@@ -219,6 +219,18 @@ export default function PolymarketAlertsTlPage() {
           <p className="mt-5 text-sm text-gray-300">No mockups. These are real screenshot examples from Telegram alert delivery.</p>
         </section>
 
+        <section className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-7 md:p-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Who is this for?</h2>
+          <p className="mt-4 text-gray-200">Built for fast-market users who want an information edge, not slow research cycles.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {['Crypto traders', 'Polymarket traders', 'Airdrop hunters', 'Degens', 'Data nerds'].map((tag) => (
+              <span key={tag} className="rounded-full border border-white/15 bg-black/30 px-4 py-2 text-sm font-medium text-gray-100">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </section>
+
         <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">HOW IT WORKS</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
