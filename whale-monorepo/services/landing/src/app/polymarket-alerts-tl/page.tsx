@@ -59,11 +59,10 @@ const alertWallImages = [
   '/images/jietu003.jpeg',
   '/images/jietuhome.jpeg',
   '/images/jietu001.png',
+  '/images/jietu001.jpeg',
   '/images/jietu002.jpeg',
   '/images/jietu003.jpeg',
   '/images/jietuhome.jpeg',
-  '/images/jietu001.jpeg',
-  '/images/jietu001.png',
 ];
 
 export default function PolymarketAlertsTlPage() {
@@ -204,13 +203,13 @@ export default function PolymarketAlertsTlPage() {
 
         <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">Real Alerts From Our Users</h2>
-          <p className="mt-4 text-gray-200">Real Telegram delivery examples from live signal flow.</p>
+          <p className="mt-4 text-gray-200">Real Telegram alert screenshots from actual delivery examples.</p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {alertWallImages.map((src, index) => (
               <div key={`${src}-${index}`} className="rounded-xl border border-white/10 bg-black/25 p-2">
                 <Image
                   src={src}
-                  alt={`SightWhale Telegram alert screenshot ${index + 1}`}
+                  alt={`Real SightWhale Telegram alert screenshot ${index + 1}`}
                   width={1080}
                   height={1400}
                   className="w-full h-auto rounded-lg"
@@ -218,7 +217,7 @@ export default function PolymarketAlertsTlPage() {
               </div>
             ))}
           </div>
-          <p className="mt-5 text-sm text-gray-300">Screenshots are representative Telegram alert deliveries from real monitoring output.</p>
+          <p className="mt-5 text-sm text-gray-300">No mockups. These are real screenshot examples from Telegram alert delivery.</p>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
