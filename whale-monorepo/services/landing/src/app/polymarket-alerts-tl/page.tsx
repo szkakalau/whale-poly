@@ -53,16 +53,15 @@ const faqItems = [
 ];
 
 const alertWallImages = [
-  '/images/jietu001.png',
-  '/images/jietu001.jpeg',
-  '/images/jietu002.jpeg',
-  '/images/jietu003.jpeg',
-  '/images/jietuhome.jpeg',
-  '/images/jietu001.png',
-  '/images/jietu001.jpeg',
-  '/images/jietu002.jpeg',
-  '/images/jietu003.jpeg',
-  '/images/jietuhome.jpeg',
+  '/images/alerts/ScreenShot_2026-03-29_003514_416.png',
+  '/images/alerts/ScreenShot_2026-03-29_003612_184.png',
+  '/images/alerts/ScreenShot_2026-03-29_003634_059.png',
+  '/images/alerts/ScreenShot_2026-03-29_003657_869.png',
+  '/images/alerts/ScreenShot_2026-03-29_003721_930.png',
+  '/images/alerts/ScreenShot_2026-03-29_003736_900.png',
+  '/images/alerts/ScreenShot_2026-03-29_003751_850.png',
+  '/images/alerts/ScreenShot_2026-03-29_003807_061.png',
+  '/images/alerts/ScreenShot_2026-03-29_003830_698.png',
 ];
 
 export default function PolymarketAlertsTlPage() {
