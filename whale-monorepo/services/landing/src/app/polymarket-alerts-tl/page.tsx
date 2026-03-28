@@ -197,6 +197,16 @@ export default function PolymarketAlertsTlPage() {
           </Link>
         </section>
 
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">STRONG RISK REVERSAL</h2>
+          <p className="mt-4 text-gray-200">Try it for a month.</p>
+          <p className="mt-2 text-gray-200">Leave anytime.</p>
+          <p className="mt-2 text-gray-200">No commitment.</p>
+          <p className="mt-5 text-white font-medium">
+            Test it in live markets, decide from your own experience, and keep it only if it improves your timing.
+          </p>
+        </section>
+
         <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-7 md:p-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white">TIMING MATTERS</h2>
           <div className="mt-5 space-y-3 text-gray-200">
