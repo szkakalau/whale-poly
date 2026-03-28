@@ -12,6 +12,7 @@ const TELEGRAM_DEEP_LINK_HEADER = `${TELEGRAM_BOT_URL}?start=site_header`;
 const navLinks = [
   { href: '/backtesting', label: 'Performance' },
   { href: '/conviction', label: 'Conviction' },
+  { href: '/polymarket-alerts-tl', label: 'Alerts' },
   { href: '/smart-money', label: 'Smart Money' },
   { href: '/follow', label: 'My' },
   { href: '/blog', label: 'Blog' },

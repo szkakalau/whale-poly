@@ -25,6 +25,7 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><Link href="/backtesting" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Whale Performance</Link></li>
               <li><Link href="/conviction" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Conviction Analysis</Link></li>
+              <li><Link href="/polymarket-alerts-tl" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Polymarket Alerts</Link></li>
               <li><Link href="/blog" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Intelligence Blog</Link></li>
               <li><Link href="/smart-collections" className="text-muted hover:text-accent-hover text-sm transition-colors py-2 block min-h-[44px] flex items-center">Smart Collections</Link></li>
             </ul>

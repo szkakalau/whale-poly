@@ -330,6 +330,7 @@ function estimateNextAlertWindow(params: {
 }
 
 export default async function FollowPage() {
+  const isProduction = process.env.NODE_ENV === 'production';
   const user = await getCurrentUser();
   const rows = await getFollowRows(user?.id ?? null);
   const subscriptions = user ? await getSubscriptions(user.id) : [];
@@ -479,7 +480,7 @@ export default async function FollowPage() {
                 </a>
               </div>
             )}
-            {telegramConnected && <TestAlertButton />}
+            {telegramConnected && !isProduction && <TestAlertButton />}
           </div>
         </section>
 

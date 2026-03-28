@@ -5,6 +5,9 @@ const ALERT_ENGINE_BASE =
   process.env.ALERT_ENGINE_API_BASE_URL || 'https://alert-engine-api.onrender.com';
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ detail: 'not_found' }, { status: 404 });
+  }
   await requireUser();
   let outcome = 'YES';
   try {
@@ -29,9 +32,12 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    const res = await fetch(url, { 
+    const adminToken = process.env.ADMIN_TOKEN || '';
+    const headers = adminToken ? { 'X-Admin-Token': adminToken } : undefined;
+    const res = await fetch(url, {
       method: 'POST',
-      signal: controller.signal 
+      signal: controller.signal,
+      headers,
     });
     clearTimeout(timeoutId);
     

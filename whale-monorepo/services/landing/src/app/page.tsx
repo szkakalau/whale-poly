@@ -603,6 +603,16 @@ export default function Home() {
                 <div className="text-xs text-foreground font-semibold group-hover:text-foreground">Conviction Cases</div>
               </div>
             </Link>
+
+            <Link href="/polymarket-alerts-tl" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-surface border border-border hover:bg-surface-hover hover:border-emerald-500/30 transition-all duration-300">
+              <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 group-hover:scale-105 transition-transform">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" /></svg>
+              </div>
+              <div className="text-left">
+                <div className="text-[11px] text-muted font-medium uppercase tracking-wider">Offer</div>
+                <div className="text-xs text-foreground font-semibold group-hover:text-foreground">$29 Alerts Page</div>
+              </div>
+            </Link>
           </div>
         </section>
 

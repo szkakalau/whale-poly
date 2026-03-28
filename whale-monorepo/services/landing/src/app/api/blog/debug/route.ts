@@ -26,7 +26,14 @@ async function resolveBlogPostsSchema(): Promise<string | null> {
   return schema;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    const adminToken = process.env.ADMIN_TOKEN || '';
+    const headerToken = req.headers.get('x-admin-token') || '';
+    if (!adminToken || headerToken !== adminToken) {
+      return NextResponse.json({ detail: 'not_found' }, { status: 404 });
+    }
+  }
   const postsDir = getPostsDirectory();
   const fileExists = fs.existsSync(postsDir);
   const mdFiles = fileExists ? fs.readdirSync(postsDir).filter((f) => f.endsWith('.md')) : [];

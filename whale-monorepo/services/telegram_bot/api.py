@@ -290,6 +290,10 @@ def _hash_admin(value: str) -> str:
   return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
 
 
+def _is_production() -> bool:
+  return os.getenv("NODE_ENV", "").lower() == "production"
+
+
 def _is_health_market(payload: dict) -> bool:
   title = str(payload.get("market_title") or payload.get("market_question") or "").lower()
   m_id = str(payload.get("market_id") or "").lower()
@@ -910,7 +914,9 @@ async def health():
   return {"status": "ok", "redis": "ok" if redis_ok else "unavailable"}
 
 @app.get("/debug/build")
-async def debug_build():
+async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  if _is_production():
+    _require_admin(x_admin_token)
   keys = [
     "RENDER_GIT_COMMIT",
     "RENDER_SERVICE_ID",
@@ -934,7 +940,11 @@ async def debug_build():
 
 
 @app.post("/alerts/test")
-async def test_alert(message: str = Query("Test alert from SightWhale")):
+async def test_alert(
+  message: str = Query("Test alert from SightWhale"),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  _require_admin(x_admin_token)
   if not settings.telegram_bot_token or not settings.telegram_alert_chat_id:
     return {"ok": False, "error": "telegram_alert_config_missing"}
   url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"

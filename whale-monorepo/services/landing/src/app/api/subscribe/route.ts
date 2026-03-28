@@ -12,6 +12,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
+    if (process.env.NODE_ENV === 'production') {
+      const adminToken = process.env.ADMIN_TOKEN || '';
+      const headerToken = req.headers.get('x-admin-token') || '';
+      const isAdmin = Boolean(adminToken) && headerToken === adminToken;
+      if (!isAdmin && plan !== Plan.FREE) {
+        return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
+      }
+    }
+
     // Mocking Stripe integration logic here
     // In production, you would create a Stripe checkout session
 

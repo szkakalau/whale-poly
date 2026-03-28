@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseBearerToken, verifyMobileAccessToken } from './src/lib/mobileAuth';
 import { verifyMiniAppSessionCookie } from './src/lib/telegramMiniApp';
 
 const SESSION_COOKIE = 'tg_session';
@@ -9,9 +10,15 @@ function getSessionSecret(): string {
 
 export async function middleware(req: NextRequest) {
   const headers = new Headers(req.headers);
+  headers.delete('x-user-id');
 
-  if (headers.get('x-user-id')) {
-    return NextResponse.next({ request: { headers } });
+  const bearer = parseBearerToken(headers.get('authorization'));
+  if (bearer) {
+    const payload = await verifyMobileAccessToken(bearer);
+    if (payload) {
+      headers.set('x-user-id', payload.uid);
+      return NextResponse.next({ request: { headers } });
+    }
   }
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;

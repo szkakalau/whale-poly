@@ -44,12 +44,18 @@ def _hash_admin(value: str) -> str:
   return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
 
 
+def _is_production() -> bool:
+  return os.getenv("NODE_ENV", "").lower() == "production"
+
+
 @app.get("/health")
 async def health():
   return {"status": "ok"}
 
 @app.get("/debug/build")
-async def debug_build():
+async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  if _is_production():
+    _require_admin(x_admin_token)
   keys = [
     "RENDER_GIT_COMMIT",
     "RENDER_SERVICE_ID",
@@ -61,7 +67,12 @@ async def debug_build():
   return {"service": "alert-engine", "env": env}
 
 @app.get("/debug/resolve_outcome")
-async def debug_resolve_outcome(token_id: str = Query(..., min_length=1)):
+async def debug_resolve_outcome(
+  token_id: str = Query(..., min_length=1),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  if _is_production():
+    _require_admin(x_admin_token)
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
     resolved = await _resolve_outcome_from_token(redis, token_id)
@@ -71,7 +82,12 @@ async def debug_resolve_outcome(token_id: str = Query(..., min_length=1)):
     await redis.aclose()
 
 @app.get("/debug/outcome")
-async def debug_outcome(token_id: str = Query(..., min_length=1)):
+async def debug_outcome(
+  token_id: str = Query(..., min_length=1),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  if _is_production():
+    _require_admin(x_admin_token)
   tid = str(token_id).strip()
   proxy = settings.https_proxy or None
   result: dict = {"token_id": tid, "proxy_set": bool(proxy), "steps": []}
@@ -216,7 +232,9 @@ async def recent_alerts(minutes: int = Query(60, ge=1, le=1440), session: AsyncS
 
 
 @app.get("/debug/queues")
-async def debug_queues():
+async def debug_queues(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  if _is_production():
+    _require_admin(x_admin_token)
   names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
   try:
@@ -276,8 +294,10 @@ async def force_alert(
   size: float = Query(12345.67),
   price: float = Query(0.42),
   whale_score: int = Query(90),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
   session: AsyncSession = Depends(get_session),
 ):
+  _require_admin(x_admin_token)
   now = datetime.now(timezone.utc)
   seed = f"{market_question}:{now.isoformat()}"
   whale_trade_id = hashlib.sha1(f"wt:{seed}".encode("utf-8")).hexdigest()[:32]

@@ -566,7 +566,11 @@ async def health():
 
 
 @app.post("/alerts/test")
-async def test_alert(message: str = Query("Test alert from SightWhale")):
+async def test_alert(
+  message: str = Query("Test alert from SightWhale"),
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+):
+  _require_admin(x_admin_token)
   if not settings.telegram_bot_token or not settings.telegram_alert_chat_id:
     return {"ok": False, "error": "telegram_alert_config_missing"}
   url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
