@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { prisma } from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
 
 export const metadata = {
   title: 'Polymarket Whale Alerts - Information Edge for Traders',
@@ -64,7 +66,65 @@ const alertWallImages = [
   '/images/alerts/ScreenShot_2026-03-29_003830_698.png',
 ];
 
-export default function PolymarketAlertsTlPage() {
+type ProofStats = {
+  linkedTraders: number;
+  trackedWhaleBets: number;
+  alerts30d: number;
+};
+
+function formatCompactInt(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+const loadProofStats = unstable_cache(
+  async (): Promise<ProofStats> => {
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let linkedTraders = 0;
+    let trackedWhaleBets = 0;
+    let alerts30d = 0;
+
+    try {
+      linkedTraders = await prisma.user.count({ where: { telegramId: { not: null } } });
+    } catch {
+      try {
+        const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(`SELECT COUNT(*)::bigint AS n FROM tg_users`);
+        linkedTraders = Number(rows[0]?.n ?? 0);
+      } catch {
+        linkedTraders = 0;
+      }
+    }
+
+    try {
+      const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(`SELECT COUNT(*)::bigint AS n FROM whale_trades`);
+      trackedWhaleBets = Number(rows[0]?.n ?? 0);
+    } catch {
+      trackedWhaleBets = 0;
+    }
+
+    try {
+      alerts30d = await prisma.alertEvent.count({ where: { occurredAt: { gte: since30d } } });
+    } catch {
+      try {
+        const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          `SELECT COUNT(*)::bigint AS n FROM alerts WHERE created_at >= $1`,
+          since30d,
+        );
+        alerts30d = Number(rows[0]?.n ?? 0);
+      } catch {
+        alerts30d = 0;
+      }
+    }
+
+    return { linkedTraders, trackedWhaleBets, alerts30d };
+  },
+  ['polymarket-alerts-proof-stats'],
+  { revalidate: 60 },
+);
+
+export default async function PolymarketAlertsTlPage() {
+  const proofStats = await loadProofStats();
+
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
@@ -97,6 +157,29 @@ export default function PolymarketAlertsTlPage() {
             </Link>
           </div>
           <p className="mt-4 text-sm text-gray-400">Cancel anytime. No contracts.</p>
+        </section>
+
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Real Proof</h2>
+          <p className="mt-3 text-gray-200">Live usage signals from the platform pipeline.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.linkedTraders)}+</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Traders Linked</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.trackedWhaleBets)}+</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Whale Bets Tracked</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.alerts30d)}+</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Alerts Sent (30D)</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-2xl font-black text-white">24/7</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Monitoring Uptime</p>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-7 md:p-8">
@@ -228,6 +311,28 @@ export default function PolymarketAlertsTlPage() {
                 {tag}
               </span>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">HOW TO START</h2>
+          <p className="mt-4 text-gray-200">Three quick steps to remove setup friction and start receiving signals.</p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">1</p>
+              <p className="mt-2 text-lg font-semibold text-white">Subscribe</p>
+              <p className="mt-2 text-sm text-gray-300">Start your plan and unlock real-time whale signal delivery.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">2</p>
+              <p className="mt-2 text-lg font-semibold text-white">Connect Telegram</p>
+              <p className="mt-2 text-sm text-gray-300">Link your Telegram once so alerts can reach you instantly.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">3</p>
+              <p className="mt-2 text-lg font-semibold text-white">Receive Alerts Instantly</p>
+              <p className="mt-2 text-sm text-gray-300">Get signal updates in real time and act while timing still matters.</p>
+            </div>
           </div>
         </section>
 
