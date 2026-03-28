@@ -277,6 +277,17 @@ export default function PolymarketAlertsTlPage() {
           </Link>
         </section>
 
+        <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-7 md:p-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Why Is This So Cheap?</h2>
+          <p className="mt-4 text-gray-200">Why only $29?</p>
+          <div className="mt-4 space-y-3 text-gray-200">
+            <p>Because this is a lean, signal-first subscription focused on one job: faster whale visibility.</p>
+            <p>We keep pricing accessible so active Polymarket traders can test real alert value in live markets without high upfront cost.</p>
+            <p>As coverage depth and alert infrastructure expand, pricing will be revised for new subscribers.</p>
+          </div>
+          <p className="mt-5 text-sm text-gray-300">Current pricing is an early access rate for users who join at this stage.</p>
+        </section>
+
         <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white">STRONG RISK REVERSAL</h2>
           <p className="mt-4 text-gray-200">Try it for a month.</p>
@@ -285,6 +296,16 @@ export default function PolymarketAlertsTlPage() {
           <p className="mt-5 text-white font-medium">
             Test it in live markets, decide from your own experience, and keep it only if it improves your timing.
           </p>
+        </section>
+
+        <section className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-7 md:p-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Refund / Cancel</h2>
+          <div className="mt-4 space-y-2 text-gray-100">
+            <p>Cancel anytime</p>
+            <p>No questions asked</p>
+            <p>Refund within 7 days</p>
+          </div>
+          <p className="mt-5 text-sm text-gray-300">Clear exit policy so you can test the service with lower decision pressure.</p>
         </section>
 
         <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-7 md:p-8 text-center">
