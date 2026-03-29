@@ -1,0 +1,75 @@
+{
+  "authTelegram": {
+    "request": {
+      "method": "POST",
+      "path": "/api/mobile/auth/telegram",
+      "body": {
+        "initData": "query_id=sample&user=sample&hash=sample"
+      }
+    },
+    "response200": {
+      "ok": true,
+      "accessToken": "mock.access.token",
+      "expiresIn": 604800,
+      "user": {
+        "id": "cmockuser001",
+        "telegramId": "123456",
+        "plan": "FREE",
+        "planExpireAt": null
+      }
+    }
+  },
+  "leaderboard": {
+    "request": {
+      "method": "GET",
+      "path": "/api/smart-money/leaderboard?orderBy=PNL&timePeriod=MONTH&category=OVERALL&limit=3"
+    },
+    "response200": {
+      "orderBy": "PNL",
+      "timePeriod": "MONTH",
+      "category": "OVERALL",
+      "limit": 3,
+      "items": [
+        {
+          "wallet": "0xabc",
+          "volume": 100000.0,
+          "profit": 12000.0,
+          "roi": 0.12
+        }
+      ]
+    }
+  },
+  "liveSignals": {
+    "request": {
+      "method": "GET",
+      "path": "/api/live-signals"
+    },
+    "response200": {
+      "signals": [],
+      "source": "whale_profiles+whale_engine",
+      "refreshedAt": "2026-03-28T00:00:00.000Z"
+    }
+  },
+  "billingSync": {
+    "request": {
+      "method": "POST",
+      "path": "/api/mobile/billing/google/sync",
+      "headers": {
+        "Authorization": "Bearer mock.access.token"
+      },
+      "body": {
+        "purchaseToken": "play_purchase_token",
+        "productId": "pro_monthly",
+        "orderId": "GPA.1234-5678-9012-34567",
+        "purchaseTimeMs": 1735689600000,
+        "expiryTimeMs": 1738368000000,
+        "isAutoRenewing": true
+      }
+    },
+    "response200": {
+      "ok": true,
+      "plan": "PRO",
+      "planExpireAt": "2026-04-01T00:00:00.000Z"
+    }
+  }
+}

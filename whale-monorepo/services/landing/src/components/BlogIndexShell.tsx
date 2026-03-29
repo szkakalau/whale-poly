@@ -26,7 +26,7 @@ export default function BlogIndexShell({ children }: { children: ReactNode }) {
       <main className="relative mx-auto w-full max-w-5xl flex-1 px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
         <header className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.35em] text-violet-400/90 sm:text-xs">
-            Sight Whale · Intelligence
+            SightWhale.com · Intelligence
           </p>
           <h1 className="mb-5 bg-gradient-to-r from-white via-white to-gray-500 bg-clip-text text-4xl font-bold leading-[1.08] text-transparent sm:text-5xl md:text-6xl">
             Intelligence Log

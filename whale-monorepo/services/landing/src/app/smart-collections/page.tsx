@@ -7,7 +7,7 @@ import SmartCollectionsClient, {
 } from './SmartCollectionsClient';
 
 export const metadata = {
-  title: 'Smart Collections - Sight Whale',
+  title: 'Smart Collections - SightWhale.com',
   description:
     'System-generated groups of whales clustered by strategy, performance, and behavior.',
   robots: {

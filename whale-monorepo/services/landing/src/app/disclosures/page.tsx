@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Disclosures — Sight Whale',
-  description: 'Disclosures about affiliations, conflicts of interest, and how Sight Whale is funded.',
+  title: 'Disclosures — SightWhale.com',
+  description: 'Disclosures about affiliations, conflicts of interest, and how SightWhale.com is funded.',
   alternates: { canonical: '/disclosures' },
   openGraph: {
-    title: 'Disclosures — Sight Whale',
-    description: 'Disclosures about affiliations, conflicts of interest, and how Sight Whale is funded.',
+    title: 'Disclosures — SightWhale.com',
+    description: 'Disclosures about affiliations, conflicts of interest, and how SightWhale.com is funded.',
     type: 'website',
     url: 'https://www.sightwhale.com/disclosures',
   },
@@ -54,7 +54,7 @@ export default function DisclosuresPage() {
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-white">Not affiliated</h2>
             <p>
-              Sight Whale is an independent product. We are not affiliated with Polymarket unless
+              SightWhale.com is an independent product. We are not affiliated with Polymarket unless
               explicitly stated. “Polymarket” and related trademarks belong to their respective owners.
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function DisclosuresPage() {
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-white">Conflicts of interest</h2>
             <ul className="space-y-2">
-              <li>Sight Whale team members may hold positions in prediction markets.</li>
+              <li>SightWhale.com team members may hold positions in prediction markets.</li>
               <li>We may publish analysis on markets where we also trade.</li>
               <li>We do not guarantee that alerts reflect our own positions or views.</li>
             </ul>
@@ -75,7 +75,7 @@ export default function DisclosuresPage() {
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-white">How we make money</h2>
             <p>
-              Sight Whale may earn revenue from subscriptions and product upgrades. We do not accept
+              SightWhale.com may earn revenue from subscriptions and product upgrades. We do not accept
               payment to manipulate alerts or fabricate signals.
             </p>
           </div>

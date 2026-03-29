@@ -539,7 +539,7 @@ export default async function BlogPostPage({ params }: Props) {
     ],
     publisher: {
       "@type": "Organization",
-      name: "Sight Whale",
+      name: "SightWhale.com",
       url: "https://www.sightwhale.com",
       logo: {
         "@type": "ImageObject",

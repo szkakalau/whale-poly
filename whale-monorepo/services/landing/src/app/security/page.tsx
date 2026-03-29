@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Security — Sight Whale',
-  description: 'Security practices and responsible disclosure process for Sight Whale.',
+  title: 'Security — SightWhale.com',
+  description: 'Security practices and responsible disclosure process for SightWhale.com.',
   alternates: { canonical: '/security' },
   openGraph: {
-    title: 'Security — Sight Whale',
-    description: 'Security practices and responsible disclosure process for Sight Whale.',
+    title: 'Security — SightWhale.com',
+    description: 'Security practices and responsible disclosure process for SightWhale.com.',
     type: 'website',
     url: 'https://www.sightwhale.com/security',
   },
@@ -79,7 +79,7 @@ export default function SecurityPage() {
             <h2 className="text-lg font-semibold text-white">Scope</h2>
             <ul className="space-y-2">
               <li>In scope: sightwhale.com and official subdomains/services</li>
-              <li>Out of scope: third-party services not controlled by Sight Whale</li>
+              <li>Out of scope: third-party services not controlled by SightWhale.com</li>
             </ul>
           </div>
 

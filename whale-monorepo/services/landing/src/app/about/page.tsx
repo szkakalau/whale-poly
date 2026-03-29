@@ -3,11 +3,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'About — Sight Whale',
-  description: 'Sight Whale helps you track smart money on Polymarket with real-time alerts and transparent methodology.',
+  title: 'About — SightWhale.com',
+  description: 'SightWhale.com helps you track smart money on Polymarket with real-time alerts and transparent methodology.',
   alternates: { canonical: '/about' },
   openGraph: {
-    title: 'About — Sight Whale',
+    title: 'About — SightWhale.com',
     description: 'Track smart money on Polymarket with real-time alerts and transparent methodology.',
     type: 'website',
     url: 'https://www.sightwhale.com/about',
@@ -29,11 +29,11 @@ export default function AboutPage() {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Sight Whale',
+    name: 'SightWhale.com',
     url: 'https://www.sightwhale.com',
     logo: 'https://www.sightwhale.com/images/og-image.png',
     description:
-      'Sight Whale helps traders track smart money behavior on Polymarket and receive real-time alerts.',
+      'SightWhale.com helps traders track smart money behavior on Polymarket and receive real-time alerts.',
     sameAs: ['https://t.me/sightwhale_bot'],
   };
 
@@ -61,7 +61,7 @@ export default function AboutPage() {
             Built for traders who follow the money.
           </h1>
           <p className="text-gray-400 leading-relaxed max-w-2xl">
-            Sight Whale is an intelligence layer for Polymarket. We identify historically profitable
+            SightWhale.com is an intelligence layer for Polymarket. We identify historically profitable
             wallets, summarize high-conviction activity, and deliver real-time alerts so you can
             react faster with more context.
           </p>
@@ -92,7 +92,7 @@ export default function AboutPage() {
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-6">
-          <h2 className="text-xl font-semibold text-white">What Sight Whale is (and isn’t)</h2>
+          <h2 className="text-xl font-semibold text-white">What SightWhale.com is (and isn&apos;t)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
             <div className="space-y-2">
               <p className="font-semibold text-white">We are</p>

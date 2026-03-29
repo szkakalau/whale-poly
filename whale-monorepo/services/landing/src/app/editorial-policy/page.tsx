@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Editorial Policy — Sight Whale',
-  description: 'How Sight Whale publishes analysis, uses automation, and handles corrections.',
+  title: 'Editorial Policy — SightWhale.com',
+  description: 'How SightWhale.com publishes analysis, uses automation, and handles corrections.',
   alternates: { canonical: '/editorial-policy' },
   openGraph: {
-    title: 'Editorial Policy — Sight Whale',
-    description: 'How Sight Whale publishes analysis, uses automation, and handles corrections.',
+    title: 'Editorial Policy — SightWhale.com',
+    description: 'How SightWhale.com publishes analysis, uses automation, and handles corrections.',
     type: 'website',
     url: 'https://www.sightwhale.com/editorial-policy',
   },
@@ -44,7 +44,7 @@ export default function EditorialPolicyPage() {
             Trust is a product feature.
           </h1>
           <p className="text-gray-400 leading-relaxed max-w-3xl">
-            Sight Whale publishes content to help readers interpret prediction market signals. We
+            SightWhale.com publishes content to help readers interpret prediction market signals. We
             aim to be clear about what we know, what we infer, and what we do not know.
           </p>
         </section>
@@ -112,7 +112,7 @@ export default function EditorialPolicyPage() {
               trademarks belong to their respective owners.
             </p>
             <p>
-              Sight Whale content is informational and not investment advice. Trading prediction
+              SightWhale.com content is informational and not investment advice. Trading prediction
               markets involves risk.
             </p>
           </div>

@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Terms — Sight Whale',
-  description: 'Terms of service for Sight Whale.',
+  title: 'Terms — SightWhale.com',
+  description: 'Terms of service for SightWhale.com.',
   alternates: { canonical: '/terms' },
   openGraph: {
-    title: 'Terms — Sight Whale',
-    description: 'Terms of service for Sight Whale.',
+    title: 'Terms — SightWhale.com',
+    description: 'Terms of service for SightWhale.com.',
     type: 'website',
     url: 'https://www.sightwhale.com/terms',
   },
@@ -54,7 +54,7 @@ export default function TermsPage() {
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-white">Service description</h2>
             <p>
-              Sight Whale provides informational tools for tracking publicly observable prediction market
+              SightWhale.com provides informational tools for tracking publicly observable prediction market
               activity and delivering alerts. We do not execute trades, custody assets, or provide brokerage
               services.
             </p>

@@ -5,12 +5,12 @@ import Footer from '@/components/Footer';
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 
 export const metadata: Metadata = {
-  title: 'Contact — Sight Whale',
-  description: 'Contact Sight Whale for support, partnerships, or press inquiries.',
+  title: 'Contact — SightWhale.com',
+  description: 'Contact SightWhale.com for support, partnerships, or press inquiries.',
   alternates: { canonical: '/contact' },
   openGraph: {
-    title: 'Contact — Sight Whale',
-    description: 'Contact Sight Whale for support, partnerships, or press inquiries.',
+    title: 'Contact — SightWhale.com',
+    description: 'Contact SightWhale.com for support, partnerships, or press inquiries.',
     type: 'website',
     url: 'https://www.sightwhale.com/contact',
   },
@@ -67,7 +67,7 @@ export default function ContactPage() {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 space-y-3">
             <h2 className="text-lg font-semibold text-white">Partnerships / Press</h2>
             <p className="text-sm text-gray-300">
-              If you want to collaborate or feature Sight Whale:
+              If you want to collaborate or feature SightWhale.com:
             </p>
             <a
               className="text-violet-300 hover:text-violet-200 underline underline-offset-4"

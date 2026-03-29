@@ -98,7 +98,7 @@ export class BlogContentGenerator {
       content: content,
       tags: this.generateTags(marketData),
       readTime: this.calculateReadTime(content),
-      author: "Sight Whale Research"
+      author: "SightWhale.com Research"
     };
   }
 
@@ -312,7 +312,7 @@ export class BlogContentGenerator {
     return [
       "## Sources & methodology",
       "- Polymarket market data (prices/volume): " + searchUrl,
-      "- Whale trade signals: derived from on-site trade flow and wallet histories tracked by Sight Whale",
+      "- Whale trade signals: derived from on-site trade flow and wallet histories tracked by SightWhale.com",
     ].join('\n');
   }
 

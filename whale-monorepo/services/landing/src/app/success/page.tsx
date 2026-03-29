@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata = {
-  title: 'Payment Successful - Sight Whale',
+  title: 'Payment Successful - SightWhale.com',
   description: 'Your payment was received. Subscription will activate after processing.',
   robots: {
     index: false,

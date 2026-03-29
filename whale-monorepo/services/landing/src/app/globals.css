@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Sight Whale — charcoal professional palette */
+/* SightWhale.com — charcoal professional palette */
 :root {
   --background: #0f1115;
   --surface: #151821;

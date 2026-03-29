@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Methodology — Sight Whale',
-  description: 'How Sight Whale collects data, scores wallets, and generates alerts for Polymarket trade flow.',
+  title: 'Methodology — SightWhale.com',
+  description: 'How SightWhale.com collects data, scores wallets, and generates alerts for Polymarket trade flow.',
   alternates: { canonical: '/methodology' },
   openGraph: {
-    title: 'Methodology — Sight Whale',
-    description: 'How Sight Whale collects data, scores wallets, and generates alerts for Polymarket trade flow.',
+    title: 'Methodology — SightWhale.com',
+    description: 'How SightWhale.com collects data, scores wallets, and generates alerts for Polymarket trade flow.',
     type: 'website',
     url: 'https://www.sightwhale.com/methodology',
   },
@@ -44,7 +44,7 @@ export default function MethodologyPage() {
             How we turn trade flow into actionable alerts.
           </h1>
           <p className="text-gray-400 leading-relaxed max-w-3xl">
-            Sight Whale tracks Polymarket trade activity, maps it back to wallets, and surfaces the
+            SightWhale.com tracks Polymarket trade activity, maps it back to wallets, and surfaces the
             most decision-relevant information. This page explains what we measure, what we do not
             measure, and the key limitations you should understand.
           </p>

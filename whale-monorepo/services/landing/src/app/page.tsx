@@ -521,7 +521,7 @@ export default function Home() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Sight Whale",
+            "name": "SightWhale.com",
             "operatingSystem": "Web, Telegram",
             "applicationCategory": "FinanceApplication",
             "description": "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",

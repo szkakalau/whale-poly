@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Subscribe - Sight Whale',
+  title: 'Subscribe - SightWhale.com',
   description: 'Subscribe to receive real-time whale intelligence alerts.',
   robots: {
     index: false,

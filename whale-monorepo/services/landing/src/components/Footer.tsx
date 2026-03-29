@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
               <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.32)]" />
-              <span className="font-bold text-foreground text-xl tracking-tight font-display">Sight Whale</span>
+              <span className="font-bold text-foreground text-xl tracking-tight font-display">SightWhale.com</span>
             </div>
             <p className="text-muted text-sm leading-relaxed max-w-sm font-light">
               The leading intelligence layer for Polymarket. We track historically profitable whale behavior and deliver real-time alerts to help you stay ahead of the crowd.
@@ -71,7 +71,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-border-muted flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-subtle text-xs font-light">
-            © {new Date().getFullYear()} Sight Whale. Built for the next generation of prediction market traders.
+            © {new Date().getFullYear()} SightWhale.com. Built for the next generation of prediction market traders.
           </div>
           <div className="flex gap-8">
             <Link href="/privacy" className="text-subtle hover:text-muted text-xs transition-colors">Privacy</Link>

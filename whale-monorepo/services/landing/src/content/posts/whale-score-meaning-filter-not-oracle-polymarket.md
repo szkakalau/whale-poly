@@ -83,7 +83,7 @@ A score cannot:
 
 If someone sells you a score as a crystal ball, they are selling comfort, not edge.
 
-Sight Whale’s positioning is closer to **intelligence plumbing**: observable flows, scored for usefulness, delivered where you actually act (often Telegram), with paths to verify context on the web.
+SightWhale.com's positioning is closer to **intelligence plumbing**: observable flows, scored for usefulness, delivered where you actually act (often Telegram), with paths to verify context on the web.
 
 ---
 

@@ -14,7 +14,7 @@ type PageProps = {
 };
 
 export const metadata = {
-  title: 'Smart Collection - Sight Whale',
+  title: 'Smart Collection - SightWhale.com',
   description: 'Smart collection details and subscribed whales.',
   robots: {
     index: false,

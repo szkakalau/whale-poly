@@ -57,7 +57,7 @@ Push precision too high and users fear missing moves.
 
 Good systems do not “solve” that tension. They **pick a stance** and communicate it clearly.
 
-Sight Whale’s stance is closer to: **conviction-first delivery**, with tooling to go deeper when you want more breadth (leaderboards, profiles, collections).
+SightWhale.com's stance is closer to: **conviction-first delivery**, with tooling to go deeper when you want more breadth (leaderboards, profiles, collections).
 
 ---
 

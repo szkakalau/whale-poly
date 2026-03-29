@@ -13,7 +13,7 @@ Your phone lights up: a whale-sized move on a market you barely follow.
 
 That moment is where most people lose money—not because the alert was “wrong,” but because **reaction replaced process**.
 
-This post is a checklist you can run in under two minutes. It assumes you use a system like Sight Whale to surface **large, scored flows** and deliver them quickly (for example via Telegram). It does not promise outcomes. It gives you a way to stay consistent when you are tired, rushed, or tempted to chase.
+This post is a checklist you can run in under two minutes. It assumes you use a system like SightWhale.com to surface **large, scored flows** and deliver them quickly (for example via Telegram). It does not promise outcomes. It gives you a way to stay consistent when you are tired, rushed, or tempted to chase.
 
 Internal links:
 
@@ -57,7 +57,7 @@ Open the market page and scan in this order:
 4. **Recent price path**  
    Did the market already move *before* your alert arrived? If yes, you are not “copying” the whale. You are **paying for a ticket after the first act**.
 
-Sight Whale is built around **verifiable flows** and tools to inspect wallet context—use them to answer “was this early or late?” rather than guessing.
+SightWhale.com is built around **verifiable flows** and tools to inspect wallet context—use them to answer “was this early or late?” rather than guessing.
 
 ---
 
@@ -71,7 +71,7 @@ Treat that like hiring:
 - **Size matters relative to their history**. A “large” trade for you might be a rounding error for them—or the opposite.  
 - **Consistency matters**. One spectacular bet does not make a process.
 
-Sight Whale surfaces **Whale Score™** as a composite lens on wallet behavior. Use it as a **filter**, not a prophecy. A higher score means “more reasons to take the next step seriously,” not “buy now.”
+SightWhale.com surfaces **Whale Score™** as a composite lens on wallet behavior. Use it as a **filter**, not a prophecy. A higher score means “more reasons to take the next step seriously,” not “buy now.”
 
 ---
 

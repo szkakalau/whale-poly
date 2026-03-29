@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
-  title: 'My Dashboard - Sight Whale',
+  title: 'My Dashboard - SightWhale.com',
   description: 'Track followed whales, smart collections, and the latest smart money updates.',
   robots: {
     index: false,

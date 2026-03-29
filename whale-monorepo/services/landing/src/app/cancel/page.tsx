@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata = {
-  title: 'Checkout Canceled - Sight Whale',
+  title: 'Checkout Canceled - SightWhale.com',
   description: 'Your checkout was canceled. You can try again anytime.',
   robots: {
     index: false,

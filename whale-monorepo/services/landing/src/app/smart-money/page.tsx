@@ -3,7 +3,7 @@ import Footer from '@/components/Footer';
 import SmartMoneyClient from './SmartMoneyClient';
 
 export const metadata = {
-  title: 'Smart Money Leaderboard - Sight Whale',
+  title: 'Smart Money Leaderboard - SightWhale.com',
   description: 'Top Polymarket traders by Profit, ROI, and Volume. Subscribe to collections for real-time alerts.',
   alternates: {
     canonical: '/smart-money',

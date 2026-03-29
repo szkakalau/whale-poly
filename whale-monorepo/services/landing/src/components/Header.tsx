@@ -24,10 +24,10 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300 pt-[env(safe-area-inset-top,0)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-5 h-14 min-h-[3.5rem] flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2 min-w-0" title="Sight Whale Home">
+        <Link href="/" className="flex items-center gap-2 min-w-0" title="SightWhale.com Home">
           <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.38)]" />
           <span className="font-bold tracking-tight text-base sm:text-lg text-foreground truncate font-display">
-            <span className="md:hidden">Sight Whale</span>
+            <span className="md:hidden">SightWhale.com</span>
             <span className="hidden md:inline">Polymarket Whale Intelligence</span>
           </span>
         </Link>

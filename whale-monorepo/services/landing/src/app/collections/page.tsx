@@ -7,7 +7,7 @@ import CollectionsClient, {
 } from './CollectionsClient';
 
 export const metadata = {
-  title: 'Whale Collections - Sight Whale',
+  title: 'Whale Collections - SightWhale.com',
   description:
     'Group multiple whales into collections to track themes, strategies, or portfolios.',
   robots: {

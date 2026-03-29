@@ -125,7 +125,7 @@ If two markets look linked economically but differ legally, **the link is not fr
 
 ---
 
-## 6) What to do on the product side (if you use Sight Whale)
+## 6) What to do on the product side (if you use SightWhale.com)
 
 Tools help most when they match how dependence actually works:
 

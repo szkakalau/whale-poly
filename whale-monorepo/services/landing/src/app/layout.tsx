@@ -32,7 +32,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+  title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
   description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
   keywords: [
     "Polymarket", 
@@ -49,24 +49,24 @@ export const metadata: Metadata = {
     "Real-time Odds Tracking"
   ],
   openGraph: {
-    title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+    title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
     description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
     type: "website",
     url: "https://www.sightwhale.com/",
-    siteName: "Sight Whale",
+    siteName: "SightWhale.com",
     locale: "en_US",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Sight Whale — Follow the Smart Money on Polymarket and Prediction Markets"
+        alt: "SightWhale.com — Follow the Smart Money on Polymarket and Prediction Markets"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sight Whale — Follow Smart Money on Polymarket & Win More",
+    title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
     description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
     images: ["/opengraph-image"]
   },

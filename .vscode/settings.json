@@ -1,0 +1,4 @@
+{
+    "cursor.general.disableHttp1SSE": true,
+    "cursor.general.disableHttp2": false
+}

@@ -3,12 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Privacy — Sight Whale',
-  description: 'Privacy policy for Sight Whale.',
+  title: 'Privacy — SightWhale.com',
+  description: 'Privacy policy for SightWhale.com.',
   alternates: { canonical: '/privacy' },
   openGraph: {
-    title: 'Privacy — Sight Whale',
-    description: 'Privacy policy for Sight Whale.',
+    title: 'Privacy — SightWhale.com',
+    description: 'Privacy policy for SightWhale.com.',
     type: 'website',
     url: 'https://www.sightwhale.com/privacy',
   },
