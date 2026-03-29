@@ -439,11 +439,10 @@ export default async function PolymarketAlertsTlPage() {
         </section>
 
         <section className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-7 md:p-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Refund / Cancel</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Cancel Policy</h2>
           <div className="mt-4 space-y-2 text-gray-100">
             <p>Cancel anytime</p>
             <p>No questions asked</p>
-            <p>Refund within 7 days</p>
           </div>
           <p className="mt-5 text-sm text-gray-300">Clear exit policy so you can test the service with lower decision pressure.</p>
         </section>
