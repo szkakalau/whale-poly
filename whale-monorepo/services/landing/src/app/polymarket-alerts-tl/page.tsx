@@ -12,6 +12,7 @@ import {
   PolymarketAlertsClosingCta,
   PolymarketAlertsPostPricingFaqAndGuarantee,
 } from './PolymarketAlertsFaqRiskClosing';
+import { PolymarketAlertsPricingCompare } from './PolymarketAlertsPricingCompare';
 
 export const metadata = {
   title: 'Polymarket Whale Alerts - Information Edge for Traders',
@@ -368,28 +369,22 @@ export default async function PolymarketAlertsTlPage() {
 
         <PolymarketAlertsPrePricing />
 
-        <section className="rounded-2xl border border-violet-400/30 bg-violet-500/10 p-7 md:p-10 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">PRICING</h2>
-          <p className="mt-3 text-gray-200">Simple subscription. No commitment.</p>
-          <h3 className="mt-4 text-4xl md:text-5xl font-black text-white">$29 / month</h3>
-          <p className="mt-4 text-gray-200">Try it for one month. If it doesn&apos;t provide value, cancel anytime.</p>
-          <p className="mt-2 text-sm text-gray-300">No contracts. No lock-in.</p>
-          <Link href="/subscribe" className="mt-6 inline-flex items-center justify-center rounded-xl bg-violet-500 px-7 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors">
-            Start With Better Timing
-          </Link>
-        </section>
+        <PolymarketAlertsPricingCompare />
 
         <PolymarketAlertsPostPricingFaqAndGuarantee />
 
         <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Why Is This So Cheap?</h2>
-          <p className="mt-4 text-gray-200">Why only $29?</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Why start at $29 Pro?</h2>
+          <p className="mt-4 text-gray-200">
+            Pro is a lean entry so you can validate whale alerts in live markets without a big upfront bet. When timing
+            starts to matter every day, most traders step up to <span className="text-white font-medium">Lite ($59)</span>{' '}
+            for faster delivery, filters, and priority routing.
+          </p>
           <div className="mt-4 space-y-3 text-gray-200">
-            <p>Because this is a lean, signal-first subscription focused on one job: faster whale visibility.</p>
-            <p>We keep pricing accessible so active Polymarket traders can test real alert value in live markets without high upfront cost.</p>
-            <p>As coverage depth and alert infrastructure expand, pricing will be revised for new subscribers.</p>
+            <p>We keep the entry tier accessible on purpose—then let you upgrade when the signal speed pays for itself.</p>
+            <p>As coverage depth and alert infrastructure expand, new tiers (like Whale) will open first to waitlist members.</p>
           </div>
-          <p className="mt-5 text-sm text-gray-300">Current pricing is an early access rate for users who join at this stage.</p>
+          <p className="mt-5 text-sm text-gray-300">Current public pricing is early access; grandfathering may apply for existing subscribers.</p>
         </section>
 
         <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-7 md:p-8 text-center">

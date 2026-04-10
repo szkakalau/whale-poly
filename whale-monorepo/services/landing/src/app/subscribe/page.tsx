@@ -76,7 +76,7 @@ function SubscribeForm() {
     if (code.includes('invalid plan')) {
       return {
         message: 'Selected plan is not available right now.',
-        actions: ['Switch to Pro or Elite and retry.', 'If this looks wrong, contact support.']
+        actions: ['Switch to Pro or Lite and retry.', 'If this looks wrong, contact support.']
       };
     }
     if (code.includes('payment_api_base_url is required')) {
@@ -183,8 +183,8 @@ function SubscribeForm() {
             className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white outline-none focus:border-violet-500/60 transition-all appearance-none"
           >
             <option value="free">Free</option>
-            <option value="pro">Pro</option>
-            <option value="elite">Elite</option>
+            <option value="pro">Pro ($29)</option>
+            <option value="elite">Lite ($59)</option>
           </select>
         </div>
 
@@ -295,7 +295,7 @@ export default function SubscribePage() {
               </ul>
             </div>
             <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
-              <div className="text-xs uppercase tracking-wide text-cyan-200">Elite</div>
+              <div className="text-xs uppercase tracking-wide text-cyan-200">Lite</div>
               <div className="text-lg font-semibold text-white mt-2">$59/mo · $590/yr</div>
               <ul className="mt-3 space-y-2 text-xs text-gray-200">
                 <li>Everything in Pro</li>
