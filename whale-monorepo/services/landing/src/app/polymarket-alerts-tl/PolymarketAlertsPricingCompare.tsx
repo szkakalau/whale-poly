@@ -1,30 +1,45 @@
 import Link from 'next/link';
 
-export function PolymarketAlertsPricingCompare() {
+type PolymarketAlertsPricingCompareProps = {
+  compact?: boolean;
+};
+
+export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAlertsPricingCompareProps) {
+  const shell = compact
+    ? 'p-5 pb-6 pt-6 md:p-6 md:pb-7 md:pt-7'
+    : 'p-8 pb-10 pt-10 md:p-12 md:pb-12 md:pt-12';
+  const grid = compact ? 'mt-6 gap-4 pt-1' : 'mt-12 gap-6 pt-2';
+  const cardPad = compact ? 'p-4 md:p-5' : 'p-6 md:p-8';
+  const listGap = compact ? 'mt-4 space-y-2' : 'mt-6 space-y-3';
+  const btnMt = compact ? 'mt-5' : 'mt-8';
+  const anchor = compact ? 'text-base md:text-lg' : 'text-lg md:text-xl';
+  const h2 = compact ? 'mt-3 text-2xl md:text-3xl' : 'mt-5 text-3xl md:text-4xl';
+  const sub = compact ? 'mt-2 text-xs md:text-sm' : 'mt-3 text-sm md:text-base';
+
   return (
     <section
-      className="relative overflow-x-hidden rounded-3xl border border-white/10 bg-[#0c0c0e] p-8 pb-10 pt-10 md:p-12 md:pb-12 md:pt-12"
+      className={`relative overflow-x-hidden rounded-3xl border border-white/10 bg-[#0c0c0e] ${shell}`}
       aria-labelledby="pricing-compare-heading"
     >
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_70%_20%,#a3e635,transparent_45%),radial-gradient(circle_at_20%_80%,#22d3ee,transparent_40%)]" />
 
-      <p className="relative text-center font-display text-lg font-semibold leading-snug text-lime-200/95 md:text-xl">
+      <p className={`relative text-center font-display font-semibold leading-snug text-lime-200/95 ${anchor}`}>
         Most active traders choose Lite for faster alerts.
       </p>
 
       <h2
         id="pricing-compare-heading"
-        className="font-display relative mt-5 text-center text-3xl font-black tracking-tight text-white md:text-4xl"
+        className={`font-display relative text-center font-black tracking-tight text-white ${h2}`}
       >
         Choose your alert speed
       </h2>
-      <p className="relative mx-auto mt-3 max-w-xl text-center text-sm text-gray-400 md:text-base">
+      <p className={`relative mx-auto max-w-xl text-center text-gray-400 ${sub}`}>
         Most traders upgrade after their first month.
       </p>
 
-      <div className="relative mt-12 grid gap-6 pt-2 lg:grid-cols-3 lg:items-stretch">
+      <div className={`relative grid lg:grid-cols-3 lg:items-stretch ${grid}`}>
         {/* Pro — $29 */}
-        <div className="flex flex-col rounded-2xl border border-white/[0.09] bg-black/50 p-6 md:p-8 shadow-inner shadow-black/40">
+        <div className={`flex flex-col rounded-2xl border border-white/[0.09] bg-black/50 shadow-inner shadow-black/40 ${cardPad}`}>
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-display text-xl font-bold text-white">Pro</h3>
             <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-400">
@@ -35,7 +50,7 @@ export function PolymarketAlertsPricingCompare() {
             $29
             <span className="text-lg font-semibold text-gray-500 md:text-xl">/month</span>
           </p>
-          <ul className="mt-6 flex-1 space-y-3 text-sm text-gray-300">
+          <ul className={`flex-1 text-sm text-gray-300 ${listGap}`}>
             <li className="flex gap-2">
               <span className="text-lime-400/90" aria-hidden>
                 ✓
@@ -63,14 +78,16 @@ export function PolymarketAlertsPricingCompare() {
           </ul>
           <Link
             href="/subscribe?plan=pro"
-            className="mt-8 inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/[0.07] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:border-lime-400/40 hover:bg-lime-400/10"
+            className={`inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/[0.07] px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-lime-400/40 hover:bg-lime-400/10 ${btnMt}`}
           >
             Get started
           </Link>
         </div>
 
         {/* Lite — $59 — featured */}
-        <div className="relative flex flex-col rounded-2xl border-2 border-lime-400/45 bg-gradient-to-b from-lime-400/[0.09] via-black/60 to-black/80 p-6 shadow-[0_0_60px_-12px_rgba(163,230,53,0.35)] md:p-8 lg:scale-[1.02] lg:z-[1]">
+        <div
+          className={`relative flex flex-col rounded-2xl border-2 border-lime-400/45 bg-gradient-to-b from-lime-400/[0.09] via-black/60 to-black/80 shadow-[0_0_60px_-12px_rgba(163,230,53,0.35)] lg:scale-[1.02] lg:z-[1] ${cardPad}`}
+        >
           <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-lime-400 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-950 shadow-lg">
             Most popular
           </div>
@@ -84,7 +101,7 @@ export function PolymarketAlertsPricingCompare() {
             $59
             <span className="text-lg font-semibold text-lime-200/70 md:text-xl">/month</span>
           </p>
-          <ul className="mt-6 flex-1 space-y-3 text-sm text-gray-200">
+          <ul className={`flex-1 text-sm text-gray-200 ${listGap}`}>
             <li className="flex gap-2">
               <span className="text-lime-400" aria-hidden>
                 ✓
@@ -126,14 +143,14 @@ export function PolymarketAlertsPricingCompare() {
           </ul>
           <Link
             href="/subscribe?plan=elite"
-            className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-lime-400 px-5 py-3.5 text-sm font-bold text-zinc-950 shadow-[0_0_32px_-8px_rgba(163,230,53,0.55)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
+            className={`inline-flex w-full items-center justify-center rounded-xl bg-lime-400 px-5 py-3 text-sm font-bold text-zinc-950 shadow-[0_0_32px_-8px_rgba(163,230,53,0.55)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99] ${btnMt}`}
           >
             Upgrade to Lite
           </Link>
         </div>
 
         {/* Whale — $99 — coming soon */}
-        <div className="flex flex-col rounded-2xl border border-dashed border-white/20 bg-black/35 p-6 md:p-8 opacity-95">
+        <div className={`flex flex-col rounded-2xl border border-dashed border-white/20 bg-black/35 opacity-95 ${cardPad}`}>
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-display text-xl font-bold text-white">Whale</h3>
             <span className="rounded-full border border-amber-400/35 bg-amber-500/15 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-200">
@@ -145,7 +162,7 @@ export function PolymarketAlertsPricingCompare() {
             $99
             <span className="text-lg font-semibold text-gray-600 md:text-xl">/month</span>
           </p>
-          <ul className="mt-6 flex-1 space-y-3 text-sm text-gray-500">
+          <ul className={`flex-1 text-sm text-gray-500 ${listGap}`}>
             <li className="flex gap-2">
               <span className="text-gray-600" aria-hidden>
                 ◇
@@ -173,14 +190,14 @@ export function PolymarketAlertsPricingCompare() {
           </ul>
           <a
             href="mailto:support@sightwhale.com?subject=Whale%20tier%20waitlist"
-            className="mt-8 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-transparent px-5 py-3.5 text-sm font-semibold text-gray-400 transition-colors hover:border-amber-400/40 hover:text-amber-100"
+            className={`inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-transparent px-5 py-3 text-sm font-semibold text-gray-400 transition-colors hover:border-amber-400/40 hover:text-amber-100 ${btnMt}`}
           >
             Join the waitlist
           </a>
         </div>
       </div>
 
-      <p className="relative mt-8 text-center text-xs text-gray-500">
+      <p className={`relative text-center text-xs text-gray-500 ${compact ? 'mt-5' : 'mt-8'}`}>
         No contracts. Cancel anytime on paid tiers. Whale launches when infrastructure is ready—we&apos;ll email waitlist
         first.
       </p>

@@ -39,12 +39,22 @@ const traderUseBullets = [
   'Understand where large money is positioning',
 ] as const;
 
-export function PolymarketAlertsConversionAfterHero() {
+export function PolymarketAlertsConversionAfterHero({ compact = false }: { compact?: boolean }) {
+  const pad = compact ? 'p-5 md:p-6' : 'p-8 md:p-12';
+  const caseList = compact ? 'mt-6 space-y-4' : 'mt-10 space-y-6';
+  const caseArt = compact ? 'p-4 pl-4 md:p-5 md:pl-8' : 'p-6 pl-5 md:p-8 md:pl-10';
+  const speedGrid = compact ? 'mt-5 gap-3' : 'mt-8 gap-4';
+  const speedCard = compact ? 'p-4' : 'p-6';
+  const volGrid = compact ? 'mt-5 gap-3' : 'mt-8 gap-4';
+  const volCard = compact ? 'px-4 py-4' : 'px-5 py-6';
+  const useList = compact ? 'mt-5 space-y-2' : 'mt-8 space-y-4';
+  const useItem = compact ? 'px-3 py-2 text-sm' : 'px-4 py-3';
+
   return (
     <>
       {/* SECTION 1 — Narrative proof (case studies) */}
       <section
-        className="group/section relative overflow-hidden rounded-3xl border border-lime-400/20 bg-[#070807]/90 p-8 md:p-12 shadow-[0_0_80px_-20px_rgba(163,230,53,0.25)]"
+        className={`group/section relative overflow-hidden rounded-3xl border border-lime-400/20 bg-[#070807]/90 shadow-[0_0_80px_-20px_rgba(163,230,53,0.25)] ${pad}`}
         aria-labelledby="proof-case-studies-heading"
       >
         <div
@@ -74,11 +84,11 @@ export function PolymarketAlertsConversionAfterHero() {
           See how whale activity appears before major market movement.
         </p>
 
-        <div className="relative mt-10 space-y-6">
+        <div className={`relative ${caseList}`}>
           {caseStudies.map((cs, i) => (
             <article
               key={cs.n}
-              className="relative rounded-2xl border border-white/[0.08] bg-black/40 p-6 pl-5 shadow-inner shadow-black/40 md:p-8 md:pl-10"
+              className={`relative rounded-2xl border border-white/[0.08] bg-black/40 shadow-inner shadow-black/40 ${caseArt}`}
               style={{
                 animationDelay: `${i * 80}ms`,
               }}
@@ -121,20 +131,20 @@ export function PolymarketAlertsConversionAfterHero() {
           ))}
         </div>
 
-        <p className="relative mt-8 text-center text-sm text-gray-500">
+        <p className={`relative text-center text-sm text-gray-500 ${compact ? 'mt-5' : 'mt-8'}`}>
           Evidence from representative alert → price paths, not performance promises.
         </p>
       </section>
 
       {/* SECTION 2 — Speed advantage */}
       <section
-        className="rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-violet-600/[0.06] p-8 md:p-12"
+        className={`rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-violet-600/[0.06] ${pad}`}
         aria-labelledby="speed-edge-heading"
       >
         <h2 id="speed-edge-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
           Speed is the entire edge
         </h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className={`grid md:grid-cols-3 ${speedGrid}`}>
           {[
             {
               label: 'Retail traders',
@@ -151,7 +161,7 @@ export function PolymarketAlertsConversionAfterHero() {
           ].map((col) => (
             <div
               key={col.label}
-              className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-6 text-center md:text-left"
+              className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 text-center md:text-left ${speedCard}`}
             >
               <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">{col.label}</p>
@@ -164,7 +174,9 @@ export function PolymarketAlertsConversionAfterHero() {
               <p className="mt-3 text-sm text-gray-400">{col.sub}</p>
             </div>
           ))}
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-6 text-center md:text-left md:flex md:flex-col md:justify-center">
+          <div
+            className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 text-center md:text-left md:flex md:flex-col md:justify-center ${speedCard}`}
+          >
             <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">Markets monitored</p>
             <p className="font-display mt-4 text-2xl font-black leading-snug text-white md:text-3xl">
@@ -177,16 +189,16 @@ export function PolymarketAlertsConversionAfterHero() {
 
       {/* SECTION 3 — Volume / cadence */}
       <section
-        className="rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.07] to-black/40 p-8 md:p-12"
+        className={`rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.07] to-black/40 ${pad}`}
         aria-labelledby="volume-alerts-heading"
       >
         <h2 id="volume-alerts-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
           Hundreds of real whale alerts every week
         </h2>
-        <p className="mt-4 max-w-2xl text-lg text-amber-100/85">
+        <p className={`max-w-2xl text-amber-100/85 ${compact ? 'mt-3 text-base' : 'mt-4 text-lg'}`}>
           You are not paying for one signal. You are getting continuous market intelligence.
         </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className={`grid sm:grid-cols-3 ${volGrid}`}>
           {[
             { k: 'Alerts last 7 days', v: '120+', hint: 'Estimated live volume' },
             { k: 'Active markets tracked', v: '100+', hint: 'Broad Polymarket coverage' },
@@ -194,7 +206,7 @@ export function PolymarketAlertsConversionAfterHero() {
           ].map((row) => (
             <div
               key={row.k}
-              className="rounded-2xl border border-white/10 bg-black/45 px-5 py-6 text-center sm:text-left"
+              className={`rounded-2xl border border-white/10 bg-black/45 text-center sm:text-left ${volCard}`}
             >
               <p className="text-xs uppercase tracking-[0.16em] text-amber-200/70">{row.k}</p>
               <p className="font-display mt-3 text-3xl font-black text-white md:text-4xl">{row.v}</p>
@@ -206,17 +218,17 @@ export function PolymarketAlertsConversionAfterHero() {
 
       {/* SECTION 4 — Use imagination / workflow */}
       <section
-        className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 md:p-12"
+        className={`rounded-3xl border border-white/10 bg-white/[0.04] ${pad}`}
         aria-labelledby="how-traders-use-heading"
       >
         <h2 id="how-traders-use-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
           How traders use whale alerts
         </h2>
-        <ul className="mt-8 space-y-4">
+        <ul className={useList}>
           {traderUseBullets.map((line) => (
             <li
               key={line}
-              className="flex gap-4 rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3 text-gray-200"
+              className={`flex gap-3 rounded-xl border border-white/[0.06] bg-black/25 text-gray-200 ${useItem}`}
             >
               <span className="mt-0.5 font-mono text-lime-400" aria-hidden>
                 ●
@@ -230,20 +242,25 @@ export function PolymarketAlertsConversionAfterHero() {
   );
 }
 
-export function PolymarketAlertsPrePricing() {
+export function PolymarketAlertsPrePricing({ compact = false }: { compact?: boolean }) {
+  const shell = compact
+    ? 'px-6 py-8 text-center md:px-10 md:py-10'
+    : 'px-8 py-12 text-center md:px-14 md:py-16';
+  const h2 = compact
+    ? 'font-display relative text-2xl font-black leading-tight tracking-tight text-white md:text-4xl'
+    : 'font-display relative text-3xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-[3.25rem]';
+  const sub = compact ? 'relative mx-auto mt-4 max-w-xl text-sm text-violet-100/90 md:text-base' : 'relative mx-auto mt-6 max-w-xl text-base text-violet-100/90 md:text-lg';
+
   return (
     <section
-      className="relative overflow-hidden rounded-3xl border border-violet-400/35 bg-gradient-to-br from-violet-600/25 via-fuchsia-600/10 to-transparent px-8 py-12 text-center md:px-14 md:py-16"
+      className={`relative overflow-hidden rounded-3xl border border-violet-400/35 bg-gradient-to-br from-violet-600/25 via-fuchsia-600/10 to-transparent ${shell}`}
       aria-labelledby="one-trade-heading"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]" />
-      <h2
-        id="one-trade-heading"
-        className="font-display relative text-3xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-[3.25rem]"
-      >
+      <h2 id="one-trade-heading" className={h2}>
         One trade can pay for the subscription
       </h2>
-      <p className="relative mx-auto mt-6 max-w-xl text-base text-violet-100/90 md:text-lg">
+      <p className={sub}>
         If alerts help you avoid one bad entry or catch one early move, the subscription pays for itself.
       </p>
     </section>

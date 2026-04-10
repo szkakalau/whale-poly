@@ -36,6 +36,7 @@ export const metadata = {
   },
 };
 
+/** First six screenshots — keeps the proof wall shorter for paid-traffic scroll depth */
 const alertWallImages = [
   '/images/alerts/ScreenShot_2026-03-29_003514_416.png',
   '/images/alerts/ScreenShot_2026-03-29_003612_184.png',
@@ -43,10 +44,16 @@ const alertWallImages = [
   '/images/alerts/ScreenShot_2026-03-29_003657_869.png',
   '/images/alerts/ScreenShot_2026-03-29_003721_930.png',
   '/images/alerts/ScreenShot_2026-03-29_003736_900.png',
-  '/images/alerts/ScreenShot_2026-03-29_003751_850.png',
-  '/images/alerts/ScreenShot_2026-03-29_003807_061.png',
-  '/images/alerts/ScreenShot_2026-03-29_003830_698.png',
 ];
+
+const whatYouGetItems = [
+  'Real-time whale bet alerts',
+  'Entry timing context',
+  'Market movement signals',
+  'Telegram notifications',
+  '24/7 monitoring',
+  'Less manual scanning',
+] as const;
 
 type ProofStats = {
   linkedTraders: number;
@@ -116,74 +123,87 @@ export default async function PolymarketAlertsTlPage() {
 
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 pt-32 pb-24 relative space-y-10">
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-8 md:p-12">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-5">HERO</p>
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight text-white max-w-4xl">
+      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-6 pt-28 pb-16 relative space-y-6 md:space-y-7">
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">HERO</p>
+          <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white max-w-4xl">
             Stop Entering Polymarket After The Move Started.
           </h1>
-          <p className="mt-6 text-lg text-gray-300 max-w-3xl">
+          <p className="mt-4 text-base md:text-lg text-gray-300 max-w-3xl">
             See whale-sized bets in real time and act with an information edge before most traders notice.
           </p>
-          <ul className="mt-8 grid gap-3 md:grid-cols-3">
-            <li className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-gray-200">Track large Polymarket bets automatically</li>
-            <li className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-gray-200">Get instant Telegram alerts</li>
-            <li className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-gray-200">Stop missing early positioning</li>
+          <ul className="mt-5 grid gap-2 md:grid-cols-3">
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
+              Track large Polymarket bets automatically
+            </li>
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
+              Get instant Telegram alerts
+            </li>
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
+              Stop missing early positioning
+            </li>
           </ul>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Link
-              href="/subscribe"
+              href="/subscribe?plan=pro"
               className="inline-flex items-center justify-center rounded-xl bg-violet-500 px-6 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors"
             >
               Get My Timing Edge
             </Link>
           </div>
-          <p className="mt-4 text-sm text-gray-400">Cancel anytime. No contracts.</p>
+          <p className="mt-3 text-sm text-gray-400">Cancel anytime. No contracts.</p>
         </section>
 
-        <PolymarketAlertsConversionAfterHero />
-
-        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Real Proof</h2>
-          <p className="mt-3 text-gray-200">Live usage signals from the platform pipeline.</p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-2xl font-black text-white">300+</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Traders Linked</p>
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Real Proof</h2>
+          <p className="mt-2 text-sm text-gray-200">Live usage signals from the platform pipeline.</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+              <p className="text-xl font-black text-white">300+</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Traders Linked</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.trackedWhaleBets)}+</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Whale Bets Tracked</p>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.trackedWhaleBets)}+</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Whale Bets Tracked</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-2xl font-black text-white">{formatCompactInt(proofStats.alerts30d)}+</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Alerts Sent (30D)</p>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.alerts30d)}+</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Alerts Sent (30D)</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-2xl font-black text-white">24/7</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-300">Monitoring Uptime</p>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+              <p className="text-xl font-black text-white">24/7</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Monitoring Uptime</p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">What This Actually Changes For You</h2>
-          <p className="mt-4 text-gray-200 leading-relaxed">
-            This is the practical outcome, not theory. You stop reacting to moves after they start and begin operating with earlier visibility.
+        <PolymarketAlertsPrePricing compact />
+
+        <PolymarketAlertsPricingCompare compact />
+
+        <PolymarketAlertsPostPricingFaqAndGuarantee compact />
+
+        <PolymarketAlertsConversionAfterHero compact />
+
+        <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">What This Actually Changes For You</h2>
+          <p className="mt-3 text-sm text-gray-200 leading-relaxed">
+            This is the practical outcome, not theory. You stop reacting to moves after they start and begin operating
+            with earlier visibility.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Before</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-300">
+              <ul className="mt-2 space-y-1.5 text-xs text-gray-300">
                 <li>• You discover big bets after price already moved</li>
                 <li>• You enter late and chase worse entries</li>
                 <li>• You spend hours manually scanning markets</li>
                 <li>• You make rushed decisions with limited context</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">With SightWhale</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+              <ul className="mt-2 space-y-1.5 text-xs text-gray-200">
                 <li>• You see large positioning earlier</li>
                 <li>• You stop chasing entries after the move starts</li>
                 <li>• You save daily monitoring time</li>
@@ -191,221 +211,186 @@ export default async function PolymarketAlertsTlPage() {
               </ul>
             </div>
           </div>
-          <p className="mt-5 text-white font-medium">Outcome: less chasing, less noise, better timing windows.</p>
+          <p className="mt-3 text-sm text-white font-medium">Outcome: less chasing, less noise, better timing windows.</p>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">THE PROBLEM</h2>
-          <div className="mt-5 space-y-4 text-gray-300 leading-relaxed">
-            <p>Polymarket moves fast.</p>
-            <p>Very fast.</p>
-            <p>Large bets can shift probabilities within minutes. By the time most traders notice:</p>
-            <ul className="space-y-2">
-              <li>• The price already moved</li>
-              <li>• The edge already shrank</li>
-              <li>• The opportunity already changed</li>
-            </ul>
-            <p>Retail traders don&apos;t lose because they are wrong. They lose because they are late.</p>
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Why timing beats being right</h2>
+          <div className="mt-3 space-y-3 text-sm text-gray-300 leading-relaxed">
+            <p>
+              Polymarket reprices in minutes. By the time most traders notice, the probability already moved—retail
+              doesn&apos;t lose because they&apos;re wrong, they lose because they&apos;re late.
+            </p>
+            <p className="text-gray-200">
+              In every market, size leaves signals: stocks (institutions), crypto (whales), prediction markets (large
+              bets). SightWhale surfaces that flow so you can decide while timing still matters.
+            </p>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-cyan-400/20 bg-cyan-500/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">THE OPPORTUNITY</h2>
-          <div className="mt-5 space-y-4 text-gray-200 leading-relaxed">
-            <p>In every financial market, large capital leaves signals.</p>
-            <ul className="space-y-2">
-              <li>• Stocks → institutional flow</li>
-              <li>• Crypto → whale wallets</li>
-              <li>• Prediction markets → large bets</li>
-            </ul>
-            <p>Tracking smart money behavior is one of the oldest trading edges.</p>
-            <p className="text-white font-medium">SightWhale simply makes it visible.</p>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">WHAT YOU GET</h2>
-          <p className="mt-4 text-gray-300">Your subscription includes:</p>
-          <ul className="mt-5 space-y-3 text-gray-200">
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• Real-time whale bet alerts</li>
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• Entry timing context</li>
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• Market movement signals</li>
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• Instant Telegram notifications</li>
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• 24/7 automated monitoring</li>
-            <li className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">• Time saved from manual tracking</li>
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">What you get</h2>
+          <p className="mt-2 text-xs text-gray-400">Your subscription includes:</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {whatYouGetItems.map((item) => (
+              <li
+                key={item}
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-gray-200"
+              >
+                {item}
+              </li>
+            ))}
           </ul>
-          <p className="mt-5 text-white font-medium">You focus on decisions. We monitor the markets.</p>
+          <p className="mt-3 text-sm text-white font-medium">You focus on decisions. We monitor the markets.</p>
         </section>
 
-        <section className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">PROOF: WHO IS ALREADY USING THIS</h2>
-          <p className="mt-4 text-gray-200">
-            This is already used by traders who are actively placing bets and need faster visibility, not passive market spectators.
+        <section className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Who is already using this</h2>
+          <p className="mt-2 text-sm text-gray-200">
+            Traders who actively place bets and need faster visibility—not passive spectators.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">User Types</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">User types</p>
+              <ul className="mt-2 space-y-1 text-xs text-gray-200">
                 <li>• Active Polymarket traders</li>
-                <li>• Crypto bettors rotating across fast markets</li>
-                <li>• Sports bettors using event-driven timing</li>
-                <li>• Information-edge traders managing multiple markets</li>
+                <li>• Crypto bettors in fast markets</li>
+                <li>• Sports bettors, event-driven timing</li>
+                <li>• Multi-market information traders</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">How They Use It</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
-                <li>• Pre-event positioning before momentum expands</li>
-                <li>• Intraday reaction when whale flow appears suddenly</li>
-                <li>• Cross-checking entries instead of blind market chasing</li>
-                <li>• Reducing manual scan time during volatile windows</li>
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">How they use it</p>
+              <ul className="mt-2 space-y-1 text-xs text-gray-200">
+                <li>• Pre-event positioning</li>
+                <li>• Intraday reaction to whale flow</li>
+                <li>• Cross-checking entries</li>
+                <li>• Less manual scanning in volatility</li>
               </ul>
             </div>
           </div>
-          <p className="mt-5 text-white font-medium">
-            Social signal matters: serious traders already pay for timing visibility because late information is expensive.
-          </p>
         </section>
 
-        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Real Alerts From Our Users</h2>
-          <p className="mt-4 text-gray-200">Real Telegram alert screenshots from actual delivery examples.</p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Real alerts from our users</h2>
+          <p className="mt-2 text-sm text-gray-200">Telegram delivery examples (real screenshots).</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {alertWallImages.map((src, index) => (
-              <div key={`${src}-${index}`} className="rounded-xl border border-white/10 bg-black/25 p-2">
+              <div key={`${src}-${index}`} className="rounded-lg border border-white/10 bg-black/25 p-1 overflow-hidden">
                 <Image
                   src={src}
                   alt={`Real SightWhale Telegram alert screenshot ${index + 1}`}
                   width={1080}
                   height={1400}
-                  className="w-full h-auto rounded-lg"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="w-full h-auto max-h-[min(52vh,520px)] rounded-md object-cover object-top"
                 />
               </div>
             ))}
           </div>
-          <p className="mt-5 text-sm text-gray-300">No mockups. These are real screenshot examples from Telegram alert delivery.</p>
+          <p className="mt-3 text-xs text-gray-400">No mockups—actual alert delivery examples.</p>
         </section>
 
-        <section className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Who is this for?</h2>
-          <p className="mt-4 text-gray-200">Built for fast-market users who want an information edge, not slow research cycles.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
+        <section className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Who is this for?</h2>
+          <p className="mt-2 text-sm text-gray-200">Fast-market users who want an edge—not slow research cycles.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
             {['Crypto traders', 'Polymarket traders', 'Airdrop hunters', 'Degens', 'Data nerds'].map((tag) => (
-              <span key={tag} className="rounded-full border border-white/15 bg-black/30 px-4 py-2 text-sm font-medium text-gray-100">
+              <span
+                key={tag}
+                className="rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-medium text-gray-100"
+              >
                 {tag}
               </span>
             ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">HOW TO START</h2>
-          <p className="mt-4 text-gray-200">Three quick steps to remove setup friction and start receiving signals.</p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">1</p>
-              <p className="mt-2 text-lg font-semibold text-white">Subscribe</p>
-              <p className="mt-2 text-sm text-gray-300">Start your plan and unlock real-time whale signal delivery.</p>
+        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Get started in three steps</h2>
+          <p className="mt-2 text-sm text-gray-200">Subscribe, connect Telegram, receive signals—no dashboards.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">1 · Subscribe</p>
+              <p className="mt-2 text-sm text-gray-300">
+                Pick Pro or Lite at checkout. We monitor Polymarket 24/7 and flag whale-sized prints.
+              </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">2</p>
-              <p className="mt-2 text-lg font-semibold text-white">Connect Telegram</p>
-              <p className="mt-2 text-sm text-gray-300">Link your Telegram once so alerts can reach you instantly.</p>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">2 · Connect Telegram</p>
+              <p className="mt-2 text-sm text-gray-300">
+                Alerts go to Telegram only. Link once from the bot—no extra logins.
+              </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">3</p>
-              <p className="mt-2 text-lg font-semibold text-white">Receive Alerts Instantly</p>
-              <p className="mt-2 text-sm text-gray-300">Get signal updates in real time and act while timing still matters.</p>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">3 · Real-time alerts</p>
+              <p className="mt-2 text-sm text-gray-300">
+                Large bets surface fast; you get instant notifications while timing still matters.
+              </p>
             </div>
           </div>
+          <p className="mt-3 text-sm text-white font-medium">No dashboards. No complexity. Just alerts.</p>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">HOW IT WORKS</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="text-xs text-cyan-300 uppercase tracking-[0.2em]">Step 1 — We monitor markets 24/7</div>
-              <p className="mt-2 text-sm text-gray-300">Our system continuously tracks large bets across Polymarket.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="text-xs text-cyan-300 uppercase tracking-[0.2em]">Step 2 — We detect unusual activity</div>
-              <p className="mt-2 text-sm text-gray-300">When whale-sized positions appear, they are flagged instantly.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="text-xs text-cyan-300 uppercase tracking-[0.2em]">Step 3 — You receive alerts immediately</div>
-              <p className="mt-2 text-sm text-gray-300">Signals are delivered directly to Telegram in real time.</p>
-            </div>
-          </div>
-          <p className="mt-5 text-white font-medium">No dashboards. No complexity. Just alerts.</p>
-        </section>
-
-        <section className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">WHO THIS IS NOT FOR</h2>
-          <p className="mt-4 text-gray-200">
-            If this section describes you, do not subscribe. This product is intentionally narrow.
-          </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Not A Fit</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+        <section className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Who this is not for</h2>
+          <p className="mt-2 text-sm text-gray-200">If this describes you, don&apos;t subscribe.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Not a fit</p>
+              <ul className="mt-2 space-y-1 text-xs text-gray-200">
                 <li>• You never trade on Polymarket</li>
                 <li>• You want guaranteed profits</li>
                 <li>• You don&apos;t make your own decisions</li>
                 <li>• You won&apos;t act on time-sensitive information</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/25 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Good Fit</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Good fit</p>
+              <ul className="mt-2 space-y-1 text-xs text-gray-200">
                 <li>• You already risk capital on prediction markets</li>
                 <li>• You care about entry timing and visibility</li>
                 <li>• You want signal speed, not hype</li>
-                <li>• You prefer data alerts over emotional decision-making</li>
+                <li>• You prefer data alerts over emotional decisions</li>
               </ul>
             </div>
           </div>
-          <p className="mt-5 text-white font-medium">This is for traders who want better information, not promises.</p>
+          <p className="mt-3 text-sm text-white font-medium">Better information—not promises.</p>
         </section>
 
-        <PolymarketAlertsPrePricing />
-
-        <PolymarketAlertsPricingCompare />
-
-        <PolymarketAlertsPostPricingFaqAndGuarantee />
-
-        <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Why start at $29 Pro?</h2>
-          <p className="mt-4 text-gray-200">
+        <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-5 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Why start at $29 Pro?</h2>
+          <p className="mt-3 text-sm text-gray-200">
             Pro is a lean entry so you can validate whale alerts in live markets without a big upfront bet. When timing
             starts to matter every day, most traders step up to <span className="text-white font-medium">Lite ($59)</span>{' '}
             for faster delivery, filters, and priority routing.
           </p>
-          <div className="mt-4 space-y-3 text-gray-200">
-            <p>We keep the entry tier accessible on purpose—then let you upgrade when the signal speed pays for itself.</p>
-            <p>As coverage depth and alert infrastructure expand, new tiers (like Whale) will open first to waitlist members.</p>
+          <div className="mt-3 space-y-2 text-sm text-gray-200">
+            <p>We keep the entry tier accessible on purpose—upgrade when signal speed pays for itself.</p>
+            <p>New tiers (like Whale) open to waitlist first as infrastructure expands.</p>
           </div>
-          <p className="mt-5 text-sm text-gray-300">Current public pricing is early access; grandfathering may apply for existing subscribers.</p>
+          <p className="mt-3 text-xs text-gray-400">Early-access public pricing; grandfathering may apply.</p>
         </section>
 
-        <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-7 md:p-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">TIMING MATTERS</h2>
-          <div className="mt-5 space-y-3 text-gray-200">
+        <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-5 md:p-6 text-center">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Timing matters</h2>
+          <div className="mt-3 space-y-1 text-sm text-gray-200">
             <p>Markets move 24/7.</p>
             <p>Whales don&apos;t wait.</p>
             <p>Opportunities don&apos;t repeat.</p>
           </div>
-          <div className="mt-6 rounded-xl border border-amber-200/20 bg-black/30 p-5 text-left max-w-3xl mx-auto">
-            <p className="text-sm text-amber-100">Every day you trade without early whale visibility:</p>
-            <ul className="mt-3 space-y-2 text-sm text-gray-200">
+          <div className="mt-4 rounded-xl border border-amber-200/20 bg-black/30 p-4 text-left max-w-2xl mx-auto">
+            <p className="text-xs text-amber-100">Every day you trade without early whale visibility:</p>
+            <ul className="mt-2 space-y-1 text-xs text-gray-200">
               <li>• You enter after the first probability shift</li>
               <li>• You accept tighter entries and fewer options</li>
-              <li>• You keep competing with traders who saw the move earlier</li>
+              <li>• You compete with traders who saw the move earlier</li>
             </ul>
           </div>
-          <p className="mt-5 text-white font-semibold">Delay compounds. Early visibility does not.</p>
+          <p className="mt-3 text-sm text-white font-semibold">Delay compounds. Early visibility does not.</p>
         </section>
 
-        <PolymarketAlertsClosingCta />
+        <PolymarketAlertsClosingCta compact />
       </main>
 
       <Footer />
