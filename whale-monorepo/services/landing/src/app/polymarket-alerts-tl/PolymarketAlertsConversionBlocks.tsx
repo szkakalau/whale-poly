@@ -1,0 +1,251 @@
+const caseStudies = [
+  {
+    n: 1,
+    alert: '$38,000 YES bet',
+    market: 'Will Trump win the 2024 election?',
+    timeUtc: '14:12 UTC',
+    moveFrom: '54%',
+    moveTo: '63%',
+    minutes: 22,
+    why: 'Retail traders typically notice this move only after price spikes.',
+  },
+  {
+    n: 2,
+    alert: '$27,500 NO bet',
+    market: 'US recession in 2025?',
+    timeUtc: '09:47 UTC',
+    moveFrom: '41%',
+    moveTo: '35%',
+    minutes: 18,
+    why: 'Whale positioning often happens before the narrative spreads.',
+  },
+  {
+    n: 3,
+    alert: '$51,200 YES bet',
+    market: 'Ethereum ETF approved in 2025?',
+    timeUtc: '17:03 UTC',
+    moveFrom: '48%',
+    moveTo: '58%',
+    minutes: 31,
+    why: 'Large traders position early. Retail reacts later.',
+  },
+] as const;
+
+const traderUseBullets = [
+  'Spot early positioning before major news',
+  'Discover markets you weren’t watching',
+  'Confirm conviction before entering a trade',
+  'Avoid entering after large price moves',
+  'Understand where large money is positioning',
+] as const;
+
+export function PolymarketAlertsConversionAfterHero() {
+  return (
+    <>
+      {/* SECTION 1 — Narrative proof (case studies) */}
+      <section
+        className="group/section relative overflow-hidden rounded-3xl border border-lime-400/20 bg-[#070807]/90 p-8 md:p-12 shadow-[0_0_80px_-20px_rgba(163,230,53,0.25)]"
+        aria-labelledby="proof-case-studies-heading"
+      >
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(163, 230, 53, 0.35) 2px,
+              rgba(163, 230, 53, 0.35) 3px
+            )`,
+          }}
+        />
+        <div className="pointer-events-none absolute -right-16 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lime-400/10 blur-[80px]" />
+
+        <p className="relative font-mono text-[11px] uppercase tracking-[0.28em] text-lime-300/90">
+          Real alerts → Real market moves
+        </p>
+        <h2
+          id="proof-case-studies-heading"
+          className="font-display relative mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl"
+        >
+          Real alerts. Real markets. Real time.
+        </h2>
+        <p className="relative mt-3 max-w-2xl text-base text-gray-300 md:text-lg">
+          See how whale activity appears before major market movement.
+        </p>
+
+        <div className="relative mt-10 space-y-6">
+          {caseStudies.map((cs, i) => (
+            <article
+              key={cs.n}
+              className="relative rounded-2xl border border-white/[0.08] bg-black/40 p-6 pl-5 shadow-inner shadow-black/40 md:p-8 md:pl-10"
+              style={{
+                animationDelay: `${i * 80}ms`,
+              }}
+            >
+              <div className="absolute left-0 top-6 bottom-6 w-1 rounded-full bg-gradient-to-b from-lime-400/90 via-lime-300/50 to-transparent md:top-8 md:bottom-8" />
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="font-mono text-xs uppercase tracking-[0.2em] text-lime-200/80">
+                  Case Study #{cs.n}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Alert detected</p>
+                  <p className="font-mono text-lg font-semibold text-lime-100 md:text-xl">{cs.alert}</p>
+                  <p className="text-sm text-gray-400">
+                    Market: <span className="italic text-gray-200">{cs.market}</span>
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-lime-400/5 px-4 py-3 font-mono text-sm text-lime-100/95 md:text-right">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-lime-300/70">Time of alert</p>
+                  <p className="mt-1 text-base font-semibold tabular-nums">{cs.timeUtc}</p>
+                </div>
+              </div>
+              <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Market reaction</p>
+                <p className="mt-2 text-gray-100 md:text-lg">
+                  Price moved{' '}
+                  <span className="font-mono font-bold text-lime-300">{cs.moveFrom}</span>
+                  {' → '}
+                  <span className="font-mono font-bold text-lime-200">{cs.moveTo}</span>
+                  {' in the next '}
+                  <span className="font-mono font-semibold text-white">{cs.minutes} minutes</span>
+                </p>
+              </div>
+              <p className="mt-4 border-t border-white/5 pt-4 text-sm leading-relaxed text-gray-400">
+                <span className="font-semibold text-gray-300">Why this matters — </span>
+                {cs.why}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <p className="relative mt-8 text-center text-sm text-gray-500">
+          Evidence from representative alert → price paths, not performance promises.
+        </p>
+      </section>
+
+      {/* SECTION 2 — Speed advantage */}
+      <section
+        className="rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-violet-600/[0.06] p-8 md:p-12"
+        aria-labelledby="speed-edge-heading"
+      >
+        <h2 id="speed-edge-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
+          Speed is the entire edge
+        </h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              label: 'Retail traders',
+              line1: '15–60',
+              line2: 'minutes',
+              sub: 'Notice moves after 15–60 minutes',
+            },
+            {
+              label: 'Whale alerts',
+              line1: '<30',
+              line2: 'seconds',
+              sub: 'Delivered in under 30 seconds',
+            },
+          ].map((col) => (
+            <div
+              key={col.label}
+              className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-6 text-center md:text-left"
+            >
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">{col.label}</p>
+              <p className="font-display mt-4 text-4xl font-black tabular-nums text-white md:text-5xl">
+                {col.line1}
+                <span className="block text-lg font-bold tracking-wide text-cyan-200/90 md:inline md:ml-2 md:text-2xl">
+                  {col.line2}
+                </span>
+              </p>
+              <p className="mt-3 text-sm text-gray-400">{col.sub}</p>
+            </div>
+          ))}
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-6 text-center md:text-left md:flex md:flex-col md:justify-center">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">Markets monitored</p>
+            <p className="font-display mt-4 text-2xl font-black leading-snug text-white md:text-3xl">
+              All active Polymarket markets
+            </p>
+            <p className="mt-3 text-sm text-gray-400">Continuous scanning across the tradable universe we cover</p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3 — Volume / cadence */}
+      <section
+        className="rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.07] to-black/40 p-8 md:p-12"
+        aria-labelledby="volume-alerts-heading"
+      >
+        <h2 id="volume-alerts-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
+          Hundreds of real whale alerts every week
+        </h2>
+        <p className="mt-4 max-w-2xl text-lg text-amber-100/85">
+          You are not paying for one signal. You are getting continuous market intelligence.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            { k: 'Alerts last 7 days', v: '120+', hint: 'Estimated live volume' },
+            { k: 'Active markets tracked', v: '100+', hint: 'Broad Polymarket coverage' },
+            { k: 'Whale wallets monitored', v: 'hundreds', hint: 'Large-position watchlist' },
+          ].map((row) => (
+            <div
+              key={row.k}
+              className="rounded-2xl border border-white/10 bg-black/45 px-5 py-6 text-center sm:text-left"
+            >
+              <p className="text-xs uppercase tracking-[0.16em] text-amber-200/70">{row.k}</p>
+              <p className="font-display mt-3 text-3xl font-black text-white md:text-4xl">{row.v}</p>
+              <p className="mt-2 text-xs text-gray-500">{row.hint}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 4 — Use imagination / workflow */}
+      <section
+        className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 md:p-12"
+        aria-labelledby="how-traders-use-heading"
+      >
+        <h2 id="how-traders-use-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
+          How traders use whale alerts
+        </h2>
+        <ul className="mt-8 space-y-4">
+          {traderUseBullets.map((line) => (
+            <li
+              key={line}
+              className="flex gap-4 rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3 text-gray-200"
+            >
+              <span className="mt-0.5 font-mono text-lime-400" aria-hidden>
+                ●
+              </span>
+              <span className="leading-relaxed">{line}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  );
+}
+
+export function PolymarketAlertsPrePricing() {
+  return (
+    <section
+      className="relative overflow-hidden rounded-3xl border border-violet-400/35 bg-gradient-to-br from-violet-600/25 via-fuchsia-600/10 to-transparent px-8 py-12 text-center md:px-14 md:py-16"
+      aria-labelledby="one-trade-heading"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]" />
+      <h2
+        id="one-trade-heading"
+        className="font-display relative text-3xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-[3.25rem]"
+      >
+        One trade can pay for the subscription
+      </h2>
+      <p className="relative mx-auto mt-6 max-w-xl text-base text-violet-100/90 md:text-lg">
+        If alerts help you avoid one bad entry or catch one early move, the subscription pays for itself.
+      </p>
+    </section>
+  );
+}

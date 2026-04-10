@@ -4,6 +4,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import { unstable_cache } from 'next/cache';
+import {
+  PolymarketAlertsConversionAfterHero,
+  PolymarketAlertsPrePricing,
+} from './PolymarketAlertsConversionBlocks';
+import {
+  PolymarketAlertsClosingCta,
+  PolymarketAlertsPostPricingFaqAndGuarantee,
+} from './PolymarketAlertsFaqRiskClosing';
 
 export const metadata = {
   title: 'Polymarket Whale Alerts - Information Edge for Traders',
@@ -26,33 +34,6 @@ export const metadata = {
     canonical: '/polymarket-alerts-tl',
   },
 };
-
-const faqItems = [
-  {
-    q: 'Is this financial advice?',
-    a: 'No. SightWhale provides market data and alerts only. You make your own decisions.',
-  },
-  {
-    q: 'Can you guarantee profits?',
-    a: 'No trading tool can guarantee profits. Our goal is to give you better information and timing.',
-  },
-  {
-    q: 'Who is this for?',
-    a: 'Anyone actively trading or betting on Polymarket.',
-  },
-  {
-    q: 'Do I need experience?',
-    a: 'Basic understanding of Polymarket is enough.',
-  },
-  {
-    q: 'How are alerts delivered?',
-    a: 'Instantly via Telegram.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. You can cancel your subscription anytime.',
-  },
-];
 
 const alertWallImages = [
   '/images/alerts/ScreenShot_2026-03-29_003514_416.png',
@@ -158,6 +139,8 @@ export default async function PolymarketAlertsTlPage() {
           </div>
           <p className="mt-4 text-sm text-gray-400">Cancel anytime. No contracts.</p>
         </section>
+
+        <PolymarketAlertsConversionAfterHero />
 
         <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">Real Proof</h2>
@@ -355,29 +338,6 @@ export default async function PolymarketAlertsTlPage() {
           <p className="mt-5 text-white font-medium">No dashboards. No complexity. Just alerts.</p>
         </section>
 
-        <section className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">How Traders Actually Use These Alerts</h2>
-          <p className="mt-4 text-gray-200">Outcome proof from real usage behavior, focused on timing and workflow improvements.</p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Trader #1</p>
-              <p className="mt-2 text-sm text-gray-200">Uses alerts to spot early positioning before event-driven spikes and avoid late entries.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Trader #2</p>
-              <p className="mt-2 text-sm text-gray-200">Reduced daily manual market scanning by 2–3 hours by relying on Telegram alert delivery.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Trader #3</p>
-              <p className="mt-2 text-sm text-gray-200">Uses alerts as confirmation before entries instead of chasing moves after probabilities shift.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">Trader #4</p>
-              <p className="mt-2 text-sm text-gray-200">Filters noisy markets faster and focuses only on contracts with meaningful whale activity.</p>
-            </div>
-          </div>
-        </section>
-
         <section className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">WHO THIS IS NOT FOR</h2>
           <p className="mt-4 text-gray-200">
@@ -406,6 +366,8 @@ export default async function PolymarketAlertsTlPage() {
           <p className="mt-5 text-white font-medium">This is for traders who want better information, not promises.</p>
         </section>
 
+        <PolymarketAlertsPrePricing />
+
         <section className="rounded-2xl border border-violet-400/30 bg-violet-500/10 p-7 md:p-10 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white">PRICING</h2>
           <p className="mt-3 text-gray-200">Simple subscription. No commitment.</p>
@@ -417,6 +379,8 @@ export default async function PolymarketAlertsTlPage() {
           </Link>
         </section>
 
+        <PolymarketAlertsPostPricingFaqAndGuarantee />
+
         <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-7 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-white">Why Is This So Cheap?</h2>
           <p className="mt-4 text-gray-200">Why only $29?</p>
@@ -426,25 +390,6 @@ export default async function PolymarketAlertsTlPage() {
             <p>As coverage depth and alert infrastructure expand, pricing will be revised for new subscribers.</p>
           </div>
           <p className="mt-5 text-sm text-gray-300">Current pricing is an early access rate for users who join at this stage.</p>
-        </section>
-
-        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-7 md:p-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">STRONG RISK REVERSAL</h2>
-          <p className="mt-4 text-gray-200">Try it for a month.</p>
-          <p className="mt-2 text-gray-200">Leave anytime.</p>
-          <p className="mt-2 text-gray-200">No commitment.</p>
-          <p className="mt-5 text-white font-medium">
-            Test it in live markets, decide from your own experience, and keep it only if it improves your timing.
-          </p>
-        </section>
-
-        <section className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-7 md:p-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Cancel Policy</h2>
-          <div className="mt-4 space-y-2 text-gray-100">
-            <p>Cancel anytime</p>
-            <p>No questions asked</p>
-          </div>
-          <p className="mt-5 text-sm text-gray-300">Clear exit policy so you can test the service with lower decision pressure.</p>
         </section>
 
         <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-7 md:p-8 text-center">
@@ -465,31 +410,7 @@ export default async function PolymarketAlertsTlPage() {
           <p className="mt-5 text-white font-semibold">Delay compounds. Early visibility does not.</p>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-7 md:p-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">FAQ</h2>
-          <div className="mt-6 space-y-4">
-            {faqItems.map((item) => (
-              <div key={item.q} className="rounded-xl border border-white/10 bg-black/25 p-4">
-                <h3 className="text-white font-semibold">{item.q}</h3>
-                <p className="mt-2 text-sm text-gray-300">{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 via-violet-500/15 to-transparent p-8 md:p-12 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-white">Start Seeing What Large Traders Are Doing.</h2>
-          <p className="mt-4 text-gray-200 max-w-2xl mx-auto">
-            Give yourself an information edge today.
-          </p>
-          <Link
-            href="/subscribe"
-            className="mt-7 inline-flex items-center justify-center rounded-xl bg-cyan-400 px-8 py-3 text-sm font-bold text-black hover:bg-cyan-300 transition-colors"
-          >
-            Give Me The Edge
-          </Link>
-          <p className="mt-3 text-xs text-gray-300">Next markets won&apos;t wait. Cancel anytime.</p>
-        </section>
+        <PolymarketAlertsClosingCta />
       </main>
 
       <Footer />
