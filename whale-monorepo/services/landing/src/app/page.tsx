@@ -15,6 +15,31 @@ function safeNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Raw SQL may return bigint as string, or Numeric as Decimal-like objects. */
+function coerceBigIntish(value: unknown): number {
+  try {
+    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+    const s = String(value ?? '0').trim();
+    if (!s) return 0;
+    return Number(BigInt(s));
+  } catch {
+    return 0;
+  }
+}
+
+function coerceFloatMetric(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'bigint') return Number(value);
+  const v = value as { toNumber?: () => number } | null;
+  if (v != null && typeof v === 'object' && typeof v.toNumber === 'function') {
+    const n = v.toNumber();
+    return Number.isFinite(n) ? n : 0;
+  }
+  const n = Number(String(value ?? '').replace(/,/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
 function formatCompactInt(value: number): string {
   if (!Number.isFinite(value)) return '—';
   return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
@@ -66,15 +91,42 @@ const loadHomeStats = unstable_cache(
         `
         SELECT
           COUNT(*)::bigint AS whale_count,
-          COALESCE(SUM(total_volume)::float, 0) AS total_volume
+          COALESCE(SUM(total_volume)::double precision, 0) AS total_volume
         FROM whale_profiles
         `,
       );
       const whaleRow = whaleAgg[0] || { whale_count: 0, total_volume: 0 };
-      whale_count = Number(BigInt(String(whaleRow.whale_count || 0)));
-      total_volume = safeNumber(whaleRow.total_volume, 0);
+      whale_count = coerceBigIntish(whaleRow.whale_count);
+      total_volume = coerceFloatMetric(whaleRow.total_volume);
     } catch {
       // whale_profiles missing or not in this DB
+    }
+
+    // Same pipeline DB often has whale_trades + trades_raw before whale_profiles is backfilled.
+    if (whale_count === 0 && total_volume === 0) {
+      try {
+        const tradeAgg = await prisma.$queryRawUnsafe<
+          { whale_count: unknown; total_volume: unknown }[]
+        >(
+          `
+          SELECT
+            COUNT(DISTINCT wt.wallet_address)::bigint AS whale_count,
+            COALESCE(
+              SUM((tr.amount::numeric * tr.price::numeric))::double precision,
+              0
+            ) AS total_volume
+          FROM whale_trades wt
+          INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+          `,
+        );
+        const row = tradeAgg[0];
+        if (row) {
+          whale_count = coerceBigIntish(row.whale_count);
+          total_volume = coerceFloatMetric(row.total_volume);
+        }
+      } catch {
+        // whale_trades / trades_raw missing
+      }
     }
 
     let follows = 0;
@@ -127,7 +179,7 @@ const loadHomeStats = unstable_cache(
       alertEvents30d: alertEvents,
     };
   },
-  ['home-stats'],
+  ['home-stats-v2'],
   { revalidate: 60 },
 );
 
