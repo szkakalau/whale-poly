@@ -161,3 +161,15 @@ model AlertEvent {
   @@index([userId, occurredAt], name: "idx_alert_user_time")
   @@map("alert_events")
 }
+
+model WhaleWaitlistLead {
+  id        String   @id @default(cuid())
+  email     String
+  telegram  String?
+  segment   String?  @default("")
+  notes     String?  @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email], name: "idx_waitlist_email")
+  @@map("whale_waitlist_leads")
+}

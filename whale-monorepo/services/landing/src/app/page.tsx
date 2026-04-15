@@ -10,10 +10,6 @@ import { Suspense } from 'react';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/sightwhale_bot";
 const TELEGRAM_DEEP_LINK_SUBSCRIBE = `${TELEGRAM_BOT_URL}?start=subscribe_pro`;
-function safeNumber(value: unknown, fallback = 0): number {
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 /** Raw SQL may return bigint as string, or Numeric as Decimal-like objects. */
 function coerceBigIntish(value: unknown): number {
@@ -224,15 +220,19 @@ async function HomeStatsLiveCards() {
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
       <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
         <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Whales</div>
-        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">{formatCompactInt(homeStats.trackedWhales)}</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2 min-w-0 truncate">
+          {formatCompactInt(homeStats.trackedWhales)}
+        </div>
       </div>
       <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
         <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Tracked Volume</div>
-        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">{formatUsdCompact(homeStats.trackedVolumeUsd)}</div>
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2 min-w-0 truncate">
+          {formatUsdCompact(homeStats.trackedVolumeUsd)}
+        </div>
       </div>
       <div className="rounded-xl sm:rounded-2xl border border-border bg-surface px-3 sm:px-4 py-3 min-h-[72px] sm:min-h-0 flex flex-col justify-center">
         <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-subtle font-black">Alerts (30D)</div>
-        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2">
+        <div className="text-base sm:text-lg font-black text-foreground mt-1 sm:mt-2 min-w-0 truncate">
           {homeStats.alertEvents30d === 0 ? 'New' : formatCompactInt(homeStats.alertEvents30d)}
         </div>
       </div>
@@ -592,17 +592,17 @@ export default function Home() {
         {/* HERO SECTION */}
         <section className="relative px-4 sm:px-6 max-w-7xl mx-auto text-center mb-20 sm:mb-24 md:mb-32 pt-6 sm:pt-12">
               <div>
-                <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-border text-muted text-[11px] md:text-sm hover:border-accent/45 transition-all cursor-default group relative overflow-hidden bg-surface/85">
+                <div className="inline-flex max-w-full items-center justify-center gap-2.5 px-3 sm:px-4 py-2 rounded-full glass mb-8 sm:mb-12 border border-border text-muted text-[11px] md:text-sm hover:border-accent/45 transition-all cursor-default group relative overflow-hidden bg-surface/85 flex-wrap">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
               </span>
-              <span className="tracking-[0.05em]">
+              <span className="tracking-[0.05em] min-w-0 text-balance">
                 <Suspense fallback={<HomeStatsHeroTrackingSkeleton />}>
                   <HomeStatsHeroTracking />
                 </Suspense>
               </span>
-              <svg className="w-3 h-3 text-subtle group-hover:text-accent-hover transition-colors ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-3 h-3 text-subtle group-hover:text-accent-hover transition-colors ml-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </div>
           </div>
 
@@ -681,9 +681,11 @@ export default function Home() {
                 This feed is generated from tracked wallets and updates continuously. Click any item to see the full wallet context.
               </p>
             </div>
-            <Suspense fallback={<HomeStatsLiveCardsSkeleton />}>
-              <HomeStatsLiveCards />
-            </Suspense>
+            <div className="w-full lg:w-auto lg:max-w-[28rem] shrink-0">
+              <Suspense fallback={<HomeStatsLiveCardsSkeleton />}>
+                <HomeStatsLiveCards />
+              </Suspense>
+            </div>
           </div>
 
           <Suspense

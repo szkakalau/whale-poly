@@ -123,57 +123,93 @@ export default async function PolymarketAlertsTlPage() {
 
       <Header />
 
-      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-6 pt-28 pb-16 relative space-y-6 md:space-y-7">
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 md:p-8">
+      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-4 sm:px-6 pt-20 sm:pt-28 pb-16 relative space-y-5 md:space-y-7">
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5 sm:p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">HERO</p>
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white max-w-4xl">
-            Stop Entering Polymarket After The Move Started.
-          </h1>
-          <p className="mt-4 text-base md:text-lg text-gray-300 max-w-3xl">
-            See whale-sized bets in real time and act with an information edge before most traders notice.
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-semibold tracking-wide text-gray-200">
+            For active Polymarket traders only
           </p>
-          <ul className="mt-5 grid gap-2 md:grid-cols-3">
-            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
-              Track large Polymarket bets automatically
-            </li>
-            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
-              Get instant Telegram alerts
-            </li>
-            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-gray-200">
-              Stop missing early positioning
-            </li>
-          </ul>
-          <div className="mt-5 flex flex-col sm:flex-row gap-3">
+          <h1 className="mt-3 text-[26px] leading-[1.12] sm:text-[30px] md:text-5xl font-bold text-white max-w-4xl text-balance">
+            Stop Chasing Polymarket Moves &amp; Losing Money. Follow 80+ Win Rate Whales, Get Real-Time Alerts In
+            {' <30s.'}
+          </h1>
+          <p className="mt-3 text-[14px] leading-relaxed md:mt-4 md:text-lg text-gray-300 max-w-3xl">
+            No Complex Dashboards. Just Telegram Alerts For High-Conviction Whale Bets, Before The Market Moves. 7-Day
+            Risk-Free Trial.
+          </p>
+          <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row gap-3">
             <Link
               href="/subscribe?plan=pro"
-              className="inline-flex items-center justify-center rounded-xl bg-violet-500 px-6 py-3 text-sm font-semibold text-white hover:bg-violet-400 transition-colors"
+              className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-6 py-3.5 text-sm font-semibold text-white hover:bg-violet-400 transition-colors active:scale-[0.98]"
             >
-              Get My Timing Edge
+              Start 7-Day Risk-Free Trial | $29/Month
+            </Link>
+            <Link
+              href="#real-whale-alert-examples"
+              className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl border border-white/15 bg-white/[0.05] px-6 py-3.5 text-sm font-semibold text-white hover:border-cyan-300/40 hover:bg-cyan-400/10 transition-colors active:scale-[0.98]"
+            >
+              See Real Whale Alert Examples
             </Link>
           </div>
-          <p className="mt-3 text-sm text-gray-400">Cancel anytime. No contracts.</p>
+          <div className="mt-4 flex sm:hidden gap-2">
+            <Link
+              href="/subscribe?plan=elite"
+              className="inline-flex w-full min-h-[48px] items-center justify-center rounded-xl border border-violet-500/35 bg-violet-500/10 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500/15 transition-colors active:scale-[0.98]"
+            >
+              Go Elite ($59) — Faster alerts
+            </Link>
+          </div>
+          <ul className="mt-4 sm:mt-5 grid gap-2 md:grid-cols-2">
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-[13px] leading-relaxed text-gray-200">
+              ✅ &lt;30s Real-Time Telegram Alerts For Polymarket Whale Bets
+            </li>
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-[13px] leading-relaxed text-gray-200">
+              ✅ Only Alerts From Whales With 80+ Historical Win Rate (Exclusive Whale Score)
+            </li>
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-[13px] leading-relaxed text-gray-200">
+              ✅ No Dashboards, No Complex Setup, 2-Minute Onboarding
+            </li>
+            <li className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-[13px] leading-relaxed text-gray-200">
+              ✅ Cancel Anytime | 7-Day No-Questions-Asked Refund
+            </li>
+          </ul>
         </section>
 
         <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
-          <h2 className="text-xl md:text-2xl font-bold text-white">Real Proof</h2>
-          <p className="mt-2 text-sm text-gray-200">Live usage signals from the platform pipeline.</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white">Proven By Traders, Validated By Real Market Moves</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-xl font-black text-white">300+</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Traders Linked</p>
+              <p className="text-xl font-black text-white">84%</p>
+              <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
+                Win Rate Of Whale Score 80+ Alerts (Past 30 Days)
+              </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
               <p className="text-xl font-black text-white">{formatCompactInt(proofStats.trackedWhaleBets)}+</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Whale Bets Tracked</p>
+              <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
+                Whale Bets Tracked &amp; Verified
+              </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
               <p className="text-xl font-black text-white">{formatCompactInt(proofStats.alerts30d)}+</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Alerts Sent (30D)</p>
+              <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
+                High-Conviction Alerts Sent (Past 30 Days)
+              </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-xl font-black text-white">24/7</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-gray-300">Monitoring Uptime</p>
+              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.linkedTraders)}+</p>
+              <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
+                Active Polymarket Traders Using Daily
+              </p>
             </div>
+          </div>
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/subscribe?plan=pro"
+              className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-cyan-400 px-6 py-3.5 text-sm font-semibold text-zinc-950 hover:bg-cyan-300 transition-colors active:scale-[0.98]"
+            >
+              Start Your Risk-Free Trial Today
+            </Link>
           </div>
         </section>
 
@@ -271,7 +307,10 @@ export default async function PolymarketAlertsTlPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
+        <section
+          id="real-whale-alert-examples"
+          className="scroll-mt-24 rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6"
+        >
           <h2 className="text-xl md:text-2xl font-bold text-white">Real alerts from our users</h2>
           <p className="mt-2 text-sm text-gray-200">Telegram delivery examples (real screenshots).</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -313,7 +352,7 @@ export default async function PolymarketAlertsTlPage() {
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">1 · Subscribe</p>
               <p className="mt-2 text-sm text-gray-300">
-                Pick Pro or Lite at checkout. We monitor Polymarket 24/7 and flag whale-sized prints.
+                Pick Pro or Elite at checkout. We monitor Polymarket 24/7 and flag whale-sized prints.
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
@@ -362,7 +401,7 @@ export default async function PolymarketAlertsTlPage() {
           <h2 className="text-xl md:text-2xl font-bold text-white">Why start at $29 Pro?</h2>
           <p className="mt-3 text-sm text-gray-200">
             Pro is a lean entry so you can validate whale alerts in live markets without a big upfront bet. When timing
-            starts to matter every day, most traders step up to <span className="text-white font-medium">Lite ($59)</span>{' '}
+            starts to matter every day, most traders step up to <span className="text-white font-medium">Elite ($59)</span>{' '}
             for faster delivery, filters, and priority routing.
           </p>
           <div className="mt-3 space-y-2 text-sm text-gray-200">

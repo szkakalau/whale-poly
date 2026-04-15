@@ -76,7 +76,7 @@ function SubscribeForm() {
     if (code.includes('invalid plan')) {
       return {
         message: 'Selected plan is not available right now.',
-        actions: ['Switch to Pro or Lite and retry.', 'If this looks wrong, contact support.']
+        actions: ['Switch to Pro or Elite and retry.', 'If this looks wrong, contact support.']
       };
     }
     if (code.includes('payment_api_base_url is required')) {
@@ -184,7 +184,7 @@ function SubscribeForm() {
           >
             <option value="free">Free</option>
             <option value="pro">Pro ($29)</option>
-            <option value="elite">Lite ($59)</option>
+            <option value="elite">Elite ($59)</option>
           </select>
         </div>
 
@@ -235,12 +235,14 @@ export default function SubscribePage() {
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
       <Header />
-      <main className="mx-auto max-w-2xl px-6 py-32 relative">
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-24 sm:py-32 relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -z-10"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] -z-10"></div>
         
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white tracking-tight">Activate Intelligence</h1>
-        <div className="space-y-6 text-gray-400 mb-10 text-lg font-light leading-relaxed">
+        <h1 className="text-[34px] sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8 text-white tracking-tight text-balance">
+          Activate Intelligence
+        </h1>
+        <div className="space-y-4 sm:space-y-6 text-gray-400 mb-8 sm:mb-10 text-[15px] sm:text-lg font-light leading-relaxed">
           <p>
             1. Open{' '}
             <a
@@ -266,7 +268,7 @@ export default function SubscribePage() {
           <SubscribeForm />
         </Suspense>
 
-        <section className="mt-12 rounded-2xl border border-white/10 bg-white/5 p-6 space-y-6">
+        <section className="mt-10 sm:mt-12 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-white">Plan differences you can verify</h2>
             <p className="text-xs text-gray-400 mt-2">
@@ -295,7 +297,7 @@ export default function SubscribePage() {
               </ul>
             </div>
             <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
-              <div className="text-xs uppercase tracking-wide text-cyan-200">Lite</div>
+              <div className="text-xs uppercase tracking-wide text-cyan-200">Elite</div>
               <div className="text-lg font-semibold text-white mt-2">$59/mo · $590/yr</div>
               <ul className="mt-3 space-y-2 text-xs text-gray-200">
                 <li>Everything in Pro</li>

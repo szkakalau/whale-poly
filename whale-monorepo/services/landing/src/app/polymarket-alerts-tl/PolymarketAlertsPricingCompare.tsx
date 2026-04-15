@@ -10,10 +10,9 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
     : 'p-8 pb-10 pt-10 md:p-12 md:pb-12 md:pt-12';
   const grid = compact ? 'mt-6 gap-4 pt-1' : 'mt-12 gap-6 pt-2';
   const cardPad = compact ? 'p-4 md:p-5' : 'p-6 md:p-8';
-  const listGap = compact ? 'mt-4 space-y-2' : 'mt-6 space-y-3';
+  const listGap = compact ? 'mt-4 space-y-2.5' : 'mt-6 space-y-3';
   const btnMt = compact ? 'mt-5' : 'mt-8';
-  const anchor = compact ? 'text-base md:text-lg' : 'text-lg md:text-xl';
-  const h2 = compact ? 'mt-3 text-2xl md:text-3xl' : 'mt-5 text-3xl md:text-4xl';
+  const h2 = compact ? 'text-2xl md:text-3xl' : 'text-3xl md:text-4xl';
   const sub = compact ? 'mt-2 text-xs md:text-sm' : 'mt-3 text-sm md:text-base';
 
   return (
@@ -23,184 +22,243 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
     >
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_70%_20%,#a3e635,transparent_45%),radial-gradient(circle_at_20%_80%,#22d3ee,transparent_40%)]" />
 
-      <p className={`relative text-center font-display font-semibold leading-snug text-lime-200/95 ${anchor}`}>
-        Most active traders choose Lite for faster alerts.
-      </p>
-
       <h2
         id="pricing-compare-heading"
         className={`font-display relative text-center font-black tracking-tight text-white ${h2}`}
       >
-        Choose your alert speed
+        Pick Your Whale Edge, Start Trading With An Edge In 2 Minutes
       </h2>
       <p className={`relative mx-auto max-w-xl text-center text-gray-400 ${sub}`}>
-        Most traders upgrade after their first month.
+        One winning trade pays for your entire subscription.
       </p>
 
       <div className={`relative grid lg:grid-cols-3 lg:items-stretch ${grid}`}>
-        {/* Pro — $29 */}
-        <div className={`flex flex-col rounded-2xl border border-white/[0.09] bg-black/50 shadow-inner shadow-black/40 ${cardPad}`}>
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display text-xl font-bold text-white">Pro</h3>
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-400">
-              Entry
-            </span>
+        {/* Elite — $59 — featured (mobile-first, must appear first on mobile) */}
+        <div
+          className={`relative order-1 lg:order-2 flex flex-col rounded-2xl border-2 border-violet-500 bg-gradient-to-b from-violet-500/[0.14] via-black/60 to-black/80 shadow-[0_0_70px_-14px_rgba(139,92,246,0.50)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_90px_-18px_rgba(139,92,246,0.65)] lg:z-[1] lg:-mt-3 lg:mb-3 ${cardPad}`}
+        >
+          <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+            Recommended For Active Traders
           </div>
-          <p className="mt-4 font-display text-4xl font-black tabular-nums text-white md:text-5xl">
-            $29
-            <span className="text-lg font-semibold text-gray-500 md:text-xl">/month</span>
-          </p>
-          <ul className={`flex-1 text-sm text-gray-300 ${listGap}`}>
-            <li className="flex gap-2">
-              <span className="text-lime-400/90" aria-hidden>
-                ✓
+
+          <div className="mt-4 text-center">
+            <h3 className="font-display text-2xl font-black text-white">Elite</h3>
+            <p className="mt-3 font-display text-5xl font-black tabular-nums text-white md:text-6xl">
+              $59
+              <span className="text-base font-medium text-violet-200/80 md:text-lg">/month</span>
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
+              Faster alerts + higher win rate, for daily active traders maximizing their edge
+            </p>
+          </div>
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+          <ul className={`flex-1 text-sm text-gray-200 ${listGap}`}>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>Real-time whale alerts</span>
+              <span>EVERYTHING included in the Pro plan</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400/90" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>All Polymarket markets</span>
+              <span>✨ Priority Faster Alert Channel (10-15s delivery, 2x faster than Pro)</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400/90" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>Telegram delivery</span>
+              <span>✨ Exclusive alerts only from whales with 80+ Whale Score (top 1% winning traders)</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400/90" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>Cancel anytime</span>
+              <span>✨ Large-trade filter (cut out low-conviction noise, only high-value bets)</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
+              </span>
+              <span>✨ Priority delivery routing (no delays during peak market volatility)</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
+              </span>
+              <span>✨ Daily market summary + top whale watchlist</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
+              </span>
+              <span>Cancel anytime, no contracts</span>
             </li>
           </ul>
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
           <Link
-            href="/subscribe?plan=pro"
-            className={`inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/[0.07] px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-lime-400/40 hover:bg-lime-400/10 ${btnMt}`}
+            href="/subscribe?plan=elite"
+            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_0_34px_-10px_rgba(139,92,246,0.75)] transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
           >
-            Get started
+            Get Elite Priority Alerts
           </Link>
         </div>
 
-        {/* Lite — $59 — featured */}
+        {/* Pro — $29 */}
         <div
-          className={`relative flex flex-col rounded-2xl border-2 border-lime-400/45 bg-gradient-to-b from-lime-400/[0.09] via-black/60 to-black/80 shadow-[0_0_60px_-12px_rgba(163,230,53,0.35)] lg:scale-[1.02] lg:z-[1] ${cardPad}`}
+          className={`order-2 lg:order-1 flex flex-col rounded-2xl border border-white/[0.10] bg-black/50 shadow-inner shadow-black/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] ${cardPad}`}
         >
-          <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-lime-400 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-950 shadow-lg">
-            Most popular
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+              Most Popular
+            </div>
+            <h3 className="mt-3 font-display text-2xl font-black text-white">Pro</h3>
+            <p className="mt-3 font-display text-5xl font-black tabular-nums text-white md:text-6xl">
+              $29
+              <span className="text-base font-medium text-gray-400 md:text-lg">/month</span>
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
+              Entry-level whale edge, perfect for new &amp; casual Polymarket traders
+            </p>
           </div>
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <h3 className="font-display text-xl font-bold text-white">Lite</h3>
-            <span className="rounded-full border border-lime-400/30 bg-lime-400/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-lime-200">
-              Recommended
-            </span>
-          </div>
-          <p className="mt-4 font-display text-4xl font-black tabular-nums text-white md:text-5xl">
-            $59
-            <span className="text-lg font-semibold text-lime-200/70 md:text-xl">/month</span>
-          </p>
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
           <ul className={`flex-1 text-sm text-gray-200 ${listGap}`}>
-            <li className="flex gap-2">
-              <span className="text-lime-400" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>Everything in Pro</span>
+              <span>Real-time &lt;30s Polymarket whale alerts</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>
-                <strong className="text-white">Faster alert channel</strong>
-              </span>
+              <span>Full coverage of all active Polymarket markets</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>
-                <strong className="text-white">Large trades filter</strong>
-              </span>
+              <span>Alerts from whales with 70+ exclusive Whale Score</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>
-                <strong className="text-white">Priority delivery</strong>
-              </span>
+              <span>Instant Telegram alert delivery</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-lime-400" aria-hidden>
-                ✓
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
-              <span>
-                <strong className="text-white">Daily summary</strong>
+              <span>No dashboards, 2-minute one-time setup</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
+                ✅
               </span>
+              <span>Cancel anytime, no contracts</span>
             </li>
           </ul>
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
           <Link
-            href="/subscribe?plan=elite"
-            className={`inline-flex w-full items-center justify-center rounded-xl bg-lime-400 px-5 py-3 text-sm font-bold text-zinc-950 shadow-[0_0_32px_-8px_rgba(163,230,53,0.55)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99] ${btnMt}`}
+            href="/subscribe?plan=pro"
+            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
           >
-            Upgrade to Lite
+            Start 7-Day Risk-Free Trial
           </Link>
         </div>
 
         {/* Whale — $99 — coming soon */}
-        <div className={`flex flex-col rounded-2xl border border-dashed border-white/20 bg-black/35 opacity-95 ${cardPad}`}>
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display text-xl font-bold text-white">Whale</h3>
-            <span className="rounded-full border border-amber-400/35 bg-amber-500/15 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-200">
-              Coming soon
-            </span>
+        <div
+          className={`order-3 lg:order-3 flex flex-col rounded-2xl border border-dashed border-white/25 bg-black/35 opacity-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] ${cardPad}`}
+        >
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center rounded-full bg-white/15 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-gray-200">
+              Coming Soon
+            </div>
+            <h3 className="mt-3 font-display text-2xl font-black text-gray-400">Whale</h3>
+            <p className="mt-3 font-display text-5xl font-black tabular-nums text-gray-500 md:text-6xl">
+              $99
+              <span className="text-base font-medium text-gray-600 md:text-lg">/month</span>
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+              Institutional-grade full-stack edge, for high-volume traders &amp; teams
+            </p>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Full-depth signal stack for size and teams.</p>
-          <p className="mt-4 font-display text-4xl font-black tabular-nums text-gray-500 md:text-5xl">
-            $99
-            <span className="text-lg font-semibold text-gray-600 md:text-xl">/month</span>
-          </p>
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
           <ul className={`flex-1 text-sm text-gray-500 ${listGap}`}>
-            <li className="flex gap-2">
-              <span className="text-gray-600" aria-hidden>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
                 ◇
               </span>
-              <span>Everything in Lite</span>
+              <span>EVERYTHING included in the Elite plan</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-gray-600" aria-hidden>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
                 ◇
               </span>
-              <span>Dedicated coverage &amp; concierge onboarding</span>
+              <span>Dedicated account manager &amp; concierge onboarding</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-gray-600" aria-hidden>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
                 ◇
               </span>
-              <span>Custom watchlists &amp; API-style exports</span>
+              <span>Custom watchlists &amp; API-style data exports</span>
             </li>
-            <li className="flex gap-2">
-              <span className="text-gray-600" aria-hidden>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
                 ◇
               </span>
-              <span>Early access to new signal types</span>
+              <span>Early access to all new signal types</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
+                ◇
+              </span>
+              <span>Exclusive whale-cluster trade alerts</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-left">
+              <span className="w-5 shrink-0 text-gray-600" aria-hidden>
+                ◇
+              </span>
+              <span>Waitlist members get first access + grandfathered pricing</span>
             </li>
           </ul>
-          <a
-            href="mailto:support@sightwhale.com?subject=Whale%20tier%20waitlist"
-            className={`inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-transparent px-5 py-3 text-sm font-semibold text-gray-400 transition-colors hover:border-amber-400/40 hover:text-amber-100 ${btnMt}`}
+
+          <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+          <Link
+            href="/whale-waitlist"
+            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl border-2 border-violet-500/70 bg-transparent px-5 py-3.5 text-sm font-extrabold text-violet-200 transition-all hover:bg-violet-500 hover:text-white active:scale-[0.98] ${btnMt}`}
           >
-            Join the waitlist
-          </a>
+            Join The Waitlist
+          </Link>
         </div>
       </div>
 
-      <p className={`relative text-center text-xs text-gray-500 ${compact ? 'mt-5' : 'mt-8'}`}>
-        No contracts. Cancel anytime on paid tiers. Whale launches when infrastructure is ready—we&apos;ll email waitlist
-        first.
-      </p>
+      <div className={`relative ${compact ? 'mt-5' : 'mt-8'}`}>
+        <div className="w-full rounded-2xl border border-violet-500/15 bg-violet-500/10 px-5 py-4 text-center">
+          <p className="text-sm font-semibold text-white">
+            All paid plans come with a 7-day no-questions-asked full refund.
+          </p>
+          <p className="mt-1 text-xs text-gray-300">
+            If you don’t find the alerts useful within 7 days, email us and we’ll give you every penny back. No fine
+            print, no hoops to jump through.
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
