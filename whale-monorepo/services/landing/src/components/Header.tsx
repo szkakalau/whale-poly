@@ -22,7 +22,10 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300 pt-[env(safe-area-inset-top,0)]">
+    <header
+      className="fixed left-0 right-0 z-50 glass-nav transition-all duration-300 pt-[env(safe-area-inset-top,0)]"
+      style={{ top: 'var(--sw-top-offset, 0px)' }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-5 h-14 min-h-[3.5rem] flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center gap-2 min-w-0" title="SightWhale.com Home">
           <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.38)]" />
@@ -62,16 +65,18 @@ export default function Header() {
 
       {/* Mobile menu overlay */}
       <div
-        className={`md:hidden fixed inset-0 top-14 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-200 ${
+        className={`md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-200 ${
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        style={{ top: 'calc(var(--sw-top-offset, 0px) + 3.5rem)' }}
         aria-hidden={!mobileOpen}
         onClick={() => setMobileOpen(false)}
       />
       <div
-        className={`md:hidden fixed top-14 left-0 right-0 bottom-0 z-40 overflow-y-auto bg-background border-t border-border transition-transform duration-200 ease-out ${
+        className={`md:hidden fixed left-0 right-0 bottom-0 z-40 overflow-y-auto bg-background border-t border-border transition-transform duration-200 ease-out ${
           mobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        style={{ top: 'calc(var(--sw-top-offset, 0px) + 3.5rem)' }}
         aria-hidden={!mobileOpen}
       >
         <nav className="flex flex-col p-4 gap-1">

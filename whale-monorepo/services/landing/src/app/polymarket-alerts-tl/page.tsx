@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import { unstable_cache } from 'next/cache';
+import { RedditOfferTopBar } from './RedditOfferTopBar';
 import {
   PolymarketAlertsConversionAfterHero,
   PolymarketAlertsCaseStudies2026,
@@ -91,6 +92,19 @@ type ProofStats = {
   alerts30d: number;
 };
 
+/** Raw SQL may return bigint as string (or driver-specific types). */
+function coerceBigIntish(value: unknown): number {
+  try {
+    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+    const s = String(value ?? '0').trim();
+    if (!s) return 0;
+    return Number(BigInt(s));
+  } catch {
+    return 0;
+  }
+}
+
 function SectionCta({
   primaryPlan = 'pro',
   primaryLabel = 'Start 7-Day Risk-Free Trial',
@@ -128,6 +142,11 @@ function formatCompactInt(value: number): string {
   return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
+function formatProofValue(value: number, { empty = '—', suffix = '+' }: { empty?: string; suffix?: string } = {}): string {
+  if (!Number.isFinite(value) || value <= 0) return empty;
+  return `${formatCompactInt(value)}${suffix}`;
+}
+
 const loadProofStats = unstable_cache(
   async (): Promise<ProofStats> => {
     const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -140,7 +159,7 @@ const loadProofStats = unstable_cache(
     } catch {
       try {
         const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(`SELECT COUNT(*)::bigint AS n FROM tg_users`);
-        linkedTraders = Number(rows[0]?.n ?? 0);
+        linkedTraders = coerceBigIntish(rows[0]?.n);
       } catch {
         linkedTraders = 0;
       }
@@ -148,9 +167,15 @@ const loadProofStats = unstable_cache(
 
     try {
       const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(`SELECT COUNT(*)::bigint AS n FROM whale_trades`);
-      trackedWhaleBets = Number(rows[0]?.n ?? 0);
+      trackedWhaleBets = coerceBigIntish(rows[0]?.n);
     } catch {
-      trackedWhaleBets = 0;
+      // Fallback: pipeline DB may expose only trades_raw (before whale_trades is populated / accessible)
+      try {
+        const rows = await prisma.$queryRawUnsafe<{ n: unknown }[]>(`SELECT COUNT(*)::bigint AS n FROM trades_raw`);
+        trackedWhaleBets = coerceBigIntish(rows[0]?.n);
+      } catch {
+        trackedWhaleBets = 0;
+      }
     }
 
     try {
@@ -161,7 +186,7 @@ const loadProofStats = unstable_cache(
           `SELECT COUNT(*)::bigint AS n FROM alerts WHERE created_at >= $1`,
           since30d,
         );
-        alerts30d = Number(rows[0]?.n ?? 0);
+        alerts30d = coerceBigIntish(rows[0]?.n);
       } catch {
         alerts30d = 0;
       }
@@ -183,21 +208,20 @@ export default async function PolymarketAlertsTlPage() {
         <div className="absolute bottom-[-14%] right-[-10%] w-[42%] h-[42%] bg-cyan-500/10 rounded-full blur-[120px]" />
       </div>
 
+      <RedditOfferTopBar scrollTargetId="pricing" />
       <Header />
 
-      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-4 sm:px-6 pt-20 sm:pt-28 pb-16 relative space-y-5 md:space-y-7">
+      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-4 sm:px-6 pt-[calc(5rem+var(--sw-top-offset,0px))] sm:pt-[calc(7rem+var(--sw-top-offset,0px))] pb-16 relative space-y-5 md:space-y-7">
         <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5 sm:p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">HERO</p>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-semibold tracking-wide text-gray-200">
             For active Polymarket traders only
           </p>
           <h1 className="mt-3 text-[26px] leading-[1.12] sm:text-[30px] md:text-5xl font-bold text-white max-w-4xl text-balance">
-            Stop Chasing Polymarket Moves &amp; Losing Money. Follow 80+ Win Rate Whales, Get Real-Time Alerts In
-            {' <30s.'}
+            Stop Chasing Polymarket Moves &amp; Losing Money. Follow 80+ Win Rate Whales, Get Real-Time Alerts In &lt;30s.
           </h1>
           <p className="mt-3 text-[14px] leading-relaxed md:mt-4 md:text-lg text-gray-300 max-w-3xl">
-            No Complex Dashboards. Just Telegram Alerts For High-Conviction Whale Bets, Before The Market Moves. 7-Day
-            Risk-Free Trial.
+            No Complex Dashboards. Just Telegram Alerts For High-Conviction Whale Bets. 7-Day Risk-Free Trial.
           </p>
           <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row gap-3">
             <Link
@@ -247,19 +271,19 @@ export default async function PolymarketAlertsTlPage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.trackedWhaleBets)}+</p>
+              <p className="text-xl font-black text-white">{formatProofValue(proofStats.trackedWhaleBets)}</p>
               <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
                 Whale Bets Tracked &amp; Verified
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.alerts30d)}+</p>
+              <p className="text-xl font-black text-white">{formatProofValue(proofStats.alerts30d)}</p>
               <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
                 High-Conviction Alerts Sent (Past 30 Days)
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-xl font-black text-white">{formatCompactInt(proofStats.linkedTraders)}+</p>
+              <p className="text-xl font-black text-white">{formatProofValue(proofStats.linkedTraders)}</p>
               <p className="mt-1 text-[11px] leading-snug uppercase tracking-[0.12em] text-gray-300">
                 Active Polymarket Traders Using Daily
               </p>
@@ -294,7 +318,9 @@ export default async function PolymarketAlertsTlPage() {
           secondaryLabel="Get Elite priority alerts"
         />
 
-        <PolymarketAlertsPricingCompare compact />
+        <section id="pricing" className="scroll-mt-[calc(8rem+var(--sw-top-offset,0px))]">
+          <PolymarketAlertsPricingCompare compact />
+        </section>
 
         <PolymarketAlertsPrePricing compact />
         <SectionCta
