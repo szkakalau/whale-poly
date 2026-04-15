@@ -269,7 +269,8 @@ function SubscribeForm() {
     // Construct plan for payment checkout
     const planName = period === 'yearly' ? `${tier}_yearly` : tier;
     const upsellState = readUpsellState();
-    const applyPromo = tier !== 'free' && period === 'monthly' && isUpsellActive(upsellState.claimedAt);
+    // Note: after the early return above, tier is narrowed to 'pro' | 'elite'.
+    const applyPromo = period === 'monthly' && isUpsellActive(upsellState.claimedAt);
 
     try {
       const res = await fetch('/api/checkout', {
