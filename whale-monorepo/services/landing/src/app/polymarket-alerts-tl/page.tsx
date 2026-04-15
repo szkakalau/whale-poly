@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { unstable_cache } from 'next/cache';
 import {
   PolymarketAlertsConversionAfterHero,
+  PolymarketAlertsCaseStudies2026,
   PolymarketAlertsPrePricing,
 } from './PolymarketAlertsConversionBlocks';
 import {
@@ -13,6 +14,8 @@ import {
   PolymarketAlertsPostPricingFaqAndGuarantee,
 } from './PolymarketAlertsFaqRiskClosing';
 import { PolymarketAlertsPricingCompare } from './PolymarketAlertsPricingCompare';
+import { PolymarketAlertsWhaleScoreSection } from './PolymarketAlertsWhaleScoreSection';
+import { PolymarketAlertsBeforeAfterTable } from './PolymarketAlertsBeforeAfterTable';
 
 export const metadata = {
   title: 'Polymarket Whale Alerts - Information Edge for Traders',
@@ -213,42 +216,19 @@ export default async function PolymarketAlertsTlPage() {
           </div>
         </section>
 
-        <PolymarketAlertsPrePricing compact />
+        <PolymarketAlertsWhaleScoreSection compact />
+
+        <PolymarketAlertsCaseStudies2026 compact />
+
+        <PolymarketAlertsBeforeAfterTable compact />
 
         <PolymarketAlertsPricingCompare compact />
+
+        <PolymarketAlertsPrePricing compact />
 
         <PolymarketAlertsPostPricingFaqAndGuarantee compact />
 
         <PolymarketAlertsConversionAfterHero compact />
-
-        <section className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-5 md:p-6">
-          <h2 className="text-xl md:text-2xl font-bold text-white">What This Actually Changes For You</h2>
-          <p className="mt-3 text-sm text-gray-200 leading-relaxed">
-            This is the practical outcome, not theory. You stop reacting to moves after they start and begin operating
-            with earlier visibility.
-          </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Before</p>
-              <ul className="mt-2 space-y-1.5 text-xs text-gray-300">
-                <li>• You discover big bets after price already moved</li>
-                <li>• You enter late and chase worse entries</li>
-                <li>• You spend hours manually scanning markets</li>
-                <li>• You make rushed decisions with limited context</li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">With SightWhale</p>
-              <ul className="mt-2 space-y-1.5 text-xs text-gray-200">
-                <li>• You see large positioning earlier</li>
-                <li>• You stop chasing entries after the move starts</li>
-                <li>• You save daily monitoring time</li>
-                <li>• You decide faster with better timing and visibility</li>
-              </ul>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-white font-medium">Outcome: less chasing, less noise, better timing windows.</p>
-        </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:p-6">
           <h2 className="text-xl md:text-2xl font-bold text-white">Why timing beats being right</h2>
