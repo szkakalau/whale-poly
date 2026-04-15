@@ -26,6 +26,7 @@ class CheckoutIn(BaseModel):
   plan: str
   user_id: str | None = None
   customer_email: str | None = None
+  apply_promo: bool | None = None
   
 class PlanUpsertItem(BaseModel):
   name: str
@@ -327,6 +328,7 @@ async def current_plan(telegram_id: str, session: AsyncSession = Depends(get_ses
 async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_session)):
   code = payload.telegram_activation_code.strip().upper()
   plan_name = payload.plan.strip().lower()
+  apply_promo = bool(payload.apply_promo or False)
   
   # Normalize institutional to elite
   if "institutional" in plan_name:
@@ -345,6 +347,7 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
     activation_code=code,
     plan=plan.name,
     user_id=payload.user_id,
+    apply_promo=apply_promo,
   )
   return {"checkout_url": url, "mode": "stripe"}
 

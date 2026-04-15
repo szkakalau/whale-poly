@@ -40,6 +40,8 @@ class Settings:
     self.stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET", "")
     self.landing_success_url = os.getenv("LANDING_SUCCESS_URL", "")
     self.landing_cancel_url = os.getenv("LANDING_CANCEL_URL", "")
+    # Stripe promotion code ID applied as `discounts=[{promotion_code: ...}]` on hosted checkout sessions.
+    self.stripe_promo_first_month_10_off = os.getenv("STRIPE_PROMO_FIRST_MONTH_10_OFF", "")
     self.default_currency = os.getenv("DEFAULT_CURRENCY", "usd")
     self.payment_mode = os.getenv("PAYMENT_MODE", "stripe").lower()
     self.landing_alerts_ingest_url = os.getenv("LANDING_ALERTS_INGEST_URL", "")

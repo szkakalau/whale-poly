@@ -4,41 +4,6 @@ const SUPPORT_MAIL = 'mailto:support@sightwhale.com';
 
 const faqEntries = [
   {
-    id: 'trading-advice',
-    question: 'Is this trading advice?',
-    body: (
-      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
-        <p className="font-medium text-zinc-900">No.</p>
-        <p>
-          SightWhale is a <strong className="text-zinc-900">data and alert service</strong>.
-        </p>
-        <p>
-          We track large wallet activity on Polymarket and deliver real-time notifications. How you use this
-          information is entirely up to you.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: 'guarantee-profits',
-    question: 'Do alerts guarantee profitable trades?',
-    body: (
-      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
-        <p className="font-medium text-zinc-900">No.</p>
-        <p>Prediction markets are volatile and risky.</p>
-        <p>
-          Whale alerts are <strong className="text-zinc-900">market intelligence</strong>, not guarantees.
-        </p>
-        <p className="text-zinc-700">Many traders use alerts to:</p>
-        <ul className="list-disc space-y-1.5 pl-5 text-zinc-700">
-          <li>discover markets earlier</li>
-          <li>avoid late entries</li>
-          <li>understand market sentiment</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
     id: 'speed',
     question: 'How fast are alerts delivered?',
     body: (
@@ -64,6 +29,40 @@ const faqEntries = [
     ),
   },
   {
+    id: 'whale-score',
+    question: 'What is Whale Score?',
+    body: (
+      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
+        <p>
+          Whale Score is our proprietary ranking that surfaces <strong className="text-zinc-900">whales that actually win</strong>
+          — not just big wallets.
+        </p>
+        <p className="text-zinc-700">
+          We score traders using five non-negotiables: historical win rate, 30-day realized ROI, conviction, timing
+          accuracy, and consistent wallet size.
+        </p>
+        <div className="rounded-xl border border-zinc-200 bg-white/70 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">What the score means</p>
+          <ul className="mt-2 space-y-1.5 text-sm text-zinc-700">
+            <li>
+              <strong className="text-zinc-900">70+</strong>: included in Pro alerts
+            </li>
+            <li>
+              <strong className="text-zinc-900">80+</strong>: top 1% whales, Elite-only
+            </li>
+            <li>
+              <strong className="text-zinc-900">90+</strong>: rare, highest-conviction prints
+            </li>
+          </ul>
+        </div>
+        <p className="text-zinc-700">
+          It’s <strong className="text-zinc-900">not a guarantee</strong>. It’s a filter that removes noise so you can act
+          with better timing and context.
+        </p>
+      </div>
+    ),
+  },
+  {
     id: 'volume',
     question: 'How many alerts will I receive?',
     body: (
@@ -75,6 +74,49 @@ const faqEntries = [
           It depends on market activity, but we monitor <strong className="text-zinc-900">all active Polymarket markets</strong>{' '}
           continuously.
         </p>
+      </div>
+    ),
+  },
+  {
+    id: 'compliance',
+    question: 'Is this legal / compliant? Is it trading advice?',
+    body: (
+      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
+        <p>
+          SightWhale is a <strong className="text-zinc-900">data and alert service</strong> — not financial, legal, or betting advice.
+        </p>
+        <p className="text-zinc-700">
+          We report observable wallet activity and deliver notifications. How you use that information is entirely up to you,
+          and prediction markets carry real risk.
+        </p>
+        <p className="text-zinc-700">
+          If you have a specific compliance question for your jurisdiction, contact us and we’ll point you to our disclosures.
+        </p>
+        <a
+          href={SUPPORT_MAIL}
+          className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white/70 px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-white transition-colors"
+        >
+          Email support
+        </a>
+      </div>
+    ),
+  },
+  {
+    id: 'trading-advice',
+    question: 'Do alerts guarantee profitable trades?',
+    body: (
+      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
+        <p className="font-medium text-zinc-900">No.</p>
+        <p>Prediction markets are volatile and risky.</p>
+        <p>
+          Whale alerts are <strong className="text-zinc-900">market intelligence</strong>, not guarantees.
+        </p>
+        <p className="text-zinc-700">Many traders use alerts to:</p>
+        <ul className="list-disc space-y-1.5 pl-5 text-zinc-700">
+          <li>discover markets earlier</li>
+          <li>avoid late entries</li>
+          <li>understand market sentiment</li>
+        </ul>
       </div>
     ),
   },
@@ -94,7 +136,7 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
   const faqPad = compact ? 'p-5 md:p-6' : 'p-8 md:p-12';
   const faqList = compact ? 'mt-5 space-y-2' : 'mt-8 space-y-3';
   const faqArt = compact ? 'p-4' : 'p-5 md:p-6';
-  const guaranteeShell = compact ? 'px-6 py-6 md:px-8 md:py-8' : 'px-8 py-10 md:px-12 md:py-12';
+  const guaranteeShell = compact ? 'mt-5 p-4 md:mt-6 md:p-5' : 'mt-8 p-5 md:p-6';
 
   return (
     <>
@@ -113,6 +155,30 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           Straight answers on advice, risk, speed, delivery, volume, and cancellation—before you subscribe.
         </p>
 
+        {/* 7-day guarantee — must be first, bold, highlighted */}
+        <div
+          className={`relative overflow-hidden rounded-2xl border border-amber-200/30 bg-gradient-to-br from-amber-200/15 via-white/5 to-transparent ${guaranteeShell}`}
+          aria-label="7-day no-questions-asked refund"
+        >
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-200/10 blur-[60px]" />
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-200/80">
+            7-day risk-free promise
+          </p>
+          <p className="mt-2 text-base font-bold text-white md:text-lg">
+            7-Day No-Questions-Asked Refund
+          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-200/90">
+            If you don&apos;t find the alerts useful within 7 days,{' '}
+            <a
+              href={SUPPORT_MAIL}
+              className="font-semibold text-white underline decoration-white/25 underline-offset-4 hover:decoration-white/60"
+            >
+              email us
+            </a>{' '}
+            and we&apos;ll refund you. No fine print. No hoops.
+          </p>
+        </div>
+
         <div className={`relative ${faqList}`}>
           {faqEntries.map((item) => (
             <article
@@ -123,32 +189,6 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
               <div className="mt-4 border-t border-white/5 pt-4">{item.body}</div>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section
-        className={`relative overflow-hidden rounded-3xl border border-zinc-300/50 bg-gradient-to-br from-[#f4f1ea] via-[#ebe6dc] to-[#e2ddd3] text-zinc-900 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.45)] ${guaranteeShell}`}
-        aria-labelledby="risk-free-guarantee-heading"
-      >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E")`,
-          }}
-        />
-        <div className="relative">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Risk reversal</p>
-          <h2 id="risk-free-guarantee-heading" className="font-display mt-3 text-2xl font-black tracking-tight md:text-3xl">
-            Try it for 7 days. Risk-free.
-          </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-700 md:text-lg">
-            If you don&apos;t find the alerts useful,{' '}
-            <a href={SUPPORT_MAIL} className="font-semibold text-zinc-900 underline decoration-zinc-400 underline-offset-4 hover:decoration-zinc-800">
-              email us
-            </a>{' '}
-            within 7 days and we&apos;ll refund you.
-          </p>
-          <p className="mt-3 text-sm font-medium text-zinc-800">No questions asked.</p>
         </div>
       </section>
     </>

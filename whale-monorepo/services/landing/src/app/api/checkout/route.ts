@@ -20,6 +20,7 @@ export async function POST(req: Request) {
 
   const telegram_activation_code = String(data.telegram_activation_code ?? '').trim();
   const rawPlan = String(data.plan ?? '').trim().toLowerCase().replace('-', '_');
+  const applyPromo = Boolean(data.apply_promo ?? false);
   
   if (!telegram_activation_code || !rawPlan) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         telegram_activation_code: codeUpper,
         plan,
+        apply_promo: applyPromo,
         user_id: user?.id ?? null,
         customer_email: user?.email ?? null,
       }),

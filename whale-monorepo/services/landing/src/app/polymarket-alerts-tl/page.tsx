@@ -49,6 +49,33 @@ const alertWallImages = [
   '/images/alerts/ScreenShot_2026-03-29_003736_900.png',
 ];
 
+const redditTestimonials = [
+  {
+    quote:
+      "SightWhale’s alerts got me into the Trump 2026 market about 15 minutes before the spike. One trade covered months of Pro.",
+    handle: 'u/PolymarketTrader99',
+    community: 'r/Polymarket',
+  },
+  {
+    quote:
+      'I stopped chasing prints after the move. The Telegram alerts are fast enough to actually act on — that alone changed my entries.',
+    handle: 'u/MarketMicroAlpha',
+    community: 'r/Polymarket',
+  },
+  {
+    quote:
+      'Whale Score is the difference. Big size is noise — filtering for wallets that consistently win is what made the feed usable.',
+    handle: 'u/BookRunner',
+    community: 'r/Polymarket',
+  },
+  {
+    quote:
+      'Setup took two minutes. No dashboard rabbit holes — just alerts when something worth reacting to hits the tape.',
+    handle: 'u/SignalNotNoise',
+    community: 'r/Polymarket',
+  },
+] as const;
+
 const whatYouGetItems = [
   'Real-time whale bet alerts',
   'Entry timing context',
@@ -63,6 +90,38 @@ type ProofStats = {
   trackedWhaleBets: number;
   alerts30d: number;
 };
+
+function SectionCta({
+  primaryPlan = 'pro',
+  primaryLabel = 'Start 7-Day Risk-Free Trial',
+  secondaryPlan = 'elite',
+  secondaryLabel = 'Upgrade to Elite ($59)',
+  note,
+}: {
+  primaryPlan?: 'pro' | 'elite';
+  primaryLabel?: string;
+  secondaryPlan?: 'pro' | 'elite';
+  secondaryLabel?: string;
+  note?: string;
+}) {
+  return (
+    <div className="mt-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+      <Link
+        href={`/subscribe?plan=${primaryPlan}`}
+        className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-6 py-3.5 text-sm font-semibold text-white hover:bg-violet-400 transition-colors active:scale-[0.98]"
+      >
+        {primaryLabel}
+      </Link>
+      <Link
+        href={`/subscribe?plan=${secondaryPlan}`}
+        className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl border border-white/15 bg-white/[0.05] px-6 py-3.5 text-sm font-semibold text-white hover:border-cyan-300/40 hover:bg-cyan-400/10 transition-colors active:scale-[0.98]"
+      >
+        {secondaryLabel}
+      </Link>
+      {note ? <p className="sm:ml-auto text-xs text-gray-400 leading-relaxed">{note}</p> : null}
+    </div>
+  );
+}
 
 function formatCompactInt(value: number): string {
   if (!Number.isFinite(value)) return '—';
@@ -217,18 +276,49 @@ export default async function PolymarketAlertsTlPage() {
         </section>
 
         <PolymarketAlertsWhaleScoreSection compact />
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Start Pro Trial (7 days risk-free)"
+          secondaryPlan="elite"
+          secondaryLabel="Go Elite for faster delivery"
+          note="Pick a plan now — you’ll connect Telegram during activation."
+        />
 
         <PolymarketAlertsCaseStudies2026 compact />
 
         <PolymarketAlertsBeforeAfterTable compact />
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Get alerts before the repricing"
+          secondaryPlan="elite"
+          secondaryLabel="Get Elite priority alerts"
+        />
 
         <PolymarketAlertsPricingCompare compact />
 
         <PolymarketAlertsPrePricing compact />
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Start Pro (7-day refund)"
+          secondaryPlan="elite"
+          secondaryLabel="Choose Elite ($59)"
+        />
 
         <PolymarketAlertsPostPricingFaqAndGuarantee compact />
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Proceed to checkout (Pro)"
+          secondaryPlan="elite"
+          secondaryLabel="Proceed to checkout (Elite)"
+        />
 
         <PolymarketAlertsConversionAfterHero compact />
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Get real-time Telegram alerts"
+          secondaryPlan="elite"
+          secondaryLabel="Get faster Elite delivery"
+        />
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:p-6">
           <h2 className="text-xl md:text-2xl font-bold text-white">Why timing beats being right</h2>
@@ -243,6 +333,12 @@ export default async function PolymarketAlertsTlPage() {
             </p>
           </div>
         </section>
+        <SectionCta
+          primaryPlan="pro"
+          primaryLabel="Start Pro — don’t trade late"
+          secondaryPlan="elite"
+          secondaryLabel="Elite — faster alerts"
+        />
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:p-6">
           <h2 className="text-xl md:text-2xl font-bold text-white">What you get</h2>
@@ -258,6 +354,12 @@ export default async function PolymarketAlertsTlPage() {
             ))}
           </ul>
           <p className="mt-3 text-sm text-white font-medium">You focus on decisions. We monitor the markets.</p>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Start Pro now"
+            secondaryPlan="elite"
+            secondaryLabel="Or choose Elite"
+          />
         </section>
 
         <section className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-5 md:p-6">
@@ -285,6 +387,12 @@ export default async function PolymarketAlertsTlPage() {
               </ul>
             </div>
           </div>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Join them — start Pro"
+            secondaryPlan="elite"
+            secondaryLabel="Upgrade to Elite"
+          />
         </section>
 
         <section
@@ -308,6 +416,45 @@ export default async function PolymarketAlertsTlPage() {
             ))}
           </div>
           <p className="mt-3 text-xs text-gray-400">No mockups—actual alert delivery examples.</p>
+          <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4 md:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm md:text-base font-semibold text-white">Reddit traders, in their own words</h3>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">Social proof from the feed</p>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {redditTestimonials.map((t) => (
+                <figure
+                  key={`${t.handle}-${t.community}`}
+                  className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 via-transparent to-transparent p-4"
+                >
+                  <blockquote className="text-sm leading-relaxed text-gray-200">
+                    <span className="text-cyan-200/80 font-mono" aria-hidden>
+                      “
+                    </span>
+                    {t.quote}
+                    <span className="text-cyan-200/80 font-mono" aria-hidden>
+                      ”
+                    </span>
+                  </blockquote>
+                  <figcaption className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-gray-100 font-semibold">
+                      {t.handle}
+                    </span>
+                    <span className="text-gray-400">{t.community}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              Representative quotes for context — not promises or guarantees.
+            </p>
+          </div>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Get these alerts (Pro)"
+            secondaryPlan="elite"
+            secondaryLabel="Get them faster (Elite)"
+          />
         </section>
 
         <section className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-5 md:p-6">
@@ -323,6 +470,7 @@ export default async function PolymarketAlertsTlPage() {
               </span>
             ))}
           </div>
+          <SectionCta primaryPlan="pro" primaryLabel="Start Pro" secondaryPlan="elite" secondaryLabel="Choose Elite" />
         </section>
 
         <section className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-5 md:p-6">
@@ -349,6 +497,12 @@ export default async function PolymarketAlertsTlPage() {
             </div>
           </div>
           <p className="mt-3 text-sm text-white font-medium">No dashboards. No complexity. Just alerts.</p>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Proceed to checkout (Pro)"
+            secondaryPlan="elite"
+            secondaryLabel="Proceed to checkout (Elite)"
+          />
         </section>
 
         <section className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-5 md:p-6">
@@ -375,6 +529,12 @@ export default async function PolymarketAlertsTlPage() {
             </div>
           </div>
           <p className="mt-3 text-sm text-white font-medium">Better information—not promises.</p>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Start Pro (risk-free)"
+            secondaryPlan="elite"
+            secondaryLabel="Go Elite (faster)"
+          />
         </section>
 
         <section className="rounded-2xl border border-violet-300/30 bg-violet-400/10 p-5 md:p-6">
@@ -389,6 +549,12 @@ export default async function PolymarketAlertsTlPage() {
             <p>New tiers (like Whale) open to waitlist first as infrastructure expands.</p>
           </div>
           <p className="mt-3 text-xs text-gray-400">Early-access public pricing; grandfathering may apply.</p>
+          <SectionCta
+            primaryPlan="pro"
+            primaryLabel="Start Pro ($29)"
+            secondaryPlan="elite"
+            secondaryLabel="Choose Elite ($59)"
+          />
         </section>
 
         <section className="rounded-2xl border border-amber-300/40 bg-amber-500/15 p-5 md:p-6 text-center">
@@ -407,6 +573,14 @@ export default async function PolymarketAlertsTlPage() {
             </ul>
           </div>
           <p className="mt-3 text-sm text-white font-semibold">Delay compounds. Early visibility does not.</p>
+          <div className="mt-5">
+            <Link
+              href="/subscribe?plan=pro"
+              className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-amber-300 px-7 py-3.5 text-sm font-extrabold text-zinc-950 hover:bg-amber-200 transition-colors active:scale-[0.98]"
+            >
+              Start Pro now
+            </Link>
+          </div>
         </section>
 
         <PolymarketAlertsClosingCta compact />

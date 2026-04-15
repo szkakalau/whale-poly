@@ -19,6 +19,7 @@ def create_checkout_session(
   plan: str,
   user_id: str | None = None,
   customer_email: str | None = None,
+  apply_promo: bool = False,
 ) -> str:
   stripe = _stripe()
   metadata = {"activation_code": activation_code, "plan": plan}
@@ -33,6 +34,9 @@ def create_checkout_session(
     "cancel_url": settings.landing_cancel_url,
     "metadata": metadata,
   }
+  promo_id = (getattr(settings, "stripe_promo_first_month_10_off", "") or "").strip()
+  if apply_promo and promo_id:
+    create_kwargs["discounts"] = [{"promotion_code": promo_id}]
   if customer_email and str(customer_email).strip():
     create_kwargs["customer_email"] = str(customer_email).strip()
   session = stripe.checkout.Session.create(**create_kwargs)
