@@ -52,7 +52,7 @@ export default function UpgradeModal({
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center sm:p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -66,7 +66,7 @@ export default function UpgradeModal({
       />
       
       {/* Modal Content */}
-      <div className="relative w-full max-w-md glass rounded-[2rem] border border-white/10 p-8 shadow-2xl animate-scale-in overflow-hidden">
+      <div className="relative max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem))] w-full max-w-md overflow-y-auto glass rounded-2xl border border-white/10 p-5 shadow-2xl animate-scale-in overflow-x-hidden sm:rounded-[2rem] sm:p-8">
         {/* Decorative background */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -z-10"></div>

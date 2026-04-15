@@ -334,7 +334,7 @@ function SubscribeForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm text-gray-400">Tier</label>
             <select
@@ -412,9 +412,9 @@ function SubscribeForm() {
 
 export default function SubscribePage() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-24 sm:py-32 relative">
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -z-10"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] -z-10"></div>
         

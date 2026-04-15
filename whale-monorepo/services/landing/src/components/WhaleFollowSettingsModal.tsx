@@ -139,7 +139,7 @@ export default function WhaleFollowSettingsModal({ wallet, onClose, onSaved }: P
                 </label>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Min Size (USD)</label>
                 <div className="text-[10px] text-gray-500 mb-1">

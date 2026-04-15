@@ -443,9 +443,9 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   if (!data) {
     const fallbackName = shortenWallet(wallet);
     return (
-      <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+      <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
         <Header />
-        <main className="mx-auto max-w-4xl px-6 py-32 relative">
+        <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
           <div className="mb-8">
             <p className="text-sm text-gray-500 mb-4">Whale Profile</p>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
@@ -483,7 +483,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
   )}&text=${encodeURIComponent(shareText)}`;
 
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] bg-violet-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-15%] right-[-15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[140px]" />
@@ -491,7 +491,7 @@ export default async function WhaleProfilePage({ params }: PageProps) {
 
       <Header />
 
-      <main className="mx-auto max-w-6xl px-6 pt-32 pb-24 relative">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
         <section className="mb-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>

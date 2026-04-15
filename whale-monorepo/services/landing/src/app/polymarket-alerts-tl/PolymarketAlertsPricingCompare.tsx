@@ -39,7 +39,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
         <div
           className={`relative order-1 lg:order-2 flex flex-col rounded-2xl border-2 border-violet-500 bg-gradient-to-b from-violet-500/[0.14] via-black/60 to-black/80 shadow-[0_0_70px_-14px_rgba(139,92,246,0.50)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_90px_-18px_rgba(139,92,246,0.65)] lg:z-[1] lg:-mt-3 lg:mb-3 ${cardPad}`}
         >
-          <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+          <div className="absolute -top-3 left-1/2 z-[2] max-w-[min(100%,calc(100vw-2rem))] -translate-x-1/2 rounded-full bg-violet-500 px-3 py-1 text-center font-mono text-[9px] font-bold uppercase leading-tight tracking-[0.12em] text-white shadow-lg sm:px-4 sm:text-[10px] sm:tracking-[0.2em] sm:whitespace-nowrap">
             Recommended For Active Traders
           </div>
 

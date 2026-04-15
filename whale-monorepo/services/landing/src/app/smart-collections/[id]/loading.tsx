@@ -1,11 +1,11 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] bg-violet-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-15%] right-[-15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[140px]" />
       </div>
-      <div className="mx-auto max-w-5xl px-6 pt-32 pb-24 space-y-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 space-y-8">
         <div className="animate-pulse space-y-3">
           <div className="h-3 w-32 rounded-full bg-white/10" />
           <div className="h-9 w-80 rounded bg-white/10" />

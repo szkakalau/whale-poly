@@ -126,12 +126,12 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           Explore Smart Collections
         </Link>
       </div>
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-0.5 [scrollbar-width:thin] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           <button
             type="button"
             onClick={() => setOrderBy('PNL')}
-            className={`text-xs rounded-full border px-3 py-1 ${
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium min-h-[40px] sm:min-h-0 sm:py-1 ${
               orderBy === 'PNL' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
@@ -140,7 +140,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           <button
             type="button"
             onClick={() => setOrderBy('VOL')}
-            className={`text-xs rounded-full border px-3 py-1 ${
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium min-h-[40px] sm:min-h-0 sm:py-1 ${
               orderBy === 'VOL' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
@@ -149,18 +149,18 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           <button
             type="button"
             onClick={() => setOrderBy('ROI')}
-            className={`text-xs rounded-full border px-3 py-1 ${
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-medium min-h-[40px] sm:min-h-0 sm:py-1 ${
               orderBy === 'ROI' ? 'border-violet-500/60 bg-violet-500/20 text-violet-100' : 'border-white/15 text-gray-300'
             }`}
           >
             Sort by ROI
           </button>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:items-center lg:flex lg:w-auto lg:shrink-0 lg:gap-3">
           <select
             value={timePeriod}
             onChange={(e) => setTimePeriod(e.target.value as typeof timePeriod)}
-            className="text-xs rounded-full border border-white/15 bg-black/40 px-3 py-1 text-gray-200"
+            className="min-h-[44px] w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-gray-200 sm:min-h-0 sm:w-auto sm:rounded-full sm:py-1"
           >
             <option value="DAY">Day</option>
             <option value="WEEK">Week</option>
@@ -170,7 +170,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as typeof category)}
-            className="text-xs rounded-full border border-white/15 bg-black/40 px-3 py-1 text-gray-200"
+            className="min-h-[44px] w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-gray-200 sm:min-h-0 sm:w-auto sm:rounded-full sm:py-1"
           >
             <option value="OVERALL">Overall</option>
             <option value="POLITICS">Politics</option>
@@ -188,7 +188,7 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
           type="button"
           onClick={subscribeSmartCollection}
           disabled={pending}
-          className="inline-flex items-center rounded-full border border-violet-500/60 bg-violet-500/20 px-4 py-1.5 text-xs font-medium text-violet-50 hover:bg-violet-500/30"
+          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-violet-500/60 bg-violet-500/20 px-4 py-2.5 text-xs font-medium text-violet-50 hover:bg-violet-500/30 lg:w-auto lg:shrink-0"
         >
           Subscribe (High PnL Whales)
         </button>
@@ -229,8 +229,8 @@ export default function SmartMoneyClient({ initialItems, initialOrderBy }: Props
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-        <table className="w-full text-sm text-gray-300">
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 [-webkit-overflow-scrolling:touch]">
+        <table className="min-w-[560px] w-full text-sm text-gray-300">
           <thead className="text-xs uppercase tracking-wide text-gray-500 border-b border-white/10">
             <tr>
               <th className="py-2 pl-4 text-left">Wallet</th>

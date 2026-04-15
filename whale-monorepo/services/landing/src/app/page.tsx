@@ -558,7 +558,7 @@ async function HomeQuickStartSection() {
 export default function Home() {
   // Keep first HTML fast: personalization (Quick Start progress) streams later.
   return (
-    <div className="min-h-screen text-foreground selection:bg-[#5B8CFF]/25 overflow-hidden">
+    <div className="min-h-screen text-foreground selection:bg-[#5B8CFF]/25 overflow-x-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 z-[-1] bg-background" />
 

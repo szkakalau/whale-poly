@@ -16,9 +16,9 @@ export const metadata = {
 
 export default function SuccessPage() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <Header />
-      <main className="mx-auto max-w-2xl px-6 py-32 relative">
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
         <h1 className="text-4xl font-bold mb-6 text-white">Payment received</h1>
         <p className="text-gray-300 mb-10">
           Payment completed. Your subscription will be activated automatically after processing.

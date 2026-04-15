@@ -201,9 +201,9 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
 
   if (!detail) {
     return (
-      <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+      <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
         <Header />
-        <main className="mx-auto max-w-3xl px-6 pt-32 pb-24 relative">
+        <main className="mx-auto max-w-3xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
           <h1 className="text-2xl font-semibold text-white mb-4">
             Smart collection not found
           </h1>
@@ -234,7 +234,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
   )}&text=${encodeURIComponent(shareText)}`;
 
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] bg-violet-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-15%] right-[-15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[140px]" />
@@ -242,7 +242,7 @@ export default async function SmartCollectionDetailPage({ params }: PageProps) {
 
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 pt-32 pb-24 relative space-y-8">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative space-y-8">
         <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">

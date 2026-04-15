@@ -202,7 +202,7 @@ export default async function PolymarketAlertsTlPage() {
   const proofStats = await loadProofStats();
 
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-12%] left-[-10%] w-[42%] h-[42%] bg-violet-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-14%] right-[-10%] w-[42%] h-[42%] bg-cyan-500/10 rounded-full blur-[120px]" />
@@ -211,7 +211,7 @@ export default async function PolymarketAlertsTlPage() {
       <RedditOfferTopBar scrollTargetId="pricing" />
       <Header />
 
-      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-4 sm:px-6 pt-[calc(5rem+var(--sw-top-offset,0px))] sm:pt-[calc(7rem+var(--sw-top-offset,0px))] pb-16 relative space-y-5 md:space-y-7">
+      <main className="polymarket-alerts-tl-main mx-auto max-w-5xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-[calc(7rem+var(--sw-top-offset,0px))] pb-16 sm:pb-20 relative space-y-5 md:space-y-7">
         <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5 sm:p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">HERO</p>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-semibold tracking-wide text-gray-200">

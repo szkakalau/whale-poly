@@ -68,7 +68,7 @@ export default function WhaleWaitlistPage() {
   }
 
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-12%] left-[-10%] w-[42%] h-[42%] bg-violet-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-14%] right-[-10%] w-[42%] h-[42%] bg-cyan-500/10 rounded-full blur-[120px]" />
@@ -76,7 +76,7 @@ export default function WhaleWaitlistPage() {
 
       <Header />
 
-      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-24 sm:py-32 relative">
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
         <p className="text-xs uppercase tracking-[0.22em] text-gray-400">Whale plan waitlist</p>
         <h1 className="mt-3 text-[34px] sm:text-5xl font-black tracking-tight text-white text-balance">
           Get first access to Whale.

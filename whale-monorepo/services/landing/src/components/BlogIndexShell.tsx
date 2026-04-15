@@ -23,7 +23,7 @@ export default function BlogIndexShell({ children }: { children: ReactNode }) {
 
       <Header />
 
-      <main className="relative mx-auto w-full max-w-5xl flex-1 px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
+      <main className="relative mx-auto w-full max-w-5xl flex-1 px-4 pb-20 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:px-6 sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-28">
         <header className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.35em] text-violet-400/90 sm:text-xs">
             SightWhale.com · Intelligence

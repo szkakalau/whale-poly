@@ -32,7 +32,7 @@ export const metadata = {
 
 export default function BacktestingPage() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
       {/* Background Effects */}
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-600/10 rounded-full blur-[120px]"></div>
@@ -41,7 +41,7 @@ export default function BacktestingPage() {
 
       <Header />
 
-      <main className="mx-auto max-w-4xl px-6 py-32 relative">
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24 relative">
         {/* INTRODUCTION */}
         <section className="mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">

@@ -14,8 +14,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
-      <div className="mx-auto max-w-3xl px-6 pt-32 pb-24">
+    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-x-hidden bg-[#0a0a0a]">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px)+var(--sw-top-offset,0px))] md:pt-32 pb-16 sm:pb-24">
         <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-6">
           <div className="text-lg font-semibold text-white">Failed to load Smart Money</div>
           <div className="text-sm text-gray-300 mt-2">
