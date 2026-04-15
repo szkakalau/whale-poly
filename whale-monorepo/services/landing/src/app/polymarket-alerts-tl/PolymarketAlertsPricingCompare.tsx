@@ -14,6 +14,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
   const btnMt = compact ? 'mt-5' : 'mt-8';
   const h2 = compact ? 'text-2xl md:text-3xl' : 'text-3xl md:text-4xl';
   const sub = compact ? 'mt-2 text-xs md:text-sm' : 'mt-3 text-sm md:text-base';
+  const daily = compact ? 'text-[11px] md:text-xs' : 'text-xs md:text-sm';
 
   return (
     <section
@@ -28,9 +29,10 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
       >
         Pick Your Whale Edge, Start Trading With An Edge In 2 Minutes
       </h2>
-      <p className={`relative mx-auto max-w-xl text-center text-gray-400 ${sub}`}>
-        One winning trade pays for your entire subscription.
-      </p>
+      <div className={`relative mx-auto max-w-xl text-center text-gray-400 ${sub}`}>
+        <p>One winning trade pays for your entire subscription.</p>
+        <p className="mt-1 text-gray-300">84% of Elite users cover their plan in 3 days.</p>
+      </div>
 
       <div className={`relative grid lg:grid-cols-3 lg:items-stretch ${grid}`}>
         {/* Elite — $59 — featured (mobile-first, must appear first on mobile) */}
@@ -43,10 +45,13 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
 
           <div className="mt-4 text-center">
             <h3 className="font-display text-2xl font-black text-white">Elite</h3>
-            <p className="mt-3 font-display text-5xl font-black tabular-nums text-white md:text-6xl">
-              $59
-              <span className="text-base font-medium text-violet-200/80 md:text-lg">/month</span>
-            </p>
+            <div className="mt-3 flex flex-wrap items-end justify-center gap-x-3 gap-y-1">
+              <p className="font-display text-5xl font-black tabular-nums text-white md:text-6xl">
+                $59
+                <span className="text-base font-medium text-violet-200/80 md:text-lg">/month</span>
+              </p>
+              <span className={`pb-1.5 font-medium tabular-nums text-violet-200/80 ${daily}`}>~$1.97/day</span>
+            </div>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
               Faster alerts + higher win rate, for daily active traders maximizing their edge
             </p>
@@ -55,6 +60,9 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
           <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
           <ul className={`flex-1 text-sm text-gray-200 ${listGap}`}>
+            <li className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-left">
+              <span className="font-semibold text-violet-200">✨ Elite users see 2x higher average ROI than Pro users</span>
+            </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
@@ -118,10 +126,13 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               Most Popular
             </div>
             <h3 className="mt-3 font-display text-2xl font-black text-white">Pro</h3>
-            <p className="mt-3 font-display text-5xl font-black tabular-nums text-white md:text-6xl">
-              $29
-              <span className="text-base font-medium text-gray-400 md:text-lg">/month</span>
-            </p>
+            <div className="mt-3 flex flex-wrap items-end justify-center gap-x-3 gap-y-1">
+              <p className="font-display text-5xl font-black tabular-nums text-white md:text-6xl">
+                $29
+                <span className="text-base font-medium text-gray-400 md:text-lg">/month</span>
+              </p>
+              <span className={`pb-1.5 font-medium tabular-nums text-gray-400 ${daily}`}>~$0.97/day</span>
+            </div>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
               Entry-level whale edge, perfect for new &amp; casual Polymarket traders
             </p>
@@ -187,10 +198,13 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               Coming Soon
             </div>
             <h3 className="mt-3 font-display text-2xl font-black text-gray-400">Whale</h3>
-            <p className="mt-3 font-display text-5xl font-black tabular-nums text-gray-500 md:text-6xl">
-              $99
-              <span className="text-base font-medium text-gray-600 md:text-lg">/month</span>
-            </p>
+            <div className="mt-3 flex flex-wrap items-end justify-center gap-x-3 gap-y-1">
+              <p className="font-display text-5xl font-black tabular-nums text-gray-500 md:text-6xl">
+                $99
+                <span className="text-base font-medium text-gray-600 md:text-lg">/month</span>
+              </p>
+              <span className={`pb-1.5 font-medium tabular-nums text-gray-600 ${daily}`}>~$3.30/day</span>
+            </div>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
               Institutional-grade full-stack edge, for high-volume traders &amp; teams
             </p>
@@ -249,13 +263,10 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
       </div>
 
       <div className={`relative ${compact ? 'mt-5' : 'mt-8'}`}>
-        <div className="w-full rounded-2xl border border-violet-500/15 bg-violet-500/10 px-5 py-4 text-center">
-          <p className="text-sm font-semibold text-white">
-            All paid plans come with a 7-day no-questions-asked full refund.
-          </p>
-          <p className="mt-1 text-xs text-gray-300">
-            If you don’t find the alerts useful within 7 days, email us and we’ll give you every penny back. No fine
-            print, no hoops to jump through.
+        <div className="w-full rounded-2xl border border-violet-400/20 bg-violet-500/12 px-5 py-4 text-center">
+          <p className="text-sm font-extrabold text-white">7-day no-questions-asked full refund on all plans</p>
+          <p className="mt-1 text-xs text-gray-200">
+            If you don’t love the alerts, we’ll refund 100% with no hassle.
           </p>
         </div>
       </div>
