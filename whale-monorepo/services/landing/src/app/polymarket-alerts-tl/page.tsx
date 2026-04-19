@@ -59,21 +59,13 @@ function SectionTitle({ children }: { children: ReactNode }) {
 export function HeroSection() {
   return (
     <section className="pt-10 pb-14 sm:pt-14 sm:pb-16">
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#343536] bg-[#272729] px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[#818384]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#ff4500]" aria-hidden />
-          r/Polymarket vibes
-        </span>
-        <span className="text-[13px] text-[#6f7071]">· no fluff, just flow</span>
-      </div>
       <h1 className="font-display text-balance text-[1.75rem] font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl">
         Follow Polymarket whales{' '}
         <span className="text-[#ff4500] underline decoration-[#ff4500]/40 decoration-2 underline-offset-4">in real time</span>
       </h1>
-      <p className="mt-5 text-lg leading-relaxed text-[#d7dadc]">
-        Get instant alerts when smart money places big bets.
-        <br />
-        <span className="text-[#818384]">Stop trading blind.</span>
+      <p className="mt-5 text-lg leading-relaxed text-[#d7dadc]">Know what whales bet — before the market reacts.</p>
+      <p className="mt-3 font-mono text-[15px] font-semibold tracking-tight text-[#fbbf24]/95">
+        Track $10k+ bets the moment they happen.
       </p>
       <div className="mt-8">
         <PrimaryButton>Start Whale Alerts — $29/mo</PrimaryButton>
@@ -109,49 +101,65 @@ export function ProblemSection() {
             <span className="shrink-0 font-mono text-[#ff4500]" aria-hidden>
               ▸
             </span>
-            Most traders see it too late
+            Most traders react too late
           </li>
         </ul>
-        <p className="mt-6 rounded-md border border-dashed border-[#343536] bg-[#0d0d0d] px-3 py-2.5 text-center text-[15px] font-medium text-[#d7dadc]">
-          Now you see what whales do — instantly.
+        <p className="mt-6 rounded-md border border-dashed border-[#5c2e12]/60 bg-[#1a0f08]/90 px-3 py-3 text-center text-[15px] font-medium leading-snug text-[#fec89a]">
+          By the time Twitter talks about a market — whales are already in.
         </p>
+        <div className="mt-6">
+          <PrimaryButton>Start Whale Alerts — $29/mo</PrimaryButton>
+        </div>
       </PostCard>
     </section>
   );
 }
 
 export function HowItWorksSection() {
-  const cards = [
-    {
-      title: 'Track whale wallets',
-      body: 'We monitor large Polymarket traders',
-    },
-    {
-      title: 'Detect big bets',
-      body: 'We spot high-value trades in seconds',
-    },
-    {
-      title: 'Send instant alerts',
-      body: 'You get notified in real time',
-    },
-  ];
+  const lines = ['We track whale wallets', 'We detect large bets instantly', 'You get real-time alerts'];
   return (
     <section className="py-14 sm:py-16">
       <SectionTitle>How SightWhale works</SectionTitle>
-      <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-[#6f7071]">three steps · same as always</p>
-      <div className="mt-6 space-y-3">
-        {cards.map((c, i) => (
-          <PostCard key={c.title} className="flex gap-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#272729] font-mono text-sm font-bold text-[#ff4500]">
-              {i + 1}
+      <PostCard className="mt-6">
+        <ul className="space-y-4 text-left text-[17px] leading-relaxed text-[#d7dadc]">
+          {lines.map((line) => (
+            <li key={line} className="flex gap-3 border-b border-[#2a2a2b] pb-4 last:border-0 last:pb-0">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff4500]" aria-hidden />
+              {line}
+            </li>
+          ))}
+        </ul>
+      </PostCard>
+    </section>
+  );
+}
+
+export function MarketSpeedSection() {
+  return (
+    <section className="py-14 sm:py-16">
+      <PostCard className="border-[#1e3a5f]/50 bg-gradient-to-br from-[#0c1520]/90 to-[#1a1a1b]">
+        <SectionTitle>Markets move fast when whales enter</SectionTitle>
+        <ul className="mt-5 space-y-3 border-t border-[#343536] pt-5 text-left text-[17px] leading-relaxed text-[#d7dadc]">
+          <li className="flex gap-3">
+            <span className="shrink-0 text-[#38bdf8]" aria-hidden>
+              ◆
             </span>
-            <div>
-              <p className="font-display text-lg font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-[17px] leading-relaxed text-[#818384]">{c.body}</p>
-            </div>
-          </PostCard>
-        ))}
-      </div>
+            Odds can shift within minutes
+          </li>
+          <li className="flex gap-3">
+            <span className="shrink-0 text-[#38bdf8]" aria-hidden>
+              ◆
+            </span>
+            Retail traders react too late
+          </li>
+          <li className="flex gap-3">
+            <span className="shrink-0 text-[#38bdf8]" aria-hidden>
+              ◆
+            </span>
+            Early signals create the edge
+          </li>
+        </ul>
+      </PostCard>
     </section>
   );
 }
@@ -178,6 +186,9 @@ export function PreviewSection() {
           />
         </div>
       </PostCard>
+      <div className="mt-6">
+        <PrimaryButton>Get Whale Alerts — $29/mo</PrimaryButton>
+      </div>
     </section>
   );
 }
@@ -218,15 +229,31 @@ export function ValueSection() {
   );
 }
 
+export function FounderTrustSection() {
+  return (
+    <section className="py-14 sm:py-16">
+      <PostCard className="border-[#3d2a1f]/80 bg-[#141210]">
+        <SectionTitle>Built by a Polymarket trader</SectionTitle>
+        <div className="mt-5 space-y-4 border-t border-[#343536] pt-5 text-[17px] leading-relaxed text-[#d7dadc]">
+          <p>I built SightWhale after spending hours manually tracking whale wallets.</p>
+          <p className="text-[#b8b9ba]">Now early members get the same alerts I use every day.</p>
+        </div>
+      </PostCard>
+    </section>
+  );
+}
+
 export function SocialProofSection() {
   return (
     <section className="py-14 sm:py-16">
       <PostCard className="border-[#3d2a1f] bg-gradient-to-br from-[#1f1410]/80 to-[#1a1a1b]">
-        <SectionTitle>Early members are joining</SectionTitle>
+        <SectionTitle>Early users are joining every week</SectionTitle>
         <div className="mt-5 space-y-4 text-[17px] leading-relaxed text-[#d7dadc]">
           <p>You&apos;re getting access at the founding member price.</p>
-          <p>Built by an active Polymarket trader.</p>
-          <p>Continuously improving with early users.</p>
+          <p className="text-[#b8b9ba]">The product is improving fast with early members.</p>
+        </div>
+        <div className="mt-6">
+          <PrimaryButton>Join the early group — $29/mo</PrimaryButton>
         </div>
       </PostCard>
     </section>
@@ -240,6 +267,9 @@ export function PricingSection() {
         <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#ff4500]/15 blur-2xl" aria-hidden />
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#ff4500]">Founding member</p>
         <h2 className="font-display mt-2 text-2xl font-bold text-white">Founding Member Pricing</h2>
+        <p className="mt-3 rounded-md border border-[#343536] bg-[#0d0d0d] px-3 py-2 text-center font-mono text-[13px] font-medium text-[#a3e635]/95">
+          Less than one bad trade per month
+        </p>
         <p className="mt-4 font-display text-4xl font-extrabold tracking-tight text-white">
           $29 <span className="text-lg font-semibold text-[#818384]">/ month</span>
         </p>
@@ -271,10 +301,49 @@ export function UrgencySection() {
     <section className="py-12 sm:py-14">
       <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-4 py-4 text-center">
         <p className="text-[16px] leading-relaxed text-[#fbbf24]/90">
-          Founding member spots are limited.
+          Founding price available for early users.
           <br />
-          <span className="text-[#d7dadc]">Price will increase as more users join.</span>
+          <span className="text-[#d7dadc]">Price increases once the early group fills.</span>
         </p>
+      </div>
+    </section>
+  );
+}
+
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'How do I receive alerts?',
+    a: 'Email now. Telegram coming soon.',
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. One-click cancel. No lock-in.',
+  },
+  {
+    q: 'Is this beginner friendly?',
+    a: 'Yes. Alerts are simple and real-time.',
+  },
+];
+
+export function FAQSection() {
+  return (
+    <section className="py-14 sm:py-16">
+      <SectionTitle>Frequently asked questions</SectionTitle>
+      <div className="mt-6 space-y-2">
+        {FAQ_ITEMS.map((item) => (
+          <details
+            key={item.q}
+            className="group rounded-lg border border-[#343536] bg-[#1a1a1b] px-4 py-1 open:pb-3 open:pt-2 [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="flex cursor-pointer list-none items-center gap-2 py-3 font-display text-[16px] font-semibold text-white marker:content-none">
+              <span className="font-mono text-[#ff4500] transition-transform group-open:rotate-90" aria-hidden>
+                ▸
+              </span>
+              {item.q}
+            </summary>
+            <p className="border-t border-[#343536] pb-1 pl-7 pt-3 text-[16px] leading-relaxed text-[#b8b9ba]">{item.a}</p>
+          </details>
+        ))}
       </div>
     </section>
   );
@@ -323,11 +392,14 @@ export default function PolymarketAlertsTlPage() {
         <HeroSection />
         <ProblemSection />
         <HowItWorksSection />
+        <MarketSpeedSection />
         <PreviewSection />
         <ValueSection />
+        <FounderTrustSection />
         <SocialProofSection />
         <PricingSection />
         <UrgencySection />
+        <FAQSection />
         <FinalCTASection />
       </main>
       <StickyCTA />
