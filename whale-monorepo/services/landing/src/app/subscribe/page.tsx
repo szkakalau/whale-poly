@@ -1,12 +1,128 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, useSyncExternalStore, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
+const SUBSCRIBE_START_PARAM = 'subscribe_pro';
+
+function resolveBotDomain(baseUrl: string): string {
+  try {
+    const u = new URL(baseUrl);
+    if (u.hostname === 't.me' && u.pathname.length > 1) {
+      const seg = u.pathname.replace(/^\//, '').split('/')[0];
+      if (seg) return seg;
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'sightwhale_bot';
+}
+
+function isLikelyInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|LinkedInApp|Snapchat/i.test(ua);
+}
+
+const NARROW_QUERY = '(max-width: 639px)';
+
+function subscribeNarrowViewport(onStoreChange: () => void) {
+  const mq = window.matchMedia(NARROW_QUERY);
+  mq.addEventListener('change', onStoreChange);
+  return () => mq.removeEventListener('change', onStoreChange);
+}
+
+function getNarrowViewportSnapshot() {
+  return window.matchMedia(NARROW_QUERY).matches;
+}
+
+function TelegramActivationLinks() {
+  const { httpsUrl, tgAppUrl } = useMemo(() => {
+    const httpsUrl = `${TELEGRAM_BOT_URL}?start=${SUBSCRIBE_START_PARAM}`;
+    const domain = resolveBotDomain(TELEGRAM_BOT_URL);
+    const tgAppUrl = `tg://resolve?domain=${encodeURIComponent(domain)}&start=${SUBSCRIBE_START_PARAM}`;
+    return { httpsUrl, tgAppUrl };
+  }, []);
+
+  const isNarrow = useSyncExternalStore(subscribeNarrowViewport, getNarrowViewportSnapshot, () => false);
+  const showWebViewHint = useSyncExternalStore(
+    () => () => {},
+    isLikelyInAppBrowser,
+    () => false
+  );
+  const [copied, setCopied] = useState(false);
+
+  async function copyBotLink() {
+    try {
+      await navigator.clipboard.writeText(httpsUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const webLinkProps = isNarrow
+    ? ({ rel: 'noopener noreferrer' } as const)
+    : ({ target: '_blank' as const, rel: 'noopener noreferrer' as const });
+
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      {showWebViewHint ? (
+        <div
+          className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-[13px] sm:text-sm text-amber-100/95 leading-snug"
+          role="status"
+        >
+          If the button does not open Telegram, use your browser&apos;s menu to open this page in Safari or Chrome, then
+          try again.
+        </div>
+      ) : null}
+
+      <p>
+        1. Open{' '}
+        <a
+          href={httpsUrl}
+          {...webLinkProps}
+          className="text-violet-400 hover:text-violet-300 font-medium underline decoration-violet-500/30 underline-offset-4"
+        >
+          @sightwhale_bot
+        </a>{' '}
+        and run <code className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-violet-300">/start</code>
+        — or use the button below (recommended on mobile).
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <a
+          href={httpsUrl}
+          {...webLinkProps}
+          className="btn-primary w-full min-h-[44px] px-4 inline-flex items-center justify-center text-center shadow-lg text-base sm:text-lg py-3.5 transform active:scale-[0.98] transition-all"
+        >
+          Open @sightwhale_bot in Telegram
+        </a>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <a
+            href={tgAppUrl}
+            className="min-h-[44px] inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-medium text-gray-200 hover:bg-white/10 hover:border-white/25 transition-colors"
+          >
+            Open in Telegram app
+          </a>
+          <button
+            type="button"
+            onClick={copyBotLink}
+            className="min-h-[44px] inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-medium text-gray-200 hover:bg-white/10 hover:border-white/25 transition-colors"
+          >
+            {copied ? 'Link copied' : 'Copy bot link'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SubscribeForm() {
   const searchParams = useSearchParams();
@@ -243,18 +359,7 @@ export default function SubscribePage() {
           Activate Intelligence
         </h1>
         <div className="space-y-4 sm:space-y-6 text-gray-400 mb-8 sm:mb-10 text-[15px] sm:text-lg font-light leading-relaxed">
-          <p>
-            1. Open{' '}
-            <a
-              href={`${TELEGRAM_BOT_URL}?start=subscribe_pro`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-violet-400 hover:text-violet-300 font-medium underline decoration-violet-500/30 underline-offset-4"
-            >
-              @sightwhale_bot
-            </a>{' '}
-            and run <code className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-violet-300">/start</code>
-          </p>
+          <TelegramActivationLinks />
           <p>
             2. Tap <span className="text-white font-medium">Generate Code</span> or use the deep link from Telegram. We
             will auto-fill the code here when you return.
