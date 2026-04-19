@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -18,6 +18,7 @@ function getProSubscribeHref(): string {
   return path.includes('?') ? `${path}&plan=pro` : `${path}?plan=pro`;
 }
 
+/** High-contrast primary action — subscribe / checkout. */
 function PrimaryButton({ children, className = '' }: { children: ReactNode; className?: string }) {
   const href = getProSubscribeHref();
   const sharedClass = `inline-flex w-full items-center justify-center rounded-full bg-[#ff4500] px-5 py-3.5 text-base font-bold tracking-tight text-white shadow-[0_6px_28px_rgba(255,69,0,0.38)] transition-[transform,box-shadow] hover:scale-[1.02] hover:bg-[#ff5417] hover:shadow-[0_8px_32px_rgba(255,69,0,0.45)] active:scale-[0.99] min-h-14 ${className}`;
@@ -58,23 +59,34 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 export function HeroSection() {
   return (
-    <section className="pt-10 pb-14 sm:pt-14 sm:pb-16">
-      <h1 className="font-display text-balance text-[1.75rem] font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl">
-        Follow Polymarket whales{' '}
-        <span className="text-[#ff4500] underline decoration-[#ff4500]/40 decoration-2 underline-offset-4">in real time</span>
+    <section className="pt-8 pb-12 sm:pt-10 sm:pb-14" aria-label="Hero">
+      <h1 className="font-display text-balance text-[clamp(1.25rem,5.2vw,1.65rem)] font-black uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55)] sm:text-[clamp(1.45rem,4.8vw,1.95rem)] sm:tracking-[0.07em]">
+        Stop being exit liquidity on{' '}
+        <span className="text-[#ff4500]">Polymarket</span>
       </h1>
-      <p className="mt-5 text-lg leading-relaxed text-[#d7dadc]">Know what whales bet — before the market reacts.</p>
-      <p className="mt-3 font-mono text-[15px] font-semibold tracking-tight text-[#fbbf24]/95">
-        Track $10k+ bets the moment they happen.
+      <p className="mt-5 max-w-[34ch] text-[15px] leading-relaxed text-[#a8abae] sm:text-[16px]">
+        See whale-sized bets in real time, act with an information edge before the price moves.
+      </p>
+      <p className="mt-4 border-l-2 border-[#fbbf24]/80 pl-3 text-[16px] font-semibold leading-snug text-[#fef3c7] sm:text-[17px]">
+        One good alert pays for the entire subscription.
       </p>
       <div className="mt-8">
-        <PrimaryButton>Start Whale Alerts — $29/mo</PrimaryButton>
+        <PrimaryButton className="min-h-[3.75rem] py-4 text-[17px] font-extrabold shadow-[0_8px_40px_rgba(255,69,0,0.5)] ring-2 ring-white/10">
+          Start 7-Day Risk-Free Trial
+        </PrimaryButton>
       </div>
-      <p className="mt-5 text-center font-mono text-[13px] leading-relaxed text-[#818384]">
-        Join early users tracking smart money
-        <br />
-        Cancel anytime
+      <p className="mt-4 text-center">
+        <a
+          href="#live-alert-examples"
+          className="inline-block font-mono text-[13px] font-medium uppercase tracking-[0.14em] text-[#8b8c8e] underline decoration-[#ff4500]/50 decoration-1 underline-offset-4 transition-colors hover:text-[#d7dadc] hover:decoration-[#ff4500]"
+        >
+          See Live Alert Examples
+        </a>
       </p>
+      <div className="mt-8 space-y-2.5 text-center text-[17px] font-semibold leading-snug text-[#eef0f2] sm:text-[18px]">
+        <p>7-day full refund, no questions asked.</p>
+        <p className="text-[#c4c6c9]">Cancel anytime, no contracts.</p>
+      </div>
     </section>
   );
 }
@@ -166,7 +178,7 @@ export function MarketSpeedSection() {
 
 export function PreviewSection() {
   return (
-    <section className="py-14 sm:py-16">
+    <section id="live-alert-examples" className="scroll-mt-6 py-14 sm:py-16">
       <SectionTitle>Real whale alerts look like this</SectionTitle>
       <p className="mt-3 text-[17px] leading-relaxed text-[#818384]">You receive alerts the moment whales enter a market.</p>
       <PostCard className="mt-6 overflow-hidden p-0">
@@ -371,13 +383,24 @@ export function StickyCTA() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#343536] bg-[#1a1a1b]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a1a1b]/85">
       <div className="mx-auto max-w-md">
-        <PrimaryButton className="shadow-[0_-4px_24px_rgba(0,0,0,0.45)]">Start Whale Alerts — $29/mo</PrimaryButton>
+        <PrimaryButton className="min-h-[3.5rem] py-3.5 text-[16px] font-extrabold shadow-[0_-4px_28px_rgba(255,69,0,0.35)] ring-1 ring-white/10">
+          Start 7-Day Risk-Free Trial
+        </PrimaryButton>
       </div>
     </div>
   );
 }
 
 export default function PolymarketAlertsTlPage() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'smooth';
+    return () => {
+      root.style.scrollBehavior = prev;
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#030303] text-[#d7dadc]">
       <div

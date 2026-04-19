@@ -8,11 +8,11 @@ export const viewport: Viewport = {
 export const metadata = {
   title: 'Polymarket Whale Alerts — SightWhale',
   description:
-    'Know what whales bet before the market reacts. Track $10k+ Polymarket bets in real time — founding member pricing.',
+    'Stop being exit liquidity on Polymarket. Whale-sized bets in real time — 7-day risk-free trial, full refund.',
   openGraph: {
     title: 'SightWhale — Polymarket Whale Alerts',
     description:
-      'Know what whales bet before the market reacts. Real-time whale alerts for Polymarket.',
+      'See whale-sized bets in real time. 7-day risk-free trial — cancel anytime.',
     type: 'website',
     url: 'https://www.sightwhale.com/polymarket-alerts-tl',
   },
@@ -20,7 +20,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'SightWhale — Polymarket Whale Alerts',
     description:
-      'Know what whales bet before the market reacts. Real-time alerts — $29/mo.',
+      'Whale alerts for Polymarket. 7-day risk-free trial.',
   },
   alternates: {
     canonical: '/polymarket-alerts-tl',
