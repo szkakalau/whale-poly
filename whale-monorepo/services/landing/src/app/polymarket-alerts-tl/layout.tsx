@@ -1,4 +1,9 @@
 import type { ReactNode } from 'react';
+import type { Viewport } from 'next';
+
+export const viewport: Viewport = {
+  themeColor: '#030303',
+};
 
 export const metadata = {
   title: 'Polymarket Whale Alerts — SightWhale',
