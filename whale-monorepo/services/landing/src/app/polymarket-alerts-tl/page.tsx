@@ -91,6 +91,68 @@ export function HeroSection() {
   );
 }
 
+/** Second screen: proprietary Whale Score™ moat — placed before live alert examples. */
+export function WhaleScoreMoatSection() {
+  return (
+    <section className="pb-12 pt-2 sm:pb-14" aria-labelledby="whale-score-moat-heading">
+      <div className="relative overflow-hidden rounded-xl border border-[#ff4500]/30 bg-gradient-to-b from-[#1c120a] via-[#12100e] to-[#080807] p-5 shadow-[0_0_48px_rgba(255,69,0,0.12)] ring-1 ring-white/[0.06]">
+        <div
+          className="pointer-events-none absolute -right-6 -top-10 h-32 w-32 rounded-full bg-[#ff4500]/20 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-40 rotate-12 bg-[#fbbf24]/[0.07] blur-2xl"
+          aria-hidden
+        />
+
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ff4500]/90">Proprietary signal layer</p>
+        <h2
+          id="whale-score-moat-heading"
+          className="font-display mt-3 text-balance text-[clamp(0.95rem,4.2vw,1.2rem)] font-black uppercase leading-[1.2] tracking-[0.055em] text-white sm:tracking-[0.06em]"
+        >
+          Not all whale bets are equal.
+          <span className="mt-2 block text-[#ff4500] [text-shadow:0_0_28px_rgba(255,69,0,0.35)]">
+            We only send you the ones that move markets.
+          </span>
+        </h2>
+
+        <div className="mt-6 space-y-4 border-t border-[#3d2e24]/80 pt-5 text-[16px] leading-relaxed text-[#c9cbce]">
+          <p>
+            Any tool can show you large Polymarket trades. Only SightWhale filters the noise with our proprietary{' '}
+            <span className="font-semibold text-white">Whale Score™</span> <span className="font-mono text-[15px] text-[#a3e635]">(0–100)</span>.
+          </p>
+          <p className="text-[15px] text-[#b4b6b9] sm:text-[16px]">
+            Our AI-driven scoring system separates &quot;dumb large money&quot; from the top 1% of Polymarket wallets that consistently drive price action. Every alert we send has a Whale Score of{' '}
+            <span className="font-semibold text-[#fef08a]">70+</span>, so you skip{' '}
+            <span className="font-semibold text-white">90%</span> of the noise and only act on signals that matter.
+          </p>
+        </div>
+
+        {/* 0–100 scale — ties visually to “70+” / “90% noise” copy */}
+        <div className="mt-6">
+          <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-[#6f7071]">
+            <span>0</span>
+            <span className="text-[#ff4500]/90">Whale Score™</span>
+            <span>100</span>
+          </div>
+          <div className="relative h-3 overflow-hidden rounded-full bg-[#1f1f20] ring-1 ring-[#343536]">
+            <div
+              className="h-full w-[70%] rounded-full bg-gradient-to-r from-[#7c2d12] via-[#ff4500] to-[#fbbf24]"
+              aria-hidden
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-center gap-2 font-mono text-[11px] text-[#818384]">
+            <span className="rounded border border-[#fef08a]/30 bg-[#fef08a]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#fef08a]">
+              70+ only
+            </span>
+            <span>Below this — filtered out.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function ProblemSection() {
   return (
     <section className="py-14 sm:py-16">
@@ -413,6 +475,7 @@ export default function PolymarketAlertsTlPage() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[min(42vh,420px)] bg-gradient-to-b from-[#ff4500]/[0.07] via-transparent to-transparent" aria-hidden />
       <main className="relative z-10 mx-auto max-w-md px-4 pb-4 font-[family-name:var(--font-body)]">
         <HeroSection />
+        <WhaleScoreMoatSection />
         <ProblemSection />
         <HowItWorksSection />
         <MarketSpeedSection />
