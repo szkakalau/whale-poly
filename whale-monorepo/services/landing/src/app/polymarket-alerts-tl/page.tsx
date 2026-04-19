@@ -313,7 +313,7 @@ export function UrgencySection() {
 const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: 'How do I receive alerts?',
-    a: 'Email now. Telegram coming soon.',
+    a: 'Email and Telegram. Use either channel or both — you can set this in your account.',
   },
   {
     q: 'Can I cancel anytime?',
