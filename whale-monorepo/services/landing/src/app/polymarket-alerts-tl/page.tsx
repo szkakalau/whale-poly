@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -21,7 +21,7 @@ function getProSubscribeHref(): string {
 /** High-contrast primary action — subscribe / checkout. */
 function PrimaryButton({ children, className = '' }: { children: ReactNode; className?: string }) {
   const href = getProSubscribeHref();
-  const sharedClass = `inline-flex w-full items-center justify-center rounded-full bg-[#ff4500] px-5 py-3.5 text-base font-bold tracking-tight text-white shadow-[0_6px_28px_rgba(255,69,0,0.38)] transition-[transform,box-shadow] hover:scale-[1.02] hover:bg-[#ff5417] hover:shadow-[0_8px_32px_rgba(255,69,0,0.45)] active:scale-[0.99] min-h-14 ${className}`;
+  const sharedClass = `inline-flex w-full items-center justify-center rounded-full bg-black px-5 py-3.5 text-[15px] font-semibold tracking-tight text-white transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black min-h-14 ${className}`;
 
   if (href.startsWith('http://') || href.startsWith('https://')) {
     return (
@@ -59,33 +59,22 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 export function HeroSection() {
   return (
-    <section className="pt-8 pb-12 sm:pt-10 sm:pb-14" aria-label="Hero">
-      <h1 className="font-display text-balance text-[clamp(1.25rem,5.2vw,1.65rem)] font-black uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55)] sm:text-[clamp(1.45rem,4.8vw,1.95rem)] sm:tracking-[0.07em]">
-        Stop being exit liquidity on{' '}
-        <span className="text-[#ff4500]">Polymarket</span>
+    <section className="pt-14 sm:pt-16" aria-label="Hero">
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Polymarket whale alerts</p>
+      <h1 className="font-display mt-4 text-balance text-[clamp(2.1rem,6.4vw,3.35rem)] font-semibold leading-[1.02] tracking-tight text-black">
+        Stop being exit liquidity.
       </h1>
-      <p className="mt-5 max-w-[34ch] text-[15px] leading-relaxed text-[#a8abae] sm:text-[16px]">
-        See whale-sized bets in real time, act with an information edge before the price moves.
+      <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-neutral-600 sm:text-[17px]">
+        Real-time Telegram alerts when whale-sized bets hit Polymarket — so you can act before the price moves.
       </p>
-      <p className="mt-4 border-l-2 border-[#fbbf24]/80 pl-3 text-[16px] font-semibold leading-snug text-[#fef3c7] sm:text-[17px]">
-        One good alert pays for the entire subscription.
-      </p>
-      <div className="mt-8">
-        <PrimaryButton className="min-h-[3.75rem] py-4 text-[17px] font-extrabold shadow-[0_8px_40px_rgba(255,69,0,0.5)] ring-2 ring-white/10">
-          Start 7-Day Risk-Free Trial
-        </PrimaryButton>
+
+      <div className="mt-8 max-w-sm">
+        <PrimaryButton className="min-h-[3.75rem] py-4 text-[16px]">Start 7-Day Risk-Free Trial</PrimaryButton>
       </div>
-      <p className="mt-4 text-center">
-        <a
-          href="#live-alert-examples"
-          className="inline-block font-mono text-[13px] font-medium uppercase tracking-[0.14em] text-[#8b8c8e] underline decoration-[#ff4500]/50 decoration-1 underline-offset-4 transition-colors hover:text-[#d7dadc] hover:decoration-[#ff4500]"
-        >
-          See Live Alert Examples
-        </a>
-      </p>
-      <div className="mt-8 space-y-2.5 text-center text-[17px] font-semibold leading-snug text-[#eef0f2] sm:text-[18px]">
-        <p>7-day full refund, no questions asked.</p>
-        <p className="text-[#c4c6c9]">Cancel anytime, no contracts.</p>
+
+      <div className="mt-6 space-y-1.5 text-[13px] leading-relaxed text-neutral-500">
+        <p>7-day full refund. No questions asked.</p>
+        <p>Cancel anytime. No contracts.</p>
       </div>
     </section>
   );
@@ -94,55 +83,58 @@ export function HeroSection() {
 /** Second screen: proprietary Whale Score™ moat — placed before live alert examples. */
 export function WhaleScoreMoatSection() {
   return (
-    <section className="pb-12 pt-2 sm:pb-14" aria-labelledby="whale-score-moat-heading">
-      <div className="relative overflow-hidden rounded-xl border border-[#ff4500]/30 bg-gradient-to-b from-[#1c120a] via-[#12100e] to-[#080807] p-5 shadow-[0_0_48px_rgba(255,69,0,0.12)] ring-1 ring-white/[0.06]">
-        <div
-          className="pointer-events-none absolute -right-6 -top-10 h-32 w-32 rounded-full bg-[#ff4500]/20 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-40 rotate-12 bg-[#fbbf24]/[0.07] blur-2xl"
-          aria-hidden
-        />
+    <section className="mt-12 border-t border-neutral-200 pt-10 sm:mt-14 sm:pt-12" aria-labelledby="whale-score-moat-heading">
+      <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_1px_0_rgba(0,0,0,0.03)] sm:p-8">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.65]" aria-hidden>
+          <div className="absolute -left-24 -top-28 h-64 w-64 rounded-full bg-neutral-100 blur-2xl" />
+          <div className="absolute -right-24 -top-16 h-56 w-56 rounded-full bg-neutral-100 blur-2xl" />
+        </div>
 
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ff4500]/90">Proprietary signal layer</p>
+        <p className="relative font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+          Proprietary signal layer
+        </p>
         <h2
           id="whale-score-moat-heading"
-          className="font-display mt-3 text-balance text-[clamp(0.95rem,4.2vw,1.2rem)] font-black uppercase leading-[1.2] tracking-[0.055em] text-white sm:tracking-[0.06em]"
+          className="relative font-display mt-3 text-balance text-[clamp(1.25rem,4.2vw,1.65rem)] font-semibold leading-tight tracking-tight text-black"
         >
           Not all whale bets are equal.
-          <span className="mt-2 block text-[#ff4500] [text-shadow:0_0_28px_rgba(255,69,0,0.35)]">
-            We only send you the ones that move markets.
-          </span>
+          <span className="mt-2 block text-neutral-600">We only send you the ones that move markets.</span>
         </h2>
 
-        <div className="mt-6 space-y-4 border-t border-[#3d2e24]/80 pt-5 text-[16px] leading-relaxed text-[#c9cbce]">
-          <p>
+        <div className="relative mt-6 space-y-4 border-t border-neutral-200 pt-6 text-[15px] leading-relaxed text-neutral-600">
+          <p className="max-w-[74ch]">
             Any tool can show you large Polymarket trades. Only SightWhale filters the noise with our proprietary{' '}
-            <span className="font-semibold text-white">Whale Score™</span> <span className="font-mono text-[15px] text-[#a3e635]">(0–100)</span>.
+            <span className="font-semibold text-black">Whale Score™</span>{' '}
+            <span className="font-mono text-[13px] text-neutral-500">(0–100)</span>.
           </p>
-          <p className="text-[15px] text-[#b4b6b9] sm:text-[16px]">
+          <p className="max-w-[78ch] text-[14px] text-neutral-600 sm:text-[15px]">
             Our AI-driven scoring system separates &quot;dumb large money&quot; from the top 1% of Polymarket wallets that consistently drive price action. Every alert we send has a Whale Score of{' '}
-            <span className="font-semibold text-[#fef08a]">70+</span>, so you skip{' '}
-            <span className="font-semibold text-white">90%</span> of the noise and only act on signals that matter.
+            <span className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-semibold text-black">
+              70+
+            </span>
+            , so you skip{' '}
+            <span className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-semibold text-black">
+              90%
+            </span>{' '}
+            of the noise and only act on signals that matter.
           </p>
         </div>
 
         {/* 0–100 scale — ties visually to “70+” / “90% noise” copy */}
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-[#6f7071]">
+        <div className="relative mt-6">
+          <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500">
             <span>0</span>
-            <span className="text-[#ff4500]/90">Whale Score™</span>
+            <span className="text-neutral-700">Whale Score™</span>
             <span>100</span>
           </div>
-          <div className="relative h-3 overflow-hidden rounded-full bg-[#1f1f20] ring-1 ring-[#343536]">
+          <div className="relative h-3 overflow-hidden rounded-full bg-neutral-100 ring-1 ring-neutral-200">
             <div
-              className="h-full w-[70%] rounded-full bg-gradient-to-r from-[#7c2d12] via-[#ff4500] to-[#fbbf24]"
+              className="h-full w-[70%] rounded-full bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-600"
               aria-hidden
             />
           </div>
-          <div className="mt-2 flex items-center justify-center gap-2 font-mono text-[11px] text-[#818384]">
-            <span className="rounded border border-[#fef08a]/30 bg-[#fef08a]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#fef08a]">
+          <div className="mt-2 flex items-center justify-center gap-2 font-mono text-[11px] text-neutral-500">
+            <span className="rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
               70+ only
             </span>
             <span>Below this — filtered out.</span>
@@ -240,28 +232,35 @@ export function MarketSpeedSection() {
 
 export function PreviewSection() {
   return (
-    <section id="live-alert-examples" className="scroll-mt-6 py-14 sm:py-16">
-      <SectionTitle>Real whale alerts look like this</SectionTitle>
-      <p className="mt-3 text-[17px] leading-relaxed text-[#818384]">You receive alerts the moment whales enter a market.</p>
-      <PostCard className="mt-6 overflow-hidden p-0">
-        <div className="flex items-center gap-2 border-b border-[#343536] bg-[#272729] px-3 py-2">
-          <span className="font-mono text-[11px] text-[#818384]">telegram · preview</span>
-          <span className="ml-auto rounded bg-[#1a1a1b] px-2 py-0.5 font-mono text-[10px] text-[#6f7071]">screenshot</span>
+    <section className="mt-12 border-t border-neutral-200 pt-10 sm:mt-14 sm:pt-12" aria-label="Preview">
+      <div className="flex items-end justify-between gap-6">
+        <h2 className="font-display text-[18px] font-semibold tracking-tight text-black sm:text-[20px]">
+          A real alert, delivered instantly
+        </h2>
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Telegram</p>
+      </div>
+      <p className="mt-3 max-w-[70ch] text-[14px] leading-relaxed text-neutral-600">
+        You get the message the moment whales enter — before the odds move.
+      </p>
+
+      <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Preview</span>
+          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+            screenshot
+          </span>
         </div>
-        <div className="bg-[#0d0d0d]">
+        <div className="bg-neutral-50">
           <Image
             src={ALERT_PREVIEW_IMAGE}
             alt="Example SightWhale whale alert in Telegram"
             width={1080}
             height={1400}
-            sizes="(max-width: 448px) 100vw, 448px"
+            sizes="(max-width: 640px) 100vw, 720px"
             className="h-auto w-full object-cover object-top"
             priority={false}
           />
         </div>
-      </PostCard>
-      <div className="mt-6">
-        <PrimaryButton>Get Whale Alerts — $29/mo</PrimaryButton>
       </div>
     </section>
   );
@@ -454,41 +453,31 @@ export function StickyCTA() {
 }
 
 export default function PolymarketAlertsTlPage() {
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.style.scrollBehavior;
-    root.style.scrollBehavior = 'smooth';
-    return () => {
-      root.style.scrollBehavior = prev;
-    };
-  }, []);
-
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#030303] text-[#d7dadc]">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        }}
-        aria-hidden
-      />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[min(42vh,420px)] bg-gradient-to-b from-[#ff4500]/[0.07] via-transparent to-transparent" aria-hidden />
-      <main className="relative z-10 mx-auto max-w-md px-4 pb-4 font-[family-name:var(--font-body)]">
+    <div className="min-h-screen bg-white text-black">
+      <main className="mx-auto max-w-2xl px-5 pb-16 font-[family-name:var(--font-body)] sm:px-8">
         <HeroSection />
         <WhaleScoreMoatSection />
-        <ProblemSection />
-        <HowItWorksSection />
-        <MarketSpeedSection />
         <PreviewSection />
-        <ValueSection />
-        <FounderTrustSection />
-        <SocialProofSection />
-        <PricingSection />
-        <UrgencySection />
-        <FAQSection />
-        <FinalCTASection />
+
+        <footer className="mt-12 border-t border-neutral-200 pt-8 text-[12px] leading-relaxed text-neutral-500">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p>Pricing: $29/mo.</p>
+            <p>Alerts are delivered via Telegram only.</p>
+          </div>
+          <p className="mt-3">
+            By starting a trial, you agree to our{' '}
+            <Link href="/terms" className="underline underline-offset-4 decoration-neutral-300 hover:decoration-neutral-500">
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="underline underline-offset-4 decoration-neutral-300 hover:decoration-neutral-500">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </footer>
       </main>
-      <StickyCTA />
     </div>
   );
 }
