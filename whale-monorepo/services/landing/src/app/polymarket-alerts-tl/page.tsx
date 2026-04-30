@@ -1,38 +1,64 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {
+  PolymarketAlertsCaseStudies2026,
+  PolymarketAlertsConversionAfterHero,
+  PolymarketAlertsPrePricing,
+} from './PolymarketAlertsConversionBlocks';
+import { PolymarketAlertsPostPricingFaqAndGuarantee, PolymarketAlertsClosingCta } from './PolymarketAlertsFaqRiskClosing';
+import { PolymarketAlertsPricingCompare } from './PolymarketAlertsPricingCompare';
+import { trackEvent, type AnalyticsPayload } from '@/lib/analytics';
 
 const ALERT_PREVIEW_IMAGE = '/images/alerts/ScreenShot_2026-03-29_003514_416.png';
 
 /** Same base as `Header` — internal `/subscribe` + `/api/checkout`, or optional external payment URL. */
 const SUBSCRIPTION_BASE = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || '/subscribe';
 
-function getProSubscribeHref(): string {
+function getSubscribeHref(plan: 'pro' | 'elite' = 'pro'): string {
   const base = SUBSCRIPTION_BASE.trim();
   if (base.startsWith('http://') || base.startsWith('https://')) {
-    return base;
+    const joiner = base.includes('?') ? '&' : '?';
+    return base.includes('plan=') ? base : `${base}${joiner}plan=${plan}`;
   }
   const path = base.startsWith('/') ? base : `/${base}`;
-  return path.includes('?') ? `${path}&plan=pro` : `${path}?plan=pro`;
+  return path.includes('?') ? `${path}&plan=${plan}` : `${path}?plan=${plan}`;
 }
 
 /** High-contrast primary action — subscribe / checkout. */
-function PrimaryButton({ children, className = '' }: { children: ReactNode; className?: string }) {
-  const href = getProSubscribeHref();
+function PrimaryButton({
+  children,
+  className = '',
+  plan = 'pro',
+  eventName,
+  eventProps,
+}: {
+  children: ReactNode;
+  className?: string;
+  plan?: 'pro' | 'elite';
+  eventName?: string;
+  eventProps?: AnalyticsPayload;
+}) {
+  const href = getSubscribeHref(plan);
   const sharedClass = `inline-flex w-full items-center justify-center rounded-full bg-black px-5 py-3.5 text-[15px] font-semibold tracking-tight text-white transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black min-h-14 ${className}`;
+  const handleClick = () => {
+    if (eventName) {
+      trackEvent(eventName, { plan, destination: href, source_page: 'polymarket-alerts-tl', ...eventProps });
+    }
+  };
 
   if (href.startsWith('http://') || href.startsWith('https://')) {
     return (
-      <a href={href} className={sharedClass}>
+      <a href={href} className={sharedClass} rel="noreferrer" onClick={handleClick}>
         {children}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={sharedClass}>
+    <Link href={href} className={sharedClass} onClick={handleClick}>
       {children}
     </Link>
   );
@@ -57,24 +83,118 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
+const HERO_POINTS = [
+  'Only alerts with Whale Score 70+',
+  'Telegram delivery in under 30 seconds',
+  'Setup takes about 2 minutes',
+  '7-day full refund if it is not useful',
+] as const;
+
+const ONBOARDING_STEPS = [
+  {
+    n: '01',
+    title: 'Open the subscription flow',
+    body: 'Tap the CTA and land on the setup page with your Pro plan pre-selected.',
+  },
+  {
+    n: '02',
+    title: 'Generate your Telegram activation code',
+    body: 'Open `@sightwhale_bot`, tap Generate Code, then come back to checkout.',
+  },
+  {
+    n: '03',
+    title: 'Pay once, get alerts in Telegram',
+    body: 'After checkout, alerts are delivered in Telegram with no dashboard to babysit.',
+  },
+] as const;
+
+const CLARITY_CARDS = [
+  { label: 'Delivery', value: 'Telegram', detail: 'No extra dashboard or inbox clutter' },
+  { label: 'Speed', value: '<30s', detail: 'Built for markets that move before retail reacts' },
+  { label: 'Filter', value: '70+ only', detail: 'Large bets are filtered by Whale Score' },
+  { label: 'Risk', value: '7 days', detail: 'Full refund if the alerts are not useful' },
+] as const;
+
 export function HeroSection() {
   return (
-    <section className="pt-14 sm:pt-16" aria-label="Hero">
-      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Polymarket whale alerts</p>
-      <h1 className="font-display mt-4 text-balance text-[clamp(2.1rem,6.4vw,3.35rem)] font-semibold leading-[1.02] tracking-tight text-black">
-        Stop being exit liquidity.
-      </h1>
-      <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-neutral-600 sm:text-[17px]">
-        Real-time Telegram alerts when whale-sized bets hit Polymarket — so you can act before the price moves.
-      </p>
+    <section className="pt-12 sm:pt-16" aria-label="Hero">
+      <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Polymarket whale alerts</p>
+          <h1 className="font-display mt-4 max-w-[12ch] text-balance text-[clamp(2.3rem,6vw,4.8rem)] font-semibold leading-[0.98] tracking-tight text-black">
+            Stop trading after the move.
+          </h1>
+          <p className="mt-5 max-w-[62ch] text-[17px] leading-relaxed text-neutral-600 sm:text-[18px]">
+            SightWhale sends real-time Telegram alerts when whale-sized bets hit Polymarket, filtered so you only see
+            the trades most likely to move the market.
+          </p>
 
-      <div className="mt-8 max-w-sm">
-        <PrimaryButton className="min-h-[3.75rem] py-4 text-[16px]">Start 7-Day Risk-Free Trial</PrimaryButton>
-      </div>
+          <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+            {HERO_POINTS.map((point) => (
+              <div
+                key={point}
+                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-[14px] font-medium text-neutral-700 shadow-[0_1px_0_rgba(0,0,0,0.03)]"
+              >
+                {point}
+              </div>
+            ))}
+          </div>
 
-      <div className="mt-6 space-y-1.5 text-[13px] leading-relaxed text-neutral-500">
-        <p>7-day full refund. No questions asked.</p>
-        <p>Cancel anytime. No contracts.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <PrimaryButton
+              className="min-h-[3.75rem] px-6 py-4 text-[16px] sm:w-auto"
+              eventName="lp_cta_click"
+              eventProps={{ cta_id: 'hero_primary', section: 'hero' }}
+            >
+              Start 7-Day Trial Setup
+            </PrimaryButton>
+            <a
+              href="#pricing"
+              onClick={() => trackEvent('lp_cta_click', { cta_id: 'hero_secondary_pricing', section: 'hero', destination: '#pricing', source_page: 'polymarket-alerts-tl' })}
+              className="inline-flex min-h-[3.75rem] items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-4 text-[16px] font-semibold tracking-tight text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50"
+            >
+              See Pricing First
+            </a>
+          </div>
+
+          <div className="mt-5 space-y-1.5 text-[13px] leading-relaxed text-neutral-500">
+            <p>Web checkout, Telegram delivery.</p>
+            <p>You will generate an activation code in Telegram before payment.</p>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_25px_80px_-35px_rgba(0,0,0,0.28)] sm:p-5">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-2 pb-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">Preview</p>
+              <p className="mt-1 text-sm font-semibold text-black">A real alert, delivered instantly</p>
+            </div>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+              Telegram
+            </span>
+          </div>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50">
+            <Image
+              src={ALERT_PREVIEW_IMAGE}
+              alt="Example SightWhale whale alert in Telegram"
+              width={1080}
+              height={1400}
+              sizes="(max-width: 1024px) 100vw, 560px"
+              className="h-auto w-full object-cover object-top"
+              priority
+            />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">What you see</p>
+              <p className="mt-2 text-sm font-medium text-neutral-800">Whale score, side, size, and instant context</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">Why it matters</p>
+              <p className="mt-2 text-sm font-medium text-neutral-800">You can decide before the crowd notices</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -266,176 +386,106 @@ export function PreviewSection() {
   );
 }
 
-export function ValueSection() {
+export function ClaritySection() {
   return (
-    <section className="py-14 sm:py-16">
-      <PostCard>
-        <SectionTitle>Why traders use whale alerts</SectionTitle>
-        <ul className="mt-5 space-y-2.5 text-left text-[17px] leading-relaxed text-[#d7dadc]">
-          <li className="flex gap-2">
-            <span className="text-[#7193ff]" aria-hidden>
-              ↗
-            </span>{' '}
-            Spot momentum early
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#7193ff]" aria-hidden>
-              ↗
-            </span>{' '}
-            Follow smart money
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#7193ff]" aria-hidden>
-              ↗
-            </span>{' '}
-            Avoid emotional trading
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#7193ff]" aria-hidden>
-              ↗
-            </span>{' '}
-            Save hours of manual tracking
-          </li>
-        </ul>
-      </PostCard>
-    </section>
-  );
-}
-
-export function FounderTrustSection() {
-  return (
-    <section className="py-14 sm:py-16">
-      <PostCard className="border-[#3d2a1f]/80 bg-[#141210]">
-        <SectionTitle>Built by a Polymarket trader</SectionTitle>
-        <div className="mt-5 space-y-4 border-t border-[#343536] pt-5 text-[17px] leading-relaxed text-[#d7dadc]">
-          <p>I built SightWhale after spending hours manually tracking whale wallets.</p>
-          <p className="text-[#b8b9ba]">Now early members get the same alerts I use every day.</p>
+    <section className="py-10 sm:py-12" aria-labelledby="clarity-heading">
+      <div className="rounded-[32px] border border-neutral-200 bg-white p-5 shadow-[0_16px_60px_-36px_rgba(0,0,0,0.3)] sm:p-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Clarity before checkout</p>
+            <h2 id="clarity-heading" className="font-display mt-2 text-[1.75rem] font-semibold tracking-tight text-black sm:text-[2.2rem]">
+              What you are actually buying
+            </h2>
+          </div>
+          <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-500">
+            Stronger purchase intent comes from fewer surprises after the click.
+          </p>
         </div>
-      </PostCard>
-    </section>
-  );
-}
 
-export function SocialProofSection() {
-  return (
-    <section className="py-14 sm:py-16">
-      <PostCard className="border-[#3d2a1f] bg-gradient-to-br from-[#1f1410]/80 to-[#1a1a1b]">
-        <SectionTitle>Early users are joining every week</SectionTitle>
-        <div className="mt-5 space-y-4 text-[17px] leading-relaxed text-[#d7dadc]">
-          <p>You&apos;re getting access at the founding member price.</p>
-          <p className="text-[#b8b9ba]">The product is improving fast with early members.</p>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          {CLARITY_CARDS.map((card) => (
+            <article key={card.label} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">{card.label}</p>
+              <p className="mt-2 text-xl font-semibold tracking-tight text-black">{card.value}</p>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">{card.detail}</p>
+            </article>
+          ))}
         </div>
-        <div className="mt-6">
-          <PrimaryButton>Join the early group — $29/mo</PrimaryButton>
-        </div>
-      </PostCard>
-    </section>
-  );
-}
-
-export function PricingSection() {
-  return (
-    <section className="py-14 sm:py-16">
-      <PostCard className="relative overflow-hidden border-[#ff4500]/35">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#ff4500]/15 blur-2xl" aria-hidden />
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#ff4500]">Founding member</p>
-        <h2 className="font-display mt-2 text-2xl font-bold text-white">Founding Member Pricing</h2>
-        <p className="mt-3 rounded-md border border-[#343536] bg-[#0d0d0d] px-3 py-2 text-center font-mono text-[13px] font-medium text-[#a3e635]/95">
-          Less than one bad trade per month
-        </p>
-        <p className="mt-4 font-display text-4xl font-extrabold tracking-tight text-white">
-          $29 <span className="text-lg font-semibold text-[#818384]">/ month</span>
-        </p>
-        <ul className="mt-6 space-y-2.5 border-t border-[#343536] pt-5 text-left text-[17px] text-[#d7dadc]">
-          <li className="flex gap-2">
-            <span className="text-[#ff4500]">✓</span> Real-time whale alerts
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#ff4500]">✓</span> Track smart money wallets
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#ff4500]">✓</span> Early member pricing
-          </li>
-          <li className="flex gap-2">
-            <span className="text-[#ff4500]">✓</span> Direct founder support
-          </li>
-        </ul>
-        <div className="mt-8">
-          <PrimaryButton>Start tracking whales</PrimaryButton>
-        </div>
-        <p className="mt-5 text-center font-mono text-[13px] text-[#6f7071]">Cancel anytime. No commitment.</p>
-      </PostCard>
-    </section>
-  );
-}
-
-export function UrgencySection() {
-  return (
-    <section className="py-12 sm:py-14">
-      <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-4 py-4 text-center">
-        <p className="text-[16px] leading-relaxed text-[#fbbf24]/90">
-          Founding price available for early users.
-          <br />
-          <span className="text-[#d7dadc]">Price increases once the early group fills.</span>
-        </p>
       </div>
     </section>
   );
 }
 
-const FAQ_ITEMS: { q: string; a: string }[] = [
-  {
-    q: 'How do I receive alerts?',
-    a: 'Telegram only. Connect Telegram in the app to receive alerts — email is not supported.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. One-click cancel. No lock-in.',
-  },
-  {
-    q: 'Is this beginner friendly?',
-    a: 'Yes. Alerts are simple and real-time.',
-  },
-];
-
-export function FAQSection() {
+export function HowToStartSection() {
   return (
-    <section className="py-14 sm:py-16">
-      <SectionTitle>Frequently asked questions</SectionTitle>
-      <div className="mt-6 space-y-2">
-        {FAQ_ITEMS.map((item) => (
-          <details
-            key={item.q}
-            className="group rounded-lg border border-[#343536] bg-[#1a1a1b] px-4 py-1 open:pb-3 open:pt-2 [&_summary::-webkit-details-marker]:hidden"
-          >
-            <summary className="flex cursor-pointer list-none items-center gap-2 py-3 font-display text-[16px] font-semibold text-white marker:content-none">
-              <span className="font-mono text-[#ff4500] transition-transform group-open:rotate-90" aria-hidden>
-                ▸
-              </span>
-              {item.q}
-            </summary>
-            <p className="border-t border-[#343536] pb-1 pl-7 pt-3 text-[16px] leading-relaxed text-[#b8b9ba]">{item.a}</p>
-          </details>
-        ))}
+    <section id="how-it-works" className="py-14 sm:py-16" aria-labelledby="how-to-start-heading">
+      <div className="rounded-[32px] border border-neutral-200 bg-[#111214] p-6 shadow-[0_24px_90px_-42px_rgba(0,0,0,0.5)] sm:p-8 md:p-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Setup flow</p>
+            <h2 id="how-to-start-heading" className="font-display mt-2 text-[1.9rem] font-semibold tracking-tight text-white sm:text-[2.4rem]">
+              Know exactly what happens after you click
+            </h2>
+          </div>
+          <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-400">
+            This removes the biggest conversion killer on alert products: unexpected setup friction.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {ONBOARDING_STEPS.map((step) => (
+            <article key={step.n} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-300">{step.n}</p>
+              <h3 className="mt-4 text-lg font-semibold text-white">{step.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-neutral-300">{step.body}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-4 text-sm leading-relaxed text-amber-100">
+          You pay on the web, but alerts are delivered in Telegram. Making that explicit before checkout usually lifts
+          completed purchases because users are not confused on the next page.
+        </div>
       </div>
     </section>
   );
 }
 
-export function FinalCTASection() {
+export function DecisionSection() {
   return (
-    <section className="pb-36 pt-8 sm:pb-40">
-      <PostCard>
-        <h2 className="font-display text-center text-[1.4rem] font-bold leading-snug text-white sm:text-2xl">
-          Stop trading blind.
-          <br />
-          <span className="text-[#ff4500]">Start following whales.</span>
-        </h2>
-        <div className="mt-8">
-          <PrimaryButton>Get Whale Alerts — $29/mo</PrimaryButton>
+    <section className="py-14 sm:py-16" aria-labelledby="decision-heading">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_70px_-40px_rgba(0,0,0,0.35)] sm:p-8">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Buying decision</p>
+          <h2 id="decision-heading" className="font-display mt-2 text-[1.9rem] font-semibold tracking-tight text-black sm:text-[2.35rem]">
+            Why people click but do not pay
+          </h2>
+          <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-neutral-600">
+            <p>Most signal pages lose buyers when the page is exciting, but the next step feels unclear or annoying.</p>
+            <p>
+              The fix is simple: show the real setup flow, show what the paid plan actually unlocks, and reverse risk
+              hard enough that hesitation feels expensive.
+            </p>
+          </div>
         </div>
-        <p className="mt-5 text-center font-mono text-[13px] text-[#818384]">Takes less than 30 seconds to join.</p>
-      </PostCard>
+
+        <div className="rounded-[32px] border border-neutral-200 bg-black p-6 text-white shadow-[0_20px_80px_-46px_rgba(0,0,0,0.55)] sm:p-8">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-lime-300">Main conversion hook</p>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight">One avoided bad entry can pay for the month.</h3>
+          <p className="mt-4 text-sm leading-relaxed text-neutral-300">
+            When users can picture one concrete win, the price feels like risk management instead of software spend.
+          </p>
+          <div className="mt-6">
+            <PrimaryButton
+              className="bg-lime-400 text-black hover:bg-lime-300"
+              eventName="lp_cta_click"
+              eventProps={{ cta_id: 'decision_primary', section: 'decision' }}
+            >
+              Start Pro For $29/mo
+            </PrimaryButton>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -444,7 +494,11 @@ export function StickyCTA() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#343536] bg-[#1a1a1b]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a1a1b]/85">
       <div className="mx-auto max-w-md">
-        <PrimaryButton className="min-h-[3.5rem] py-3.5 text-[16px] font-extrabold shadow-[0_-4px_28px_rgba(255,69,0,0.35)] ring-1 ring-white/10">
+        <PrimaryButton
+          className="min-h-[3.5rem] py-3.5 text-[16px] font-extrabold shadow-[0_-4px_28px_rgba(255,69,0,0.35)] ring-1 ring-white/10"
+          eventName="lp_cta_click"
+          eventProps={{ cta_id: 'sticky_primary', section: 'sticky' }}
+        >
           Start 7-Day Risk-Free Trial
         </PrimaryButton>
       </div>
@@ -453,17 +507,36 @@ export function StickyCTA() {
 }
 
 export default function PolymarketAlertsTlPage() {
+  useEffect(() => {
+    trackEvent('lp_view', { page: 'polymarket-alerts-tl' });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white text-black">
-      <main className="mx-auto max-w-2xl px-5 pb-16 font-[family-name:var(--font-body)] sm:px-8">
+    <div className="min-h-screen bg-[#f6f4ef] text-black">
+      <main className="mx-auto max-w-6xl px-5 pb-16 font-[family-name:var(--font-body)] sm:px-8">
         <HeroSection />
+        <ClaritySection />
+        <HowToStartSection />
+        <DecisionSection />
         <WhaleScoreMoatSection />
         <PreviewSection />
+        <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
+          <PolymarketAlertsConversionAfterHero />
+          <PolymarketAlertsCaseStudies2026 />
+          <PolymarketAlertsPrePricing />
+        </div>
+        <div id="pricing" className="mt-12 sm:mt-16">
+          <PolymarketAlertsPricingCompare />
+        </div>
+        <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
+          <PolymarketAlertsPostPricingFaqAndGuarantee />
+          <PolymarketAlertsClosingCta />
+        </div>
 
         <footer className="mt-12 border-t border-neutral-200 pt-8 text-[12px] leading-relaxed text-neutral-500">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p>Pricing: $29/mo.</p>
-            <p>Alerts are delivered via Telegram only.</p>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p>Pricing starts at $29/mo.</p>
+            <p>Checkout happens on web. Alerts are delivered via Telegram only.</p>
           </div>
           <p className="mt-3">
             By starting a trial, you agree to our{' '}
@@ -477,6 +550,7 @@ export default function PolymarketAlertsTlPage() {
             .
           </p>
         </footer>
+        <StickyCTA />
       </main>
     </div>
   );

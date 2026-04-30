@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TestAlertButton from '@/components/TestAlertButton';
+import TrackPageEvent from '@/components/TrackPageEvent';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -426,6 +427,15 @@ export default async function FollowPage() {
 
   return (
     <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+      <TrackPageEvent
+        name="dashboard_view"
+        payload={{
+          page: 'follow',
+          plan: user?.plan ?? 'anonymous',
+          telegram_connected: telegramConnected,
+          paid_plan: Boolean(paidPlan),
+        }}
+      />
       <div className="fixed inset-0 z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] bg-violet-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-15%] right-[-15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[140px]" />
