@@ -127,7 +127,7 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
       </section>
 
       <section
-        className={`relative overflow-hidden rounded-3xl border border-zinc-300/50 bg-gradient-to-br from-[#f4f1ea] via-[#ebe6dc] to-[#e2ddd3] text-zinc-900 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.45)] ${guaranteeShell}`}
+        className={`relative overflow-hidden rounded-3xl border border-white/10 bg-[#0c1017] text-white shadow-[0_24px_80px_-24px_rgba(0,0,0,0.45)] ${guaranteeShell}`}
         aria-labelledby="risk-free-guarantee-heading"
       >
         <div
@@ -137,18 +137,18 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           }}
         />
         <div className="relative">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Refund policy</p>
-          <h2 id="risk-free-guarantee-heading" className="font-display mt-3 text-2xl font-black tracking-tight md:text-3xl">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-300">Refund policy</p>
+          <h2 id="risk-free-guarantee-heading" className="font-display mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
             Try it for 7 days. Risk-free.
           </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-700 md:text-lg">
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-200 md:text-lg">
             If you don&apos;t find the alerts useful,{' '}
-            <a href={SUPPORT_MAIL} className="font-semibold text-zinc-900 underline decoration-zinc-400 underline-offset-4 hover:decoration-zinc-800">
+            <a href={SUPPORT_MAIL} className="font-semibold text-white underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">
               email us
             </a>{' '}
             within 7 days and we&apos;ll refund you.
           </p>
-          <p className="mt-3 text-sm font-medium text-zinc-800">No complicated process.</p>
+          <p className="mt-3 text-sm font-semibold text-gray-100">No complicated process.</p>
         </div>
       </section>
     </>
