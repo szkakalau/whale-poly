@@ -171,16 +171,32 @@ export function HeroSection() {
               Telegram
             </span>
           </div>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50">
-            <Image
-              src={ALERT_PREVIEW_IMAGE}
-              alt="Example SightWhale whale alert in Telegram"
-              width={1080}
-              height={1400}
-              sizes="(max-width: 1024px) 100vw, 560px"
-              className="h-auto max-h-[520px] w-full object-cover object-top sm:max-h-none"
-              priority
-            />
+          <div className="mt-4 rounded-[28px] border border-neutral-200 bg-[radial-gradient(circle_at_top,_rgba(96,165,250,0.18),_transparent_38%),linear-gradient(180deg,_#eff6ff_0%,_#f8fafc_42%,_#eef2ff_100%)] p-4 sm:p-5">
+            <div className="mx-auto w-full max-w-[330px] rounded-[2.5rem] border border-[#0f172a] bg-[#0b1220] p-2.5 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.65)] ring-1 ring-black/10">
+              <div className="flex justify-center pb-2">
+                <div className="h-1.5 w-20 rounded-full bg-white/20" aria-hidden />
+              </div>
+              <div className="overflow-hidden rounded-[2rem] border border-[#1e293b] bg-white">
+                <div className="flex items-center justify-between bg-[#229ED9] px-4 py-2.5 text-white">
+                  <div>
+                    <p className="text-[11px] font-semibold leading-none">Telegram</p>
+                    <p className="mt-1 text-[10px] leading-none text-white/75">SightWhale Alerts</p>
+                  </div>
+                  <span className="rounded-full bg-white/15 px-2 py-1 text-[10px] font-medium tracking-tight text-white/90">
+                    live
+                  </span>
+                </div>
+                <Image
+                  src={ALERT_PREVIEW_IMAGE}
+                  alt="Example SightWhale whale alert in Telegram"
+                  width={1080}
+                  height={1400}
+                  sizes="(max-width: 1024px) 100vw, 330px"
+                  className="mx-auto h-auto w-full bg-[#e5eff8]"
+                  priority
+                />
+              </div>
+            </div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
@@ -346,42 +362,6 @@ export function MarketSpeedSection() {
   );
 }
 
-export function PreviewSection() {
-  return (
-    <section className="mt-10 border-t border-neutral-200 pt-8 sm:mt-14 sm:pt-12" aria-label="Preview">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <h2 className="font-display text-[18px] font-semibold tracking-tight text-black sm:text-[20px]">
-          A real alert, delivered instantly
-        </h2>
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Telegram</p>
-      </div>
-      <p className="mt-3 max-w-[70ch] text-[14px] leading-relaxed text-neutral-600">
-        You get the message the moment whales enter — before the odds move.
-      </p>
-
-      <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02)]">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Preview</span>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
-            screenshot
-          </span>
-        </div>
-        <div className="bg-neutral-50">
-          <Image
-            src={ALERT_PREVIEW_IMAGE}
-            alt="Example SightWhale whale alert in Telegram"
-            width={1080}
-            height={1400}
-            sizes="(max-width: 640px) 100vw, 720px"
-            className="h-auto w-full object-cover object-top"
-            priority={false}
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export function ClaritySection() {
   return (
     <section className="py-8 sm:py-12" aria-labelledby="clarity-heading">
@@ -514,7 +494,6 @@ export default function PolymarketAlertsTlPage() {
         <HowToStartSection />
         <DecisionSection />
         <WhaleScoreMoatSection />
-        <PreviewSection />
         <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
           <PolymarketAlertsConversionAfterHero />
           <PolymarketAlertsCaseStudies2026 />
