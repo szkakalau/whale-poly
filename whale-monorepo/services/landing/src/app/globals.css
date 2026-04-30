@@ -60,6 +60,7 @@ body {
     linear-gradient(rgba(230, 232, 236, 0.028) 1px, transparent 1px),
     linear-gradient(90deg, rgba(230, 232, 236, 0.028) 1px, transparent 1px);
   background-size: 44px 44px;
+  -webkit-text-size-adjust: 100%;
 }
 
 .safe-area-inset-top {
@@ -72,6 +73,13 @@ body {
   }
   body::before {
     display: none;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
   }
 }
 

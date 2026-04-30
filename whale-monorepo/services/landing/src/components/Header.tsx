@@ -27,7 +27,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-2 min-w-0" title="SightWhale.com Home">
           <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.38)]" />
           <span className="font-bold tracking-tight text-base sm:text-lg text-foreground truncate font-display">
-            <span className="md:hidden">SightWhale.com</span>
+            <span className="md:hidden">SightWhale</span>
             <span className="hidden md:inline">Polymarket Whale Intelligence</span>
           </span>
         </Link>

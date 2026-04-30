@@ -117,14 +117,14 @@ const CLARITY_CARDS = [
 
 export function HeroSection() {
   return (
-    <section className="pt-12 sm:pt-16" aria-label="Hero">
-      <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+    <section className="pt-10 sm:pt-16" aria-label="Hero">
+      <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Polymarket whale alerts</p>
-          <h1 className="font-display mt-4 max-w-[12ch] text-balance text-[clamp(2.3rem,6vw,4.8rem)] font-semibold leading-[0.98] tracking-tight text-black">
+          <h1 className="font-display mt-4 max-w-[12ch] text-balance text-[clamp(2rem,9vw,4.8rem)] font-semibold leading-[0.98] tracking-tight text-black">
             Stop trading after the move.
           </h1>
-          <p className="mt-5 max-w-[62ch] text-[17px] leading-relaxed text-neutral-600 sm:text-[18px]">
+          <p className="mt-4 max-w-[62ch] text-[16px] leading-relaxed text-neutral-600 sm:mt-5 sm:text-[18px]">
             SightWhale sends real-time Telegram alerts when whale-sized bets hit Polymarket, filtered so you only see
             the trades most likely to move the market.
           </p>
@@ -140,7 +140,7 @@ export function HeroSection() {
             ))}
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
             <PrimaryButton
               className="min-h-[3.75rem] px-6 py-4 text-[16px] sm:w-auto"
               eventName="lp_cta_click"
@@ -151,7 +151,7 @@ export function HeroSection() {
             <a
               href="#pricing"
               onClick={() => trackEvent('lp_cta_click', { cta_id: 'hero_secondary_pricing', section: 'hero', destination: '#pricing', source_page: 'polymarket-alerts-tl' })}
-              className="inline-flex min-h-[3.75rem] items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-4 text-[16px] font-semibold tracking-tight text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50"
+              className="inline-flex min-h-[3.75rem] w-full items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-4 text-center text-[16px] font-semibold tracking-tight text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50 sm:w-auto"
             >
               See Pricing First
             </a>
@@ -164,12 +164,12 @@ export function HeroSection() {
         </div>
 
         <div className="rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_25px_80px_-35px_rgba(0,0,0,0.28)] sm:p-5">
-          <div className="flex items-center justify-between border-b border-neutral-200 px-2 pb-3">
+          <div className="flex flex-col gap-2 border-b border-neutral-200 px-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">Preview</p>
               <p className="mt-1 text-sm font-semibold text-black">A real alert, delivered instantly</p>
             </div>
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+            <span className="w-fit rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
               Telegram
             </span>
           </div>
@@ -180,7 +180,7 @@ export function HeroSection() {
               width={1080}
               height={1400}
               sizes="(max-width: 1024px) 100vw, 560px"
-              className="h-auto w-full object-cover object-top"
+              className="h-auto max-h-[520px] w-full object-cover object-top sm:max-h-none"
               priority
             />
           </div>
@@ -203,7 +203,7 @@ export function HeroSection() {
 /** Second screen: proprietary Whale Score™ moat — placed before live alert examples. */
 export function WhaleScoreMoatSection() {
   return (
-    <section className="mt-12 border-t border-neutral-200 pt-10 sm:mt-14 sm:pt-12" aria-labelledby="whale-score-moat-heading">
+    <section className="mt-10 border-t border-neutral-200 pt-8 sm:mt-14 sm:pt-12" aria-labelledby="whale-score-moat-heading">
       <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_1px_0_rgba(0,0,0,0.03)] sm:p-8">
         <div className="pointer-events-none absolute inset-0 opacity-[0.65]" aria-hidden>
           <div className="absolute -left-24 -top-28 h-64 w-64 rounded-full bg-neutral-100 blur-2xl" />
@@ -253,7 +253,7 @@ export function WhaleScoreMoatSection() {
               aria-hidden
             />
           </div>
-          <div className="mt-2 flex items-center justify-center gap-2 font-mono text-[11px] text-neutral-500">
+          <div className="mt-2 flex flex-col items-center justify-center gap-1.5 font-mono text-[11px] text-neutral-500 sm:flex-row sm:gap-2">
             <span className="rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
               70+ only
             </span>
@@ -352,8 +352,8 @@ export function MarketSpeedSection() {
 
 export function PreviewSection() {
   return (
-    <section className="mt-12 border-t border-neutral-200 pt-10 sm:mt-14 sm:pt-12" aria-label="Preview">
-      <div className="flex items-end justify-between gap-6">
+    <section className="mt-10 border-t border-neutral-200 pt-8 sm:mt-14 sm:pt-12" aria-label="Preview">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <h2 className="font-display text-[18px] font-semibold tracking-tight text-black sm:text-[20px]">
           A real alert, delivered instantly
         </h2>
@@ -388,7 +388,7 @@ export function PreviewSection() {
 
 export function ClaritySection() {
   return (
-    <section className="py-10 sm:py-12" aria-labelledby="clarity-heading">
+    <section className="py-8 sm:py-12" aria-labelledby="clarity-heading">
       <div className="rounded-[32px] border border-neutral-200 bg-white p-5 shadow-[0_16px_60px_-36px_rgba(0,0,0,0.3)] sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -418,7 +418,7 @@ export function ClaritySection() {
 
 export function HowToStartSection() {
   return (
-    <section id="how-it-works" className="py-14 sm:py-16" aria-labelledby="how-to-start-heading">
+    <section id="how-it-works" className="py-10 sm:py-16" aria-labelledby="how-to-start-heading">
       <div className="rounded-[32px] border border-neutral-200 bg-[#111214] p-6 shadow-[0_24px_90px_-42px_rgba(0,0,0,0.5)] sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
@@ -453,7 +453,7 @@ export function HowToStartSection() {
 
 export function DecisionSection() {
   return (
-    <section className="py-14 sm:py-16" aria-labelledby="decision-heading">
+    <section className="py-10 sm:py-16" aria-labelledby="decision-heading">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_70px_-40px_rgba(0,0,0,0.35)] sm:p-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Buying decision</p>
@@ -501,6 +501,7 @@ export function StickyCTA() {
         >
           Start 7-Day Risk-Free Trial
         </PrimaryButton>
+        <p className="mt-2 text-center text-[11px] text-white/65">2-minute setup on mobile</p>
       </div>
     </div>
   );
@@ -513,7 +514,7 @@ export default function PolymarketAlertsTlPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f4ef] text-black">
-      <main className="mx-auto max-w-6xl px-5 pb-16 font-[family-name:var(--font-body)] sm:px-8">
+      <main className="mx-auto max-w-6xl px-4 pb-32 font-[family-name:var(--font-body)] sm:px-8 sm:pb-16">
         <HeroSection />
         <ClaritySection />
         <HowToStartSection />
@@ -533,7 +534,7 @@ export default function PolymarketAlertsTlPage() {
           <PolymarketAlertsClosingCta />
         </div>
 
-        <footer className="mt-12 border-t border-neutral-200 pt-8 text-[12px] leading-relaxed text-neutral-500">
+        <footer className="mt-12 border-t border-neutral-200 pb-8 pt-8 text-[12px] leading-relaxed text-neutral-500 sm:pb-0">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <p>Pricing starts at $29/mo.</p>
             <p>Checkout happens on web. Alerts are delivered via Telegram only.</p>

@@ -368,7 +368,7 @@ function SubscribeForm() {
   return (
     <form onSubmit={onSubmit} className="glass space-y-6 rounded-[28px] border border-white/10 p-5 sm:p-6">
       <div className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Step 2</p>
             <h2 className="mt-1 text-lg font-semibold text-white">Paste your activation code</h2>
@@ -408,7 +408,7 @@ function SubscribeForm() {
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <label className="text-sm text-gray-400">Plan</label>
           <button
             type="button"
@@ -536,14 +536,14 @@ function SubscribeForm() {
       </div>
 
       <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/8 p-4">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">Step 3</p>
             <h3 className="mt-1 text-lg font-semibold text-white">
               {mode === 'free' ? 'Activate free access' : 'Proceed to secure checkout'}
             </h3>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-2xl font-bold tracking-tight text-white">{mode === 'free' ? '$0' : `$${selectedAmount}`}</p>
             <p className="text-xs text-emerald-200/80">{mode === 'free' ? 'No payment' : selectedSuffix}</p>
           </div>
@@ -572,7 +572,7 @@ function SubscribeForm() {
       <button
         type="submit"
         disabled={loading || (mode === 'paid' && !hasCode)}
-        className="btn-primary w-full py-4 text-lg shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+        className="btn-primary w-full py-4 text-base shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:text-lg"
       >
         {loading
           ? mode === 'free'
@@ -595,7 +595,7 @@ function SubscribeForm() {
 
 function CheckoutSidebar() {
   return (
-    <aside className="space-y-6">
+    <aside className="order-2 space-y-6 lg:order-1">
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">How this works</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Get from click to checkout fast</h2>
@@ -616,7 +616,9 @@ function CheckoutSidebar() {
         </div>
       </div>
 
-      <TelegramActivationLinks />
+      <div className="hidden lg:block">
+        <TelegramActivationLinks />
+      </div>
 
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">Why users complete payment</p>
@@ -638,7 +640,7 @@ export default function SubscribePage() {
   return (
     <div className="min-h-screen overflow-hidden bg-[#0a0a0a] text-gray-100 selection:bg-violet-500/30">
       <Header />
-      <main className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+      <main className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 sm:py-28">
         <div className="absolute top-0 right-0 -z-10 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
         <div className="absolute bottom-0 left-0 -z-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
 
@@ -653,13 +655,17 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+        <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-8">
           <CheckoutSidebar />
 
-          <div className="space-y-6">
+          <div className="order-1 space-y-5 lg:order-2 lg:space-y-6">
+            <div className="lg:hidden">
+              <TelegramActivationLinks />
+            </div>
+
             <Suspense
               fallback={
-                <div className="glass rounded-[28px] border border-white/10 p-12 text-center text-gray-500">
+                <div className="glass rounded-[28px] border border-white/10 p-8 text-center text-gray-500 sm:p-12">
                   Loading checkout options...
                 </div>
               }
