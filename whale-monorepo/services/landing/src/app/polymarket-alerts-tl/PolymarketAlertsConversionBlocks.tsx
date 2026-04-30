@@ -40,11 +40,11 @@ const caseStudies2026 = [
 ] as const;
 
 const traderUseBullets = [
-  'Spot early positioning before major news',
-  'Discover markets you weren’t watching',
-  'Confirm conviction before entering a trade',
-  'Avoid entering after large price moves',
-  'Understand where large money is positioning',
+  'Spot markets you were not watching before the crowd notices them',
+  'Avoid entering after a large move is already underway',
+  'Use whale activity as a second layer of confirmation',
+  'Spend less time scanning noisy free sources',
+  'Stay closer to where large money is positioning',
 ] as const;
 
 export function PolymarketAlertsConversionAfterHero({ compact = false }: { compact?: boolean }) {
@@ -63,21 +63,24 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
         aria-labelledby="speed-edge-heading"
       >
         <h2 id="speed-edge-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
-          Speed matters
+          Why traders pay for this instead of relying on free sources
         </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-cyan-50/85 md:text-base">
+          Free sources can show you big trades. They usually do not help you decide which ones matter fast enough.
+        </p>
         <div className={`grid md:grid-cols-3 ${speedGrid}`}>
           {[
             {
-              label: 'Retail traders',
+              label: 'Free sources',
               line1: '15–60',
               line2: 'minutes',
-              sub: 'Notice moves after 15–60 minutes',
+              sub: 'You often notice the move only after the market starts reacting',
             },
             {
-              label: 'Whale alerts',
+              label: 'SightWhale',
               line1: '<30',
               line2: 'seconds',
-              sub: 'Delivered in under 30 seconds',
+              sub: 'Filtered alerts are typically delivered in under 30 seconds',
             },
           ].map((col) => (
             <div
@@ -99,11 +102,11 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
             className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 text-center md:text-left md:flex md:flex-col md:justify-center ${speedCard}`}
           >
             <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">Markets monitored</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">What changes</p>
             <p className="font-display mt-4 text-2xl font-black leading-snug text-white md:text-3xl">
-              All active Polymarket markets
+              Faster awareness. Less noise.
             </p>
-            <p className="mt-3 text-sm text-gray-400">Continuous scanning across the tradable universe we cover</p>
+            <p className="mt-3 text-sm text-gray-400">You spend less time scanning feeds and more time deciding whether the positioning matters</p>
           </div>
         </div>
       </section>
@@ -113,16 +116,16 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
         aria-labelledby="volume-alerts-heading"
       >
         <h2 id="volume-alerts-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
-          Hundreds of real whale alerts every week
+          We scan a lot so you do not have to
         </h2>
         <p className={`max-w-2xl text-amber-100/85 ${compact ? 'mt-3 text-base' : 'mt-4 text-lg'}`}>
-          Alerts run continuously across the markets we monitor.
+          SightWhale watches broad whale activity across Polymarket, then filters for the handful of alerts most worth your attention.
         </p>
         <div className={`grid sm:grid-cols-3 ${volGrid}`}>
           {[
-            { k: 'Alerts last 7 days', v: '120+', hint: 'Estimated live volume' },
-            { k: 'Active markets tracked', v: '100+', hint: 'Broad Polymarket coverage' },
-            { k: 'Whale wallets monitored', v: 'hundreds', hint: 'Large-position watchlist' },
+            { k: 'Markets watched', v: '100+', hint: 'Broad Polymarket coverage' },
+            { k: 'Whale events scanned', v: '120+', hint: 'Representative weekly volume' },
+            { k: 'Delivery threshold', v: '70+', hint: 'Only higher-signal alerts pass through' },
           ].map((row) => (
             <div
               key={row.k}
@@ -143,6 +146,9 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
         <h2 id="how-traders-use-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
           How traders use whale alerts
         </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-gray-300 md:text-base">
+          Most users do not treat these as automatic buy signals. They use them to get faster context and improve timing.
+        </p>
         <ul className={useList}>
           {traderUseBullets.map((line) => (
             <li
@@ -195,10 +201,10 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
         id="proof-case-studies-2026-heading"
         className="font-display relative mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl"
       >
-        How alerts appeared before market moves
+        Recent examples of alerts appearing before market moves
       </h2>
       <p className="relative mt-3 max-w-2xl text-base text-gray-300 md:text-lg">
-        A few examples of how large bets showed up before prices moved.
+        A few representative cases where large, high-score bets showed up before meaningful price movement.
       </p>
 
       <div className={`relative ${caseList}`}>
@@ -226,32 +232,31 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
             <div className="mt-4 grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Alert detected</p>
-                <p className="font-mono text-lg font-semibold text-lime-100 md:text-xl">{cs.alert}</p>
-                <p className="text-sm text-gray-400">
-                  Market: <span className="italic text-gray-200">{cs.market}</span>
-                </p>
+                <p className="font-mono text-base font-semibold text-lime-100 md:text-lg">{cs.alert}</p>
+                <p className="text-sm leading-relaxed text-gray-300">{cs.market}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-lime-400/5 px-4 py-3 font-mono text-sm text-lime-100/95 md:text-right">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-lime-300/70">Time of alert</p>
-                <p className="mt-1 text-base font-semibold tabular-nums">{cs.timeUtc}</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-lime-300/70">Time</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums md:text-base">{cs.timeUtc}</p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Market reaction</p>
-              <p className="mt-2 text-gray-100 md:text-lg">
-                Price moved <span className="font-mono font-bold text-lime-300">{cs.moveFrom}</span>
-                {' → '}
-                <span className="font-mono font-bold text-lime-200">{cs.moveTo}</span>
-                {' in the next '}
-                <span className="font-mono font-semibold text-white">{cs.minutes} minutes</span>
-              </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Move</p>
+                <p className="mt-1 font-mono text-lg font-bold text-lime-200">
+                  {cs.moveFrom} {'->'} {cs.moveTo}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Window</p>
+                <p className="mt-1 font-mono text-lg font-bold text-white">{cs.minutes} min</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Why it matters</p>
+                <p className="mt-1 text-sm font-medium text-gray-200">Earlier context before the crowd had it</p>
+              </div>
             </div>
-
-            <p className="mt-4 border-t border-white/5 pt-4 text-sm leading-relaxed text-gray-300">
-              <span className="font-semibold text-gray-200">Why traders watch it — </span>
-              {cs.meaning}
-            </p>
           </article>
         ))}
       </div>
@@ -261,10 +266,10 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
           href="/subscribe?plan=pro"
           className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-lime-400 px-7 py-3.5 text-sm font-extrabold text-zinc-950 shadow-[0_0_40px_-10px_rgba(163,230,53,0.65)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
         >
-          Start getting alerts
+          Start 7-Day Risk-Free Trial
         </Link>
         <p className="text-center text-xs text-gray-500">
-          Representative examples for timing and entry context — not promises or guarantees.
+          Representative examples for timing and market reaction, not promises or guarantees.
         </p>
       </div>
     </section>
@@ -287,11 +292,22 @@ export function PolymarketAlertsPrePricing({ compact = false }: { compact?: bool
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]" />
       <h2 id="one-trade-heading" className={h2}>
-        One good alert can justify the subscription
+        One earlier signal or one avoided bad entry can justify the month
       </h2>
       <p className={sub}>
-        If alerts help you avoid one bad entry or catch one early move, the subscription pays for itself.
+        Most of the value comes from seeing important moves sooner, not from copying every alert.
       </p>
+      <div className="relative mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-3">
+        {[
+          'Catch one strong move earlier',
+          'Avoid one late chase into a stretched market',
+          'Spend less time scanning noisy feeds and trackers',
+        ].map((item) => (
+          <div key={item} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-4 text-sm text-violet-50/90">
+            {item}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

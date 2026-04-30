@@ -82,10 +82,10 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 const HERO_POINTS = [
-  'Only alerts with Whale Score 70+',
-  'Telegram delivery in under 30 seconds',
-  'Setup takes about 2 minutes',
-  '7-day full refund if it is not useful',
+  'Typical delivery in under 30 seconds',
+  'Whale Score 70+ only',
+  '2-minute one-time setup',
+  '7-day full refund',
 ] as const;
 
 const ONBOARDING_STEPS = [
@@ -107,10 +107,10 @@ const ONBOARDING_STEPS = [
 ] as const;
 
 const CLARITY_CARDS = [
-  { label: 'Delivery', value: 'Telegram', detail: 'No extra dashboard or inbox clutter' },
-  { label: 'Speed', value: '<30s', detail: 'Built for markets that move before retail reacts' },
-  { label: 'Filter', value: '70+ only', detail: 'Large bets are filtered by Whale Score' },
-  { label: 'Risk', value: '7 days', detail: 'Full refund if the alerts are not useful' },
+  { label: 'Delivery', value: 'Telegram', detail: 'Alerts go straight to Telegram, with no extra dashboard to babysit' },
+  { label: 'Speed', value: '<30s', detail: 'Most alerts arrive fast enough to help you react before the crowd catches up' },
+  { label: 'Filter', value: '70+ only', detail: 'Only higher-signal whale activity passes the Whale Score threshold' },
+  { label: 'Risk', value: '7 days', detail: 'Try it first. If it is not useful, email us for a full refund' },
 ] as const;
 
 export function HeroSection() {
@@ -120,11 +120,12 @@ export function HeroSection() {
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Polymarket whale alerts</p>
           <h1 className="font-display mt-4 max-w-[12ch] text-balance text-[clamp(2rem,9vw,4.8rem)] font-semibold leading-[0.98] tracking-tight text-black">
-            Stop trading after the move.
+            Get whale alerts in Telegram before the crowd reacts.
           </h1>
           <p className="mt-4 max-w-[62ch] text-[16px] leading-relaxed text-neutral-600 sm:mt-5 sm:text-[18px]">
-            SightWhale sends real-time Telegram alerts when whale-sized bets hit Polymarket, filtered so you only see
-            the trades most likely to move the market.
+            SightWhale tracks whale-sized Polymarket bets and only sends you alerts that clear{' '}
+            <strong className="font-semibold text-black">Whale Score 70+</strong>, so you can spot meaningful
+            positioning earlier and avoid chasing late moves.
           </p>
 
           <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
@@ -144,20 +145,23 @@ export function HeroSection() {
               eventName="lp_cta_click"
               eventProps={{ cta_id: 'hero_primary', section: 'hero' }}
             >
-              Start 7-Day Trial Setup
+              Start 7-Day Risk-Free Trial
             </PrimaryButton>
             <a
-              href="#pricing"
-              onClick={() => trackEvent('lp_cta_click', { cta_id: 'hero_secondary_pricing', section: 'hero', destination: '#pricing', source_page: 'polymarket-alerts-tl' })}
-              className="inline-flex min-h-[3.75rem] w-full items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-4 text-center text-[16px] font-semibold tracking-tight text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50 sm:w-auto"
+              href="#case-studies-2026"
+              onClick={() => trackEvent('lp_cta_click', { cta_id: 'hero_secondary_examples', section: 'hero', destination: '#case-studies-2026', source_page: 'polymarket-alerts-tl' })}
+              className="inline-flex min-h-[3.75rem] w-full items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-6 py-4 text-center text-[16px] font-semibold tracking-tight text-amber-950 shadow-[0_14px_40px_-28px_rgba(245,158,11,0.8)] transition-all hover:border-amber-400 hover:bg-amber-100 hover:shadow-[0_18px_44px_-24px_rgba(245,158,11,0.95)] sm:w-auto"
             >
-              See Pricing First
+              See Real Alert Examples
+              <span aria-hidden className="font-mono text-base">
+                →
+              </span>
             </a>
           </div>
 
           <div className="mt-5 space-y-1.5 text-[13px] leading-relaxed text-neutral-500">
-            <p>Web checkout, Telegram delivery.</p>
-            <p>You will generate an activation code in Telegram before payment.</p>
+            <p>Pay on web. Receive alerts in Telegram.</p>
+            <p>No dashboard to babysit. You will generate an activation code in Telegram before payment.</p>
           </div>
         </div>
 
@@ -201,11 +205,11 @@ export function HeroSection() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">What you see</p>
-              <p className="mt-2 text-sm font-medium text-neutral-800">Whale score, side, size, and instant context</p>
+              <p className="mt-2 text-sm font-medium text-neutral-800">Side, size, timing, Whale Score, and context</p>
             </div>
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">Why it matters</p>
-              <p className="mt-2 text-sm font-medium text-neutral-800">You can decide before the crowd notices</p>
+              <p className="mt-2 text-sm font-medium text-neutral-800">You get faster, filtered context instead of raw noise</p>
             </div>
           </div>
         </div>
@@ -370,11 +374,11 @@ export function ClaritySection() {
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">At a glance</p>
             <h2 id="clarity-heading" className="font-display mt-2 text-[1.75rem] font-semibold tracking-tight text-black sm:text-[2.2rem]">
-              What you are actually buying
+              Before you subscribe, here&apos;s exactly what you get
             </h2>
           </div>
           <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-500">
-            See the delivery method, speed, filter, and refund terms before you subscribe.
+            No vague promises. Just a faster, cleaner way to see whale positioning on Polymarket.
           </p>
         </div>
 
@@ -387,6 +391,9 @@ export function ClaritySection() {
             </article>
           ))}
         </div>
+        <p className="mt-5 text-sm leading-relaxed text-neutral-600">
+          You are not paying for more alerts. You are paying for faster, filtered, usable context.
+        </p>
       </div>
     </section>
   );
@@ -404,7 +411,7 @@ export function HowToStartSection() {
             </h2>
           </div>
           <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-400">
-            Open the bot, generate your code, and finish checkout.
+            The setup is simple, and you only do it once.
           </p>
         </div>
 
@@ -419,7 +426,7 @@ export function HowToStartSection() {
         </div>
 
         <div className="mt-8 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-4 text-sm leading-relaxed text-amber-100">
-          Checkout happens on the web. Alerts are delivered in Telegram.
+          No dashboard setup. No complicated onboarding. Checkout happens on the web, and alerts are delivered in Telegram.
         </div>
       </div>
     </section>
@@ -431,31 +438,34 @@ export function DecisionSection() {
     <section className="py-10 sm:py-16" aria-labelledby="decision-heading">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_70px_-40px_rgba(0,0,0,0.35)] sm:p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Why traders use it</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">How traders use it</p>
           <h2 id="decision-heading" className="font-display mt-2 text-[1.9rem] font-semibold tracking-tight text-black sm:text-[2.35rem]">
-            A faster read on whale positioning
+            How traders actually use these alerts
           </h2>
           <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-neutral-600">
-            <p>Whale alerts help you spot large positioning earlier, before the crowd catches up.</p>
-            <p>
-              Use them to discover markets sooner, avoid late entries, and stay closer to where large money is moving.
-            </p>
+            <p>Most users do not treat these alerts as automatic buy signals. They use them to get faster context and make better timing decisions.</p>
+            <p>Spot markets you were not watching, avoid late entries after a move starts, and use whale activity as a second layer of confirmation before acting.</p>
           </div>
         </div>
 
         <div className="rounded-[32px] border border-neutral-200 bg-black p-6 text-white shadow-[0_20px_80px_-46px_rgba(0,0,0,0.55)] sm:p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-lime-300">Why it can be worth it</p>
-          <h3 className="mt-3 text-2xl font-semibold tracking-tight">One avoided bad entry can pay for the month.</h3>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-lime-300">This is not for everyone</p>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight">Not for people looking for guaranteed wins.</h3>
           <p className="mt-4 text-sm leading-relaxed text-neutral-300">
-            For many traders, one earlier signal or one avoided chase is enough to justify the subscription.
+            This is best for traders who want faster context, still make their own decisions, and are comfortable receiving alerts in Telegram.
           </p>
+          <ul className="mt-5 space-y-2 text-sm text-neutral-200">
+            <li>Not for guaranteed-profit seekers</li>
+            <li>Not for fully automated trading</li>
+            <li>Not for people who do not use Telegram</li>
+          </ul>
           <div className="mt-6">
             <PrimaryButton
               className="bg-lime-400 text-black hover:bg-lime-300"
               eventName="lp_cta_click"
               eventProps={{ cta_id: 'decision_primary', section: 'decision' }}
             >
-              Start Pro For $29/mo
+              Start 7-Day Risk-Free Trial
             </PrimaryButton>
           </div>
         </div>
@@ -466,16 +476,16 @@ export function DecisionSection() {
 
 export function StickyCTA() {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#343536] bg-[#1a1a1b]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a1a1b]/85">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#343536] bg-[#1a1a1b]/92 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a1a1b]/80">
       <div className="mx-auto max-w-md">
         <PrimaryButton
-          className="min-h-[3.5rem] py-3.5 text-[16px] font-extrabold shadow-[0_-4px_28px_rgba(255,69,0,0.35)] ring-1 ring-white/10"
+          className="min-h-[3.1rem] py-3 text-[15px] font-extrabold shadow-[0_-4px_24px_rgba(255,69,0,0.28)] ring-1 ring-white/10 sm:min-h-[3.5rem] sm:py-3.5 sm:text-[16px]"
           eventName="lp_cta_click"
           eventProps={{ cta_id: 'sticky_primary', section: 'sticky' }}
         >
           Start 7-Day Risk-Free Trial
         </PrimaryButton>
-        <p className="mt-2 text-center text-[11px] text-white/65">2-minute setup on mobile</p>
+        <p className="mt-1 hidden text-center text-[11px] text-white/65 sm:block">2-minute setup. Telegram delivery.</p>
       </div>
     </div>
   );
@@ -491,18 +501,18 @@ export default function PolymarketAlertsTlPage() {
       <main className="mx-auto max-w-6xl px-4 pb-32 font-[family-name:var(--font-body)] sm:px-8 sm:pb-16">
         <HeroSection />
         <ClaritySection />
-        <HowToStartSection />
-        <DecisionSection />
-        <WhaleScoreMoatSection />
         <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
-          <PolymarketAlertsConversionAfterHero />
           <PolymarketAlertsCaseStudies2026 />
+          <PolymarketAlertsConversionAfterHero />
+          <WhaleScoreMoatSection />
+          <DecisionSection />
           <PolymarketAlertsPrePricing />
         </div>
         <div id="pricing" className="mt-12 sm:mt-16">
           <PolymarketAlertsPricingCompare />
         </div>
         <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
+          <HowToStartSection />
           <PolymarketAlertsPostPricingFaqAndGuarantee />
           <PolymarketAlertsClosingCta />
         </div>

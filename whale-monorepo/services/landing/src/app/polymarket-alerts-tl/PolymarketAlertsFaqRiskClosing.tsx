@@ -51,6 +51,21 @@ const faqEntries = [
     ),
   },
   {
+    id: 'free-sources',
+    question: 'Why not just use free whale trackers or X?',
+    body: (
+      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
+        <p>
+          Free sources can show you large trades, but they usually leave you with the hard part:
+          <strong className="text-zinc-900"> speed, filtering, and deciding what matters</strong>.
+        </p>
+        <p>
+          SightWhale is built to reduce that work by sending filtered alerts directly to Telegram.
+        </p>
+      </div>
+    ),
+  },
+  {
     id: 'where',
     question: 'Where will I receive alerts?',
     body: (
@@ -85,6 +100,19 @@ const faqEntries = [
       <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
         <p className="font-medium text-zinc-900">Yes.</p>
         <p>You can cancel your subscription anytime. No contracts.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'not-for-you',
+    question: 'Who is this not for?',
+    body: (
+      <div className="space-y-3 text-sm leading-relaxed text-zinc-600">
+        <p>This is probably not for you if you want guaranteed wins, fully automated trading, or you do not use Telegram.</p>
+        <p>
+          It works best for traders who want <strong className="text-zinc-900">faster context</strong> and still make
+          their own decisions.
+        </p>
       </div>
     ),
   },
@@ -170,18 +198,23 @@ export function PolymarketAlertsClosingCta({ compact = false }: { compact?: bool
         id="closing-cta-heading"
         className="font-display relative text-3xl font-black tracking-tight text-white md:text-5xl"
       >
-        Stop trading blind.
+        See the alerts for yourself.
       </h2>
-      <p className="relative mx-auto mt-4 max-w-md text-lg text-gray-400 md:text-xl">Know when large money moves.</p>
+      <p className="relative mx-auto mt-4 max-w-md text-lg text-gray-400 md:text-xl">
+        2-minute setup. Telegram delivery. 7-day full refund.
+      </p>
       <Link
         href="/subscribe?plan=pro"
         className="relative mt-8 inline-flex items-center gap-2 rounded-xl bg-lime-400 px-8 py-3.5 text-sm font-bold text-zinc-950 shadow-[0_0_40px_-8px_rgba(163,230,53,0.55)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
       >
-        Get whale alerts
+        Start 7-Day Risk-Free Trial
         <span aria-hidden className="font-mono text-base">
           →
         </span>
       </Link>
+      <p className="relative mx-auto mt-3 max-w-lg text-sm leading-relaxed text-gray-500">
+        If it is not useful within 7 days, email us and get a full refund.
+      </p>
     </section>
   );
 }

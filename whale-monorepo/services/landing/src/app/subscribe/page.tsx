@@ -134,8 +134,8 @@ function TelegramActivationLinks() {
       ) : null}
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Step 1</p>
-        <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Open Telegram and generate your code</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Step 1 of 3</p>
+        <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Open Telegram and generate your activation code</h2>
         <p className="mt-3 text-sm leading-relaxed text-gray-300">
           Open{' '}
           <a
@@ -146,7 +146,7 @@ function TelegramActivationLinks() {
             @sightwhale_bot
           </a>{' '}
           and run <code className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-violet-300">/start</code>.
-          Then tap <span className="font-medium text-white">Generate Code</span>.
+          Then tap <span className="font-medium text-white">Generate Code</span>. You need this code before checkout can start.
         </p>
 
         <div className="mt-4 flex flex-col gap-3">
@@ -156,7 +156,7 @@ function TelegramActivationLinks() {
             onClick={() => trackEvent('telegram_open_click', { page: 'subscribe', source: 'step_1_primary', url_type: 'https' })}
             className="btn-primary inline-flex min-h-[48px] w-full items-center justify-center px-4 py-3.5 text-center text-base shadow-lg transition-all active:scale-[0.98] sm:text-lg"
           >
-            Open @sightwhale_bot in Telegram
+            Open @sightwhale_bot
           </a>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -175,6 +175,7 @@ function TelegramActivationLinks() {
               {copied ? 'Link copied' : 'Copy bot link'}
             </button>
           </div>
+          <p className="text-xs text-gray-500">If Telegram sends you back here, the code may auto-fill automatically.</p>
         </div>
       </div>
     </div>
@@ -220,6 +221,7 @@ function SubscribeForm() {
 
   const sanitizedCode = code.replace(/\s+/g, '').toUpperCase();
   const hasCode = sanitizedCode.length >= 6;
+  const isFreeMode = mode === 'free';
   const selectedPlan = PLAN_COPY[tier];
   const selectedAmount = getPlanAmount(tier, period);
   const selectedSuffix = getPlanSuffix(tier, period);
@@ -233,7 +235,7 @@ function SubscribeForm() {
 
   useEffect(() => {
     const codeFromUrl = (searchParams.get('code') || '').trim();
-    if (!codeFromUrl || mode !== 'paid' || !hasCode) return;
+    if (!codeFromUrl || isFreeMode || !hasCode) return;
 
     const button = checkoutButtonRef.current;
     if (!button) return;
@@ -244,7 +246,7 @@ function SubscribeForm() {
     });
 
     return () => window.cancelAnimationFrame(rafId);
-  }, [searchParams, hasCode, mode]);
+  }, [searchParams, hasCode, isFreeMode]);
 
   function mapCheckoutError(detail: unknown, status: number): { message: string; actions: string[] } {
     const raw = typeof detail === 'string' ? detail : '';
@@ -386,7 +388,7 @@ function SubscribeForm() {
       <div className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Step 2</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Step 2 of 3</p>
             <h2 className="mt-1 text-lg font-semibold text-white">Paste your activation code</h2>
           </div>
           <span
@@ -399,7 +401,7 @@ function SubscribeForm() {
         </div>
         <p className="mt-3 text-sm leading-relaxed text-gray-300">
           Return from Telegram after tapping <span className="font-medium text-white">Generate Code</span>. If Telegram
-          sends you back here with a deep link, the field will auto-fill.
+          sends you back here, the field may auto-fill.
         </p>
       </div>
 
@@ -408,86 +410,41 @@ function SubscribeForm() {
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder={mode === 'free' ? 'Not required for Free' : 'ABCD1234'}
+          placeholder={isFreeMode ? 'Not required for Free' : 'ABCD1234'}
           className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-lg uppercase tracking-[0.14em] text-white outline-none transition-all focus:border-violet-500/60"
-          required={mode === 'paid'}
-          disabled={mode === 'free'}
+          required={!isFreeMode}
+          disabled={isFreeMode}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
         />
         <p className="text-xs text-gray-500">
-          {mode === 'paid'
-            ? 'You need this code before checkout can start.'
-            : 'Free mode skips payment and does not need a code.'}
+          {isFreeMode ? 'Free preview skips payment and does not need a code.' : 'Once your code is detected, you are ready to start checkout.'}
         </p>
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <label className="text-sm text-gray-400">Plan</label>
+        <div className="flex items-center justify-between gap-3">
+          <label className="text-sm text-gray-400">{isFreeMode ? 'Preview mode' : 'Step 3 of 3'}</label>
           <button
             type="button"
             onClick={() => {
-              const nextMode: Mode = mode === 'paid' ? 'free' : 'paid';
+              const nextMode: Mode = isFreeMode ? 'paid' : 'free';
               setMode(nextMode);
+              if (nextMode === 'paid') setTier('pro');
               trackEvent('plan_mode_toggle', { page: 'subscribe', mode: nextMode });
             }}
             className="text-xs font-medium text-gray-400 underline decoration-white/15 underline-offset-4 hover:text-gray-200"
           >
-            {mode === 'paid' ? 'Prefer free first?' : 'Switch back to paid'}
+            {isFreeMode ? 'Back to Pro' : 'Not ready yet? Explore the limited free version'}
           </button>
         </div>
 
-        {mode === 'paid' ? (
-          <div className="grid grid-cols-1 gap-3">
-            {(['pro', 'elite'] as const).map((planKey) => {
-              const plan = PLAN_COPY[planKey];
-              const selected = tier === planKey;
-              const amount = getPlanAmount(planKey, period);
-              const suffix = getPlanSuffix(planKey, period);
-
-              return (
-                <button
-                  key={planKey}
-                  type="button"
-                  onClick={() => {
-                    setTier(planKey);
-                    trackEvent('plan_select', { page: 'subscribe', mode: 'paid', tier: planKey, period });
-                  }}
-                  className={`rounded-2xl border p-4 text-left transition-all ${
-                    selected
-                      ? 'border-violet-400 bg-violet-500/12 shadow-[0_0_0_1px_rgba(167,139,250,0.18)]'
-                      : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-black/30'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">{plan.kicker}</p>
-                      <h3 className="mt-1 text-xl font-semibold text-white">{plan.label}</h3>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold tracking-tight text-white">${amount}</p>
-                      <p className="text-xs text-gray-400">{suffix}</p>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-300">{plan.description}</p>
-                  <ul className="mt-4 grid gap-2 text-xs text-gray-300 sm:grid-cols-2">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
+        {isFreeMode ? (
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Starter access</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Limited preview</p>
                 <h3 className="mt-1 text-xl font-semibold text-white">Free</h3>
               </div>
               <div className="text-right">
@@ -496,8 +453,7 @@ function SubscribeForm() {
               </div>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-gray-300">
-              Use this only if you want to explore before paying. It is intentionally limited and slower than the paid
-              plans.
+              Use this only if you want a slower preview before paying. It is intentionally limited compared with Pro.
             </p>
             <ul className="mt-4 grid gap-2 text-xs text-gray-300 sm:grid-cols-2">
               {FREE_PLAN_FEATURES.map((feature) => (
@@ -507,10 +463,70 @@ function SubscribeForm() {
               ))}
             </ul>
           </div>
+        ) : (
+          <>
+            <div className="rounded-2xl border border-violet-400 bg-violet-500/12 p-4 shadow-[0_0_0_1px_rgba(167,139,250,0.18)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">{PLAN_COPY.pro.kicker}</p>
+                  <h3 className="mt-1 text-xl font-semibold text-white">Start with Pro</h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold tracking-tight text-white">${getPlanAmount('pro', period)}</p>
+                  <p className="text-xs text-gray-400">{getPlanSuffix('pro', period)}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-gray-300">{PLAN_COPY.pro.description}</p>
+              <ul className="mt-4 grid gap-2 text-xs text-gray-300 sm:grid-cols-2">
+                {[
+                  'Real-time whale alerts',
+                  'Typical delivery in under 30 seconds',
+                  'Whale Score 70+ only',
+                  'Telegram delivery',
+                  '2-minute one-time setup',
+                  '7-day full refund',
+                ].map((feature) => (
+                  <li key={feature} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400">
+                <span>Start with Pro now and upgrade later if you need more coverage.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextTier: PaidTier = tier === 'pro' ? 'elite' : 'pro';
+                    setTier(nextTier);
+                    trackEvent('plan_select', { page: 'subscribe', mode: 'paid', tier: nextTier, period });
+                  }}
+                  className="underline decoration-white/15 underline-offset-4 hover:text-gray-200"
+                >
+                  {tier === 'pro' ? 'Need more coverage? Switch to Elite' : 'Back to Pro'}
+                </button>
+              </div>
+            </div>
+
+            {tier === 'elite' ? (
+              <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{PLAN_COPY.elite.kicker}</p>
+                    <h3 className="mt-1 text-xl font-semibold text-white">Elite</h3>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold tracking-tight text-white">${getPlanAmount('elite', period)}</p>
+                    <p className="text-xs text-gray-400">{getPlanSuffix('elite', period)}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-gray-300">{PLAN_COPY.elite.description}</p>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 
-      <div className={`space-y-3 ${mode === 'free' ? 'opacity-60' : ''}`}>
+      <div className={`space-y-3 ${isFreeMode ? 'opacity-60' : ''}`}>
         <label className="text-sm text-gray-400">Billing</label>
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/25 p-1">
           {(['monthly', 'yearly'] as const).map((value) => {
@@ -525,14 +541,14 @@ function SubscribeForm() {
                   setPeriod(value);
                   trackEvent('billing_select', { page: 'subscribe', mode, tier, period: value });
                 }}
-                disabled={mode === 'free'}
+                disabled={isFreeMode}
                 className={`rounded-xl px-4 py-3 text-left transition-all ${
                   active ? 'bg-white text-black' : 'text-gray-300 hover:bg-white/5'
                 } disabled:cursor-not-allowed`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold capitalize">{value}</span>
-                  {isYearly && mode === 'paid' ? (
+                  {isYearly && !isFreeMode ? (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         active ? 'bg-black text-white' : 'bg-violet-500/20 text-violet-200'
@@ -543,7 +559,7 @@ function SubscribeForm() {
                   ) : null}
                 </div>
                 <p className={`mt-1 text-xs ${active ? 'text-black/70' : 'text-gray-500'}`}>
-                  {mode === 'paid' ? `$${getPlanAmount(tier, value)} ${getPlanSuffix(tier, value)}` : 'Paid plans only'}
+                  {!isFreeMode ? `$${getPlanAmount(tier, value)} ${getPlanSuffix(tier, value)}` : 'Paid plans only'}
                 </p>
               </button>
             );
@@ -554,18 +570,18 @@ function SubscribeForm() {
       <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/8 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">Step 3</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">{isFreeMode ? 'Preview mode' : 'Ready to finish'}</p>
             <h3 className="mt-1 text-lg font-semibold text-white">
-              {mode === 'free' ? 'Activate free access' : 'Proceed to secure checkout'}
+              {isFreeMode ? 'Activate the limited free preview' : 'Start secure checkout'}
             </h3>
           </div>
           <div className="text-left sm:text-right">
-            <p className="text-2xl font-bold tracking-tight text-white">{mode === 'free' ? '$0' : `$${selectedAmount}`}</p>
-            <p className="text-xs text-emerald-200/80">{mode === 'free' ? 'No payment' : selectedSuffix}</p>
+            <p className="text-2xl font-bold tracking-tight text-white">{isFreeMode ? '$0' : `$${selectedAmount}`}</p>
+            <p className="text-xs text-emerald-200/80">{isFreeMode ? 'No payment' : selectedSuffix}</p>
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-gray-300">
-          {mode === 'free'
+          {isFreeMode
             ? 'Free gets you a limited preview with no card required.'
             : `${selectedPlan.label} includes a 7-day full refund. If the alerts are not useful, email support and get your money back.`}
         </p>
@@ -588,20 +604,21 @@ function SubscribeForm() {
       <button
         ref={checkoutButtonRef}
         type="submit"
-        disabled={loading || (mode === 'paid' && !hasCode)}
+        disabled={loading || (!isFreeMode && !hasCode)}
         className="btn-primary w-full py-4 text-base shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:text-lg"
       >
         {loading
-          ? mode === 'free'
+          ? isFreeMode
             ? 'Activating...'
             : 'Redirecting to checkout...'
-          : mode === 'free'
-            ? 'Activate Free Access'
-            : `Continue to Checkout - $${selectedAmount}${selectedSuffix}`}
+          : isFreeMode
+            ? 'Explore Free Instead'
+            : 'Start Secure Checkout'}
       </button>
 
       <div className="space-y-2 text-center text-xs text-gray-500">
-        <p>{mode === 'free' ? 'No card required.' : 'Secure web checkout. Cancel anytime.'}</p>
+        <p>{isFreeMode ? 'No card required.' : 'Secure web checkout · 7-day refund · Cancel anytime.'}</p>
+        {!isFreeMode ? <p>{selectedPlan.label} · ${selectedAmount}{selectedSuffix}</p> : null}
         <Link href="/" className="inline-block transition-colors hover:text-gray-300">
           ← Back to home
         </Link>
@@ -615,13 +632,12 @@ function CheckoutSidebar() {
     <aside className="order-2 space-y-6 lg:order-1">
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">How this works</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Get from click to checkout fast</h2>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Three quick steps, then alerts go to Telegram</h2>
         <div className="mt-5 space-y-4">
           {[
-            'Open the bot in Telegram.',
+            'Open @sightwhale_bot.',
             'Tap Generate Code.',
-            'Come back here and paste the code.',
-            'Pay on the web and receive alerts in Telegram.',
+            'Paste the code here and finish secure checkout.',
           ].map((line, index) => (
             <div key={line} className="flex gap-3 rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
               <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-200">
@@ -640,9 +656,10 @@ function CheckoutSidebar() {
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">Why users complete payment</p>
         <ul className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Refund window removes first-week risk.</li>
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Telegram delivery means no dashboard setup after checkout.</li>
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">The paid plans remove alert delay, which is where most of the value lives.</li>
+          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">7-day refund lowers first-week risk.</li>
+          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Telegram delivery means no extra dashboard setup after payment.</li>
+          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Start with Pro now and upgrade later if you need more coverage.</li>
+          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Secure web checkout. Cancel anytime.</li>
         </ul>
       </div>
     </aside>
@@ -664,12 +681,19 @@ export default function SubscribePage() {
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300">Subscribe</p>
           <h1 className="mt-3 text-[34px] font-bold tracking-tight text-white text-balance sm:text-5xl">
-            Finish setup without guesswork
+            Start Pro in about 2 minutes
           </h1>
           <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-400 sm:text-lg">
-            This page exists to get you through the only real friction in the funnel: generating your Telegram activation
-            code, choosing a plan, and starting checkout without confusion.
+            Open the bot, generate your activation code, and complete secure checkout. Alerts will be delivered in
+            Telegram.
           </p>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-300">
+            {['Telegram delivery', 'Whale Score 70+ only', '7-day full refund', 'Cancel anytime'].map((item) => (
+              <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-8">
@@ -690,46 +714,30 @@ export default function SubscribePage() {
               <SubscribeForm />
             </Suspense>
 
-            <section className="space-y-6 rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Plan differences you can verify</h2>
-                  <p className="mt-2 text-xs text-gray-400">Limits are enforced in-product and visible after activation.</p>
-                </div>
-                <p className="text-xs text-gray-500">Paid plans are optimized for speed, not browsing.</p>
+            <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Questions before checkout?</h2>
+                <p className="mt-2 text-xs text-gray-400">The basics most users want confirmed before paying.</p>
               </div>
-              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="text-xs uppercase tracking-wide text-gray-500">Free</div>
-                  <div className="mt-2 text-lg font-semibold text-white">$0</div>
-                  <ul className="mt-3 space-y-2 text-xs text-gray-400">
-                    <li>3 alerts per day</li>
-                    <li>10-minute alert delay</li>
-                    <li>No whale follows</li>
-                    <li>No smart collections</li>
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4">
-                  <div className="text-xs uppercase tracking-wide text-violet-200">Pro</div>
-                  <div className="mt-2 text-lg font-semibold text-white">$29/mo · $290/yr</div>
-                  <ul className="mt-3 space-y-2 text-xs text-gray-300">
-                    <li>Unlimited alerts</li>
-                    <li>Zero alert delay</li>
-                    <li>Follow up to 20 whales</li>
-                    <li>Subscribe to 5 smart collections</li>
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
-                  <div className="text-xs uppercase tracking-wide text-cyan-200">Elite</div>
-                  <div className="mt-2 text-lg font-semibold text-white">$59/mo · $590/yr</div>
-                  <ul className="mt-3 space-y-2 text-xs text-gray-200">
-                    <li>Everything in Pro</li>
-                    <li>Follow up to 100 whales</li>
-                    <li>Subscribe to 20 smart collections</li>
-                    <li>Priority updates</li>
-                  </ul>
-                </div>
+              <div className="grid gap-3 text-sm md:grid-cols-2">
+                {[
+                  ['Do I need Telegram before I pay?', 'Yes. You need a Telegram activation code before checkout can begin.'],
+                  ['Where will I receive alerts?', 'Directly in Telegram.'],
+                  ['Can I cancel anytime?', 'Yes.'],
+                  ['What if the alerts are not useful?', 'Email us within 7 days for a full refund.'],
+                ].map(([question, answer]) => (
+                  <div key={question} className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                    <div className="text-sm font-semibold text-white">{question}</div>
+                    <div className="mt-2 text-xs leading-relaxed text-gray-400">{answer}</div>
+                  </div>
+                ))}
               </div>
+              <Link
+                href="/contact"
+                className="inline-flex text-sm text-violet-300 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-200"
+              >
+                Need help? Contact support
+              </Link>
             </section>
           </div>
         </div>
