@@ -15,6 +15,11 @@ export default function SuccessClient() {
   const dashboardHref = useMemo(() => '/follow', []);
 
   useEffect(() => {
+    trackEvent('payment_success_view', {
+      page: 'success',
+      plan,
+      session_id_present: sessionId !== 'unknown',
+    });
     trackEvent('checkout_success', {
       page: 'success',
       plan,
@@ -38,14 +43,28 @@ export default function SuccessClient() {
             href={TELEGRAM_BOT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackEvent('success_telegram_click', { page: 'success', plan })}
+            onClick={() =>
+              trackEvent('success_telegram_click', {
+                page: 'success',
+                section: 'success_actions',
+                destination: TELEGRAM_BOT_URL,
+                plan,
+              })
+            }
             className="inline-flex items-center justify-center rounded-full border border-violet-500/60 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 hover:bg-violet-500/20"
           >
             Open Telegram Bot
           </a>
           <Link
             href={dashboardHref}
-            onClick={() => trackEvent('success_dashboard_click', { page: 'success', plan })}
+            onClick={() =>
+              trackEvent('success_dashboard_click', {
+                page: 'success',
+                section: 'success_actions',
+                destination: dashboardHref,
+                plan,
+              })
+            }
             className="btn-primary inline-flex items-center justify-center"
           >
             Go to dashboard

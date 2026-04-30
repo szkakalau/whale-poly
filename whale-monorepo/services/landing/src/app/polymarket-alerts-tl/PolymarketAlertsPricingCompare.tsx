@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { trackEvent } from '@/lib/analytics';
 
 type PolymarketAlertsPricingCompareProps = {
   compact?: boolean;
@@ -83,6 +84,15 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
 
           <Link
             href="/subscribe?plan=pro"
+            onClick={() =>
+              trackEvent('lp_cta_click', {
+                page: 'polymarket-alerts-tl',
+                section: 'pricing',
+                cta_id: 'pricing_pro',
+                destination: '/subscribe?plan=pro',
+                plan: 'pro',
+              })
+            }
             className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
           >
             Start 7-Day Risk-Free Trial
@@ -136,6 +146,15 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
 
           <Link
             href="/subscribe?plan=elite"
+            onClick={() =>
+              trackEvent('lp_cta_click', {
+                page: 'polymarket-alerts-tl',
+                section: 'pricing',
+                cta_id: 'pricing_elite',
+                destination: '/subscribe?plan=elite',
+                plan: 'elite',
+              })
+            }
             className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_0_34px_-10px_rgba(139,92,246,0.75)] transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
           >
             Upgrade to Elite

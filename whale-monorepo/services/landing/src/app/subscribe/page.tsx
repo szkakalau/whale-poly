@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
+import { type ReactNode, useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -88,6 +88,39 @@ function subscribeNarrowViewport(onStoreChange: () => void) {
 
 function getNarrowViewportSnapshot() {
   return window.matchMedia(NARROW_QUERY).matches;
+}
+
+function TrackedSection({
+  section,
+  children,
+}: {
+  section: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const hasTrackedRef = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || hasTrackedRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        if (!visible || hasTrackedRef.current) return;
+
+        hasTrackedRef.current = true;
+        trackEvent('subscribe_section_view', { page: 'subscribe', section });
+        observer.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [section]);
+
+  return <div ref={ref}>{children}</div>;
 }
 
 function TelegramActivationLinks() {
@@ -410,6 +443,7 @@ function SubscribeForm() {
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onFocus={() => trackEvent('code_input_focus', { page: 'subscribe', section: 'activation_code' })}
           placeholder={isFreeMode ? 'Not required for Free' : 'ABCD1234'}
           className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-lg uppercase tracking-[0.14em] text-white outline-none transition-all focus:border-violet-500/60"
           required={!isFreeMode}
@@ -595,7 +629,11 @@ function SubscribeForm() {
               <li key={action}>{action}</li>
             ))}
           </ul>
-          <Link href="/contact" className="text-red-200 underline underline-offset-4">
+          <Link
+            href="/contact"
+            onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'checkout_error', destination: '/contact' })}
+            className="text-red-200 underline underline-offset-4"
+          >
             Contact support
           </Link>
         </div>
@@ -678,67 +716,83 @@ export default function SubscribePage() {
         <div className="absolute top-0 right-0 -z-10 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
         <div className="absolute bottom-0 left-0 -z-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
 
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300">Subscribe</p>
-          <h1 className="mt-3 text-[34px] font-bold tracking-tight text-white text-balance sm:text-5xl">
-            Start Pro in about 2 minutes
-          </h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-400 sm:text-lg">
-            Open the bot, generate your activation code, and complete secure checkout. Alerts will be delivered in
-            Telegram.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-300">
-            {['Telegram delivery', 'Whale Score 70+ only', '7-day full refund', 'Cancel anytime'].map((item) => (
-              <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
-                {item}
-              </span>
-            ))}
+        <TrackedSection section="hero">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300">Subscribe</p>
+            <h1 className="mt-3 text-[34px] font-bold tracking-tight text-white text-balance sm:text-5xl">
+              Start Pro in about 2 minutes
+            </h1>
+            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-400 sm:text-lg">
+              Open the bot, generate your activation code, and complete secure checkout. Alerts will be delivered in
+              Telegram.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-300">
+              {['Telegram delivery', 'Whale Score 70+ only', '7-day full refund', 'Cancel anytime'].map((item) => (
+                <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        </TrackedSection>
 
         <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-8">
-          <CheckoutSidebar />
+          <TrackedSection section="sidebar">
+            <CheckoutSidebar />
+          </TrackedSection>
 
           <div className="order-1 space-y-5 lg:order-2 lg:space-y-6">
-            <div className="lg:hidden">
-              <TelegramActivationLinks />
-            </div>
-
-            <Suspense
-              fallback={
-                <div className="glass rounded-[28px] border border-white/10 p-8 text-center text-gray-500 sm:p-12">
-                  Loading checkout options...
-                </div>
-              }
-            >
-              <SubscribeForm />
-            </Suspense>
-
-            <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-              <div>
-                <h2 className="text-lg font-semibold text-white">Questions before checkout?</h2>
-                <p className="mt-2 text-xs text-gray-400">The basics most users want confirmed before paying.</p>
+            <TrackedSection section="telegram_activation">
+              <div className="lg:hidden">
+                <TelegramActivationLinks />
               </div>
-              <div className="grid gap-3 text-sm md:grid-cols-2">
-                {[
-                  ['Do I need Telegram before I pay?', 'Yes. You need a Telegram activation code before checkout can begin.'],
-                  ['Where will I receive alerts?', 'Directly in Telegram.'],
-                  ['Can I cancel anytime?', 'Yes.'],
-                  ['What if the alerts are not useful?', 'Email us within 7 days for a full refund.'],
-                ].map(([question, answer]) => (
-                  <div key={question} className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="text-sm font-semibold text-white">{question}</div>
-                    <div className="mt-2 text-xs leading-relaxed text-gray-400">{answer}</div>
+            </TrackedSection>
+
+            <TrackedSection section="checkout_form">
+              <Suspense
+                fallback={
+                  <div className="glass rounded-[28px] border border-white/10 p-8 text-center text-gray-500 sm:p-12">
+                    Loading checkout options...
                   </div>
-                ))}
-              </div>
-              <Link
-                href="/contact"
-                className="inline-flex text-sm text-violet-300 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-200"
+                }
               >
-                Need help? Contact support
-              </Link>
-            </section>
+                <SubscribeForm />
+              </Suspense>
+            </TrackedSection>
+
+            <TrackedSection section="faq">
+              <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Questions before checkout?</h2>
+                  <p className="mt-2 text-xs text-gray-400">The basics most users want confirmed before paying.</p>
+                </div>
+                <div className="grid gap-3 text-sm md:grid-cols-2">
+                  {[
+                    ['Do I need Telegram before I pay?', 'Yes. You need a Telegram activation code before checkout can begin.', 'telegram_required'],
+                    ['Where will I receive alerts?', 'Directly in Telegram.', 'delivery_destination'],
+                    ['Can I cancel anytime?', 'Yes.', 'cancel_anytime'],
+                    ['What if the alerts are not useful?', 'Email us within 7 days for a full refund.', 'refund_policy'],
+                  ].map(([question, answer, faqId]) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => trackEvent('faq_open', { page: 'subscribe', section: 'faq', faq_id: faqId })}
+                      className="rounded-2xl border border-white/8 bg-black/20 p-4 text-left"
+                    >
+                      <div className="text-sm font-semibold text-white">{question}</div>
+                      <div className="mt-2 text-xs leading-relaxed text-gray-400">{answer}</div>
+                    </button>
+                  ))}
+                </div>
+                <Link
+                  href="/contact"
+                  onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'faq', destination: '/contact' })}
+                  className="inline-flex text-sm text-violet-300 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-200"
+                >
+                  Need help? Contact support
+                </Link>
+              </section>
+            </TrackedSection>
           </div>
         </div>
       </main>

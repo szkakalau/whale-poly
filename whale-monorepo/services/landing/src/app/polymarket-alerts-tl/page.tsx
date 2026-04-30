@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -112,6 +112,41 @@ const CLARITY_CARDS = [
   { label: 'Filter', value: '70+ only', detail: 'Only higher-signal whale activity passes the Whale Score threshold' },
   { label: 'Risk', value: '7 days', detail: 'Try it first. If it is not useful, email us for a full refund' },
 ] as const;
+
+function TrackedSection({
+  section,
+  eventName = 'lp_section_view',
+  children,
+}: {
+  section: string;
+  eventName?: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const hasTrackedRef = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || hasTrackedRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        if (!visible || hasTrackedRef.current) return;
+
+        hasTrackedRef.current = true;
+        trackEvent(eventName, { page: 'polymarket-alerts-tl', section });
+        observer.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [eventName, section]);
+
+  return <div ref={ref}>{children}</div>;
+}
 
 export function HeroSection() {
   return (
@@ -499,22 +534,44 @@ export default function PolymarketAlertsTlPage() {
   return (
     <div className="min-h-screen bg-[#f6f4ef] text-black">
       <main className="mx-auto max-w-6xl px-4 pb-32 font-[family-name:var(--font-body)] sm:px-8 sm:pb-16">
-        <HeroSection />
-        <ClaritySection />
+        <TrackedSection section="hero">
+          <HeroSection />
+        </TrackedSection>
+        <TrackedSection section="clarity">
+          <ClaritySection />
+        </TrackedSection>
         <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
-          <PolymarketAlertsCaseStudies2026 />
-          <PolymarketAlertsConversionAfterHero />
-          <WhaleScoreMoatSection />
-          <DecisionSection />
-          <PolymarketAlertsPrePricing />
+          <TrackedSection section="case_studies">
+            <PolymarketAlertsCaseStudies2026 />
+          </TrackedSection>
+          <TrackedSection section="why_paid">
+            <PolymarketAlertsConversionAfterHero />
+          </TrackedSection>
+          <TrackedSection section="whale_score">
+            <WhaleScoreMoatSection />
+          </TrackedSection>
+          <TrackedSection section="decision">
+            <DecisionSection />
+          </TrackedSection>
+          <TrackedSection section="value_anchor">
+            <PolymarketAlertsPrePricing />
+          </TrackedSection>
         </div>
         <div id="pricing" className="mt-12 sm:mt-16">
-          <PolymarketAlertsPricingCompare />
+          <TrackedSection section="pricing" eventName="pricing_view">
+            <PolymarketAlertsPricingCompare />
+          </TrackedSection>
         </div>
         <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-8">
-          <HowToStartSection />
-          <PolymarketAlertsPostPricingFaqAndGuarantee />
-          <PolymarketAlertsClosingCta />
+          <TrackedSection section="how_to_start">
+            <HowToStartSection />
+          </TrackedSection>
+          <TrackedSection section="faq">
+            <PolymarketAlertsPostPricingFaqAndGuarantee />
+          </TrackedSection>
+          <TrackedSection section="closing">
+            <PolymarketAlertsClosingCta />
+          </TrackedSection>
         </div>
 
         <footer className="mt-12 border-t border-neutral-200 pb-8 pt-8 text-[12px] leading-relaxed text-neutral-500 sm:pb-0">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { trackEvent } from '@/lib/analytics';
 
 const caseStudies2026 = [
   {
@@ -264,6 +265,15 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
       <div className={`relative flex flex-col items-center gap-3 ${ctaMt}`}>
         <Link
           href="/subscribe?plan=pro"
+          onClick={() =>
+            trackEvent('lp_cta_click', {
+              page: 'polymarket-alerts-tl',
+              section: 'case_studies',
+              cta_id: 'case_studies_primary',
+              destination: '/subscribe?plan=pro',
+              plan: 'pro',
+            })
+          }
           className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-lime-400 px-7 py-3.5 text-sm font-extrabold text-zinc-950 shadow-[0_0_40px_-10px_rgba(163,230,53,0.65)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
         >
           Start 7-Day Risk-Free Trial

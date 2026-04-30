@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { trackEvent } from '@/lib/analytics';
 
 const SUPPORT_MAIL = 'mailto:support@sightwhale.com';
 
@@ -145,6 +148,13 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           {faqEntries.map((item) => (
             <article
               key={item.id}
+              onClick={() =>
+                trackEvent('faq_open', {
+                  page: 'polymarket-alerts-tl',
+                  section: 'faq',
+                  faq_id: item.id,
+                })
+              }
               className={`rounded-2xl border border-white/[0.08] bg-black/40 transition-colors hover:border-cyan-400/25 hover:bg-black/50 ${faqArt}`}
             >
               <h3 className="font-display text-base font-semibold text-white md:text-lg">{item.question}</h3>
@@ -171,7 +181,17 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           </h2>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-200 md:text-lg">
             If you don&apos;t find the alerts useful,{' '}
-            <a href={SUPPORT_MAIL} className="font-semibold text-white underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300">
+            <a
+              href={SUPPORT_MAIL}
+              onClick={() =>
+                trackEvent('contact_support_click', {
+                  page: 'polymarket-alerts-tl',
+                  section: 'guarantee',
+                  destination: SUPPORT_MAIL,
+                })
+              }
+              className="font-semibold text-white underline decoration-cyan-400/60 underline-offset-4 hover:decoration-cyan-300"
+            >
               email us
             </a>{' '}
             within 7 days and we&apos;ll refund you.
@@ -205,6 +225,15 @@ export function PolymarketAlertsClosingCta({ compact = false }: { compact?: bool
       </p>
       <Link
         href="/subscribe?plan=pro"
+        onClick={() =>
+          trackEvent('lp_cta_click', {
+            page: 'polymarket-alerts-tl',
+            section: 'closing',
+            cta_id: 'closing_primary',
+            destination: '/subscribe?plan=pro',
+            plan: 'pro',
+          })
+        }
         className="relative mt-8 inline-flex items-center gap-2 rounded-xl bg-lime-400 px-8 py-3.5 text-sm font-bold text-zinc-950 shadow-[0_0_40px_-8px_rgba(163,230,53,0.55)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
       >
         Start 7-Day Risk-Free Trial
