@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useSyncExternalStore, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -183,6 +183,7 @@ function TelegramActivationLinks() {
 
 function SubscribeForm() {
   const searchParams = useSearchParams();
+  const checkoutButtonRef = useRef<HTMLButtonElement>(null);
   const [code, setCode] = useState('');
   const [mode, setMode] = useState<Mode>('paid');
   const [tier, setTier] = useState<PaidTier>('pro');
@@ -229,6 +230,21 @@ function SubscribeForm() {
       trackEvent('activation_code_detected', { page: 'subscribe', source: 'input', mode });
     }
   }, [hasCode, mode]);
+
+  useEffect(() => {
+    const codeFromUrl = (searchParams.get('code') || '').trim();
+    if (!codeFromUrl || mode !== 'paid' || !hasCode) return;
+
+    const button = checkoutButtonRef.current;
+    if (!button) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      button.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [searchParams, hasCode, mode]);
 
   function mapCheckoutError(detail: unknown, status: number): { message: string; actions: string[] } {
     const raw = typeof detail === 'string' ? detail : '';
@@ -570,6 +586,7 @@ function SubscribeForm() {
       ) : null}
 
       <button
+        ref={checkoutButtonRef}
         type="submit"
         disabled={loading || (mode === 'paid' && !hasCode)}
         className="btn-primary w-full py-4 text-base shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:text-lg"
