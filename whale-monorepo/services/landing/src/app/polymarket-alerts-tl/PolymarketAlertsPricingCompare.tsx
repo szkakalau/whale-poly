@@ -26,19 +26,18 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
         id="pricing-compare-heading"
         className={`font-display relative text-center font-black tracking-tight text-white ${h2}`}
       >
-        Pick Your Whale Edge, Start Trading With An Edge In 2 Minutes
+        Choose your plan
       </h2>
       <p className={`relative mx-auto max-w-xl text-center text-gray-400 ${sub}`}>
-        One winning trade pays for your entire subscription.
+        Pick the alert speed and coverage that fit how actively you trade.
       </p>
 
       <div className={`relative grid lg:grid-cols-3 lg:items-stretch ${grid}`}>
-        {/* Elite — $59 — featured (mobile-first, must appear first on mobile) */}
         <div
           className={`relative order-1 lg:order-2 flex flex-col rounded-2xl border-2 border-violet-500 bg-gradient-to-b from-violet-500/[0.14] via-black/60 to-black/80 shadow-[0_0_70px_-14px_rgba(139,92,246,0.50)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_90px_-18px_rgba(139,92,246,0.65)] lg:z-[1] lg:-mt-3 lg:mb-3 ${cardPad}`}
         >
           <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
-            Recommended For Active Traders
+            Best for active traders
           </div>
 
           <div className="mt-4 text-center">
@@ -48,7 +47,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               <span className="text-base font-medium text-violet-200/80 md:text-lg">/month</span>
             </p>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
-              Faster alerts + higher win rate, for daily active traders maximizing their edge
+              Faster delivery and more selective alerts for active traders.
             </p>
           </div>
 
@@ -59,37 +58,37 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>EVERYTHING included in the Pro plan</span>
+              <span>Everything in Pro</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>✨ Priority Faster Alert Channel (10-15s delivery, 2x faster than Pro)</span>
+              <span>Priority alert channel with 10-15s delivery</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>✨ Exclusive alerts only from whales with 80+ Whale Score (top 1% winning traders)</span>
+              <span>Alerts from whales with 80+ Whale Score</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>✨ Large-trade filter (cut out low-conviction noise, only high-value bets)</span>
+              <span>Large-trade filter for higher-conviction signals</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>✨ Priority delivery routing (no delays during peak market volatility)</span>
+              <span>Priority delivery during volatile market windows</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
                 ✅
               </span>
-              <span>✨ Daily market summary + top whale watchlist</span>
+              <span>Daily market summary and whale watchlist</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-emerald-400" aria-hidden>
@@ -109,7 +108,6 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
           </Link>
         </div>
 
-        {/* Pro — $29 */}
         <div
           className={`order-2 lg:order-1 flex flex-col rounded-2xl border border-white/[0.10] bg-black/50 shadow-inner shadow-black/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] ${cardPad}`}
         >
@@ -123,7 +121,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               <span className="text-base font-medium text-gray-400 md:text-lg">/month</span>
             </p>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-300">
-              Entry-level whale edge, perfect for new &amp; casual Polymarket traders
+              Best for most traders who want real-time whale alerts without extra complexity.
             </p>
           </div>
 
@@ -178,7 +176,6 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
           </Link>
         </div>
 
-        {/* Whale — $99 — coming soon */}
         <div
           className={`order-3 lg:order-3 flex flex-col rounded-2xl border border-dashed border-white/25 bg-black/35 opacity-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] ${cardPad}`}
         >
@@ -192,7 +189,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               <span className="text-base font-medium text-gray-600 md:text-lg">/month</span>
             </p>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
-              Institutional-grade full-stack edge, for high-volume traders &amp; teams
+              Built for teams and high-volume users who need more support and custom access.
             </p>
           </div>
 
@@ -203,7 +200,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
               <span className="w-5 shrink-0 text-gray-600" aria-hidden>
                 ◇
               </span>
-              <span>EVERYTHING included in the Elite plan</span>
+              <span>Everything in Elite</span>
             </li>
             <li className="flex items-start gap-2.5 text-left">
               <span className="w-5 shrink-0 text-gray-600" aria-hidden>

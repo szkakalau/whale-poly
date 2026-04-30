@@ -14,7 +14,6 @@ import { trackEvent, type AnalyticsPayload } from '@/lib/analytics';
 
 const ALERT_PREVIEW_IMAGE = '/images/alerts/ScreenShot_2026-03-29_003514_416.png';
 
-/** Same base as `Header` — internal `/subscribe` + `/api/checkout`, or optional external payment URL. */
 const SUBSCRIPTION_BASE = process.env.NEXT_PUBLIC_SUBSCRIPTION_URL || '/subscribe';
 
 function getSubscribeHref(plan: 'pro' | 'elite' = 'pro'): string {
@@ -27,7 +26,6 @@ function getSubscribeHref(plan: 'pro' | 'elite' = 'pro'): string {
   return path.includes('?') ? `${path}&plan=${plan}` : `${path}?plan=${plan}`;
 }
 
-/** High-contrast primary action — subscribe / checkout. */
 function PrimaryButton({
   children,
   className = '',
@@ -200,7 +198,6 @@ export function HeroSection() {
   );
 }
 
-/** Second screen: proprietary Whale Score™ moat — placed before live alert examples. */
 export function WhaleScoreMoatSection() {
   return (
     <section className="mt-10 border-t border-neutral-200 pt-8 sm:mt-14 sm:pt-12" aria-labelledby="whale-score-moat-heading">
@@ -240,7 +237,6 @@ export function WhaleScoreMoatSection() {
           </p>
         </div>
 
-        {/* 0–100 scale — ties visually to “70+” / “90% noise” copy */}
         <div className="relative mt-6">
           <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500">
             <span>0</span>
@@ -392,13 +388,13 @@ export function ClaritySection() {
       <div className="rounded-[32px] border border-neutral-200 bg-white p-5 shadow-[0_16px_60px_-36px_rgba(0,0,0,0.3)] sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Clarity before checkout</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">At a glance</p>
             <h2 id="clarity-heading" className="font-display mt-2 text-[1.75rem] font-semibold tracking-tight text-black sm:text-[2.2rem]">
               What you are actually buying
             </h2>
           </div>
           <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-500">
-            Stronger purchase intent comes from fewer surprises after the click.
+            See the delivery method, speed, filter, and refund terms before you subscribe.
           </p>
         </div>
 
@@ -422,13 +418,13 @@ export function HowToStartSection() {
       <div className="rounded-[32px] border border-neutral-200 bg-[#111214] p-6 shadow-[0_24px_90px_-42px_rgba(0,0,0,0.5)] sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Setup flow</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Getting started</p>
             <h2 id="how-to-start-heading" className="font-display mt-2 text-[1.9rem] font-semibold tracking-tight text-white sm:text-[2.4rem]">
-              Know exactly what happens after you click
+              Getting started takes about 2 minutes
             </h2>
           </div>
           <p className="max-w-[34ch] text-sm leading-relaxed text-neutral-400">
-            This removes the biggest conversion killer on alert products: unexpected setup friction.
+            Open the bot, generate your code, and finish checkout.
           </p>
         </div>
 
@@ -443,8 +439,7 @@ export function HowToStartSection() {
         </div>
 
         <div className="mt-8 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-4 text-sm leading-relaxed text-amber-100">
-          You pay on the web, but alerts are delivered in Telegram. Making that explicit before checkout usually lifts
-          completed purchases because users are not confused on the next page.
+          Checkout happens on the web. Alerts are delivered in Telegram.
         </div>
       </div>
     </section>
@@ -456,24 +451,23 @@ export function DecisionSection() {
     <section className="py-10 sm:py-16" aria-labelledby="decision-heading">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_70px_-40px_rgba(0,0,0,0.35)] sm:p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Buying decision</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-500">Why traders use it</p>
           <h2 id="decision-heading" className="font-display mt-2 text-[1.9rem] font-semibold tracking-tight text-black sm:text-[2.35rem]">
-            Why people click but do not pay
+            A faster read on whale positioning
           </h2>
           <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-neutral-600">
-            <p>Most signal pages lose buyers when the page is exciting, but the next step feels unclear or annoying.</p>
+            <p>Whale alerts help you spot large positioning earlier, before the crowd catches up.</p>
             <p>
-              The fix is simple: show the real setup flow, show what the paid plan actually unlocks, and reverse risk
-              hard enough that hesitation feels expensive.
+              Use them to discover markets sooner, avoid late entries, and stay closer to where large money is moving.
             </p>
           </div>
         </div>
 
         <div className="rounded-[32px] border border-neutral-200 bg-black p-6 text-white shadow-[0_20px_80px_-46px_rgba(0,0,0,0.55)] sm:p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-lime-300">Main conversion hook</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-lime-300">Why it can be worth it</p>
           <h3 className="mt-3 text-2xl font-semibold tracking-tight">One avoided bad entry can pay for the month.</h3>
           <p className="mt-4 text-sm leading-relaxed text-neutral-300">
-            When users can picture one concrete win, the price feels like risk management instead of software spend.
+            For many traders, one earlier signal or one avoided chase is enough to justify the subscription.
           </p>
           <div className="mt-6">
             <PrimaryButton

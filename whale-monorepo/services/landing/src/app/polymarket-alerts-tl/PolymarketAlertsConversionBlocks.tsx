@@ -58,13 +58,12 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
 
   return (
     <>
-      {/* SECTION 2 — Speed advantage */}
       <section
         className={`rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-violet-600/[0.06] ${pad}`}
         aria-labelledby="speed-edge-heading"
       >
         <h2 id="speed-edge-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
-          Speed is the entire edge
+          Speed matters
         </h2>
         <div className={`grid md:grid-cols-3 ${speedGrid}`}>
           {[
@@ -109,7 +108,6 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
         </div>
       </section>
 
-      {/* SECTION 3 — Volume / cadence */}
       <section
         className={`rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.07] to-black/40 ${pad}`}
         aria-labelledby="volume-alerts-heading"
@@ -118,7 +116,7 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
           Hundreds of real whale alerts every week
         </h2>
         <p className={`max-w-2xl text-amber-100/85 ${compact ? 'mt-3 text-base' : 'mt-4 text-lg'}`}>
-          You are not paying for one signal. You are getting continuous market intelligence.
+          Alerts run continuously across the markets we monitor.
         </p>
         <div className={`grid sm:grid-cols-3 ${volGrid}`}>
           {[
@@ -138,7 +136,6 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
         </div>
       </section>
 
-      {/* SECTION 4 — Use imagination / workflow */}
       <section
         className={`rounded-3xl border border-white/10 bg-white/[0.04] ${pad}`}
         aria-labelledby="how-traders-use-heading"
@@ -192,16 +189,16 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
       <div className="pointer-events-none absolute -right-16 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lime-400/10 blur-[80px]" />
 
       <p className="relative font-mono text-[11px] uppercase tracking-[0.28em] text-lime-300/90">
-        Real Alerts → Real Profitable Market Moves (2026 Data)
+        Recent alert examples
       </p>
       <h2
         id="proof-case-studies-2026-heading"
         className="font-display relative mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl"
       >
-        Real alerts. Real markets. Real time.
+        How alerts appeared before market moves
       </h2>
       <p className="relative mt-3 max-w-2xl text-base text-gray-300 md:text-lg">
-        See how whale activity appears before major market movement — and what it can mean for your ROI.
+        A few examples of how large bets showed up before prices moved.
       </p>
 
       <div className={`relative ${caseList}`}>
@@ -252,7 +249,7 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
             </div>
 
             <p className="mt-4 border-t border-white/5 pt-4 text-sm leading-relaxed text-gray-300">
-              <span className="font-semibold text-gray-200">What this means for you — </span>
+              <span className="font-semibold text-gray-200">Why traders watch it — </span>
               {cs.meaning}
             </p>
           </article>
@@ -264,7 +261,7 @@ export function PolymarketAlertsCaseStudies2026({ compact = false }: { compact?:
           href="/subscribe?plan=pro"
           className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-lime-400 px-7 py-3.5 text-sm font-extrabold text-zinc-950 shadow-[0_0_40px_-10px_rgba(163,230,53,0.65)] transition-transform hover:scale-[1.02] hover:bg-lime-300 active:scale-[0.99]"
         >
-          Get The Same Whale Edge Now
+          Start getting alerts
         </Link>
         <p className="text-center text-xs text-gray-500">
           Representative examples for timing and entry context — not promises or guarantees.
@@ -290,7 +287,7 @@ export function PolymarketAlertsPrePricing({ compact = false }: { compact?: bool
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]" />
       <h2 id="one-trade-heading" className={h2}>
-        One trade can pay for the subscription
+        One good alert can justify the subscription
       </h2>
       <p className={sub}>
         If alerts help you avoid one bad entry or catch one early move, the subscription pays for itself.

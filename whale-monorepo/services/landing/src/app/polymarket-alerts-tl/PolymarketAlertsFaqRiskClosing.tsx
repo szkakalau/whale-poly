@@ -110,7 +110,7 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           Still have questions?
         </h2>
         <p className="relative mt-2 max-w-2xl text-sm text-gray-400">
-          Straight answers on advice, risk, speed, delivery, volume, and cancellation—before you subscribe.
+          Answers about delivery, speed, refunds, and cancellation.
         </p>
 
         <div className={`relative ${faqList}`}>
@@ -137,7 +137,7 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
           }}
         />
         <div className="relative">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Risk reversal</p>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Refund policy</p>
           <h2 id="risk-free-guarantee-heading" className="font-display mt-3 text-2xl font-black tracking-tight md:text-3xl">
             Try it for 7 days. Risk-free.
           </h2>
@@ -148,7 +148,7 @@ export function PolymarketAlertsPostPricingFaqAndGuarantee({ compact = false }: 
             </a>{' '}
             within 7 days and we&apos;ll refund you.
           </p>
-          <p className="mt-3 text-sm font-medium text-zinc-800">No questions asked.</p>
+          <p className="mt-3 text-sm font-medium text-zinc-800">No complicated process.</p>
         </div>
       </section>
     </>
