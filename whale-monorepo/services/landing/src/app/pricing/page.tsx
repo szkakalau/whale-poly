@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 
 export const metadata = {
   title: 'Pricing — SightWhale',
@@ -9,41 +10,6 @@ export const metadata = {
     canonical: '/pricing',
   },
 };
-
-const PLANS = [
-  {
-    tier: 'pro' as const,
-    name: 'Pro',
-    monthly: 29,
-    yearly: 290,
-    kicker: 'Best for most traders',
-    description: 'Real-time signals in the app plus optional Telegram.',
-    features: [
-      'All real-time signals (in-app)',
-      'All 70+ Whale Score signals',
-      'Optional Telegram (~30s)',
-      'Higher follow & collection limits vs Free',
-    ],
-    href: '/subscribe?plan=pro',
-    highlighted: true,
-  },
-  {
-    tier: 'elite' as const,
-    name: 'Elite',
-    monthly: 59,
-    yearly: 590,
-    kicker: 'Priority for active traders',
-    description: 'Stricter filtering and faster optional Telegram.',
-    features: [
-      'Everything in Pro',
-      '80+ high-conviction signals where applicable',
-      'Optional Telegram (~10s priority)',
-      'Largest follow & collection limits',
-    ],
-    href: '/subscribe?plan=elite',
-    highlighted: false,
-  },
-];
 
 const FAQ = [
   {
@@ -88,7 +54,7 @@ export default function PricingPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2 mb-16">
-          {PLANS.map((plan) => (
+          {PRICING_PLAN_CARDS.map((plan) => (
             <div
               key={plan.tier}
               className={`rounded-[2rem] border p-8 flex flex-col ${
