@@ -29,6 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/conviction',
     '/polymarket-alerts-tl',
     '/subscribe',
+    '/pricing',
+    '/history',
     '/follow',
     '/smart-collections',
     '/smart-money',

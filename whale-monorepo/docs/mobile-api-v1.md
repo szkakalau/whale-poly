@@ -62,6 +62,14 @@ Auth:
 
 - Method: `GET`
 - Path: `/api/live-signals`
+- Auth: optional (`Authorization: Bearer` sets `x-user-id` via middleware, same as web session cookie).
+
+**Visibility rules (UTC day boundary):**
+
+- **Anonymous** or **FREE** (including expired Pro/Elite): only rows with `occurredAt` **strictly before** today’s `00:00:00` UTC (i.e. through end of yesterday).
+- **PRO / ELITE** with a valid `planExpireAt`: all rows (full feed).
+
+Responses for paying users use `Cache-Control: private`; anonymous/free use `public` caching.
 
 ## 6) Whale detail (mobile wrapper)
 
@@ -73,6 +81,18 @@ Auth:
 - Method: `GET`
 - Path: `/api/me/plan`
 - Header: `Authorization: Bearer <accessToken>` (optional; anonymous returns FREE)
+
+Example:
+
+```json
+{
+  "plan": "PRO",
+  "planExpireAt": "2026-06-01T00:00:00.000Z",
+  "isPaid": true
+}
+```
+
+`isPaid` is true when `plan` is `PRO` or `ELITE` and the subscription is not past `planExpireAt`.
 
 ## 8) Google Play subscription sync
 

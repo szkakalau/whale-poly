@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Plan, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { getUtcTodayStart, isPaidLiveSignalsUser } from '@/lib/live-signals-access';
 import {
   computeEffectiveScore,
   cooldownSecondsForPlan,
@@ -18,6 +19,7 @@ function toBillingPlan(plan: Plan): BillingPlan {
 
 export async function GET() {
   const user = await requireUser();
+  const boundaryMs = getUtcTodayStart();
   const rows = await prisma.$queryRawUnsafe<
     {
       id: string;
@@ -38,8 +40,12 @@ export async function GET() {
     `,
     user.id,
   );
+  const filtered =
+    isPaidLiveSignalsUser(user) ?
+      rows
+    : rows.filter((row) => row.occurred_at.getTime() < boundaryMs);
   return NextResponse.json(
-    rows.map((row) => ({
+    filtered.map((row) => ({
       id: row.id,
       source_type: row.source_type,
       source_id: row.source_id,

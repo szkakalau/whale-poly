@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { LiveSignal } from '@/lib/live-signals';
 
 export type { LiveSignal };
+
+const POLL_MS = 5 * 60 * 1000;
+const SOUND_STORAGE_KEY = 'sightwhale_signal_sound_on';
 
 function formatUsdCompact(value: number): string {
   if (!Number.isFinite(value)) return '$0';
@@ -28,13 +32,64 @@ function formatRelativeTime(iso: string): string {
   return `${d}d ago`;
 }
 
+function readSoundEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  const v = window.localStorage.getItem(SOUND_STORAGE_KEY);
+  if (v === null) return true;
+  return v !== '0';
+}
+
+function playSignalBeep() {
+  try {
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.frequency.value = 880;
+    g.gain.value = 0.07;
+    o.start();
+    o.stop(ctx.currentTime + 0.1);
+    ctx.resume?.().catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function LiveSignalsFeed({ signals: initialSignals }: { signals: LiveSignal[] }) {
+  const router = useRouter();
   const [signals, setSignals] = useState<LiveSignal[]>(initialSignals);
   const [refreshing, setRefreshing] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [planLoaded, setPlanLoaded] = useState(false);
+  const [toast, setToast] = useState<{ href: string; label: string } | null>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setSignals(initialSignals);
+    initialSignals.forEach((s) => seenIdsRef.current.add(s.id));
   }, [initialSignals]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/me/plan')
+      .then((r) => r.json())
+      .then((data: { isPaid?: boolean }) => {
+        if (cancelled) return;
+        setIsPaid(Boolean(data?.isPaid));
+        setPlanLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setPlanLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (initialSignals.length > 0) return;
@@ -44,12 +99,47 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
       .then((data: { signals?: LiveSignal[] }) => {
         if (cancelled || !Array.isArray(data.signals) || data.signals.length === 0) return;
         setSignals(data.signals);
+        data.signals.forEach((s) => seenIdsRef.current.add(s.id));
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [initialSignals.length]);
+
+  useEffect(() => {
+    if (!planLoaded || !isPaid) return;
+
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/live-signals', { cache: 'no-store' });
+        const data = (await r.json()) as { signals?: LiveSignal[] };
+        if (!Array.isArray(data.signals)) return;
+
+        const incoming = data.signals;
+        const newOnes = incoming.filter((s) => !seenIdsRef.current.has(s.id));
+        if (newOnes.length > 0) {
+          newOnes.forEach((s) => seenIdsRef.current.add(s.id));
+          const latest = [...newOnes].sort(
+            (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+          )[0];
+          setToast({
+            href: latest.href || '/#live-signals',
+            label: latest.market.slice(0, 80) || '新信号',
+          });
+          if (readSoundEnabled()) {
+            playSignalBeep();
+          }
+        }
+        setSignals(incoming);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const id = window.setInterval(() => void poll(), POLL_MS);
+    return () => window.clearInterval(id);
+  }, [planLoaded, isPaid]);
 
   const [cursor, setCursor] = useState(0);
 
@@ -74,6 +164,7 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
       const data = (await r.json()) as { signals?: LiveSignal[] };
       if (Array.isArray(data.signals) && data.signals.length > 0) {
         setSignals(data.signals);
+        data.signals.forEach((s) => seenIdsRef.current.add(s.id));
       }
     } catch {
       // ignore
@@ -83,21 +174,71 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
   }
 
   return (
-    <div className="rounded-xl sm:rounded-[2rem] border border-border bg-surface/80 overflow-hidden">
+    <div className="relative rounded-xl sm:rounded-[2rem] border border-border bg-surface/80 overflow-hidden">
+      {toast ? (
+        <div className="fixed bottom-6 left-4 right-4 z-50 mx-auto max-w-lg sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
+          <div className="flex items-start gap-3 rounded-xl border border-red-500/50 bg-red-950/95 px-4 py-3 shadow-2xl backdrop-blur-md">
+            <button
+              type="button"
+              className="min-w-0 flex-1 text-left"
+              onClick={() => {
+                setToast(null);
+                router.push(toast.href);
+              }}
+            >
+              <p className="text-xs font-black uppercase tracking-wider text-red-200">新信号发布</p>
+              <p className="mt-1 text-sm font-semibold text-white">点击查看 · {toast.label}</p>
+            </button>
+            <button
+              type="button"
+              aria-label="关闭"
+              className="shrink-0 rounded-lg p-1 text-red-200 hover:bg-white/10"
+              onClick={() => setToast(null)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           <div className="text-xs font-black tracking-[0.25em] uppercase text-emerald-300">
             Live Signals
           </div>
+          {isPaid ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-300">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              实时信号
+            </span>
+          ) : null}
           <div className="text-xs text-subtle hidden sm:block">Anonymized whale activity</div>
         </div>
-        <Link
-          href="/smart-money"
-          className="text-xs font-semibold text-[#7AA2FF] hover:text-[#5B8CFF] underline underline-offset-4"
-        >
-          View Smart Money
-        </Link>
+        <div className="flex items-center gap-3">
+          {isPaid ? (
+            <label className="flex cursor-pointer items-center gap-2 text-[10px] text-subtle select-none">
+              <input
+                type="checkbox"
+                className="rounded border-border"
+                defaultChecked={readSoundEnabled()}
+                onChange={(e) => {
+                  window.localStorage.setItem(SOUND_STORAGE_KEY, e.target.checked ? '1' : '0');
+                }}
+              />
+              声音提醒
+            </label>
+          ) : null}
+          <Link
+            href="/smart-money"
+            className="text-xs font-semibold text-[#7AA2FF] hover:text-[#5B8CFF] underline underline-offset-4"
+          >
+            View Smart Money
+          </Link>
+        </div>
       </div>
 
       <div className="px-3 sm:px-4 py-3">
@@ -112,6 +253,12 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
             <p className="text-xs text-subtle leading-relaxed mb-5">
               We pull recent trades from tracked whales. If the feed is empty, upstream data may be slow or the
               indexer hasn&apos;t updated yet.
+              {!isPaid && planLoaded ? (
+                <>
+                  {' '}
+                  Free accounts only see signals before today (UTC). Upgrade for full real-time feed.
+                </>
+              ) : null}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
               <button

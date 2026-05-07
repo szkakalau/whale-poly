@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
 import { loadLiveSignals } from '@/lib/live-signals';
 import LiveSignalsFeed from '@/components/LiveSignalsFeedLazy';
 import { unstable_cache } from 'next/cache';
@@ -622,18 +623,27 @@ export default function Home() {
           </p>
 
           <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-6 w-full max-w-sm sm:max-w-none mx-auto">
-            <a href={TELEGRAM_DEEP_LINK_SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="relative group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
+            <Link
+              href="/history"
+              className="relative group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-white text-black font-black rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-[#E8EFFF] to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
-                Launch Telegram Bot
+                查看完整历史信号
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7" /></svg>
               </span>
-            </a>
-            <Link href="#live-signals" className="group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] glass border border-border text-foreground font-bold rounded-2xl hover:bg-surface transition-all flex items-center justify-center gap-3">
-              View Live Signals
-              <div className="w-1.5 h-1.5 rounded-full bg-accent group-hover:scale-[1.5] transition-all"></div>
+            </Link>
+            <Link
+              href="/pricing"
+              className="group px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] glass border border-border text-foreground font-bold rounded-2xl hover:bg-surface transition-all flex items-center justify-center gap-3"
+            >
+              获取实时信号
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
             </Link>
           </div>
+          <p className="mt-4 max-w-xl mx-auto text-xs sm:text-sm text-muted font-light px-2">
+            无需注册，免费查看所有历史表现，验证准确率
+          </p>
 
           <div className="mt-6 sm:mt-10 flex flex-wrap justify-center gap-2 sm:gap-3">
             <Link href="/backtesting" className="group flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl bg-surface border border-border hover:bg-surface-hover hover:border-violet-500/30 transition-all duration-300">
@@ -1203,15 +1213,19 @@ export default function Home() {
 
         {/* PRICING */}
         <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+          <div className="mx-auto max-w-6xl mb-8 rounded-xl border border-red-500/45 bg-red-500/10 px-4 py-3 text-center text-sm font-semibold text-red-100">
+            所有付费计划：7 天无理由全额退款 · 不满意发邮件即可全额退回
+          </div>
           <div className="text-center mb-10 sm:mb-16">
             <h2 className="text-[10px] font-black text-violet-400 tracking-[0.4em] uppercase mb-4">
               Pricing
             </h2>
             <p className="text-xl sm:text-2xl md:text-4xl font-black text-foreground tracking-tight mb-4 leading-tight">
-              Institutional data. <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-400 via-gray-200 to-gray-500">Retail simplicity.</span>
+              实时信号 <span className="text-violet-400">付费核心价值</span>
             </p>
-            <p className="text-base text-muted font-light max-w-2xl mx-auto">Choose the intelligence level that matches your market participation.</p>
+            <p className="text-base text-muted font-light max-w-2xl mx-auto">
+              历史数据建立信任；Pro / Elite 解锁今日实时推送与更快 Telegram（可选）。
+            </p>
           </div>
           
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto items-stretch">
@@ -1220,23 +1234,25 @@ export default function Home() {
             <div className="glass rounded-[2rem] h-full flex flex-col border-border-muted p-7 bg-surface/45">
               <h3 className="text-xs font-bold text-subtle tracking-tight uppercase mb-5">Free</h3>
               <div className="text-4xl font-black mb-5 text-foreground tracking-tighter">$0<span className="text-base font-normal text-subtle tracking-normal ml-1.5">/mo</span></div>
-              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">Basic intelligence for casual observers.</p>
+              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">用完整历史验证准确率；今日实时留给付费档。</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
-                  "3 alerts per day",
-                  "10-min delayed signals",
-                  "Whale Score visibility",
-                  "No custom /follow alerts",
-                  "No custom collections",
-                  "No smart collections access"
+                  '所有历史信号（截止到昨日 UTC）',
+                  '今日 0 点前发布的信号（feed 内）',
+                  '完整历史回测与方法论（Backtesting）',
+                  '无页面内实时刷新 · 无 Telegram 推送',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-muted font-medium text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-700"></div>
+                  <li key={i} className="flex items-start gap-3 text-muted font-medium text-xs">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-gray-500">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
                     {item}
                   </li>
                 ))}
               </ul>
-              <a href="/subscribe?plan=free" className="w-full py-3.5 rounded-xl bg-surface border border-border text-foreground font-bold text-center text-xs">Get started free</a>
+              <a href="/subscribe?plan=free" className="w-full py-3.5 rounded-xl bg-surface border border-border text-foreground font-bold text-center text-xs">免费注册</a>
             </div>
 
             {/* Pro - Most Popular (Center Reinforcement) */}
@@ -1248,21 +1264,21 @@ export default function Home() {
                 <div className="text-6xl font-black text-foreground tracking-tighter">$29<span className="text-lg font-normal text-violet-300/40 tracking-normal ml-2">/mo</span></div>
                 <div className="text-sm font-medium text-violet-300/60 mt-1">or $290/yr</div>
               </div>
-              <p className="text-foreground mb-8 text-sm font-light leading-relaxed">For professional traders who need immediate edges.</p>
+              <p className="text-foreground mb-8 text-sm font-light leading-relaxed">解锁<strong className="text-emerald-400">实时</strong>：页面内即时列表 + 可选 Telegram。</p>
               
               <ul className="space-y-4 mb-10 flex-1">
                 {[
-                  "Unlimited real-time alerts",
-                  "Follow up to 20 whales",
-                  "Create up to 3 collections",
-                  "Subscribe to 5 Smart Collections",
-                  "Full Whale Score visibility",
-                  "Full Telegram Bot features"
+                  '所有实时信号（页面内即时推送）',
+                  '所有 70+ 分 Whale Score 信号',
+                  'Telegram 约 30 秒级推送（可选绑定）',
+                  'Follow / Collections / Smart Collections 配额按套餐',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-foreground font-bold text-xs">
-                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-violet-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    </div>
+                  <li key={i} className="flex items-start gap-3 text-foreground font-semibold text-xs">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -1272,7 +1288,7 @@ export default function Home() {
                 href="/subscribe?plan=pro"
                 className="w-full py-4 rounded-2xl bg-violet-600 text-foreground font-black text-base text-center"
               >
-                Upgrade to Pro
+                升级 Pro
               </a>
             </div>
 
@@ -1283,18 +1299,20 @@ export default function Home() {
                 <div className="text-4xl font-black text-foreground tracking-tighter">$59<span className="text-base font-normal text-subtle tracking-normal ml-1.5">/mo</span></div>
                 <div className="text-xs font-medium text-subtle mt-1">or $590/yr</div>
               </div>
-              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">The ultimate toolkit for high-net-worth operators.</p>
+              <p className="text-subtle mb-8 text-sm font-light leading-relaxed">只要最高置信度；Telegram 优先级更高。</p>
               <ul className="space-y-4 mb-8 flex-1">
                 {[
-                  "Unlimited real-time alerts",
-                  "Follow up to 100 whales",
-                  "Unlimited collections",
-                  "Subscribe to 20 Smart Collections",
-                  "Priority Whale Score updates",
-                  "Exclusive alpha channel access"
+                  '包含 Pro 全部能力',
+                  '仅 80+ 分高置信信号（引擎规则内）',
+                  'Telegram 约 10 秒优先推送（可选绑定）',
+                  '更大 Follow / Smart Collections 配额',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-muted font-medium text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30"></div>
+                  <li key={i} className="flex items-start gap-3 text-foreground font-semibold text-xs">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -1303,7 +1321,7 @@ export default function Home() {
                 href="/subscribe?plan=elite"
                 className="w-full py-3.5 rounded-xl bg-surface border border-border text-foreground font-bold text-center text-xs"
               >
-                Go Elite
+                升级 Elite
               </a>
             </div>
           </div>
@@ -1317,6 +1335,7 @@ export default function Home() {
 }
 
 async function HomeLiveSignals() {
-  const liveSignals = await loadLiveSignals();
-  return <LiveSignalsFeed signals={liveSignals} />;
+  const [liveSignals, user] = await Promise.all([loadLiveSignals(), getCurrentUser()]);
+  const signals = filterLiveSignalsForUser(liveSignals, user);
+  return <LiveSignalsFeed signals={signals} />;
 }

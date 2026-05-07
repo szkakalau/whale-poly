@@ -5,6 +5,8 @@ import TestAlertButton from '@/components/TestAlertButton';
 import TrackPageEvent from '@/components/TrackPageEvent';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { isPaidLiveSignalsUser } from '@/lib/live-signals-access';
+import TelegramPaidPushCard from '@/components/TelegramPaidPushCard';
 
 export const metadata = {
   title: 'My Dashboard - SightWhale.com',
@@ -340,7 +342,7 @@ export default async function FollowPage() {
   const summaries = await Promise.all(rows.map((row) => fetchWhaleSummary(row.wallet)));
   const byWallet = new Map(summaries.map((s) => [s.wallet.toLowerCase(), s]));
   const telegramConnected = Boolean(user?.telegramId);
-  const paidPlan = user?.plan && user.plan !== 'FREE';
+  const paidPlan = user ? isPaidLiveSignalsUser(user) : false;
   const recentMoves = summaries
     .filter((summary) => summary.lastTradeTime)
     .sort((a, b) => new Date(b.lastTradeTime || 0).getTime() - new Date(a.lastTradeTime || 0).getTime())
@@ -493,6 +495,10 @@ export default async function FollowPage() {
             {telegramConnected && !isProduction && <TestAlertButton />}
           </div>
         </section>
+
+        {paidPlan ? (
+          <TelegramPaidPushCard telegramConnected={telegramConnected} botUrl={TELEGRAM_BOT_URL} />
+        ) : null}
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">

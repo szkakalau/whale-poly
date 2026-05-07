@@ -34,8 +34,13 @@ const PLAN_COPY: Record<
     monthlySuffix: '/mo',
     yearlySuffix: '/yr',
     kicker: 'Best for most traders',
-    description: 'Real-time whale alerts for traders who want speed without extra complexity.',
-    features: ['Unlimited alerts', 'Zero alert delay', 'Follow up to 20 whales', '5 smart collections'],
+    description: 'Unlock today’s real-time signals—in-app refresh plus optional Telegram.',
+    features: [
+      'All real-time signals (in-app)',
+      'All 70+ Whale Score signals',
+      'Optional Telegram (~30s)',
+      'Follow up to 20 whales · 5 smart collections',
+    ],
   },
   elite: {
     label: 'Elite',
@@ -44,12 +49,22 @@ const PLAN_COPY: Record<
     monthlySuffix: '/mo',
     yearlySuffix: '/yr',
     kicker: 'Priority for active traders',
-    description: 'Everything in Pro, plus more coverage and priority for heavier users.',
-    features: ['Everything in Pro', 'Follow up to 100 whales', '20 smart collections', 'Priority updates'],
+    description: 'Pro plus higher-confidence filtering and faster optional Telegram.',
+    features: [
+      'Everything in Pro',
+      '80+ high-conviction signals (where applicable)',
+      'Optional Telegram (~10s priority)',
+      'Follow up to 100 whales · 20 smart collections',
+    ],
   },
 };
 
-const FREE_PLAN_FEATURES = ['3 alerts per day', '10-minute alert delay', 'No smart collections'];
+const FREE_PLAN_FEATURES = [
+  'Full history through yesterday (UTC)',
+  'Feed shows signals before today 00:00 UTC',
+  'Backtesting & methodology pages',
+  'No paid real-time / Telegram',
+];
 
 function getPlanAmount(tier: PaidTier, period: BillingPeriod): number {
   return period === 'yearly' ? PLAN_COPY[tier].yearlyPrice : PLAN_COPY[tier].monthlyPrice;
