@@ -4,7 +4,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.sightwhale.com';
   const now = new Date();
 
-  const routes = ['', '/history', '/pricing', '/subscribe', '/terms', '/privacy', '/success', '/cancel'].map(
+  const routes = [
+    '',
+    '/history',
+    '/pricing',
+    '/subscribe',
+    '/polymarket-alerts-tl',
+    '/terms',
+    '/privacy',
+    '/success',
+    '/cancel',
+  ].map(
     (route) => ({
       url: `${baseUrl}${route}`,
       lastModified: now,

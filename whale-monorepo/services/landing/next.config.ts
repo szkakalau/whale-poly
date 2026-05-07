@@ -8,7 +8,6 @@ const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
   { source: "/contact", destination: "/" },
   { source: "/backtesting", destination: "/" },
   { source: "/conviction", destination: "/" },
-  { source: "/polymarket-alerts-tl", destination: "/" },
   { source: "/smart-money", destination: "/" },
   { source: "/follow", destination: "/" },
   { source: "/smart-collections", destination: "/" },
