@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
+import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
 export type LiveSignal = {
   id: string;
@@ -117,7 +118,8 @@ async function buildSignalsFromWallets(wallets: string[]): Promise<LiveSignal[]>
       const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
       const sizeUsd = safeNumber(last.size ?? last.trade_usd, 0);
       const whaleScore = safeNumber(last.whale_score ?? payload.whale_score, NaN);
-      if (!occurredAt || !market || !Number.isFinite(sizeUsd) || sizeUsd <= 0) return null;
+      if (!occurredAt || !market || shouldExcludeMarketFromPublicFeeds(market) || !Number.isFinite(sizeUsd) || sizeUsd <= 0)
+        return null;
 
       return {
         id: `${wallet}-${occurredAt}`,
@@ -177,7 +179,14 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
       const wallet = safeString(row.wallet_address, '').trim();
       const occurredAt =
         row.created_at instanceof Date ? row.created_at.toISOString() : safeString(row.created_at, '');
-      if (!occurredAt || !wallet || !Number.isFinite(sizeUsd) || sizeUsd <= 0) continue;
+      if (
+        !occurredAt ||
+        !wallet ||
+        !Number.isFinite(sizeUsd) ||
+        sizeUsd <= 0 ||
+        shouldExcludeMarketFromPublicFeeds(market)
+      )
+        continue;
       const ws = safeNumber(row.whale_score, NaN);
       out.push({
         id: `wt-${wallet}-${occurredAt}`,
@@ -210,6 +219,8 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
     if (signals.length === 0) {
       signals = await loadSignalsFromWhaleTradesJoin();
     }
+
+    signals = signals.filter((s) => !shouldExcludeMarketFromPublicFeeds(s.market));
 
     return signals.slice(0, 10);
   } catch {

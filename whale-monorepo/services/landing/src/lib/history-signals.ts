@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
 import { fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
 import { isMarketStatusOpen, roiBuyHoldToResolution, roiFromHistoryPnl } from '@/lib/history-roi';
+import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
 export type HistorySignalRow = {
   id: string;
@@ -73,11 +74,16 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       limit,
     );
 
+    const visibleRows = rows.filter((r) => {
+      const title = String(r.market_title ?? '').trim() || '—';
+      return !shouldExcludeMarketFromPublicFeeds(title);
+    });
+
     const gammaCache = new Map<string, Awaited<ReturnType<typeof fetchGammaMarketByConditionId>>>();
 
     const candidatesForGamma = [
       ...new Set(
-        rows
+        visibleRows
           .filter((r) => {
             const pnl = safeNum(r.hist_pnl);
             const usd = safeNum(r.hist_trade_usd);
@@ -100,7 +106,7 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       }),
     );
 
-    return rows.map((row) => {
+    return visibleRows.map((row) => {
       const publishPrice = safeNum(row.publish_price);
       const histPnl = safeNum(row.hist_pnl);
       const histUsd = safeNum(row.hist_trade_usd);

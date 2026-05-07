@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 /**
- * Public marketing / blog content: allow mainstream search + AI citation crawlers.
+ * Public marketing content: allow mainstream search + AI citation crawlers.
  * Disallowed for every listed agent (and `*`):
  * - /api/ — endpoints not meant for indexing or bulk scraping
  * - /admin/, /login/, /dashboard/ — auth / control surfaces if routed on this host

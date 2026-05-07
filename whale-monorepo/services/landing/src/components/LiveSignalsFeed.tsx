@@ -60,7 +60,13 @@ function playSignalBeep() {
   }
 }
 
-export default function LiveSignalsFeed({ signals: initialSignals }: { signals: LiveSignal[] }) {
+export default function LiveSignalsFeed({
+  signals: initialSignals,
+  homePreview = false,
+}: {
+  signals: LiveSignal[];
+  homePreview?: boolean;
+}) {
   const router = useRouter();
   const [signals, setSignals] = useState<LiveSignal[]>(initialSignals);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,9 +76,10 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
   const seenIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    setSignals(initialSignals);
-    initialSignals.forEach((s) => seenIdsRef.current.add(s.id));
-  }, [initialSignals]);
+    const next = homePreview ? initialSignals.slice(0, 3) : initialSignals;
+    setSignals(next);
+    next.forEach((s) => seenIdsRef.current.add(s.id));
+  }, [initialSignals, homePreview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,17 +105,18 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
       .then((r) => r.json())
       .then((data: { signals?: LiveSignal[] }) => {
         if (cancelled || !Array.isArray(data.signals) || data.signals.length === 0) return;
-        setSignals(data.signals);
-        data.signals.forEach((s) => seenIdsRef.current.add(s.id));
+        const list = homePreview ? data.signals.slice(0, 3) : data.signals;
+        setSignals(list);
+        list.forEach((s) => seenIdsRef.current.add(s.id));
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [initialSignals.length]);
+  }, [initialSignals.length, homePreview]);
 
   useEffect(() => {
-    if (!planLoaded || !isPaid) return;
+    if (homePreview || !planLoaded || !isPaid) return;
 
     const poll = async () => {
       try {
@@ -131,7 +139,7 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
             playSignalBeep();
           }
         }
-        setSignals(incoming);
+        setSignals(homePreview ? incoming.slice(0, 3) : incoming);
       } catch {
         /* ignore */
       }
@@ -139,7 +147,7 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
 
     const id = window.setInterval(() => void poll(), POLL_MS);
     return () => window.clearInterval(id);
-  }, [planLoaded, isPaid]);
+  }, [planLoaded, isPaid, homePreview]);
 
   const [cursor, setCursor] = useState(0);
 
@@ -153,9 +161,10 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
 
   const windowed = useMemo(() => {
     if (signals.length === 0) return [];
-    const size = Math.min(8, signals.length);
+    const cap = homePreview ? 3 : 8;
+    const size = Math.min(cap, signals.length);
     return Array.from({ length: size }, (_, i) => signals[(cursor + i) % signals.length]);
-  }, [signals, cursor]);
+  }, [signals, cursor, homePreview]);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -163,8 +172,9 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
       const r = await fetch('/api/live-signals', { cache: 'no-store' });
       const data = (await r.json()) as { signals?: LiveSignal[] };
       if (Array.isArray(data.signals) && data.signals.length > 0) {
-        setSignals(data.signals);
-        data.signals.forEach((s) => seenIdsRef.current.add(s.id));
+        const list = homePreview ? data.signals.slice(0, 3) : data.signals;
+        setSignals(list);
+        list.forEach((s) => seenIdsRef.current.add(s.id));
       }
     } catch {
       // ignore
@@ -233,10 +243,10 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
             </label>
           ) : null}
           <Link
-            href="/smart-money"
+            href="/pricing"
             className="text-xs font-semibold text-[#7AA2FF] hover:text-[#5B8CFF] underline underline-offset-4"
           >
-            View Smart Money
+            Get full feed
           </Link>
         </div>
       </div>
@@ -270,10 +280,10 @@ export default function LiveSignalsFeed({ signals: initialSignals }: { signals: 
                 {refreshing ? 'Refreshing…' : 'Refresh feed'}
               </button>
               <Link
-                href="/smart-money"
+                href="/pricing"
                 className="inline-flex items-center justify-center rounded-xl min-h-[44px] px-4 py-2.5 text-xs font-semibold border border-border text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
               >
-                Browse leaderboard
+                Unlock real-time
               </Link>
             </div>
           </div>

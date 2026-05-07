@@ -46,7 +46,14 @@ const LiveSignalsFeedInner = dynamic(() => import('./LiveSignalsFeed'), {
   loading: () => <LiveSignalsSkeleton />,
 });
 
-export default function LiveSignalsFeedLazy({ signals }: { signals: LiveSignal[] }) {
-  return <LiveSignalsFeedInner signals={signals} />;
+export default function LiveSignalsFeedLazy({
+  signals,
+  homePreview,
+}: {
+  signals: LiveSignal[];
+  /** When true, show at most 3 rows and skip paid polling (homepage teaser). */
+  homePreview?: boolean;
+}) {
+  return <LiveSignalsFeedInner signals={signals} homePreview={homePreview} />;
 }
 

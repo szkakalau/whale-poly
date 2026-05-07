@@ -62,7 +62,6 @@ const PLAN_COPY: Record<
 const FREE_PLAN_FEATURES = [
   'Full history through yesterday (UTC)',
   'Feed shows signals before today 00:00 UTC',
-  'Backtesting & methodology pages',
   'No paid real-time / Telegram',
 ];
 
@@ -376,7 +375,7 @@ function SubscribeForm() {
           });
           return;
         }
-        window.location.href = '/follow';
+        window.location.href = '/history';
       } catch {
         trackEvent('checkout_error', { page: 'subscribe', mode: 'free', stage: 'network' });
         setError({
@@ -644,13 +643,19 @@ function SubscribeForm() {
               <li key={action}>{action}</li>
             ))}
           </ul>
-          <Link
-            href="/contact"
-            onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'checkout_error', destination: '/contact' })}
+          <a
+            href="mailto:support@sightwhale.com"
+            onClick={() =>
+              trackEvent('contact_support_click', {
+                page: 'subscribe',
+                section: 'checkout_error',
+                destination: 'mailto:support@sightwhale.com',
+              })
+            }
             className="text-red-200 underline underline-offset-4"
           >
             Contact support
-          </Link>
+          </a>
         </div>
       ) : null}
 
@@ -799,13 +804,19 @@ export default function SubscribePage() {
                     </button>
                   ))}
                 </div>
-                <Link
-                  href="/contact"
-                  onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'faq', destination: '/contact' })}
+                <a
+                  href="mailto:support@sightwhale.com"
+                  onClick={() =>
+                    trackEvent('contact_support_click', {
+                      page: 'subscribe',
+                      section: 'faq',
+                      destination: 'mailto:support@sightwhale.com',
+                    })
+                  }
                   className="inline-flex text-sm text-violet-300 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-200"
                 >
-                  Need help? Contact support
-                </Link>
+                  Need help? Email support
+                </a>
               </section>
             </TrackedSection>
           </div>

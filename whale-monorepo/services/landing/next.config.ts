@@ -1,24 +1,42 @@
 import type { NextConfig } from "next";
 
+/** Legacy marketing routes removed — send to home. */
+const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
+  { source: "/blog", destination: "/" },
+  { source: "/blog/:path*", destination: "/" },
+  { source: "/about", destination: "/" },
+  { source: "/contact", destination: "/" },
+  { source: "/backtesting", destination: "/" },
+  { source: "/conviction", destination: "/" },
+  { source: "/polymarket-alerts-tl", destination: "/" },
+  { source: "/smart-money", destination: "/" },
+  { source: "/follow", destination: "/" },
+  { source: "/smart-collections", destination: "/" },
+  { source: "/smart-collections/:path*", destination: "/" },
+  { source: "/collections", destination: "/" },
+  { source: "/collections/:path*", destination: "/" },
+  { source: "/whales/:path*", destination: "/" },
+  { source: "/methodology", destination: "/" },
+  { source: "/editorial-policy", destination: "/" },
+  { source: "/disclosures", destination: "/" },
+  { source: "/security", destination: "/" },
+  { source: "/whale-waitlist", destination: "/" },
+  { source: "/tg", destination: "/" },
+];
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  // Keep output tracing root consistent with Turbopack root to avoid build warnings.
   outputFileTracingRoot: __dirname,
-  // Prevent duplicate URL variants like `/blog` vs `/blog/` from being treated as separate pages.
   trailingSlash: false,
-  outputFileTracingIncludes: {
-    "/*": ["src/content/posts/**/*.md"],
-  },
   async redirects() {
     return [
-      // Consolidate thin duplicate vs Polymarket vs TradFi topic → single canonical article (SEO + AI citation).
-      {
-        source: "/blog/understanding-prediction-markets-vs-traditional-finance",
-        destination: "/blog/polymarket-vs-traditional-trading-markets-differences",
+      ...LEGACY_REDIRECTS.map(({ source, destination }) => ({
+        source,
+        destination: destination ?? "/",
         permanent: true,
-      },
+      })),
       {
         source: "/:path*",
         has: [{ type: "header", key: "x-forwarded-proto", value: "http" }],

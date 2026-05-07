@@ -41,7 +41,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Skip middleware for public blog routes (no `x-user-id` / auth) to reduce edge TTFB.
-  // Match all paths except static assets and `/blog` + `/blog/*` (but not `/blogging`).
-  matcher: ['/((?!blog(?:/|$)|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 };

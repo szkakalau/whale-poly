@@ -7,12 +7,20 @@ import { trackEvent } from '@/lib/analytics';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 
+function signalsAppHref(): string {
+  const explicit = process.env.NEXT_PUBLIC_SIGNALS_URL?.trim();
+  if (explicit) return explicit;
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
+  if (base) return `${base}/signals`;
+  return '/pricing';
+}
+
 export default function SuccessClient() {
   const searchParams = useSearchParams();
   const plan = (searchParams.get('plan') || '').toLowerCase() || 'unknown';
   const sessionId = searchParams.get('session_id') || searchParams.get('checkout_session_id') || 'unknown';
 
-  const dashboardHref = useMemo(() => '/follow', []);
+  const dashboardHref = useMemo(() => signalsAppHref(), []);
 
   useEffect(() => {
     trackEvent('payment_success_view', {
@@ -67,7 +75,7 @@ export default function SuccessClient() {
             }
             className="btn-primary inline-flex items-center justify-center"
           >
-            Go to dashboard
+            Open live signals
           </Link>
         </div>
       </div>
