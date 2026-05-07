@@ -10,6 +10,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
 import LiveSignalsFeedLazy from '@/components/LiveSignalsFeedLazy';
 import TelegramAlertMockup from '@/components/TelegramAlertMockup';
+import { WhaleScoreMoatSection } from '@/components/WhaleScoreMoatSection';
 import { PRICING_PRO_MONTHLY } from '@/lib/pricing-plans';
 
 function formatPct(v: number | null): string {
@@ -163,6 +164,8 @@ export default function Home() {
           </div>
           <p className="mt-4 text-xs text-subtle">History is public through yesterday UTC—no signup to audit.</p>
         </section>
+
+        <WhaleScoreMoatSection variant="dark" className="max-w-3xl mx-auto px-4 sm:px-6 mb-16 sm:mb-20" />
 
         <section
           aria-labelledby="telegram-preview-heading"
