@@ -133,7 +133,7 @@ export default function LiveSignalsFeed({
           )[0];
           setToast({
             href: latest.href || '/#live-signals',
-            label: latest.market.slice(0, 80) || '新信号',
+            label: latest.market.slice(0, 80) || 'New signal',
           });
           if (readSoundEnabled()) {
             playSignalBeep();
@@ -196,12 +196,12 @@ export default function LiveSignalsFeed({
                 router.push(toast.href);
               }}
             >
-              <p className="text-xs font-black uppercase tracking-wider text-red-200">新信号发布</p>
-              <p className="mt-1 text-sm font-semibold text-white">点击查看 · {toast.label}</p>
+              <p className="text-xs font-black uppercase tracking-wider text-red-200">New signal</p>
+              <p className="mt-1 text-sm font-semibold text-white">Tap to view · {toast.label}</p>
             </button>
             <button
               type="button"
-              aria-label="关闭"
+              aria-label="Dismiss"
               className="shrink-0 rounded-lg p-1 text-red-200 hover:bg-white/10"
               onClick={() => setToast(null)}
             >
@@ -223,7 +223,7 @@ export default function LiveSignalsFeed({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              实时信号
+              Live
             </span>
           ) : null}
           <div className="text-xs text-subtle hidden sm:block">Anonymized whale activity</div>
@@ -239,7 +239,7 @@ export default function LiveSignalsFeed({
                   window.localStorage.setItem(SOUND_STORAGE_KEY, e.target.checked ? '1' : '0');
                 }}
               />
-              声音提醒
+              Sound
             </label>
           ) : null}
           <Link

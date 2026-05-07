@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   if (!hasDatabaseUrl) {
     return NextResponse.json({
       hasDatabaseUrl: false,
-      summary: '未设置 DATABASE_URL，Prisma 无法查询；首页统计会显示为 0。',
+      summary: 'DATABASE_URL is not set; Prisma cannot query and home stats will show as zero.',
     });
   }
 
@@ -107,21 +107,22 @@ export async function GET(request: Request) {
 
   let summary: string;
   if (whaleProfilesTableError) {
-    summary = `检查 information_schema 失败：${whaleProfilesTableError}`;
+    summary = `information_schema check failed: ${whaleProfilesTableError}`;
   } else if (whaleTableMissing) {
     summary = tradeHasData
-      ? '库中无 whale_profiles 表，但 whale_trades+trades_raw 有数据；首页统计会使用该回退聚合。'
-      : '库中无 whale_profiles 表，且 whale_trades 回退也无数据（或查询失败）；请确认 Alembic 与 ingest 是否指向同一 DATABASE_URL。';
+      ? 'No whale_profiles table, but whale_trades + trades_raw has rows; home stats use this fallback aggregate.'
+      : 'No whale_profiles table and the whale_trades fallback has no rows (or query failed); confirm Alembic and ingest use the same DATABASE_URL.';
   } else if (whaleQueryFailed) {
     summary = tradeHasData
-      ? `whale_profiles 聚合失败（${whaleAggError}），但 whale_trades 回退有数据；首页会使用回退值。`
-      : `whale_profiles 聚合失败：${whaleAggError}；回退查询也无可用数据。`;
+      ? `whale_profiles aggregate failed (${whaleAggError}), but whale_trades fallback has data; home uses fallback values.`
+      : `whale_profiles aggregate failed: ${whaleAggError}; fallback query also returned no usable data.`;
   } else if (whaleEmpty) {
     summary = tradeHasData
-      ? 'whale_profiles 为空，但 whale_trades+trades_raw 有数据；首页 loadHomeStats 已回退使用该聚合（与 live-signals 一致）。'
-      : 'whale_profiles 与 whale_trades 回退均为 0：库中尚无鲸鱼成交数据，或 DATABASE_URL 指向空库。';
+      ? 'whale_profiles is empty, but whale_trades + trades_raw has data; loadHomeStats uses that fallback (same as live-signals).'
+      : 'Both whale_profiles and whale_trades fallbacks are zero: no whale trade rows yet, or DATABASE_URL points at an empty database.';
   } else {
-    summary = 'whale_profiles 有数据；若首页仍为 0，可能是 unstable_cache（60s）或部署环境变量不一致。';
+    summary =
+      'whale_profiles has data; if home still shows zero, check unstable_cache (60s TTL) or mismatched env across deploys.';
   }
 
   return NextResponse.json({
@@ -138,9 +139,9 @@ export async function GET(request: Request) {
     alertsTableError,
     summary,
     hints: [
-      '首页优先聚合 whale_profiles；若计数与成交额均为 0，则回退聚合 whale_trades INNER JOIN trades_raw。',
-      'whale_profiles 由 whale-monorepo 的 Alembic 迁移创建，并由 trade ingest / whale profile 任务写入。',
-      '生产环境访问本接口需在请求头携带 x-admin-token: <ADMIN_TOKEN>。',
+      'Home prefers whale_profiles; when counts and volume are both zero it falls back to whale_trades INNER JOIN trades_raw.',
+      'whale_profiles is created by whale-monorepo Alembic migrations and filled by trade ingest / whale profile jobs.',
+      'In production, call this endpoint with header x-admin-token: <ADMIN_TOKEN>.',
     ],
   });
 }
