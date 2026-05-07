@@ -9,6 +9,7 @@ import { loadLiveSignals } from '@/lib/live-signals';
 import { getCurrentUser } from '@/lib/auth';
 import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
 import LiveSignalsFeedLazy from '@/components/LiveSignalsFeedLazy';
+import TelegramAlertMockup from '@/components/TelegramAlertMockup';
 import { PRICING_PRO_MONTHLY } from '@/lib/pricing-plans';
 
 function formatPct(v: number | null): string {
@@ -161,6 +162,26 @@ export default function Home() {
             </HomeCtaLink>
           </div>
           <p className="mt-4 text-xs text-subtle">History is public through yesterday UTC—no signup to audit.</p>
+        </section>
+
+        <section
+          aria-labelledby="telegram-preview-heading"
+          className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-20"
+        >
+          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-10">
+            <p className="text-[11px] font-bold text-cyan-400/90 tracking-[0.35em] uppercase mb-3">Telegram</p>
+            <h2
+              id="telegram-preview-heading"
+              className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-3"
+            >
+              What an alert looks like on your phone
+            </h2>
+            <p className="text-sm text-muted leading-relaxed">
+              Optional Telegram delivery—paid subscribers can get pushes fast. Below is a real example framed like the
+              bot chat.
+            </p>
+          </div>
+          <TelegramAlertMockup />
         </section>
 
         <section id="live-signals" className="max-w-6xl mx-auto px-4 sm:px-6 mb-16 sm:mb-20">
