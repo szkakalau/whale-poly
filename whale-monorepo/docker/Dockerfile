@@ -13,3 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Ensure maintenance scripts are present in the image build context (catches wrong rootDir or missing git files early).
+RUN test -f scripts/backfill_whale_trade_history_from_raw_for_profiles.py \
+  && test -f scripts/recompute_whale_trade_history_pnl.py

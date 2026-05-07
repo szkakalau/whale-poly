@@ -77,6 +77,34 @@ After `payment-api` is live, configure Stripe webhook endpoint to:
 
 - `https://<payment-api-domain>/webhook`
 
+### Render Shell (scripts and backfill)
+
+Backend containers use `WORKDIR /app` and include `scripts/` from the monorepo root (`render.yaml` → `rootDir: whale-monorepo`, `dockerfilePath: docker/Dockerfile`).
+
+1. **Open Shell on a Python backend service**, not the Vercel landing app. Use any service built from `whale-monorepo/docker/Dockerfile`, for example `trade-ingest-api`, `whale-engine-api`, `whale-engine-worker`, `trade-ingest-worker`, `alert-engine-api`, `telegram-bot`, or `payment-api`. The landing frontend (Node/Vercel, root `whale-monorepo/services/landing`) does **not** contain these Python scripts.
+
+2. **Verify the scripts directory** before running maintenance commands:
+
+```bash
+pwd
+ls -la /app/scripts
+```
+
+If `/app/scripts` is missing, you are on the wrong container, or the deployed image was built from a revision that did not include `whale-monorepo/scripts/`—fix by pushing the files and **redeploying** a backend service, then open Shell again.
+
+3. **Backfill `whale_trade_history` and recompute PnL** (requires `DATABASE_URL` as on other services; run from `/app`):
+
+```bash
+python scripts/backfill_whale_trade_history_from_raw_for_profiles.py
+python scripts/recompute_whale_trade_history_pnl.py
+```
+
+Optional full raw backfill (can be large):
+
+```bash
+python scripts/backfill_trade_history.py --all
+```
+
 ## Vercel (landing)
 
 Landing lives at [services/landing](file:///Users/castroliu/poly/whale-monorepo/services/landing).

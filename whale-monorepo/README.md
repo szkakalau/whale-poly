@@ -75,3 +75,4 @@ Trades older than 7 days are ignored to prevent historical backfill during live 
 - Backend on Render via Blueprint: [render.yaml](file:///Users/castroliu/poly/render.yaml)
 - Landing on Vercel (root dir `whale-monorepo/services/landing`)
 - Step-by-step: [DEPLOY.md](file:///Users/castroliu/poly/DEPLOY.md)
+- One-off Python scripts under `scripts/` (DB backfill, etc.): run **Render Shell** on any backend service from `docker/Dockerfile`—see **Render Shell** in [DEPLOY.md](../DEPLOY.md#render-shell-scripts-and-backfill) (not the Vercel landing app).
