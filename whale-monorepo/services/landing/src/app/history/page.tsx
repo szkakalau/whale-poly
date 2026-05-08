@@ -29,6 +29,14 @@ function formatPrice(v: number | null): string {
   return v.toFixed(3);
 }
 
+function formatUsdCompact(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${value < 0 ? '-' : ''}$${(abs / 1_000).toFixed(1)}K`;
+  return `${value < 0 ? '-' : ''}$${abs.toFixed(0)}`;
+}
+
 function yesterdayUtcIsoDate(): string {
   const now = new Date();
   const y = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
@@ -59,13 +67,17 @@ export default async function HistoryPage() {
         </header>
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface/80">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="border-b border-border bg-surface/90 text-[11px] font-black uppercase tracking-wider text-subtle">
               <tr>
                 <th className="px-4 py-3">Published</th>
                 <th className="px-4 py-3">Market</th>
-                <th className="px-4 py-3 text-right">Whale Score</th>
-                <th className="px-4 py-3 text-right">Entry</th>
+                <th className="px-4 py-3 text-right">Whale score</th>
+                <th className="px-4 py-3 text-right normal-case">Entry (price)</th>
+                <th className="px-4 py-3">Outcome</th>
+                <th className="px-4 py-3">Side</th>
+                <th className="px-4 py-3 text-right">Size</th>
+                <th className="px-4 py-3 font-mono">Wallet</th>
                 <th className="px-4 py-3 text-right">Settlement</th>
                 <th className="px-4 py-3 text-right">ROI</th>
               </tr>
@@ -73,7 +85,7 @@ export default async function HistoryPage() {
             <tbody className="divide-y divide-border-muted">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-16 text-center text-muted">
                     No historical rows yet, or alerts haven&apos;t synced to this database.
                   </td>
                 </tr>
@@ -98,6 +110,12 @@ export default async function HistoryPage() {
                         {row.whaleScore != null ? row.whaleScore.toFixed(0) : '—'}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">{formatPrice(row.publishPrice)}</td>
+                      <td className="max-w-[140px] px-4 py-3 text-foreground">
+                        {row.outcomeLabel ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{row.sideLabel ?? '—'}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{formatUsdCompact(row.sizeUsd)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-subtle">{row.walletMasked}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted">{formatPrice(row.endPrice)}</td>
                       <td className={`px-4 py-3 text-right tabular-nums ${roiClass}`}>{formatPct(roi)}</td>
                     </tr>

@@ -10,9 +10,20 @@ export type HistorySignalRow = {
   marketTitle: string;
   whaleScore: number | null;
   publishPrice: number | null;
+  outcomeLabel: string | null;
+  sideLabel: string | null;
+  sizeUsd: number | null;
+  walletMasked: string;
   endPrice: number | null;
   roiPct: number | null;
 };
+
+function formatShortWallet(addr: string | null | undefined): string {
+  const v = (addr ?? '').trim();
+  if (!v) return '—';
+  if (v.length <= 10) return v;
+  return `${v.slice(0, 6)}…${v.slice(-4)}`;
+}
 
 function safeNum(v: unknown): number | null {
   if (v == null) return null;
@@ -35,6 +46,8 @@ type RawHistoryRow = {
   market_status: string | null;
   hist_pnl: unknown;
   hist_trade_usd: unknown;
+  wallet_address: string | null;
+  trade_size_usd: unknown;
   condition_id: string | null;
 };
 
@@ -55,6 +68,8 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         m.status AS market_status,
         wth.pnl::float8 AS hist_pnl,
         wth.trade_usd::float8 AS hist_trade_usd,
+        COALESCE(NULLIF(TRIM(wt.wallet_address), ''), NULLIF(TRIM(a.wallet_address), '')) AS wallet_address,
+        (tr.amount::numeric * tr.price::numeric)::float8 AS trade_size_usd,
         (
           SELECT tc.condition_id
           FROM token_conditions tc
@@ -121,12 +136,22 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         endPrice = resolved.endPrice;
       }
 
+      const sideRaw = String(row.trade_side ?? '')
+        .trim()
+        .toUpperCase();
+      const sideLabel =
+        sideRaw === 'BUY' || sideRaw === 'SELL' ? sideRaw : row.trade_side?.trim() ? row.trade_side.trim() : null;
+
       return {
         id: row.id,
         publishedAt: row.published_at instanceof Date ? row.published_at.toISOString() : String(row.published_at),
         marketTitle: row.market_title?.trim() || '—',
         whaleScore: safeNum(row.whale_score),
         publishPrice,
+        outcomeLabel: row.outcome_token?.trim() ? row.outcome_token.trim() : null,
+        sideLabel,
+        sizeUsd: safeNum(row.trade_size_usd),
+        walletMasked: formatShortWallet(row.wallet_address),
         endPrice,
         roiPct,
       };
