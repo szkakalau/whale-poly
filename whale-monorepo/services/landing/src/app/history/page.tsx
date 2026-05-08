@@ -37,6 +37,18 @@ function formatUsdCompact(value: number | null): string {
   return `${value < 0 ? '-' : ''}$${abs.toFixed(0)}`;
 }
 
+/** Signed USD for realized PnL (compact). */
+function formatSignedPnlUsd(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  const sign = value > 0 ? '+' : value < 0 ? '−' : '';
+  const abs = Math.abs(value);
+  let body: string;
+  if (abs >= 1_000_000) body = `$${(abs / 1_000_000).toFixed(1)}M`;
+  else if (abs >= 1_000) body = `$${(abs / 1_000).toFixed(1)}K`;
+  else body = `$${abs.toFixed(0)}`;
+  return `${sign}${body}`;
+}
+
 function yesterdayUtcIsoDate(): string {
   const now = new Date();
   const y = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
@@ -78,8 +90,8 @@ export default async function HistoryPage() {
                 <th className="px-4 py-3">Side</th>
                 <th className="px-4 py-3 text-right">Size</th>
                 <th className="px-4 py-3 font-mono">Wallet</th>
-                <th className="px-4 py-3 text-right">Settlement</th>
-                <th className="px-4 py-3 text-right">ROI</th>
+                <th className="px-4 py-3 text-right normal-case">Settlement (price)</th>
+                <th className="px-4 py-3 text-right normal-case">ROI (realized)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-muted">
@@ -117,7 +129,12 @@ export default async function HistoryPage() {
                       <td className="px-4 py-3 text-right tabular-nums">{formatUsdCompact(row.sizeUsd)}</td>
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-subtle">{row.walletMasked}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted">{formatPrice(row.endPrice)}</td>
-                      <td className={`px-4 py-3 text-right tabular-nums ${roiClass}`}>{formatPct(roi)}</td>
+                      <td className={`px-4 py-3 text-right align-top tabular-nums ${roiClass}`}>
+                        <div>{formatPct(roi)}</div>
+                        {row.realizedPnlUsd != null && Number.isFinite(row.realizedPnlUsd) && (
+                          <div className="mt-0.5 text-[11px] font-medium text-muted">{formatSignedPnlUsd(row.realizedPnlUsd)}</div>
+                        )}
+                      </td>
                     </tr>
                   );
                 })

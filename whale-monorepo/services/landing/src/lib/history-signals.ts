@@ -15,6 +15,8 @@ export type HistorySignalRow = {
   sizeUsd: number | null;
   walletMasked: string;
   endPrice: number | null;
+  /** Realized PnL (USD) from whale_trade_history when present. */
+  realizedPnlUsd: number | null;
   roiPct: number | null;
 };
 
@@ -100,11 +102,7 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       ...new Set(
         visibleRows
           .filter((r) => {
-            const pnl = safeNum(r.hist_pnl);
-            const usd = safeNum(r.hist_trade_usd);
-            const fromHist = roiFromHistoryPnl(pnl, usd);
             return (
-              fromHist == null &&
               r.condition_id &&
               String(r.condition_id).trim().length > 0 &&
               !isMarketStatusOpen(r.market_status)
@@ -136,6 +134,13 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         endPrice = resolved.endPrice;
       }
 
+      if (endPrice == null && row.condition_id) {
+        const cid = String(row.condition_id).trim();
+        const gamma = gammaCache.get(cid) ?? null;
+        const resolved = roiBuyHoldToResolution(row.trade_side, row.outcome_token, publishPrice, gamma);
+        endPrice = resolved.endPrice;
+      }
+
       const sideRaw = String(row.trade_side ?? '')
         .trim()
         .toUpperCase();
@@ -153,6 +158,7 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         sizeUsd: safeNum(row.trade_size_usd),
         walletMasked: formatShortWallet(row.wallet_address),
         endPrice,
+        realizedPnlUsd: histPnl != null && Number.isFinite(histPnl) ? histPnl : null,
         roiPct,
       };
     });
