@@ -15,7 +15,7 @@ export function isMarketStatusOpen(status: string | null | undefined): boolean {
 export function roiFromHistoryPnl(pnl: number | null, tradeUsd: number | null): number | null {
   if (pnl == null || tradeUsd == null) return null;
   if (!Number.isFinite(pnl) || !Number.isFinite(tradeUsd) || tradeUsd <= 0) return null;
-  if (Math.abs(pnl) < 1e-12) return null;
+  if (Math.abs(pnl) < 1e-12) return 0;
   return pnl / tradeUsd;
 }
 
@@ -35,6 +35,19 @@ function outcomeIndex(outcomes: string[], traded: string | null): number | null 
     return n.includes(short) || short.includes(n);
   });
   return partial >= 0 ? partial : null;
+}
+
+/**
+ * Settlement price for the traded outcome leg from Gamma (any side — BUY/SELL).
+ * Uses live outcomePrices once the market has a clear winner.
+ */
+export function settlementOutcomePrice(outcomeToken: string | null, gamma: GammaMarketSlice | null): number | null {
+  if (!gamma) return null;
+  if (winningOutcomeIndex(gamma) == null) return null;
+  const heldIdx = outcomeIndex(gamma.outcomes, outcomeToken);
+  if (heldIdx == null) return null;
+  const p = gamma.outcomePrices[heldIdx];
+  return Number.isFinite(p) ? p : null;
 }
 
 /**

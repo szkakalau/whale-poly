@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
 import { fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
-import { isMarketStatusOpen, roiBuyHoldToResolution, roiFromHistoryPnl } from '@/lib/history-roi';
+import { roiBuyHoldToResolution, roiFromHistoryPnl, settlementOutcomePrice } from '@/lib/history-roi';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
 export type HistorySignalRow = {
@@ -34,9 +34,6 @@ function safeNum(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Max distinct Gamma condition_ids fetched per /history request (rate limit). */
-export const MAX_GAMMA_CONDITION_LOOKUPS = 40;
-
 type RawHistoryRow = {
   id: string;
   published_at: Date;
@@ -52,6 +49,50 @@ type RawHistoryRow = {
   trade_size_usd: unknown;
   condition_id: string | null;
 };
+
+/** Max distinct Gamma condition_ids fetched per /history request (rate limit). */
+export const MAX_GAMMA_CONDITION_LOOKUPS = 160;
+
+async function fetchGammaMarketsBatched(
+  conditionIds: string[],
+  batchSize = 24,
+): Promise<Map<string, Awaited<ReturnType<typeof fetchGammaMarketByConditionId>>>> {
+  const cache = new Map<string, Awaited<ReturnType<typeof fetchGammaMarketByConditionId>>>();
+  for (let i = 0; i < conditionIds.length; i += batchSize) {
+    const chunk = conditionIds.slice(i, i + batchSize);
+    const rows = await Promise.all(
+      chunk.map(async (cid) => {
+        const data = await fetchGammaMarketByConditionId(cid);
+        return { cid, data };
+      }),
+    );
+    for (const { cid, data } of rows) {
+      cache.set(cid, data);
+    }
+  }
+  return cache;
+}
+
+/** Unique condition_ids in alert order (newest first). */
+function orderedUniqueConditionIds(rows: RawHistoryRow[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of rows) {
+    const cid = r.condition_id ? String(r.condition_id).trim() : '';
+    if (!cid || seen.has(cid)) continue;
+    seen.add(cid);
+    out.push(cid);
+  }
+  return out;
+}
+
+function tradeUsdDenominator(histTradeUsd: unknown, tradeSizeUsd: unknown): number | null {
+  const h = safeNum(histTradeUsd);
+  const s = safeNum(tradeSizeUsd);
+  if (h != null && Number.isFinite(h) && h > 0) return h;
+  if (s != null && Number.isFinite(s) && s > 0) return s;
+  return null;
+}
 
 /** Public history: alerts before today 00:00 UTC (through end of yesterday). */
 export async function loadPublicHistorySignals(limit = 500): Promise<HistorySignalRow[]> {
@@ -96,34 +137,14 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       return !shouldExcludeMarketFromPublicFeeds(title);
     });
 
-    const gammaCache = new Map<string, Awaited<ReturnType<typeof fetchGammaMarketByConditionId>>>();
-
-    const candidatesForGamma = [
-      ...new Set(
-        visibleRows
-          .filter((r) => {
-            return (
-              r.condition_id &&
-              String(r.condition_id).trim().length > 0 &&
-              !isMarketStatusOpen(r.market_status)
-            );
-          })
-          .map((r) => String(r.condition_id).trim()),
-      ),
-    ].slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
-
-    await Promise.all(
-      candidatesForGamma.map(async (cid) => {
-        const data = await fetchGammaMarketByConditionId(cid);
-        gammaCache.set(cid, data);
-      }),
-    );
+    const gammaIds = orderedUniqueConditionIds(visibleRows).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
+    const gammaCache = await fetchGammaMarketsBatched(gammaIds);
 
     return visibleRows.map((row) => {
       const publishPrice = safeNum(row.publish_price);
       const histPnl = safeNum(row.hist_pnl);
-      const histUsd = safeNum(row.hist_trade_usd);
-      let roiPct = roiFromHistoryPnl(histPnl, histUsd);
+      const denomUsd = tradeUsdDenominator(row.hist_trade_usd, row.trade_size_usd);
+      let roiPct = roiFromHistoryPnl(histPnl, denomUsd);
       let endPrice: number | null = null;
 
       if (roiPct == null && row.condition_id) {
@@ -137,8 +158,7 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       if (endPrice == null && row.condition_id) {
         const cid = String(row.condition_id).trim();
         const gamma = gammaCache.get(cid) ?? null;
-        const resolved = roiBuyHoldToResolution(row.trade_side, row.outcome_token, publishPrice, gamma);
-        endPrice = resolved.endPrice;
+        endPrice = settlementOutcomePrice(row.outcome_token, gamma);
       }
 
       const sideRaw = String(row.trade_side ?? '')

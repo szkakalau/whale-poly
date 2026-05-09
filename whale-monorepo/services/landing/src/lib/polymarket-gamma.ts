@@ -71,9 +71,11 @@ export async function fetchGammaMarketByConditionId(conditionId: string): Promis
   }
 }
 
-/** Index of winning outcome after resolution (price ~= 1). */
+/**
+ * Index of winning outcome after resolution (price ~= 1).
+ * Uses outcome prices only — Gamma often omits `closed` even when prices are 1/0.
+ */
 export function winningOutcomeIndex(slice: GammaMarketSlice): number | null {
-  if (!slice.closed) return null;
   let bestI = -1;
   let bestP = -1;
   for (let i = 0; i < slice.outcomePrices.length; i++) {
