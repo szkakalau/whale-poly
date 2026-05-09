@@ -113,10 +113,16 @@ export function outcomeLegPriceFromGamma(
   return Number.isFinite(p) ? p : null;
 }
 
+export type RoiFromGammaTradeOpts = {
+  /** When true (default), only compute after a clear winner on Gamma. When false, use current leg price (MTM). */
+  requireMarketResolved?: boolean;
+};
+
 /**
- * Hold-to-resolution ROI from Gamma settlement prices (BUY and SELL).
- * - BUY: ROI vs cash paid = (S − entry) / entry  (S = settlement price of that outcome).
- * - SELL: ROI vs max loss per share = (entry − S) / (1 − entry).
+ * ROI from Gamma outcome leg prices (BUY and SELL).
+ * - BUY: (S − entry) / entry
+ * - SELL: (entry − S) / (1 − entry)
+ * With default opts, S is only used once the market looks resolved on Gamma; otherwise use `{ requireMarketResolved: false }` for mark-to-market vs live prices.
  */
 export function roiFromGammaTrade(
   tradeSide: string | null,
@@ -124,6 +130,7 @@ export function roiFromGammaTrade(
   entryPrice: number | null,
   gamma: GammaMarketSlice | null,
   clobTokenId?: string | null,
+  opts?: RoiFromGammaTradeOpts,
 ): { roiPct: number | null; endPrice: number | null } {
   if (!gamma || entryPrice == null || !Number.isFinite(entryPrice) || entryPrice <= 0 || entryPrice >= 1) {
     return { roiPct: null, endPrice: null };
@@ -131,7 +138,8 @@ export function roiFromGammaTrade(
   const side = String(tradeSide || '').toUpperCase().trim();
   if (side !== 'BUY' && side !== 'SELL') return { roiPct: null, endPrice: null };
 
-  if (winningOutcomeIndex(gamma) == null) return { roiPct: null, endPrice: null };
+  const requireResolved = opts?.requireMarketResolved ?? true;
+  if (requireResolved && winningOutcomeIndex(gamma) == null) return { roiPct: null, endPrice: null };
 
   const heldIdx = tradedOutcomeIndex(gamma, outcomeToken, clobTokenId);
   if (heldIdx == null) return { roiPct: null, endPrice: null };
@@ -161,5 +169,5 @@ export function roiBuyHoldToResolution(
 ): { roiPct: number | null; endPrice: number | null } {
   const side = String(tradeSide || '').toUpperCase().trim();
   if (side !== 'BUY') return { roiPct: null, endPrice: null };
-  return roiFromGammaTrade(tradeSide, outcomeToken, entryPrice, gamma);
+  return roiFromGammaTrade(tradeSide, outcomeToken, entryPrice, gamma, undefined, { requireMarketResolved: true });
 }

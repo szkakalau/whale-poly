@@ -188,7 +188,9 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       if (roiPct == null) {
         const cid = row.condition_id ? String(row.condition_id).trim() : '';
         const gamma = gammaFromToken ?? (cid ? (gammaConditionCache.get(cid) ?? null) : null);
-        const resolved = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma, rawTokenId);
+        const resolved = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma, rawTokenId, {
+          requireMarketResolved: true,
+        });
         roiPct = resolved.roiPct;
         endPrice = resolved.endPrice;
       }
@@ -199,6 +201,15 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         endPrice =
           settlementOutcomePrice(row.outcome_token, gamma, rawTokenId) ??
           outcomeLegPriceFromGamma(row.outcome_token, gamma, rawTokenId);
+      }
+
+      if (roiPct == null) {
+        const cid = row.condition_id ? String(row.condition_id).trim() : '';
+        const gamma = gammaFromToken ?? (cid ? (gammaConditionCache.get(cid) ?? null) : null);
+        const mtm = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma, rawTokenId, {
+          requireMarketResolved: false,
+        });
+        if (mtm.roiPct != null) roiPct = mtm.roiPct;
       }
 
       const sideRaw = String(row.trade_side ?? '')

@@ -163,9 +163,10 @@ export default async function HistoryPage() {
           </dl>
           <p className="mt-4 text-[11px] text-subtle leading-relaxed">
             <strong className="text-foreground/90">ROI notes:</strong> we prefer realized PnL from{' '}
-            <code className="text-[10px]">whale_trade_history</code> when present. Otherwise, when Gamma resolves the market,
-            BUY ROI uses (settlement − entry) / entry; SELL uses (entry − settlement) / (1 − entry). Unmatched outcome labels
-            or missing Gamma data show &quot;—&quot;. Up to {MAX_GAMMA_CONDITION_LOOKUPS} distinct Gamma queries per request.
+            <code className="text-[10px]">whale_trade_history</code> when present and meaningful. When Gamma shows a clear
+            resolved winner, ROI uses that leg price; if the market is still trading, ROI uses the same leg price as the
+            settlement column (mark-to-market vs entry): BUY (S − entry) / entry, SELL (entry − S) / (1 − entry). Rows with no
+            entry price, side, or Gamma match show &quot;—&quot;. Up to {MAX_GAMMA_CONDITION_LOOKUPS} distinct Gamma queries per request.
           </p>
         </section>
       </main>
