@@ -8,6 +8,7 @@ export type GammaMarketSlice = {
   closed: boolean;
   outcomes: string[];
   outcomePrices: number[];
+  clobTokenIds: string[];
 };
 
 function parseJsonArray(value: unknown): unknown[] {
@@ -28,16 +29,49 @@ function toNum(v: unknown): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
-/** Fetch one market by condition id (Gamma uses hex condition ids). */
-export async function fetchGammaMarketByConditionId(conditionId: string): Promise<GammaMarketSlice | null> {
-  const id = String(conditionId || '').trim();
+function parseGammaMarket(row: unknown, fallbackConditionId: string): GammaMarketSlice | null {
+  if (!row || typeof row !== 'object') return null;
+
+  const r = row as Record<string, unknown>;
+  const outcomesRaw = parseJsonArray(r.outcomes).map((x) => String(x ?? '').trim());
+  const pricesRaw = parseJsonArray(r.outcomePrices).map(toNum);
+  const tokensRaw = parseJsonArray(r.clobTokenIds).map((x) => String(x ?? '').trim().toLowerCase());
+
+  const cid = String(r.conditionId ?? r.condition_id ?? fallbackConditionId).trim();
+  const closed =
+    r.closed === true ||
+    r.closed === 'true' ||
+    r.isResolved === true ||
+    r.active === false ||
+    r.active === 'false';
+
+  if (outcomesRaw.length === 0 || pricesRaw.length === 0) return null;
+  const n = Math.min(outcomesRaw.length, pricesRaw.length);
+  /** Keep outcomes[i], outcomePrices[i], and clobTokenIds[i] aligned. */
+  const outcomes: string[] = [];
+  const outcomePrices: number[] = [];
+  const clobTokenIds: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const p = pricesRaw[i];
+    if (Number.isFinite(p)) {
+      outcomes.push(outcomesRaw[i]);
+      outcomePrices.push(p);
+      clobTokenIds.push(tokensRaw[i] ?? '');
+    }
+  }
+  if (outcomes.length === 0) return null;
+
+  return { conditionId: cid, closed, outcomes, outcomePrices, clobTokenIds };
+}
+
+async function fetchGammaMarketByParam(param: string, value: string): Promise<GammaMarketSlice | null> {
+  const id = String(value || '').trim();
   if (!id) return null;
 
   try {
     const url = new URL('https://gamma-api.polymarket.com/markets');
-    url.searchParams.append('condition_ids', id);
+    url.searchParams.append(param, id);
     url.searchParams.set('limit', '1');
-
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
       next: { revalidate: 3600 },
@@ -46,38 +80,20 @@ export async function fetchGammaMarketByConditionId(conditionId: string): Promis
 
     const data = (await res.json()) as unknown;
     const row = Array.isArray(data) ? data[0] : null;
-    if (!row || typeof row !== 'object') return null;
-
-    const r = row as Record<string, unknown>;
-    const outcomesRaw = parseJsonArray(r.outcomes).map((x) => String(x ?? '').trim());
-    const pricesRaw = parseJsonArray(r.outcomePrices).map(toNum);
-
-    const cid = String(r.conditionId ?? r.condition_id ?? id).trim();
-    const closed =
-      r.closed === true ||
-      r.closed === 'true' ||
-      r.isResolved === true ||
-      r.active === false ||
-      r.active === 'false';
-
-    if (outcomesRaw.length === 0 || pricesRaw.length === 0) return null;
-    const n = Math.min(outcomesRaw.length, pricesRaw.length);
-    /** Keep outcomes[i] aligned with outcomePrices[i]; skip pairs with invalid prices only. */
-    const outcomes: string[] = [];
-    const outcomePrices: number[] = [];
-    for (let i = 0; i < n; i++) {
-      const p = pricesRaw[i];
-      if (Number.isFinite(p)) {
-        outcomes.push(outcomesRaw[i]);
-        outcomePrices.push(p);
-      }
-    }
-    if (outcomes.length === 0) return null;
-
-    return { conditionId: cid, closed, outcomes, outcomePrices };
+    return parseGammaMarket(row, id);
   } catch {
     return null;
   }
+}
+
+/** Fetch one market by condition id (Gamma uses hex condition ids). */
+export async function fetchGammaMarketByConditionId(conditionId: string): Promise<GammaMarketSlice | null> {
+  return fetchGammaMarketByParam('condition_ids', conditionId);
+}
+
+/** Fetch one market by CLOB token id (the raw token id stored on alerts/trades). */
+export async function fetchGammaMarketByClobTokenId(tokenId: string): Promise<GammaMarketSlice | null> {
+  return fetchGammaMarketByParam('clobTokenIds', tokenId);
 }
 
 /**

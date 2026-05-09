@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
-import { fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
+import { fetchGammaMarketByClobTokenId, fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
 import { roiFromGammaTrade, roiFromHistoryPnl, settlementOutcomePrice } from '@/lib/history-roi';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
@@ -47,6 +47,7 @@ type RawHistoryRow = {
   hist_trade_usd: unknown;
   wallet_address: string | null;
   trade_size_usd: unknown;
+  raw_token_id: string | null;
   condition_id: string | null;
 };
 
@@ -73,15 +74,35 @@ async function fetchGammaMarketsBatched(
   return cache;
 }
 
-/** Unique condition_ids in alert order (newest first). */
-function orderedUniqueConditionIds(rows: RawHistoryRow[]): string[] {
+async function fetchGammaMarketsByTokenBatched(
+  tokenIds: string[],
+  batchSize = 24,
+): Promise<Map<string, Awaited<ReturnType<typeof fetchGammaMarketByClobTokenId>>>> {
+  const cache = new Map<string, Awaited<ReturnType<typeof fetchGammaMarketByClobTokenId>>>();
+  for (let i = 0; i < tokenIds.length; i += batchSize) {
+    const chunk = tokenIds.slice(i, i + batchSize);
+    const rows = await Promise.all(
+      chunk.map(async (tokenId) => {
+        const data = await fetchGammaMarketByClobTokenId(tokenId);
+        return { tokenId, data };
+      }),
+    );
+    for (const { tokenId, data } of rows) {
+      cache.set(tokenId.toLowerCase(), data);
+    }
+  }
+  return cache;
+}
+
+function orderedUniqueValues(rows: RawHistoryRow[], getValue: (row: RawHistoryRow) => string | null | undefined): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const r of rows) {
-    const cid = r.condition_id ? String(r.condition_id).trim() : '';
-    if (!cid || seen.has(cid)) continue;
-    seen.add(cid);
-    out.push(cid);
+    const value = getValue(r) ? String(getValue(r)).trim() : '';
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
   }
   return out;
 }
@@ -113,10 +134,16 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         wth.trade_usd::float8 AS hist_trade_usd,
         COALESCE(NULLIF(TRIM(wt.wallet_address), ''), NULLIF(TRIM(a.wallet_address), '')) AS wallet_address,
         (tr.amount::numeric * tr.price::numeric)::float8 AS trade_size_usd,
+        COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), '')) AS raw_token_id,
         (
           SELECT tc.condition_id
           FROM token_conditions tc
-          WHERE tc.market_id = a.market_id
+          WHERE tc.token_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), ''))
+             OR tc.market_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), ''))
+          ORDER BY CASE
+            WHEN tc.token_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), '')) THEN 0
+            ELSE 1
+          END
           LIMIT 1
         ) AS condition_id
       FROM alerts a
@@ -137,8 +164,12 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       return !shouldExcludeMarketFromPublicFeeds(title);
     });
 
-    const gammaIds = orderedUniqueConditionIds(visibleRows).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
-    const gammaCache = await fetchGammaMarketsBatched(gammaIds);
+    const rawTokenIds = orderedUniqueValues(visibleRows, (r) => r.raw_token_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
+    const gammaIds = orderedUniqueValues(visibleRows, (r) => r.condition_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
+    const [gammaTokenCache, gammaConditionCache] = await Promise.all([
+      fetchGammaMarketsByTokenBatched(rawTokenIds),
+      fetchGammaMarketsBatched(gammaIds),
+    ]);
 
     return visibleRows.map((row) => {
       const publishPrice = safeNum(row.publish_price);
@@ -146,19 +177,21 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       const denomUsd = tradeUsdDenominator(row.hist_trade_usd, row.trade_size_usd);
       let roiPct = roiFromHistoryPnl(histPnl, denomUsd);
       let endPrice: number | null = null;
+      const rawTokenId = row.raw_token_id ? String(row.raw_token_id).trim() : '';
+      const gammaFromToken = rawTokenId ? (gammaTokenCache.get(rawTokenId.toLowerCase()) ?? null) : null;
 
-      if (roiPct == null && row.condition_id) {
-        const cid = String(row.condition_id).trim();
-        const gamma = gammaCache.get(cid) ?? null;
-        const resolved = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma);
+      if (roiPct == null) {
+        const cid = row.condition_id ? String(row.condition_id).trim() : '';
+        const gamma = gammaFromToken ?? (cid ? (gammaConditionCache.get(cid) ?? null) : null);
+        const resolved = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma, rawTokenId);
         roiPct = resolved.roiPct;
         endPrice = resolved.endPrice;
       }
 
-      if (endPrice == null && row.condition_id) {
-        const cid = String(row.condition_id).trim();
-        const gamma = gammaCache.get(cid) ?? null;
-        endPrice = settlementOutcomePrice(row.outcome_token, gamma);
+      if (endPrice == null) {
+        const cid = row.condition_id ? String(row.condition_id).trim() : '';
+        const gamma = gammaFromToken ?? (cid ? (gammaConditionCache.get(cid) ?? null) : null);
+        endPrice = settlementOutcomePrice(row.outcome_token, gamma, rawTokenId);
       }
 
       const sideRaw = String(row.trade_side ?? '')

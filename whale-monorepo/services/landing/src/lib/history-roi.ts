@@ -68,14 +68,29 @@ function outcomeIndex(outcomes: string[], traded: string | null): number | null 
   return null;
 }
 
+function outcomeIndexByToken(gamma: GammaMarketSlice, tokenId: string | null | undefined): number | null {
+  const token = String(tokenId ?? '').trim().toLowerCase();
+  if (!token) return null;
+  const idx = gamma.clobTokenIds.findIndex((id) => id.toLowerCase() === token);
+  return idx >= 0 ? idx : null;
+}
+
+function tradedOutcomeIndex(gamma: GammaMarketSlice, outcomeToken: string | null, clobTokenId?: string | null): number | null {
+  return outcomeIndexByToken(gamma, clobTokenId) ?? outcomeIndex(gamma.outcomes, outcomeToken);
+}
+
 /**
  * Settlement price for the traded outcome leg from Gamma (any side — BUY/SELL).
  * Uses live outcomePrices once the market has a clear winner.
  */
-export function settlementOutcomePrice(outcomeToken: string | null, gamma: GammaMarketSlice | null): number | null {
+export function settlementOutcomePrice(
+  outcomeToken: string | null,
+  gamma: GammaMarketSlice | null,
+  clobTokenId?: string | null,
+): number | null {
   if (!gamma) return null;
   if (winningOutcomeIndex(gamma) == null) return null;
-  const heldIdx = outcomeIndex(gamma.outcomes, outcomeToken);
+  const heldIdx = tradedOutcomeIndex(gamma, outcomeToken, clobTokenId);
   if (heldIdx == null) return null;
   const p = gamma.outcomePrices[heldIdx];
   return Number.isFinite(p) ? p : null;
@@ -91,6 +106,7 @@ export function roiFromGammaTrade(
   outcomeToken: string | null,
   entryPrice: number | null,
   gamma: GammaMarketSlice | null,
+  clobTokenId?: string | null,
 ): { roiPct: number | null; endPrice: number | null } {
   if (!gamma || entryPrice == null || !Number.isFinite(entryPrice) || entryPrice <= 0 || entryPrice >= 1) {
     return { roiPct: null, endPrice: null };
@@ -100,7 +116,7 @@ export function roiFromGammaTrade(
 
   if (winningOutcomeIndex(gamma) == null) return { roiPct: null, endPrice: null };
 
-  const heldIdx = outcomeIndex(gamma.outcomes, outcomeToken);
+  const heldIdx = tradedOutcomeIndex(gamma, outcomeToken, clobTokenId);
   if (heldIdx == null) return { roiPct: null, endPrice: null };
 
   const S = gamma.outcomePrices[heldIdx];
