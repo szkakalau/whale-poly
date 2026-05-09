@@ -1,7 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
 import { fetchGammaMarketByClobTokenId, fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
-import { roiFromGammaTrade, roiFromHistoryPnl, settlementOutcomePrice } from '@/lib/history-roi';
+import {
+  outcomeLegPriceFromGamma,
+  roiFromGammaTrade,
+  roiFromHistoryPnl,
+  settlementOutcomePrice,
+} from '@/lib/history-roi';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
 export type HistorySignalRow = {
@@ -191,7 +196,9 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       if (endPrice == null) {
         const cid = row.condition_id ? String(row.condition_id).trim() : '';
         const gamma = gammaFromToken ?? (cid ? (gammaConditionCache.get(cid) ?? null) : null);
-        endPrice = settlementOutcomePrice(row.outcome_token, gamma, rawTokenId);
+        endPrice =
+          settlementOutcomePrice(row.outcome_token, gamma, rawTokenId) ??
+          outcomeLegPriceFromGamma(row.outcome_token, gamma, rawTokenId);
       }
 
       const sideRaw = String(row.trade_side ?? '')
@@ -211,7 +218,8 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         sizeUsd: safeNum(row.trade_size_usd),
         walletMasked: formatShortWallet(row.wallet_address),
         endPrice,
-        realizedPnlUsd: histPnl != null && Number.isFinite(histPnl) ? histPnl : null,
+        realizedPnlUsd:
+          histPnl != null && Number.isFinite(histPnl) && Math.abs(histPnl) >= 0.01 ? histPnl : null,
         roiPct,
       };
     });

@@ -15,7 +15,8 @@ export function isMarketStatusOpen(status: string | null | undefined): boolean {
 export function roiFromHistoryPnl(pnl: number | null, tradeUsd: number | null): number | null {
   if (pnl == null || tradeUsd == null) return null;
   if (!Number.isFinite(pnl) || !Number.isFinite(tradeUsd) || tradeUsd <= 0) return null;
-  if (Math.abs(pnl) < 1e-12) return 0;
+  /** Treat ~0 as unattributed so Gamma can fill ROI (DB often stores 0 when PnL wasn’t computed). */
+  if (Math.abs(pnl) < 1e-9) return null;
   return pnl / tradeUsd;
 }
 
@@ -90,6 +91,22 @@ export function settlementOutcomePrice(
 ): number | null {
   if (!gamma) return null;
   if (winningOutcomeIndex(gamma) == null) return null;
+  const heldIdx = tradedOutcomeIndex(gamma, outcomeToken, clobTokenId);
+  if (heldIdx == null) return null;
+  const p = gamma.outcomePrices[heldIdx];
+  return Number.isFinite(p) ? p : null;
+}
+
+/**
+ * Gamma mid/settlement price for the traded outcome leg without requiring a clear global winner.
+ * Used when the market is still trading or winningOutcomeIndex is inconclusive.
+ */
+export function outcomeLegPriceFromGamma(
+  outcomeToken: string | null,
+  gamma: GammaMarketSlice | null,
+  clobTokenId?: string | null,
+): number | null {
+  if (!gamma) return null;
   const heldIdx = tradedOutcomeIndex(gamma, outcomeToken, clobTokenId);
   if (heldIdx == null) return null;
   const p = gamma.outcomePrices[heldIdx];
