@@ -23,18 +23,49 @@ function normOutcome(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function stripParenLabels(s: string): string {
+  return normOutcome(s.replace(/\s*\([^)]*\)/g, ' ').replace(/\s+/g, ' '));
+}
+
+function letterAlnum(s: string): string {
+  return s.replace(/[^a-z0-9]/gi, '');
+}
+
 /** Match traded outcome label to Gamma outcomes array (fuzzy). */
 function outcomeIndex(outcomes: string[], traded: string | null): number | null {
   if (!traded || outcomes.length === 0) return null;
   const t = normOutcome(traded);
   const exact = outcomes.findIndex((o) => normOutcome(o) === t);
   if (exact >= 0) return exact;
+
+  const tStrip = stripParenLabels(traded);
+  const stripIdx = outcomes.findIndex((o) => stripParenLabels(o) === tStrip || stripParenLabels(o).includes(tStrip));
+  if (stripIdx >= 0) return stripIdx;
+
   const short = t.includes('/') ? t.split('/').pop()?.trim() ?? t : t;
   const partial = outcomes.findIndex((o) => {
     const n = normOutcome(o);
     return n.includes(short) || short.includes(n);
   });
-  return partial >= 0 ? partial : null;
+  if (partial >= 0) return partial;
+
+  const ta = letterAlnum(t);
+  if (ta.length >= 3) {
+    const fuzzy = outcomes.findIndex((o) => {
+      const lo = letterAlnum(normOutcome(o));
+      return lo.includes(ta) || ta.includes(lo);
+    });
+    if (fuzzy >= 0) return fuzzy;
+  }
+
+  if (outcomes.length === 2) {
+    const yesIdx = outcomes.findIndex((o) => /\byes\b/i.test(o) || /^y$/i.test(o.trim()));
+    const noIdx = outcomes.findIndex((o) => /\bno\b/i.test(o) || /^n$/i.test(o.trim()));
+    if (/^(yes|y)$/i.test(t.trim()) && yesIdx >= 0) return yesIdx;
+    if (/^(no|n)$/i.test(t.trim()) && noIdx >= 0) return noIdx;
+  }
+
+  return null;
 }
 
 /**
@@ -51,32 +82,51 @@ export function settlementOutcomePrice(outcomeToken: string | null, gamma: Gamma
 }
 
 /**
- * Hold-to-resolution ROI for a **BUY** of a single outcome token at price `entry` in (0,1).
- * - Win on that outcome: (1 - entry) / entry
- * - Lose: -1 (full stake loss)
- * SELL / ambiguous paths → null.
+ * Hold-to-resolution ROI from Gamma settlement prices (BUY and SELL).
+ * - BUY: ROI vs cash paid = (S − entry) / entry  (S = settlement price of that outcome).
+ * - SELL: ROI vs max loss per share = (entry − S) / (1 − entry).
  */
+export function roiFromGammaTrade(
+  tradeSide: string | null,
+  outcomeToken: string | null,
+  entryPrice: number | null,
+  gamma: GammaMarketSlice | null,
+): { roiPct: number | null; endPrice: number | null } {
+  if (!gamma || entryPrice == null || !Number.isFinite(entryPrice) || entryPrice <= 0 || entryPrice >= 1) {
+    return { roiPct: null, endPrice: null };
+  }
+  const side = String(tradeSide || '').toUpperCase().trim();
+  if (side !== 'BUY' && side !== 'SELL') return { roiPct: null, endPrice: null };
+
+  if (winningOutcomeIndex(gamma) == null) return { roiPct: null, endPrice: null };
+
+  const heldIdx = outcomeIndex(gamma.outcomes, outcomeToken);
+  if (heldIdx == null) return { roiPct: null, endPrice: null };
+
+  const S = gamma.outcomePrices[heldIdx];
+  if (!Number.isFinite(S)) return { roiPct: null, endPrice: null };
+
+  const endPrice = S;
+
+  if (side === 'BUY') {
+    const roiPct = (S - entryPrice) / entryPrice;
+    return { roiPct, endPrice };
+  }
+
+  const atRisk = 1 - entryPrice;
+  if (atRisk <= 1e-14) return { roiPct: null, endPrice };
+  const roiPct = (entryPrice - S) / atRisk;
+  return { roiPct, endPrice };
+}
+
+/** @deprecated Use {@link roiFromGammaTrade} — kept for older imports. */
 export function roiBuyHoldToResolution(
   tradeSide: string | null,
   outcomeToken: string | null,
   entryPrice: number | null,
   gamma: GammaMarketSlice | null,
 ): { roiPct: number | null; endPrice: number | null } {
-  if (entryPrice == null || !Number.isFinite(entryPrice) || entryPrice <= 0 || entryPrice >= 1) {
-    return { roiPct: null, endPrice: null };
-  }
   const side = String(tradeSide || '').toUpperCase().trim();
   if (side !== 'BUY') return { roiPct: null, endPrice: null };
-  if (!gamma) return { roiPct: null, endPrice: null };
-
-  const winIdx = winningOutcomeIndex(gamma);
-  if (winIdx == null) return { roiPct: null, endPrice: null };
-
-  const heldIdx = outcomeIndex(gamma.outcomes, outcomeToken);
-  if (heldIdx == null) return { roiPct: null, endPrice: null };
-
-  const won = heldIdx === winIdx;
-  const endPrice = won ? 1 : 0;
-  const roiPct = won ? (1 - entryPrice) / entryPrice : -1;
-  return { roiPct, endPrice };
+  return roiFromGammaTrade(tradeSide, outcomeToken, entryPrice, gamma);
 }

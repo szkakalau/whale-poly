@@ -50,7 +50,7 @@ export async function fetchGammaMarketByConditionId(conditionId: string): Promis
 
     const r = row as Record<string, unknown>;
     const outcomesRaw = parseJsonArray(r.outcomes).map((x) => String(x ?? '').trim());
-    const pricesRaw = parseJsonArray(r.outcomePrices).map(toNum).filter((n) => Number.isFinite(n));
+    const pricesRaw = parseJsonArray(r.outcomePrices).map(toNum);
 
     const cid = String(r.conditionId ?? r.condition_id ?? id).trim();
     const closed =
@@ -62,8 +62,17 @@ export async function fetchGammaMarketByConditionId(conditionId: string): Promis
 
     if (outcomesRaw.length === 0 || pricesRaw.length === 0) return null;
     const n = Math.min(outcomesRaw.length, pricesRaw.length);
-    const outcomes = outcomesRaw.slice(0, n);
-    const outcomePrices = pricesRaw.slice(0, n);
+    /** Keep outcomes[i] aligned with outcomePrices[i]; skip pairs with invalid prices only. */
+    const outcomes: string[] = [];
+    const outcomePrices: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const p = pricesRaw[i];
+      if (Number.isFinite(p)) {
+        outcomes.push(outcomesRaw[i]);
+        outcomePrices.push(p);
+      }
+    }
+    if (outcomes.length === 0) return null;
 
     return { conditionId: cid, closed, outcomes, outcomePrices };
   } catch {
@@ -76,15 +85,23 @@ export async function fetchGammaMarketByConditionId(conditionId: string): Promis
  * Uses outcome prices only — Gamma often omits `closed` even when prices are 1/0.
  */
 export function winningOutcomeIndex(slice: GammaMarketSlice): number | null {
+  const prices = slice.outcomePrices;
+  if (prices.length === 0) return null;
   let bestI = -1;
   let bestP = -1;
-  for (let i = 0; i < slice.outcomePrices.length; i++) {
-    const p = slice.outcomePrices[i];
+  let secondP = -1;
+  for (let i = 0; i < prices.length; i++) {
+    const p = prices[i];
     if (p > bestP) {
+      secondP = bestP;
       bestP = p;
       bestI = i;
+    } else if (p > secondP) {
+      secondP = p;
     }
   }
-  if (bestI < 0 || bestP < 0.85) return null;
-  return bestI;
+  if (bestI < 0 || bestP < 0.51) return null;
+  if (bestP >= 0.85) return bestI;
+  if (bestP >= 0.72 && secondP >= 0 && bestP - secondP >= 0.38) return bestI;
+  return null;
 }

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
 import { fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';
-import { roiBuyHoldToResolution, roiFromHistoryPnl, settlementOutcomePrice } from '@/lib/history-roi';
+import { roiFromGammaTrade, roiFromHistoryPnl, settlementOutcomePrice } from '@/lib/history-roi';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
 export type HistorySignalRow = {
@@ -51,7 +51,7 @@ type RawHistoryRow = {
 };
 
 /** Max distinct Gamma condition_ids fetched per /history request (rate limit). */
-export const MAX_GAMMA_CONDITION_LOOKUPS = 160;
+export const MAX_GAMMA_CONDITION_LOOKUPS = 520;
 
 async function fetchGammaMarketsBatched(
   conditionIds: string[],
@@ -150,7 +150,7 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       if (roiPct == null && row.condition_id) {
         const cid = String(row.condition_id).trim();
         const gamma = gammaCache.get(cid) ?? null;
-        const resolved = roiBuyHoldToResolution(row.trade_side, row.outcome_token, publishPrice, gamma);
+        const resolved = roiFromGammaTrade(row.trade_side, row.outcome_token, publishPrice, gamma);
         roiPct = resolved.roiPct;
         endPrice = resolved.endPrice;
       }
