@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { ArrowRight } from 'lucide-react';
 import {
   loadPublicHistorySignals,
   summarizeHistoryRows,
@@ -61,7 +62,7 @@ export default async function HistoryPage() {
   const cutoffLabel = yesterdayUtcIsoDate();
 
   return (
-    <div className="min-h-screen text-foreground selection:bg-violet-500/25 overflow-hidden pb-28">
+    <div className="min-h-screen text-foreground selection:bg-accent-primary/25 overflow-hidden pb-28">
       <div className="fixed inset-0 z-[-1] bg-background" />
       <Header />
 
@@ -143,22 +144,24 @@ export default async function HistoryPage() {
           </table>
         </div>
 
-        <section className="mt-8 rounded-2xl border border-border-muted bg-surface/50 p-6">
+        <section className="mt-8 rounded-2xl border border-border-muted bg-surface/50 p-6 layout-diagonal-band">
           <h2 className="text-xs font-black uppercase tracking-[0.25em] text-subtle mb-4">Summary</h2>
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <div>
+          <dl className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-12 sm:gap-y-6">
+            <div className="sm:translate-y-2">
               <dt className="text-[11px] text-muted">Total signals</dt>
-              <dd className="text-2xl font-black tabular-nums">{total}</dd>
+              <dd className="font-display text-3xl font-black tabular-nums">{total}</dd>
             </div>
-            <div>
+            <div className="sm:-translate-y-1 sm:ml-[6%]">
               <dt className="text-[11px] text-muted">Win rate</dt>
-              <dd className="text-2xl font-black tabular-nums">
+              <dd className="font-display text-3xl font-black tabular-nums text-accent-primary">
                 {winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—'}
               </dd>
             </div>
-            <div>
+            <div className="sm:translate-y-3 sm:ml-auto">
               <dt className="text-[11px] text-muted">Average ROI</dt>
-              <dd className="text-2xl font-black tabular-nums">{avgRoi != null ? formatPct(avgRoi) : '—'}</dd>
+              <dd className="font-display text-3xl font-black tabular-nums text-accent-sharp">
+                {avgRoi != null ? formatPct(avgRoi) : '—'}
+              </dd>
             </div>
           </dl>
           <p className="mt-4 text-[11px] text-subtle leading-relaxed">
@@ -178,9 +181,10 @@ export default async function HistoryPage() {
           <p className="hidden text-sm text-muted sm:block">Unlock today&apos;s live stream and optional Telegram</p>
           <Link
             href="/pricing"
-            className="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-violet-600 px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-violet-500 sm:ml-auto"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-accent-hover sm:ml-auto"
           >
-            Get real-time signals →
+            Get real-time signals
+            <ArrowRight className="w-4 h-4" aria-hidden />
           </Link>
         </div>
       </div>

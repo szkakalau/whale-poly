@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
           <div className="flex items-center gap-3">
-            <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.32)]" />
+            <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_oklch(0.62_0.17_220_/_0.35)]" />
             <span className="font-bold text-foreground text-lg tracking-tight font-display">SightWhale</span>
           </div>
           <a

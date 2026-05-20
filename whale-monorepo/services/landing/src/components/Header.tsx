@@ -21,7 +21,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300 pt-[env(safe-area-inset-top,0)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-5 h-14 min-h-[3.5rem] flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center gap-2 min-w-0" title="SightWhale Home">
-          <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_rgba(91,140,255,0.38)]" />
+          <WhaleLogo className="h-8 w-8 flex-shrink-0 text-foreground drop-shadow-[0_0_14px_oklch(0.62_0.17_220_/_0.4)]" />
           <span className="font-bold tracking-tight text-base sm:text-lg text-foreground truncate font-display">
             SightWhale
           </span>
@@ -41,7 +41,7 @@ export default function Header() {
           </a>
           <Link
             href="/pricing"
-            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center shadow-[0_0_18px_rgba(91,140,255,0.28)] hover:shadow-[0_0_28px_rgba(91,140,255,0.45)]"
+            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center shadow-[0_0_18px_oklch(0.62_0.17_220_/_0.3)] hover:shadow-[0_0_28px_oklch(0.62_0.17_220_/_0.45)]"
           >
             Get real-time
           </Link>
@@ -50,7 +50,7 @@ export default function Header() {
         <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
           <Link
             href="/pricing"
-            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center shadow-[0_0_18px_rgba(91,140,255,0.28)]"
+            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center shadow-[0_0_18px_oklch(0.62_0.17_220_/_0.3)]"
           >
             Pricing
           </Link>
@@ -67,7 +67,7 @@ export default function Header() {
       </div>
 
       <div
-        className={`md:hidden fixed inset-0 top-14 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-200 ${
+        className={`md:hidden fixed inset-0 top-14 bg-background/60 backdrop-blur-sm z-40 transition-opacity duration-200 ${
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         aria-hidden={!mobileOpen}

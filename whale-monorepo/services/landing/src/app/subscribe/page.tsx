@@ -730,7 +730,7 @@ export default function SubscribePage() {
   }, []);
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#0a0a0a] text-gray-100 selection:bg-violet-500/30">
+    <div className="min-h-screen overflow-hidden bg-background text-foreground selection:bg-accent-primary/30">
       <Header />
       <main className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 sm:py-28">
         <div className="absolute top-0 right-0 -z-10 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />

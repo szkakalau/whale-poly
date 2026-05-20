@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { X, Zap } from 'lucide-react';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -61,15 +61,15 @@ export default function UpgradeModal({
     >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
         aria-hidden="true"
       />
       
       {/* Modal Content */}
       <div className="relative w-full max-w-md glass rounded-[2rem] border border-white/10 p-8 shadow-2xl animate-scale-in overflow-hidden">
         {/* Decorative background */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl -z-10"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-accent-primary/10 rounded-full blur-3xl -z-10" aria-hidden />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-accent-sharp/10 rounded-full blur-3xl -z-10" aria-hidden />
 
         <button 
           onClick={onClose}
@@ -80,18 +80,16 @@ export default function UpgradeModal({
         </button>
 
         <div className="text-center">
-          <div className="w-16 h-16 bg-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
-            <svg className="w-8 h-8 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+          <div className="w-16 h-16 bg-accent-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_oklch(0.62_0.17_220_/_0.25)]">
+            <Zap className="w-8 h-8 text-accent-secondary" aria-hidden />
           </div>
 
-          <h2 id="upgrade-modal-title" className="text-2xl font-black text-white mb-3 tracking-tight">
+          <h2 id="upgrade-modal-title" className="font-display text-2xl font-black text-foreground mb-3 tracking-tight">
             {title}
           </h2>
           
           {feature && (
-            <div className="inline-block px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-bold uppercase tracking-wider mb-4">
+            <div className="inline-block px-3 py-1 rounded-full bg-accent-sharp/10 border border-accent-sharp/25 text-accent-sharp text-[10px] font-bold uppercase tracking-wider mb-4">
               {feature}
             </div>
           )}
@@ -110,8 +108,8 @@ export default function UpgradeModal({
                 <li>Zero alert delay</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-violet-200 mb-2">Elite</div>
+            <div className="rounded-xl border border-accent-primary/30 bg-accent-primary/10 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-accent-secondary mb-2">Elite</div>
               <ul className="space-y-1">
                 <li>Everything in Pro</li>
                 <li>100 whales</li>
@@ -125,7 +123,7 @@ export default function UpgradeModal({
             <Link 
               href="/subscribe?plan=pro"
               onClick={handleLinkClick}
-              className="w-full py-4 rounded-2xl bg-violet-600 text-white font-black text-center shadow-[0_10px_30px_rgba(139,92,246,0.3)] hover:bg-violet-500 transition-all hover:-translate-y-1 active:scale-95"
+              className="w-full py-4 rounded-2xl bg-accent-primary text-white font-black text-center shadow-[0_10px_30px_oklch(0.62_0.17_220_/_0.35)] hover:bg-accent-hover transition-all hover:-translate-y-1 active:scale-95"
             >
               Upgrade to Pro — $29/mo
             </Link>

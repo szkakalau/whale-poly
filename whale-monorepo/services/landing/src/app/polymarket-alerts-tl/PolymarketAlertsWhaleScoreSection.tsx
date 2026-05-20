@@ -18,10 +18,10 @@ export function PolymarketAlertsWhaleScoreSection({
 
   return (
     <section
-      className={`relative overflow-hidden rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-600/15 via-black/40 to-transparent ${shell}`}
+      className={`relative overflow-hidden rounded-3xl border border-accent-primary/25 bg-gradient-to-br from-accent-primary/15 via-background/40 to-transparent ${shell}`}
       aria-labelledby="whale-score-heading"
     >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_65%_10%,#a78bfa,transparent_48%),radial-gradient(circle_at_20%_90%,#22d3ee,transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_65%_10%,oklch(0.62_0.17_220),transparent_48%),radial-gradient(circle_at_20%_90%,oklch(0.78_0.19_68),transparent_40%)]" />
 
       <header className="relative text-center">
         <h2
@@ -49,7 +49,7 @@ export function PolymarketAlertsWhaleScoreSection({
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="h-auto w-full object-cover object-top"
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/55 via-transparent to-transparent" />
             </div>
           </div>
           <p className="mt-3 text-center text-xs text-gray-500 md:text-left">
@@ -118,7 +118,7 @@ export function PolymarketAlertsWhaleScoreSection({
         <div className="mt-6 flex justify-center">
           <Link
             href="#case-studies-2026"
-            className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_0_40px_-10px_rgba(139,92,246,0.65)] transition-colors hover:bg-violet-400 active:scale-[0.99]"
+            className="inline-flex w-full sm:w-auto min-h-[48px] items-center justify-center rounded-xl bg-accent-primary px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_0_40px_-10px_oklch(0.62_0.17_220_/_0.55)] transition-colors hover:bg-accent-hover active:scale-[0.99]"
           >
             See The Winning Whales In Action
           </Link>

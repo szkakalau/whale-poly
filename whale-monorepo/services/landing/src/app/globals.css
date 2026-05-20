@@ -1,28 +1,35 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* SightWhale.com — high-contrast market palette */
+/* SightWhale — OKLCH market terminal palette (cool navy + teal + sharp amber) */
 :root {
-  --background: #05070b;
-  --surface: #0d1117;
-  --surface-hover: #121823;
-  --foreground: #f5f7fb;
-  --muted: #b3bccb;
-  --subtle: #7d8797;
+  --background: oklch(0.13 0.028 252);
+  --surface: oklch(0.17 0.034 252);
+  --surface-hover: oklch(0.21 0.04 252);
+  --foreground: oklch(0.96 0.012 252);
+  --muted: oklch(0.72 0.022 252);
+  --subtle: oklch(0.54 0.032 252);
 
-  --border: rgba(245, 247, 251, 0.1);
-  --border-muted: rgba(245, 247, 251, 0.06);
-  --glass-bg: rgba(5, 7, 11, 0.84);
+  --border: oklch(0.96 0.01 252 / 0.11);
+  --border-muted: oklch(0.96 0.01 252 / 0.06);
+  --glass-bg: oklch(0.13 0.028 252 / 0.86);
 
-  /* Brand — exchange blue */
-  --accent-primary: #4f8cff;
-  --accent-hover: #73a2ff;
-  --accent-active: #356fe8;
-  --accent-secondary: #94b7ff;
-  --accent-glow: rgba(79, 140, 255, 0.32);
+  /* Primary — bold electric teal-blue */
+  --accent-primary: oklch(0.62 0.17 220);
+  --accent-hover: oklch(0.68 0.18 220);
+  --accent-active: oklch(0.54 0.16 220);
+  --accent-secondary: oklch(0.78 0.1 220);
+  --accent-glow: oklch(0.62 0.17 220 / 0.38);
+
+  /* Sharp accent — amber (CTAs, highlights; not purple-pink) */
+  --accent-sharp: oklch(0.78 0.19 68);
+  --accent-sharp-hover: oklch(0.83 0.2 68);
+  --accent-sharp-muted: oklch(0.78 0.19 68 / 0.14);
 
   --card-bg: var(--surface);
   --card-border: var(--border);
+
+  --diagonal-slice: -4deg;
 }
 
 @theme inline {
@@ -88,6 +95,11 @@ body {
     animation: none !important;
     transition: none !important;
   }
+
+  .animate-reveal-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 body::before {
@@ -96,11 +108,120 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 50% 0%, rgba(91, 140, 255, 0.07), transparent 52%),
-    radial-gradient(circle at 82% 18%, rgba(122, 162, 255, 0.05), transparent 42%),
-    radial-gradient(circle at 18% 85%, rgba(61, 111, 224, 0.05), transparent 45%);
+    radial-gradient(circle at 12% 8%, oklch(0.62 0.17 220 / 0.09), transparent 48%),
+    radial-gradient(circle at 88% 22%, oklch(0.78 0.19 68 / 0.06), transparent 42%),
+    radial-gradient(circle at 42% 92%, oklch(0.54 0.14 200 / 0.07), transparent 50%);
   pointer-events: none;
 }
+
+/* Asymmetric layout primitives */
+.layout-hero-flow {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .layout-hero-flow {
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    align-items: start;
+    gap: 0;
+  }
+
+  .layout-hero-flow > :last-child {
+    margin-top: 3.5rem;
+    margin-left: -2.5rem;
+    transform: rotate(var(--diagonal-slice));
+  }
+
+  .layout-hero-flow > :last-child > * {
+    transform: rotate(calc(var(--diagonal-slice) * -1));
+  }
+}
+
+.layout-stack-overlap {
+  position: relative;
+}
+
+.layout-stack-overlap > * + * {
+  margin-top: -2.5rem;
+}
+
+@media (min-width: 768px) {
+  .layout-stack-overlap > :nth-child(2) {
+    margin-left: 12%;
+    margin-top: -3.5rem;
+  }
+
+  .layout-stack-overlap > :nth-child(3) {
+    margin-left: 4%;
+    margin-top: -2rem;
+  }
+}
+
+.layout-diagonal-band {
+  position: relative;
+  overflow: hidden;
+}
+
+.layout-diagonal-band::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -15%;
+  width: 55%;
+  height: 180%;
+  background: linear-gradient(
+    135deg,
+    oklch(0.62 0.17 220 / 0.12) 0%,
+    oklch(0.78 0.19 68 / 0.08) 55%,
+    transparent 100%
+  );
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+.layout-pricing-offset {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .layout-pricing-offset {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 2rem;
+  }
+
+  .layout-pricing-offset > :first-child {
+    flex: 0 1 42%;
+    transform: translateY(1.5rem);
+  }
+
+  .layout-pricing-offset > :last-child {
+    flex: 1 1 58%;
+    transform: translateY(-1.25rem) translateX(0.75rem);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) rotate(var(--diagonal-slice));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.animate-reveal-up {
+  animation: reveal-up 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.stagger-1 { animation-delay: 0.08s; }
+.stagger-2 { animation-delay: 0.16s; }
+.stagger-3 { animation-delay: 0.24s; }
 
 /* Utilities */
 .glass {
@@ -149,7 +270,12 @@ body::before {
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, #7aa2ff 0%, #5b8cff 45%, #3d6fe0 100%);
+  background: linear-gradient(
+    128deg,
+    oklch(0.78 0.19 68) 0%,
+    oklch(0.68 0.18 220) 48%,
+    oklch(0.62 0.17 220) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -286,21 +412,14 @@ body::before {
 /* Code block styling */
 pre {
   @apply rounded-xl p-4 overflow-x-auto border;
-  background: color-mix(in srgb, var(--background) 92%, #000);
+  background: color-mix(in oklch, var(--background) 88%, oklch(0.1 0.02 252));
   border-color: var(--border-muted);
 }
 
-/* Market-style typography and utility remap */
+/* Typography — Google Fonts via layout variables only */
 html,
 body {
-  font-family:
-    Inter,
-    "SF Pro Display",
-    "SF Pro Text",
-    "Segoe UI",
-    ui-sans-serif,
-    system-ui,
-    sans-serif;
+  font-family: var(--font-body), ui-sans-serif, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   color: var(--foreground);
@@ -312,14 +431,7 @@ button,
 input,
 select,
 textarea {
-  font-family:
-    Inter,
-    "SF Pro Display",
-    "SF Pro Text",
-    "Segoe UI",
-    ui-sans-serif,
-    system-ui,
-    sans-serif;
+  font-family: var(--font-body), ui-sans-serif, sans-serif;
   color: var(--foreground);
 }
 
@@ -330,14 +442,7 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family:
-    Inter,
-    "SF Pro Display",
-    "SF Pro Text",
-    "Segoe UI",
-    ui-sans-serif,
-    system-ui,
-    sans-serif;
+  font-family: var(--font-heading), ui-sans-serif, sans-serif;
   color: var(--foreground);
   font-weight: 700;
   line-height: 1.08;
@@ -562,6 +667,7 @@ blockquote,
 .text-violet-400,
 .text-violet-500,
 .text-violet-600,
+.text-accent-sharp,
 .text-sky-400,
 .text-cyan-300,
 .text-cyan-400,
@@ -581,7 +687,11 @@ blockquote,
 .text-\[\#5B8CFF\],
 .text-\[\#7AA2FF\],
 .text-\[\#ff4500\] {
-  color: var(--accent-secondary) !important;
+  color: var(--accent-sharp) !important;
+}
+
+.text-accent-sharp {
+  color: var(--accent-sharp) !important;
 }
 
 .text-emerald-200,
@@ -649,6 +759,9 @@ blockquote,
 .bg-violet-600,
 .bg-violet-600\/25,
 .bg-violet-900\/20,
+.bg-accent-sharp,
+.bg-accent-sharp\/10,
+.bg-accent-sharp\/15,
 .bg-indigo-300,
 .bg-indigo-500,
 .bg-indigo-600,
@@ -815,7 +928,23 @@ blockquote,
 }
 
 .to-black {
-  --tw-gradient-to: #05070b var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: oklch(0.13 0.028 252) var(--tw-gradient-to-position) !important;
+}
+
+.bg-accent-sharp {
+  background-color: var(--accent-sharp) !important;
+}
+
+.bg-accent-sharp\/10 {
+  background-color: var(--accent-sharp-muted) !important;
+}
+
+.bg-accent-sharp\/15 {
+  background-color: oklch(0.78 0.19 68 / 0.18) !important;
+}
+
+.border-accent-sharp\/35 {
+  border-color: oklch(0.78 0.19 68 / 0.35) !important;
 }
 
 .bg-clip-text.text-transparent,

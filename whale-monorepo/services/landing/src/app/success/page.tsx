@@ -17,7 +17,7 @@ export const metadata = {
 
 export default function SuccessPage() {
   return (
-    <div className="min-h-screen text-gray-100 selection:bg-violet-500/30 overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-foreground selection:bg-accent-primary/30 overflow-hidden bg-background">
       <Header />
       <main className="mx-auto max-w-2xl px-6 py-32 relative">
         <Suspense fallback={<SuccessFallback />}>

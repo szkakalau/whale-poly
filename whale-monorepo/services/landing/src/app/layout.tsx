@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { DM_Sans, JetBrains_Mono, Sora } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   variable: "--font-body",
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
-const sora = Sora({
+const syne = Syne({
   subsets: ["latin"],
   variable: "--font-heading",
-  weight: ["400", "600", "700", "800"],
+  weight: ["600", "700", "800"],
   display: "swap",
 });
 
@@ -95,9 +96,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${sora.variable} ${jetbrainsMono.variable}`}
+      className={`${ibmPlexSans.variable} ${syne.variable} ${jetbrainsMono.variable}`}
     >
-      <body className={`${dmSans.className} antialiased`}>
+      <body className={`${ibmPlexSans.className} antialiased`}>
         {children}
         <Analytics />
         <SpeedInsights />

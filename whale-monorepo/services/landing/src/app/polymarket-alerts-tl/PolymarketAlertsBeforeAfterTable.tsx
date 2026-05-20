@@ -35,7 +35,7 @@ export function PolymarketAlertsBeforeAfterTable({ compact = false }: Polymarket
       className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] ${shell}`}
       aria-labelledby="before-after-heading"
     >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_20%_0%,#22d3ee,transparent_45%),radial-gradient(circle_at_85%_80%,#a78bfa,transparent_46%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_20%_0%,oklch(0.62_0.17_220),transparent_45%),radial-gradient(circle_at_85%_80%,oklch(0.78_0.19_68),transparent_46%)]" />
 
       <h2 id="before-after-heading" className={`font-display relative font-black tracking-tight text-white ${h2}`}>
         This Is What Changes For You: No More Losing To Late Entries

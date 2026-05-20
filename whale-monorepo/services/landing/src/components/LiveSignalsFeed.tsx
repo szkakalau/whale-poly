@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { LiveSignal } from '@/lib/live-signals';
 
@@ -254,10 +255,8 @@ export default function LiveSignalsFeed({
       <div className="px-3 sm:px-4 py-3">
         {windowed.length === 0 ? (
           <div className="px-3 py-10 sm:py-12 text-center max-w-md mx-auto">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5B8CFF]/12 border border-[#5B8CFF]/25 mb-4">
-              <svg className="w-6 h-6 text-[#7AA2FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-primary/12 border border-accent-primary/25 mb-4">
+              <Zap className="w-6 h-6 text-accent-secondary" aria-hidden />
             </div>
             <p className="text-sm font-semibold text-foreground mb-1">No live rows to show yet</p>
             <p className="text-xs text-subtle leading-relaxed mb-5">

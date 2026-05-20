@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { ChevronLeft, MoreVertical } from 'lucide-react';
 
 /** Preview asset under public/ — swap filename here if you replace the screenshot. */
 export const TELEGRAM_PREVIEW_IMAGE_PATH =
@@ -12,7 +13,7 @@ const TELEGRAM_BOT_URL =
 
 export default function TelegramAlertMockup() {
   return (
-    <div className="mx-auto w-full max-w-[min(100%,26rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[#0e1621] shadow-[0_24px_80px_rgba(0,0,0,0.55)] ring-1 ring-white/5">
+    <div className="mx-auto w-full max-w-[min(100%,26rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[oklch(0.16_0.03_252)] shadow-[0_24px_80px_oklch(0.1_0.03_252_/_0.55)] ring-1 ring-white/5">
       {/* Chat header */}
       <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-black/25 bg-[#17212b] px-3">
         <button
@@ -21,9 +22,7 @@ export default function TelegramAlertMockup() {
           aria-hidden
           tabIndex={-1}
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeft className="h-6 w-6" aria-hidden />
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2b5278] text-sm font-black text-white">
@@ -36,9 +35,7 @@ export default function TelegramAlertMockup() {
         </div>
         <div className="flex shrink-0 gap-1">
           <span className="flex h-9 w-9 items-center justify-center rounded-full text-[#6ab7ff] opacity-90">
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-            </svg>
+            <MoreVertical className="h-5 w-5" aria-hidden />
           </span>
         </div>
       </header>

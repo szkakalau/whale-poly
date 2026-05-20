@@ -38,7 +38,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
           className={`order-1 lg:order-1 flex flex-col rounded-2xl border border-white/[0.10] bg-black/50 shadow-inner shadow-black/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] ${cardPad}`}
         >
           <div className="text-center">
-            <div className="inline-flex items-center justify-center rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+            <div className="inline-flex items-center justify-center rounded-full bg-accent-primary px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white">
               Best starting point
             </div>
             <h3 className="mt-3 font-display text-2xl font-black text-white">Pro</h3>
@@ -93,16 +93,16 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
                 plan: 'pro',
               })
             }
-            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
+            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-accent-primary px-5 py-3.5 text-sm font-extrabold text-white transition-all hover:bg-accent-hover active:scale-[0.98] ${btnMt}`}
           >
             Start 7-Day Risk-Free Trial
           </Link>
         </div>
 
         <div
-          className={`relative order-2 lg:order-2 flex flex-col rounded-2xl border-2 border-violet-500 bg-gradient-to-b from-violet-500/[0.14] via-black/60 to-black/80 shadow-[0_0_70px_-14px_rgba(139,92,246,0.50)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_90px_-18px_rgba(139,92,246,0.65)] ${cardPad}`}
+          className={`relative order-2 lg:order-2 flex flex-col rounded-2xl border-2 border-accent-primary bg-gradient-to-b from-accent-primary/[0.14] via-black/60 to-black/80 shadow-[0_0_70px_-14px_oklch(0.62_0.17_220_/_0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_90px_-18px_oklch(0.62_0.17_220_/_0.55)] ${cardPad}`}
         >
-          <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-violet-500 px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+          <div className="absolute -top-3 left-1/2 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-primary px-4 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
             Optional upgrade
           </div>
 
@@ -155,7 +155,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
                 plan: 'elite',
               })
             }
-            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-violet-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_0_34px_-10px_rgba(139,92,246,0.75)] transition-all hover:bg-violet-400 active:scale-[0.98] ${btnMt}`}
+            className={`inline-flex w-full min-h-[48px] items-center justify-center rounded-xl bg-accent-primary px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_0_34px_-10px_oklch(0.62_0.17_220_/_0.55)] transition-all hover:bg-accent-hover active:scale-[0.98] ${btnMt}`}
           >
             Upgrade to Elite
           </Link>
@@ -163,7 +163,7 @@ export function PolymarketAlertsPricingCompare({ compact = false }: PolymarketAl
       </div>
 
       <div className={`relative ${compact ? 'mt-5' : 'mt-8'}`}>
-        <div className="w-full rounded-2xl border border-violet-500/15 bg-violet-500/10 px-5 py-4 text-center">
+        <div className="w-full rounded-2xl border border-accent-primary/15 bg-accent-primary/10 px-5 py-4 text-center">
           <p className="text-sm font-semibold text-white">
             All paid plans come with a 7-day no-questions-asked full refund.
           </p>

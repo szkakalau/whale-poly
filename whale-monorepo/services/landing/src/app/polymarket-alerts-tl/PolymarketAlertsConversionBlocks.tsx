@@ -60,7 +60,7 @@ export function PolymarketAlertsConversionAfterHero({ compact = false }: { compa
   return (
     <>
       <section
-        className={`rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-violet-600/[0.06] ${pad}`}
+        className={`rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.08] via-transparent to-accent-primary/[0.06] ${pad}`}
         aria-labelledby="speed-edge-heading"
       >
         <h2 id="speed-edge-heading" className="font-display text-2xl font-bold text-white md:text-3xl">
@@ -297,7 +297,7 @@ export function PolymarketAlertsPrePricing({ compact = false }: { compact?: bool
 
   return (
     <section
-      className={`relative overflow-hidden rounded-3xl border border-violet-400/35 bg-gradient-to-br from-violet-600/25 via-fuchsia-600/10 to-transparent ${shell}`}
+      className={`relative overflow-hidden rounded-3xl border border-accent-primary/35 bg-gradient-to-br from-accent-primary/25 via-accent-sharp/10 to-transparent ${shell}`}
       aria-labelledby="one-trade-heading"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]" />
