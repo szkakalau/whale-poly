@@ -9,6 +9,7 @@ type WalletEvidence = {
   amountUsd: number;
   outcome: string;
   walletWeight: number;
+  categoryStats?: { category: string; totalTrades: number; winRate: number }[];
 };
 
 type Candidate = {
@@ -307,7 +308,24 @@ export default function AnalyzePage() {
                     {result.topWallets.map((w, i) => (
                       <tr key={`${w.addressShort}-${i}`} className="hover:bg-surface-hover/50 transition-colors">
                         <td className="py-2 pr-3">
-                          <span className="font-mono text-xs text-foreground">{w.addressShort}</span>
+                          <div>
+                            <span className="font-mono text-xs text-foreground">{w.addressShort}</span>
+                            {w.categoryStats && w.categoryStats.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {w.categoryStats.slice(0, 2).map((cs) => (
+                                  <span
+                                    key={cs.category}
+                                    className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                                      cs.winRate >= 0.6 ? 'bg-emerald-500/15 text-emerald-300' : 'bg-surface-hover text-muted'
+                                    }`}
+                                  >
+                                    {cs.category}
+                                    <span className="tabular-nums">{(cs.winRate * 100).toFixed(0)}%</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2 pr-3">
                           <span className={`text-xs font-bold ${w.outcome === 'YES' ? 'text-emerald-400' : w.outcome === 'NO' ? 'text-red-400' : 'text-muted'}`}>

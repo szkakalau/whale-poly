@@ -1,4 +1,5 @@
 import { loadSignalsForMarket, type LiveSignal } from '@/lib/live-signals';
+import { fetchMarketCategories, getWalletCategoryStats } from '@/lib/market-categories';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -13,6 +14,11 @@ export type WalletEvidence = {
   outcome: string;
   timestamp: string;
   walletWeight: number; // 0-100
+  categoryStats?: {
+    category: string;
+    totalTrades: number;
+    winRate: number;
+  }[];
 };
 
 export type AnalysisResult = {
@@ -153,6 +159,32 @@ export async function analyzeMarket(
       timestamp: signal.occurredAt,
       walletWeight: Math.round(weight),
     }));
+
+  // Phase 0.5: Enrich evidence with per-category wallet stats (non-blocking)
+  const marketCats = await fetchMarketCategories(marketSlug).catch(() => [] as string[]);
+  if (marketCats.length > 0) {
+    const uniqueWallets = [...new Set(evidence.map((e) => e.addressShort))];
+    for (const wallet of uniqueWallets) {
+      try {
+        const stats = await getWalletCategoryStats(wallet, marketCats);
+        if (stats.length > 0) {
+          const ev = evidence.find((e) => e.addressShort === wallet);
+          if (ev) {
+            ev.categoryStats = stats
+              .filter((s) => s.totalTrades >= 3) // require min trades for meaningful stats
+              .slice(0, 3)
+              .map((s) => ({
+                category: s.category,
+                totalTrades: s.totalTrades,
+                winRate: s.winRate,
+              }));
+          }
+        }
+      } catch {
+        // Non-blocking — evidence is still useful without category stats
+      }
+    }
+  }
 
   // Data freshness: use most recent trade timestamp
   const lastUpdated = signals.length > 0
