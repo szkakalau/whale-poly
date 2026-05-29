@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { ArrowRight } from 'lucide-react';
 import {
   loadPublicHistorySignals,
@@ -64,7 +62,6 @@ export default async function HistoryPage() {
   return (
     <div className="min-h-screen text-foreground selection:bg-accent-primary/25 overflow-hidden pb-28">
       <div className="fixed inset-0 z-[-1] bg-background" />
-      <Header />
 
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-14 sm:pt-20 pb-12">
         <header className="mb-10 text-center sm:text-left">
@@ -174,7 +171,6 @@ export default async function HistoryPage() {
         </section>
       </main>
 
-      <Footer />
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-4 py-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">

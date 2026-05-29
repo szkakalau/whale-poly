@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { IBM_Plex_Sans, JetBrains_Mono, Syne } from "next/font/google";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -33,58 +35,57 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
-  description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
+  title: {
+    default: "SightWhale — Follow Smart Money on Polymarket",
+    template: "%s · SightWhale",
+  },
+  description:
+    "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
   keywords: [
-    "Polymarket", 
-    "Polymarket Whale Intelligence", 
-    "Prediction Markets", 
-    "DeFi Alerts", 
-    "Crypto Trading Signals", 
-    "Smart Money Tracking", 
+    "Polymarket",
+    "Polymarket Whale Intelligence",
+    "Prediction Markets",
+    "DeFi Alerts",
+    "Crypto Trading Signals",
+    "Smart Money Tracking",
     "On-chain Analytics",
     "Election Betting Odds",
     "Trump Odds",
     "Sports Betting Strategy",
     "Crypto Alpha",
-    "Real-time Odds Tracking"
+    "Real-time Odds Tracking",
   ],
   openGraph: {
-    title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
-    description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
+    title: "SightWhale — Follow Smart Money on Polymarket",
+    description:
+      "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts.",
     type: "website",
     url: "https://www.sightwhale.com/",
-    siteName: "SightWhale.com",
+    siteName: "SightWhale",
     locale: "en_US",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "SightWhale.com — Follow the Smart Money on Polymarket and Prediction Markets"
-      }
-    ]
+        alt: "SightWhale — Follow the Smart Money on Polymarket",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SightWhale.com — Follow Smart Money on Polymarket & Win More",
-    description: "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
-    images: ["/opengraph-image"]
+    title: "SightWhale — Follow Smart Money on Polymarket",
+    description:
+      "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts.",
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
   },
   metadataBase: new URL("https://www.sightwhale.com"),
   alternates: {
-    canonical: '/',
+    canonical: "/",
   },
 };
 
@@ -99,7 +100,9 @@ export default function RootLayout({
       className={`${ibmPlexSans.variable} ${syne.variable} ${jetbrainsMono.variable}`}
     >
       <body className={`${ibmPlexSans.className} antialiased`}>
-        {children}
+        <Header />
+        <main className="min-h-screen pt-14 sm:pt-16">{children}</main>
+        <Footer />
         <Analytics />
         <SpeedInsights />
       </body>

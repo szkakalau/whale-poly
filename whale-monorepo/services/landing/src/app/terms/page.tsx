@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Terms — SightWhale.com',
@@ -35,7 +33,6 @@ export default function TermsPage() {
         <div className="absolute bottom-[-15%] right-[-15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[140px]" />
       </div>
 
-      <Header />
 
       <main className="mx-auto max-w-4xl px-6 pt-32 pb-24 relative space-y-10">
         <section className="space-y-3">
@@ -98,7 +95,6 @@ export default function TermsPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

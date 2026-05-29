@@ -10,6 +10,7 @@ const LOGIN_URL = getLoginUrl();
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/analyze', label: 'Analyze' },
   { href: '/history', label: 'History' },
   { href: '/pricing', label: 'Pricing' },
 ];

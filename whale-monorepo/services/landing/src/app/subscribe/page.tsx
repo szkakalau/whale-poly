@@ -3,8 +3,6 @@
 import { type ReactNode, useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { trackEvent } from '@/lib/analytics';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
@@ -731,7 +729,6 @@ export default function SubscribePage() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-background text-foreground selection:bg-accent-primary/30">
-      <Header />
       <main className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 sm:py-28">
         <div className="absolute top-0 right-0 -z-10 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
         <div className="absolute bottom-0 left-0 -z-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
@@ -822,7 +819,6 @@ export default function SubscribePage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

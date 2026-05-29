@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Checkout Canceled - SightWhale.com',
@@ -17,7 +15,6 @@ export const metadata = {
 export default function CancelPage() {
   return (
     <div className="min-h-screen text-foreground selection:bg-accent-primary/30 overflow-hidden bg-background">
-      <Header />
       <main className="mx-auto max-w-2xl px-6 py-32 relative">
         <h1 className="text-4xl font-bold mb-6 text-white">Checkout canceled</h1>
         <p className="text-gray-300 mb-10">
@@ -30,7 +27,6 @@ export default function CancelPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

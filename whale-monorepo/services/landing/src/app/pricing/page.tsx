@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 import { Check, Sparkles } from 'lucide-react';
 
@@ -33,7 +31,6 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen text-foreground selection:bg-accent-primary/25 overflow-hidden">
       <div className="fixed inset-0 z-[-1] bg-background" />
-      <Header />
 
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-14 sm:pt-24 pb-16 layout-diagonal-band">
         <header className="mb-12 max-w-2xl">
@@ -125,7 +122,6 @@ export default function PricingPage() {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }
