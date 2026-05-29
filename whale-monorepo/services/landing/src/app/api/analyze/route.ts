@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json(
-      { error: 'invalid_json', message: '无法解析请求。' } satisfies AnalyzeResponse,
+      { error: 'invalid_json', message: 'Could not parse the request.' } satisfies AnalyzeResponse,
       { status: 400 },
     );
   }
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   const query = body?.query?.trim();
   if (!query) {
     return NextResponse.json(
-      { error: 'empty_query', message: '请提供一个市场链接或关键词。例如：/analyze BTC 150k' } satisfies AnalyzeResponse,
+      { error: 'empty_query', message: 'Please provide a market link or keyword. Example: /analyze BTC 150k' } satisfies AnalyzeResponse,
       { status: 400 },
     );
   }
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: 'no_match',
-        message: '无法识别该市场。请尝试不同的关键词或直接粘贴 Polymarket 链接。',
+        message: 'Could not identify this market. Try different keywords or paste a Polymarket link directly.',
         candidates: resolved.candidates,
         matchMethod: 'none',
       } satisfies AnalyzeResponse,
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
       error: analyzeError,
     });
     return NextResponse.json(
-      { error: 'analysis_failed', message: '⚠️ 分析暂时不可用，请稍后再试（通常 < 5 分钟恢复）。' } satisfies AnalyzeResponse,
+      { error: 'analysis_failed', message: '⚠️ Analysis temporarily unavailable. Please try again (usually recovers in < 5 minutes).' } satisfies AnalyzeResponse,
       { status: 500 },
     );
   }
@@ -197,7 +197,7 @@ export async function GET(req: Request) {
   const resolved = await resolveMarketSlug(query);
   if (!resolved.slug) {
     return NextResponse.json(
-      { error: 'no_match', message: '无法识别该市场。', candidates: resolved.candidates, matchMethod: 'none' } satisfies AnalyzeResponse,
+      { error: 'no_match', message: 'Could not identify this market.', candidates: resolved.candidates, matchMethod: 'none' } satisfies AnalyzeResponse,
       { status: 404 },
     );
   }
@@ -212,7 +212,7 @@ export async function GET(req: Request) {
     } satisfies AnalyzeResponse);
   } catch {
     return NextResponse.json(
-      { error: 'analysis_failed', message: '⚠️ 分析暂时不可用，请稍后再试。' } satisfies AnalyzeResponse,
+      { error: 'analysis_failed', message: '⚠️ Analysis temporarily unavailable. Please try again later.' } satisfies AnalyzeResponse,
       { status: 500 },
     );
   }

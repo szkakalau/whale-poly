@@ -73,7 +73,7 @@ export function checkRateLimit(userId: string): RateLimitResult {
     return {
       allowed: false,
       retryAfterSec,
-      message: `⏳ 请求太频繁了，请 ${retryAfterSec} 秒后再试。`,
+      message: `⏳ Too many requests. Please try again in ${retryAfterSec} seconds.`,
     };
   }
 
@@ -82,7 +82,7 @@ export function checkRateLimit(userId: string): RateLimitResult {
     return {
       allowed: false,
       retryAfterSec,
-      message: `⏳ 本小时请求已达上限（${HOUR_LIMIT} 次），请 ${Math.ceil(retryAfterSec / 60)} 分钟后再试。`,
+      message: `⏳ Hourly request limit reached (${HOUR_LIMIT}). Please try again in ${Math.ceil(retryAfterSec / 60)} minutes.`,
     };
   }
 

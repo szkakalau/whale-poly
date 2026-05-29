@@ -40,7 +40,7 @@ export type AnalysisResult = {
 
 // ── Constants ──────────────────────────────────────────
 
-const DISCLAIMER = 'ⓘ 这不是财务建议。信号基于历史数据，不保证未来结果。交易风险自负。';
+const DISCLAIMER = 'ⓘ Not financial advice. Signals are based on historical data and do not guarantee future results. Trade at your own risk.';
 
 const MIN_TRADE_USD = 5_000; // trades below 5k are not "whale" trades
 const CONFIDENCE_THRESHOLDS = { low: 40, medium: 70 } as const; // 0-40=low, 41-70=medium, 71-100=high
@@ -224,14 +224,14 @@ export async function analyzeMarket(
  * Returns a human-readable message for cases where no analysis is possible.
  */
 export function getEmptyMessage(marketSlug: string): string {
-  return `该市场在过去 ${LOOKBACK_HOURS} 小时内没有检测到大额鲸鱼交易（≥ $${(MIN_TRADE_USD / 1000).toFixed(0)}k）。这可能意味着聪明钱尚未表态。`;
+  return `No large whale trades (≥ $${(MIN_TRADE_USD / 1000).toFixed(0)}k) were detected for this market in the past ${LOOKBACK_HOURS} hours. Smart money may not have taken a position yet.`;
 }
 
 /**
  * Returns a limited-data warning.
  */
 export function getLimitedDataMessage(tradeCount: number): string {
-  return `⚠️ 数据有限——仅检测到 ${tradeCount} 笔鲸鱼交易。需要更多数据点才能做出可靠的方向判断。`;
+  return `⚠️ Limited data — only ${tradeCount} whale trade(s) detected. More data points are needed for a reliable direction signal.`;
 }
 
 /**
@@ -239,12 +239,12 @@ export function getLimitedDataMessage(tradeCount: number): string {
  */
 export function getStalenessMessage(stalenessMinutes: number): string {
   const hours = Math.floor(stalenessMinutes / 60);
-  return `⚠️ 数据最后更新于 ${hours} 小时前，可能无法反映最新市场动态。`;
+  return `⚠️ Data last updated ${hours} hours ago. May not reflect the latest market activity.`;
 }
 
 /**
  * Returns a mixed-signal explanation.
  */
 export function getMixedMessage(bullishCount: number, bearishCount: number): string {
-  return `⚠️ 鲸鱼意见分歧——${bullishCount} 个钱包看涨，${bearishCount} 个钱包看跌。当前信号置信度较低。`;
+  return `⚠️ Whale signals are divided — ${bullishCount} wallet(s) bullish, ${bearishCount} wallet(s) bearish. Signal confidence is low.`;
 }

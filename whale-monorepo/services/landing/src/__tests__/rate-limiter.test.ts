@@ -25,7 +25,7 @@ describe('RateLimiter', () => {
     expect(result.allowed).toBe(false);
     if (!result.allowed) {
       expect(result.retryAfterSec).toBeGreaterThan(0);
-      expect(result.message).toContain('请求太频繁');
+      expect(result.message).toContain('Too many requests');
     }
   });
 
