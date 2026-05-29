@@ -1,0 +1,204 @@
+import { loadSignalsForMarket, type LiveSignal } from '@/lib/live-signals';
+
+// ── Types ──────────────────────────────────────────────
+
+export type Direction = 'bullish' | 'bearish' | 'neutral' | 'mixed';
+export type ConfidenceLevel = 'low' | 'medium' | 'high';
+
+export type WalletEvidence = {
+  addressShort: string;
+  action: 'BUY' | 'SELL' | 'UNKNOWN';
+  amountUsd: number;
+  price?: number;
+  outcome: string;
+  timestamp: string;
+  walletWeight: number; // 0-100
+};
+
+export type AnalysisResult = {
+  marketSlug: string;
+  direction: Direction;
+  confidenceLevel: ConfidenceLevel;
+  confidenceScore: number; // 0-100
+  topWallets: WalletEvidence[];
+  whaleTradeCount: number;
+  yesVolumeUsd: number;
+  noVolumeUsd: number;
+  dataFreshness: {
+    lastUpdated: string;
+    stalenessMinutes: number;
+  };
+  disclaimer: string;
+};
+
+// ── Constants ──────────────────────────────────────────
+
+const DISCLAIMER = 'ⓘ 这不是财务建议。信号基于历史数据，不保证未来结果。交易风险自负。';
+
+const MIN_TRADE_USD = 5_000; // trades below 5k are not "whale" trades
+const CONFIDENCE_THRESHOLDS = { low: 40, medium: 70 } as const; // 0-40=low, 41-70=medium, 71-100=high
+const DIRECTION_RATIO_THRESHOLD = 0.2; // YES/NO ratio diff > 20% → direction signal
+const MIN_TRADES_FOR_SIGNAL = 3; // fewer than 3 trades → neutral/low confidence
+const LOOKBACK_HOURS = 24;
+
+// ── Helpers ────────────────────────────────────────────
+
+function sizeScore(amountUsd: number): number {
+  if (amountUsd >= 100_000) return 100;
+  if (amountUsd >= 50_000) return 80;
+  if (amountUsd >= 20_000) return 60;
+  if (amountUsd >= MIN_TRADE_USD) return 30;
+  return 0;
+}
+
+function timeDecayScore(tradeDate: string, now: Date): number {
+  const tradeTs = new Date(tradeDate).getTime();
+  const elapsedSec = (now.getTime() - tradeTs) / 1000;
+  const maxSec = LOOKBACK_HOURS * 3600;
+  return Math.max(0, 100 * (1 - elapsedSec / maxSec));
+}
+
+function walletWeight(signal: LiveSignal, now: Date, _cumulativeSameOutcomeUsd?: number, _cumulativeTotalUsd?: number): number {
+  const sz = sizeScore(signal.sizeUsd);
+  const td = timeDecayScore(signal.occurredAt, now);
+  // convictionScore: use wallet's total engagement as proxy (simplified — whaleScore if available)
+  let conviction = 50; // neutral default
+  if (signal.whaleScore != null && Number.isFinite(signal.whaleScore)) {
+    conviction = Math.min(100, Math.max(0, (signal.whaleScore / 100) * 100));
+  }
+  return sz * 0.4 + td * 0.3 + conviction * 0.3;
+}
+
+function classifyConfidence(score: number): ConfidenceLevel {
+  if (score > CONFIDENCE_THRESHOLDS.medium) return 'high';
+  if (score > CONFIDENCE_THRESHOLDS.low) return 'medium';
+  return 'low';
+}
+
+function classifyDirection(yesVolume: number, noVolume: number, tradeCount: number): Direction {
+  if (tradeCount < MIN_TRADES_FOR_SIGNAL) return 'neutral';
+  const total = yesVolume + noVolume;
+  if (total === 0) return 'neutral';
+
+  // Rule 1: conflicting signals (highest priority)
+  if (yesVolume > total * DIRECTION_RATIO_THRESHOLD && noVolume > total * DIRECTION_RATIO_THRESHOLD) {
+    return 'mixed';
+  }
+
+  // Rules 2-4: directional
+  const ratio = (yesVolume - noVolume) / total;
+  if (ratio > DIRECTION_RATIO_THRESHOLD) return 'bullish';
+  if (ratio < -DIRECTION_RATIO_THRESHOLD) return 'bearish';
+  return 'neutral';
+}
+
+// ── Public API ─────────────────────────────────────────
+
+export async function analyzeMarket(marketSlug: string): Promise<AnalysisResult> {
+  const now = new Date();
+  const signals = await loadSignalsForMarket(marketSlug, LOOKBACK_HOURS);
+
+  // Compute YES/NO volumes
+  let yesVolumeUsd = 0;
+  let noVolumeUsd = 0;
+  const walletWeights: Map<string, { weight: number; signal: LiveSignal }> = new Map();
+
+  for (const s of signals) {
+    const w = walletWeight(s, now);
+    const key = `${s.walletMasked}-${s.occurredAt}`;
+    walletWeights.set(key, { weight: w, signal: s });
+
+    if (s.side === 'BUY') {
+      // BUY = YES side by default (simplified — would need outcome mapping for multi-outcome)
+      yesVolumeUsd += s.sizeUsd;
+    } else if (s.side === 'SELL') {
+      noVolumeUsd += s.sizeUsd;
+    }
+  }
+
+  const direction = classifyDirection(yesVolumeUsd, noVolumeUsd, signals.length);
+
+  // Aggregate confidence score (amount-weighted average of per-wallet weights)
+  const totalVolume = yesVolumeUsd + noVolumeUsd;
+  let confidenceScore = 0;
+  if (totalVolume > 0) {
+    for (const [, { weight, signal }] of walletWeights) {
+      confidenceScore += weight * (signal.sizeUsd / totalVolume);
+    }
+  }
+  confidenceScore = Math.round(Math.min(100, Math.max(0, confidenceScore)));
+
+  // Build wallet evidence (top wallets by weight)
+  const evidence: WalletEvidence[] = [...walletWeights.values()]
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5)
+    .map(({ weight, signal }) => ({
+      addressShort: signal.walletMasked,
+      action: signal.side,
+      amountUsd: signal.sizeUsd,
+      outcome: signal.side === 'BUY' ? 'YES' : signal.side === 'SELL' ? 'NO' : 'UNKNOWN',
+      timestamp: signal.occurredAt,
+      walletWeight: Math.round(weight),
+    }));
+
+  // Data freshness: use most recent trade timestamp
+  const lastUpdated = signals.length > 0
+    ? new Date(Math.max(...signals.map(s => new Date(s.occurredAt).getTime()))).toISOString()
+    : now.toISOString();
+  const stalenessMinutes = Math.round((now.getTime() - new Date(lastUpdated).getTime()) / 60_000);
+
+  // If direction is mixed, override confidence level to at most 'medium'
+  let confidenceLevel = classifyConfidence(confidenceScore);
+  if (direction === 'mixed' && confidenceLevel === 'high') {
+    confidenceLevel = 'medium';
+  }
+  // If too few trades, force low confidence
+  if (signals.length < MIN_TRADES_FOR_SIGNAL) {
+    confidenceLevel = 'low';
+  }
+
+  return {
+    marketSlug,
+    direction,
+    confidenceLevel,
+    confidenceScore,
+    topWallets: evidence,
+    whaleTradeCount: signals.length,
+    yesVolumeUsd,
+    noVolumeUsd,
+    dataFreshness: {
+      lastUpdated,
+      stalenessMinutes,
+    },
+    disclaimer: DISCLAIMER,
+  };
+}
+
+/**
+ * Returns a human-readable message for cases where no analysis is possible.
+ */
+export function getEmptyMessage(marketSlug: string): string {
+  return `该市场在过去 ${LOOKBACK_HOURS} 小时内没有检测到大额鲸鱼交易（≥ $${(MIN_TRADE_USD / 1000).toFixed(0)}k）。这可能意味着聪明钱尚未表态。`;
+}
+
+/**
+ * Returns a limited-data warning.
+ */
+export function getLimitedDataMessage(tradeCount: number): string {
+  return `⚠️ 数据有限——仅检测到 ${tradeCount} 笔鲸鱼交易。需要更多数据点才能做出可靠的方向判断。`;
+}
+
+/**
+ * Returns a staleness warning when data is older than threshold.
+ */
+export function getStalenessMessage(stalenessMinutes: number): string {
+  const hours = Math.floor(stalenessMinutes / 60);
+  return `⚠️ 数据最后更新于 ${hours} 小时前，可能无法反映最新市场动态。`;
+}
+
+/**
+ * Returns a mixed-signal explanation.
+ */
+export function getMixedMessage(bullishCount: number, bearishCount: number): string {
+  return `⚠️ 鲸鱼意见分歧——${bullishCount} 个钱包看涨，${bearishCount} 个钱包看跌。当前信号置信度较低。`;
+}
