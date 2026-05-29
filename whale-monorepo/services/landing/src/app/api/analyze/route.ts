@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { analyzeMarket, getEmptyMessage, getLimitedDataMessage, getStalenessMessage, getMixedMessage } from '@/lib/analysis-engine';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { resolveMarketSlug, type MarketMatch } from '@/lib/nl-matcher';
+import { logAnalyzeQuery } from '@/lib/analyze-analytics';
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -118,15 +119,42 @@ export async function POST(req: Request) {
 
   // Analyze
   const followedWallets = body?.followedWallets || [];
+  const analyzeStart = Date.now();
   let analysis: Awaited<ReturnType<typeof analyzeMarket>>;
+  let analyzeError: string | undefined;
   try {
     analysis = await analyzeMarket(resolved.slug, { followedWallets });
   } catch {
+    analyzeError = 'analysis_failed';
+    logAnalyzeQuery({
+      query,
+      matched: true,
+      matchMethod: resolved.matched,
+      marketSlug: resolved.slug || undefined,
+      durationMs: Date.now() - analyzeStart,
+      source: body?.userId?.startsWith('tg_') ? 'telegram' : 'web',
+      userId,
+      error: analyzeError,
+    });
     return NextResponse.json(
       { error: 'analysis_failed', message: '⚠️ 分析暂时不可用，请稍后再试（通常 < 5 分钟恢复）。' } satisfies AnalyzeResponse,
       { status: 500 },
     );
   }
+
+  // Log analytics
+  const durationMs = Date.now() - analyzeStart;
+  logAnalyzeQuery({
+    query,
+    matched: analysis.whaleTradeCount > 0,
+    matchMethod: resolved.matched,
+    marketSlug: resolved.slug || undefined,
+    direction: analysis.direction,
+    confidenceScore: analysis.confidenceScore,
+    durationMs,
+    source: body?.userId?.startsWith('tg_') ? 'telegram' : 'web',
+    userId,
+  });
 
   // No data case
   if (analysis.whaleTradeCount === 0) {

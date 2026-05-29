@@ -96,6 +96,8 @@ export function extractSlugFromUrl(raw: string): string | null {
   return match ? match[1] : null;
 }
 
+import { translateQuery } from './nl-translate';
+
 /**
  * Match a user query to the best market.
  * Priority:
@@ -121,7 +123,16 @@ export async function resolveMarketSlug(query: string): Promise<{
   }
 
   // 2. Gamma API search
-  const candidates = await searchMarkets(query, 5);
+  let candidates = await searchMarkets(query, 5);
+
+  // 2.5 Cross-lingual fallback: if no results, try English translation
+  if (candidates.length === 0) {
+    const translated = translateQuery(query);
+    if (translated !== query) {
+      candidates = await searchMarkets(translated, 5);
+    }
+  }
+
   if (candidates.length === 0) {
     return { slug: null, candidates: [], matched: 'none' };
   }
