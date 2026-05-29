@@ -25,6 +25,7 @@ model User {
   subscriptions Subscription[]
   smartCollectionSubscriptions SmartCollectionSubscription[]
   alertEvents  AlertEvent[]
+  marketSubscriptions MarketSubscription[]
 
   @@map("users")
 }
@@ -172,4 +173,23 @@ model WhaleWaitlistLead {
 
   @@index([email], name: "idx_waitlist_email")
   @@map("whale_waitlist_leads")
+}
+
+model MarketSubscription {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  marketSlug      String   @map("market_slug")
+  marketTitle     String?  @map("market_title")
+  lastDirection   String?  @map("last_direction")
+  lastConfidence  Float?   @map("last_confidence")
+  lastNotifiedAt  DateTime? @map("last_notified_at")
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, marketSlug], name: "user_market_unique")
+  @@index([marketSlug], name: "idx_marketsub_market")
+  @@map("market_subscriptions")
 }

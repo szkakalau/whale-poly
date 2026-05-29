@@ -17,6 +17,16 @@ type Candidate = {
   volume24h?: number;
 };
 
+type TrendingMarket = {
+  slug: string;
+  title: string;
+  volume24h: number;
+  direction: string;
+  confidenceScore: number;
+  confidenceLevel: string;
+  whaleTradeCount: number;
+};
+
 type AnalysisData = {
   marketSlug: string;
   marketTitle?: string;
@@ -41,13 +51,18 @@ export default function AnalyzePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [trending, setTrending] = useState<TrendingMarket[]>([]);
   const [analysisText, setAnalysisText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Auto-focus search on mount
+  // Auto-focus search + load trending on mount
   useEffect(() => {
     inputRef.current?.focus();
+    fetch('/api/analyze/trending')
+      .then((r) => r.json())
+      .then((d) => setTrending(d.markets || []))
+      .catch(() => {});
   }, []);
 
   const search = useCallback(async (q: string) => {
@@ -357,46 +372,87 @@ export default function AnalyzePage() {
                 <p className="text-xs text-muted/70 leading-relaxed mb-4">
                   该市场在过去 24 小时内没有检测到大额鲸鱼交易（≥ $5k）。这可能意味着聪明钱尚未表态。
                 </p>
-                <div className="border-t border-border-muted pt-3">
-                  <p className="text-[10px] text-muted font-semibold uppercase tracking-wider mb-2">
-                    热门活跃市场 — 试试这些：
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: 'Trump 2028', q: 'Trump 2028' },
-                      { label: 'Fed Rate Cut', q: 'Federal Reserve rate cut 2026' },
-                      { label: 'BTC $150k', q: 'Bitcoin above 150k' },
-                      { label: 'Super Bowl', q: 'Super Bowl winner' },
-                      { label: 'S&P 500', q: 'S&P 500 year end' },
-                    ].map((m) => (
-                      <button
-                        key={m.label}
-                        onClick={() => { setQuery(m.q); search(m.q); }}
-                        className="inline-flex items-center gap-1 rounded-md border border-border-muted bg-surface px-2.5 py-1.5 text-[11px] text-muted hover:text-foreground hover:border-accent-sharp/40 transition-colors"
-                      >
-                        <TrendingUp className="w-3 h-3" aria-hidden="true" />
-                        {m.label}
-                      </button>
-                    ))}
+                {trending.length > 0 && (
+                  <div className="border-t border-border-muted pt-3">
+                    <p className="text-[10px] text-muted font-semibold uppercase tracking-wider mb-2">
+                      热门活跃市场 — 试试这些：
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {trending.filter(m => m.whaleTradeCount > 0).slice(0, 6).map((m) => (
+                        <button
+                          key={m.slug}
+                          onClick={() => { setQuery(m.title); search(m.title); }}
+                          className="inline-flex items-center gap-1 rounded-md border border-border-muted bg-surface px-2.5 py-1.5 text-[11px] text-muted hover:text-foreground hover:border-accent-sharp/40 transition-colors"
+                        >
+                          <TrendingUp className="w-3 h-3" aria-hidden="true" />
+                          {m.title.length > 40 ? `${m.title.slice(0, 40)}...` : m.title}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Initial empty state — left-aligned, not centered */}
+        {/* Initial empty state — left-aligned + trending */}
         {!result && !loading && !error && (
-          <div className="rounded-lg border border-dashed border-border bg-surface/30 p-8 sm:p-10 text-left" role="region" aria-label="开始分析">
-            <div className="max-w-sm">
-              <div className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center mb-4">
-                <TrendingUp className="w-5 h-5 text-muted/40" aria-hidden="true" />
+          <div className="space-y-6">
+            <div className="rounded-lg border border-dashed border-border bg-surface/30 p-8 sm:p-10 text-left" role="region" aria-label="开始分析">
+              <div className="max-w-sm">
+                <div className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center mb-4">
+                  <TrendingUp className="w-5 h-5 text-muted/40" aria-hidden="true" />
+                </div>
+                <p className="text-sm text-foreground font-semibold mb-1.5">输入市场开始分析</p>
+                <p className="text-xs text-muted/60 leading-relaxed">
+                  粘贴一个 Polymarket 链接，或输入市场关键词。系统将分析鲸鱼交易数据，给出方向判断 + 信心分 + 钱包级证据链。
+                </p>
               </div>
-              <p className="text-sm text-foreground font-semibold mb-1.5">输入市场开始分析</p>
-              <p className="text-xs text-muted/60 leading-relaxed">
-                粘贴一个 Polymarket 链接，或输入市场关键词。系统将分析鲸鱼交易数据，给出方向判断 + 信心分 + 钱包级证据链。
-              </p>
             </div>
+
+            {/* Trending markets section */}
+            {trending.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-accent-sharp" aria-hidden="true" />
+                  <p className="text-sm font-bold text-foreground">Trending Now</p>
+                  <span className="text-[10px] text-muted font-semibold uppercase tracking-wider">实时刷新</span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {trending.filter(m => m.whaleTradeCount > 0).slice(0, 8).map((m) => {
+                    const dirMap: Record<string, { emoji: string; cls: string }> = {
+                      bullish: { emoji: '🟢', cls: 'text-emerald-400' },
+                      bearish: { emoji: '🔴', cls: 'text-red-400' },
+                      neutral: { emoji: '⚪', cls: 'text-muted' },
+                      mixed: { emoji: '🟡', cls: 'text-amber-400' },
+                    };
+                    const d = dirMap[m.direction] || dirMap.neutral;
+                    return (
+                      <button
+                        key={m.slug}
+                        onClick={() => { setQuery(m.title); search(m.title); }}
+                        className="flex items-center justify-between gap-3 rounded-md border border-border-muted bg-surface/50 px-3.5 py-2.5 text-left hover:border-accent-sharp/30 hover:bg-surface transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-foreground font-medium truncate">{m.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-bold ${d.cls}`}>{d.emoji} {m.direction}</span>
+                            <span className="text-[10px] text-muted tabular-nums">{m.confidenceScore}/100</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] font-black text-foreground tabular-nums">
+                            ${(m.volume24h / 1000).toFixed(0)}k
+                          </p>
+                          <p className="text-[9px] text-muted">{m.whaleTradeCount} trades</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

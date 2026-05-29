@@ -29,6 +29,7 @@ export type AnalysisResult = {
     stalenessMinutes: number;
   };
   disclaimer: string;
+  followedActivity: boolean; // E7: true if any followed wallet had trades in this market
 };
 
 // ── Constants ──────────────────────────────────────────
@@ -94,17 +95,29 @@ function classifyDirection(yesVolume: number, noVolume: number, tradeCount: numb
 
 // ── Public API ─────────────────────────────────────────
 
-export async function analyzeMarket(marketSlug: string): Promise<AnalysisResult> {
+export async function analyzeMarket(
+  marketSlug: string,
+  options?: { followedWallets?: string[] },
+): Promise<AnalysisResult> {
   const now = new Date();
   const signals = await loadSignalsForMarket(marketSlug, LOOKBACK_HOURS);
+  const followedSet = new Set((options?.followedWallets || []).map((w) => w.toLowerCase().trim()));
 
   // Compute YES/NO volumes
   let yesVolumeUsd = 0;
   let noVolumeUsd = 0;
+  let followedActivity = false;
   const walletWeights: Map<string, { weight: number; signal: LiveSignal }> = new Map();
 
   for (const s of signals) {
-    const w = walletWeight(s, now);
+    let w = walletWeight(s, now);
+
+    // E7: Boost weight for followed wallets (1.5x, capped at 100)
+    if (followedSet.size > 0 && followedSet.has(s.walletMasked.toLowerCase())) {
+      w = Math.min(100, w * 1.5);
+      followedActivity = true;
+    }
+
     const key = `${s.walletMasked}-${s.occurredAt}`;
     walletWeights.set(key, { weight: w, signal: s });
 
@@ -171,6 +184,7 @@ export async function analyzeMarket(marketSlug: string): Promise<AnalysisResult>
       stalenessMinutes,
     },
     disclaimer: DISCLAIMER,
+    followedActivity,
   };
 }
 

@@ -74,7 +74,7 @@ type AnalyzeResponse = {
 // ── Route Handlers ─────────────────────────────────────
 
 export async function POST(req: Request) {
-  let body: { query?: string; userId?: string };
+  let body: { query?: string; userId?: string; followedWallets?: string[] };
   try {
     body = await req.json();
   } catch {
@@ -117,9 +117,10 @@ export async function POST(req: Request) {
   }
 
   // Analyze
+  const followedWallets = body?.followedWallets || [];
   let analysis: Awaited<ReturnType<typeof analyzeMarket>>;
   try {
-    analysis = await analyzeMarket(resolved.slug);
+    analysis = await analyzeMarket(resolved.slug, { followedWallets });
   } catch {
     return NextResponse.json(
       { error: 'analysis_failed', message: '⚠️ 分析暂时不可用，请稍后再试（通常 < 5 分钟恢复）。' } satisfies AnalyzeResponse,
