@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from redis.asyncio import Redis
 from sqlalchemy import select
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -216,6 +217,89 @@ async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await session.commit()
 
   await update.effective_message.reply_text(f"✅ Access granted for 7 days.\nExpires: {end_date.isoformat()}")
+
+
+async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+  """Handle /analyze <market> — query the SightWhale decision engine."""
+  if not await _ensure_private(update):
+    if update.effective_message:
+      await update.effective_message.reply_text("This bot only works in private chats.")
+    return
+
+  # Extract query (everything after /analyze)
+  try:
+    raw = (update.effective_message.text or "").strip()
+  except Exception:
+    raw = ""
+  parts = raw.split(maxsplit=1)
+  query = (parts[1] or "").strip() if len(parts) > 1 else ""
+
+  if not query:
+    await update.effective_message.reply_text(
+      "使用方法：`/analyze <市场链接或关键词>`\n\n"
+      "例如:\n"
+      "• `/analyze BTC 150k`\n"
+      "• `/analyze https://polymarket.com/event/will-btc-break-100k`\n\n"
+      "我会分析鲸鱼在该市场上的动向，并给出方向 + 信心分。",
+      parse_mode="Markdown",
+    )
+    return
+
+  # Show typing indicator
+  telegram_id = str(update.effective_user.id)
+  await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+
+  try:
+    async with httpx.AsyncClient(timeout=15.0) as client:
+      resp = await client.post(
+        f"{_landing_base_url()}/api/analyze",
+        json={"query": query, "userId": telegram_id},
+      )
+      resp.raise_for_status()
+      data = resp.json()
+  except httpx.HTTPStatusError as e:
+    try:
+      body = e.response.json()
+      msg = body.get("message", str(e))
+    except Exception:
+      msg = "⚠️ 分析暂时不可用，请稍后再试。"
+    await update.effective_message.reply_text(msg)
+    return
+  except Exception:
+    await update.effective_message.reply_text("⚠️ 分析暂时不可用，请稍后再试（通常 < 5 分钟恢复）。")
+    return
+
+  # Use formatted text from API if available, otherwise build a simple message
+  formatted = data.get("formattedText")
+  if formatted:
+    await update.effective_message.reply_text(
+      formatted,
+      parse_mode="Markdown",
+      disable_web_page_preview=True,
+    )
+  else:
+    # Fallback: build a simple response
+    direction = data.get("direction", "unknown")
+    confidence = data.get("confidenceScore", 0)
+    level = data.get("confidenceLevel", "low")
+    trade_count = data.get("whaleTradeCount", 0)
+    message = data.get("message", "")
+
+    if message:
+      await update.effective_message.reply_text(message)
+    elif trade_count == 0:
+      await update.effective_message.reply_text(
+        f"该市场在过去 24 小时内没有检测到大额鲸鱼交易。\n\n{data.get('disclaimer', '')}"
+      )
+    else:
+      dir_emoji = {"bullish": "🟢", "bearish": "🔴", "neutral": "⚪", "mixed": "🟡"}.get(direction, "⚪")
+      text = (
+        f"{dir_emoji} 鲸鱼判断：**{direction.upper()}**\n"
+        f"信心分：{confidence}/100 ({level})\n"
+        f"检测到 {trade_count} 笔鲸鱼交易\n\n"
+        f"{data.get('disclaimer', '')}"
+      )
+      await update.effective_message.reply_text(text, parse_mode="Markdown")
 
 
 async def send_alert_to_subscribers(payload: dict) -> int:

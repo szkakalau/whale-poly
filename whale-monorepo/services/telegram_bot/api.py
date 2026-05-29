@@ -14,7 +14,7 @@ from sqlalchemy import func, or_, select, text
 from sqlalchemy.dialects.postgresql import insert
 from urllib.parse import urlparse
 
-from services.telegram_bot.bot import build_application
+from services.telegram_bot.bot import _COMMANDS, build_application
 from services.telegram_bot.delivery_cooldown import (
   CooldownAction,
   compute_effective_score,
@@ -213,6 +213,7 @@ async def _has_smart_collection_tables(session) -> bool:
 async def _run_bot_runtime_forever(stop: asyncio.Event, redis: Redis, application) -> None:
   await application.initialize()
   await application.start()
+  await application.bot.set_my_commands(_COMMANDS)
 
   lock_key = "telegram_bot:polling_lock"
   lock_value: str | None = None
