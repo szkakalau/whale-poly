@@ -410,7 +410,7 @@ export default function AnalyzePage() {
                   <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-muted/40 font-bold mb-1">NO SIGNAL</p>
                     <p className="text-xs font-mono text-muted/60 mb-4">
-                      No whale trades ≥ $5k detected in the past 24 hours. Smart money may not have a position yet.
+                      {result.message || 'No whale trades ≥ $5k matched this market in the past 24 hours. This may reflect no qualifying activity, delayed ingestion, or a market-slug mismatch.'}
                     </p>
                     {activeTrending.length > 0 && (
                       <div className="pt-3 border-t border-border-muted">

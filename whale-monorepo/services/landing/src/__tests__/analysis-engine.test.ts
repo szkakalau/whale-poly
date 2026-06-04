@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { resolveMarketSlug, slugToSearchQuery } from '@/lib/nl-matcher';
 
 /**
  * Unit tests for AnalysisEngine scoring logic.
@@ -182,5 +183,50 @@ describe('classifyDirection', () => {
 
   it('should return neutral for zero total volume', () => {
     expect(classifyDirection(0, 0, 5)).toBe('neutral');
+  });
+});
+
+describe('slugToSearchQuery', () => {
+  it('should humanize event slugs for fallback market search', () => {
+    expect(slugToSearchQuery('2026-nba-champion')).toBe('2026 nba champion');
+    expect(slugToSearchQuery('will_btc_hit_150k')).toBe('will btc hit 150k');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('should retry URL searches with a humanized slug before falling back', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            slug: 'who-will-win-the-2026-nba-championship',
+            title: 'Who will win the 2026 NBA Championship?',
+            conditionId: 'cond_1',
+            outcomes: ['YES', 'NO'],
+            outcomePrices: [0.5, 0.5],
+            closed: false,
+            volume24hr: 123456,
+          },
+        ],
+      });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await resolveMarketSlug('https://polymarket.com/event/2026-nba-champion');
+
+    expect(result.matched).toBe('url');
+    expect(result.slug).toBe('who-will-win-the-2026-nba-championship');
+    expect(result.candidates).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('title=2026+nba+champion');
   });
 });

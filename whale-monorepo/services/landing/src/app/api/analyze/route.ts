@@ -204,6 +204,21 @@ export async function GET(req: Request) {
 
   try {
     const analysis = await analyzeMarket(resolved.slug);
+    if (analysis.whaleTradeCount === 0) {
+      return NextResponse.json({
+        marketSlug: analysis.marketSlug,
+        marketTitle: resolved.candidates[0]?.title,
+        direction: 'neutral',
+        confidenceLevel: 'low',
+        confidenceScore: 0,
+        whaleTradeCount: 0,
+        message: getEmptyMessage(resolved.candidates[0]?.title || resolved.slug),
+        disclaimer: analysis.disclaimer,
+        matchMethod: resolved.matched,
+        candidates: resolved.candidates,
+      } satisfies AnalyzeResponse);
+    }
+
     return NextResponse.json({
       ...analysis,
       marketTitle: resolved.candidates[0]?.title,

@@ -224,7 +224,7 @@ export async function analyzeMarket(
  * Returns a human-readable message for cases where no analysis is possible.
  */
 export function getEmptyMessage(marketSlug: string): string {
-  return `No large whale trades (≥ $${(MIN_TRADE_USD / 1000).toFixed(0)}k) were detected for this market in the past ${LOOKBACK_HOURS} hours. Smart money may not have taken a position yet.`;
+  return `No large whale trades (≥ $${(MIN_TRADE_USD / 1000).toFixed(0)}k) matched "${marketSlug}" in the past ${LOOKBACK_HOURS} hours. This can mean no qualifying whale activity, delayed ingestion, or that the event URL maps to a different market slug in our dataset.`;
 }
 
 /**

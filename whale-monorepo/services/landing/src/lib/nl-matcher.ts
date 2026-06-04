@@ -96,6 +96,14 @@ export function extractSlugFromUrl(raw: string): string | null {
   return match ? match[1] : null;
 }
 
+export function slugToSearchQuery(slug: string): string {
+  return slug
+    .trim()
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 import { translateQuery } from './nl-translate';
 
 /**
@@ -113,11 +121,27 @@ export async function resolveMarketSlug(query: string): Promise<{
   // 1. URL extraction
   const urlSlug = extractSlugFromUrl(query);
   if (urlSlug) {
-    // Validate it exists in Gamma
-    const markets = await searchMarkets(urlSlug, 1);
-    if (markets.length > 0) {
-      return { slug: urlSlug, candidates: markets, matched: 'url' };
+    // Event URLs often contain an event slug, while trade rows may reference
+    // a market title or a child-market slug instead. Try both the raw slug
+    // and a humanized title-like query before falling back to the raw slug.
+    const urlQueries = [urlSlug];
+    const humanizedSlug = slugToSearchQuery(urlSlug);
+    if (humanizedSlug && humanizedSlug !== urlSlug) {
+      urlQueries.push(humanizedSlug);
     }
+
+    for (const candidateQuery of urlQueries) {
+      const markets = await searchMarkets(candidateQuery, 5);
+      if (markets.length === 0) continue;
+
+      const exactSlug = markets.find((market) => market.slug === urlSlug);
+      return {
+        slug: exactSlug?.slug || markets[0].slug || urlSlug,
+        candidates: markets,
+        matched: 'url',
+      };
+    }
+
     // URL slug not found in Gamma — still use it (DB may have data)
     return { slug: urlSlug, candidates: [], matched: 'url' };
   }
