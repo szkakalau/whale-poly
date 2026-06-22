@@ -565,9 +565,6 @@ def _compute_scores(m: _WindowMetrics, wallet_age_days: float, wash_suspected: b
   # A perfect new whale (day 0) reaches score 70 — the lowest alert threshold.
   age_mult = 1.0 - 0.3 * math.exp(-wallet_age_days / 3.0)
 
-  if wash_suspected:
-    age_mult *= 0.2
-
   performance = _clamp(performance, 0.0, 100.0)
   consistency = _clamp(consistency, 0.0, 100.0)
   timing = _clamp(timing, 0.0, 100.0)
@@ -581,6 +578,11 @@ def _compute_scores(m: _WindowMetrics, wallet_age_days: float, wash_suspected: b
     0.15 * risk +
     0.10 * impact
   ) * age_mult
+
+  # Wash trading penalty: applied to final score, independent from age.
+  # The two penalties no longer multiply each other — each has its own domain.
+  if wash_suspected:
+    whale_score *= 0.2
 
   return {
     "whale_score": float(_clamp(whale_score, 0.0, 100.0)),
