@@ -152,7 +152,7 @@ export default function AnalyzePage() {
             <span>SIGHTWHALE//ANALYZE</span>
           </div>
           <div className="hidden sm:flex items-center gap-4">
-            <span>{new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC</span>
+            <span suppressHydrationWarning>{new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC</span>
             <span className="text-border-muted">|</span>
             <span>MKTS:{trending.length}</span>
           </div>
