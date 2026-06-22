@@ -70,6 +70,7 @@ export default function AnalyzePage() {
   const [result, setResult] = useState<AnalysisData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [trending, setTrending] = useState<TrendingMarket[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
   const [analysisText, setAnalysisText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -79,7 +80,8 @@ export default function AnalyzePage() {
     fetch('/api/analyze/trending')
       .then((r) => r.json())
       .then((d) => setTrending(d.markets || []))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTrendingLoading(false));
   }, []);
 
   const search = useCallback(async (q: string) => {
@@ -476,8 +478,10 @@ export default function AnalyzePage() {
                       );
                     })}
                   </div>
-                ) : (
+                ) : trendingLoading ? (
                   <p className="text-[10px] font-mono text-muted/25">Loading market data…</p>
+                ) : (
+                  <p className="text-[10px] font-mono text-muted/40">No trending markets available</p>
                 )}
               </div>
 
