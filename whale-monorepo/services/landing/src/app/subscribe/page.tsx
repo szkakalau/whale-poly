@@ -30,29 +30,55 @@ function getAmount(plan: Plan, period: Period) {
   return period === 'yearly' ? PLANS[plan].yearly : PLANS[plan].monthly;
 }
 
-function SubscribeForm() {
-  const searchParams = useSearchParams();
-  const checkoutBtnRef = useRef<HTMLButtonElement>(null);
+function planFromParam(raw: string | null): Plan {
+  const p = (raw || '').toLowerCase();
+  return p === 'elite' || p === 'institutional' ? 'elite' : 'pro';
+}
 
+function useSubscribeParams() {
+  const searchParams = useSearchParams();
   const [plan, setPlan] = useState<Plan>('pro');
   const [period, setPeriod] = useState<Period>('monthly');
   const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<{ message: string; actions: string[] } | null>(null);
 
   useEffect(() => {
     const p = (searchParams.get('plan') || '').toLowerCase();
     const periodParam = (searchParams.get('period') || '').toLowerCase();
     const codeParam = (searchParams.get('code') || '').trim();
 
-    if (p === 'elite' || p === 'institutional') setPlan('elite');
-    else setPlan('pro');
+    setPlan(planFromParam(searchParams.get('plan')));
 
     if (periodParam === 'yearly' || periodParam === 'annual') setPeriod('yearly');
     else if (periodParam === 'monthly') setPeriod('monthly');
 
     if (codeParam && !code) setCode(codeParam.toUpperCase());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { plan, period, code, setCode };
+}
+
+function SubscribeHero() {
+  const searchParams = useSearchParams();
+  const plan = planFromParam(searchParams.get('plan'));
+  const label = PLANS[plan].label;
+
+  return (
+    <>
+      <p className="eyebrow mb-4">Subscribe</p>
+      <h1 className="text-balance mb-3">Start {label}</h1>
+      <p className="text-base text-muted leading-relaxed mb-8">
+        Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
+      </p>
+    </>
+  );
+}
+
+function SubscribeForm() {
+  const checkoutBtnRef = useRef<HTMLButtonElement>(null);
+
+  const { plan, period, code, setCode } = useSubscribeParams();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<{ message: string; actions: string[] } | null>(null);
 
   const sanitized = code.replace(/\s+/g, '').toUpperCase();
   const hasCode = sanitized.length >= 6;
@@ -225,11 +251,17 @@ export default function SubscribePage() {
     <div className="min-h-screen selection:bg-accent selection:text-white">
       <div className="max-w-xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-24 sm:pb-32">
         {/* ── Hero ── */}
-        <p className="eyebrow mb-4">Subscribe</p>
-        <h1 className="text-balance mb-3">Start Pro</h1>
-        <p className="text-base text-muted leading-relaxed mb-8">
-          Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
-        </p>
+        <Suspense fallback={
+          <>
+            <p className="eyebrow mb-4">Subscribe</p>
+            <h1 className="text-balance mb-3">Start Pro</h1>
+            <p className="text-base text-muted leading-relaxed mb-8">
+              Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
+            </p>
+          </>
+        }>
+          <SubscribeHero />
+        </Suspense>
 
         {/* ── Money-back badge ── */}
         <div className="mb-8 rounded-lg border border-accent/20 bg-accent/5 px-5 py-3">
