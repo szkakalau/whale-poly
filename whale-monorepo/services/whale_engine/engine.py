@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from redis.asyncio import Redis
-from sqlalchemy import func, select, text, inspect
+from sqlalchemy import select, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.db import insert
@@ -68,101 +68,17 @@ def _id(trade_id: str) -> str:
   return hashlib.sha1(f"wt:{trade_id}".encode("utf-8")).hexdigest()[:32]
 
 
-async def compute_whale_score(session: AsyncSession, wallet: str) -> int:
-  now = datetime.now(timezone.utc)
-  _, _, _, _, has_stats = await _ensure_schema_flags(session)
-  if has_stats:
-    try:
-      row = (await session.execute(select(WhaleStats).where(WhaleStats.wallet_address == wallet))).scalars().first()
-      if row and row.whale_score is not None:
-        return int(row.whale_score)
-    except Exception as e:
-      print(f"DEBUG: Error inserting WhaleTradeHistory: {e}")
-      import traceback
-      traceback.print_exc()
-      pass
-  since = now - timedelta(days=30)
+async def _get_whale_score(session: AsyncSession, wallet: str) -> int:
+  """Return the whale score from WhaleStats, or 0 if the wallet has not been scored yet."""
   try:
-    total = (
-      await session.execute(
-        select(func.coalesce(func.sum(TradeRaw.amount * TradeRaw.price), 0)).where(TradeRaw.wallet == wallet).where(TradeRaw.timestamp >= since)
-      )
-    ).scalar_one()
+    row = (await session.execute(
+      select(WhaleStats.whale_score).where(WhaleStats.wallet_address == wallet)
+    )).scalars().first()
+    if row is not None:
+      return int(row)
   except Exception:
-    total = 0
-  usd_30d = float(total or 0)
-  if "SniperWhale009" in wallet:
-      print(f"DEBUG: compute_whale_score {wallet} usd_30d={usd_30d}")
-
-  base = 50
-  if usd_30d >= 50000:
-    base = 95
-  elif usd_30d >= 20000:
-    base = 88
-  elif usd_30d >= 10000:
-    base = 80
-  elif usd_30d >= 5000:
-    base = 70
-
-  _, _, has_profiles, _, _ = await _ensure_schema_flags(session)
-  if not has_profiles:
-    return base
-
-  try:
-    profile = (
-      await session.execute(
-        select(WhaleProfile).where(WhaleProfile.wallet_address == wallet)
-      )
-    ).scalars().first()
-  except Exception:
-    profile = None
-  if not profile:
-    return base
-
-  try:
-    total_volume = float(profile.total_volume or 0)
-    realized_pnl = float(profile.realized_pnl or 0)
-    wins = int(profile.wins or 0)
-    losses = int(profile.losses or 0)
-  except Exception:
-    return base
-  attempts = wins + losses
-
-  score = float(base)
-
-  if attempts > 0 and total_volume > 0:
-    win_rate = wins / attempts
-    roi = realized_pnl / total_volume
-
-    if attempts >= 10:
-      if win_rate >= 0.65:
-        score += 7
-      elif win_rate >= 0.55:
-        score += 3
-      elif win_rate < 0.4:
-        score -= 5
-    else:
-      score -= 5
-
-    if roi >= 0.5:
-      score += 7
-    elif roi >= 0.2:
-      score += 3
-    elif roi <= -0.3:
-      score -= 7
-    elif roi <= -0.1:
-      score -= 3
-
-    if attempts < 10:
-      score -= 3
-    elif attempts < 30:
-      score -= 1
-
-  if score < 0:
-    return 0
-  if score > 100:
-    return 100
-  return int(round(score))
+    pass
+  return 0
 
 
 @dataclass(frozen=True)
@@ -347,16 +263,16 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
     try:
       score = int(float(cached_trade_score))
     except Exception:
-      score = await compute_whale_score(session, wallet)
+      score = await _get_whale_score(session, wallet)
   else:
     cached_wallet_score = await redis.get(f"whale_score:{wallet}")
     if cached_wallet_score is not None:
       try:
         score = int(float(cached_wallet_score))
       except Exception:
-        score = await compute_whale_score(session, wallet)
+        score = await _get_whale_score(session, wallet)
     else:
-      score = await compute_whale_score(session, wallet)
+      score = await _get_whale_score(session, wallet)
       await redis.set(f"whale_score:{wallet}", str(score), ex=settings.whale_score_cache_seconds)
     await redis.set(score_key, str(score), ex=settings.trade_score_cache_seconds)
   if "SniperWhale009" in wallet:
