@@ -110,7 +110,7 @@ import { translateQuery } from './nl-translate';
  * Match a user query to the best market.
  * Priority:
  *  1. Direct URL → extract slug
- *  2. Gamma API title search → best match by volume
+ *  2. Gamma API title search → best match by volume and relevance
  *  3. null if nothing found
  */
 export async function resolveMarketSlug(query: string): Promise<{
@@ -146,14 +146,38 @@ export async function resolveMarketSlug(query: string): Promise<{
     return { slug: urlSlug, candidates: [], matched: 'url' };
   }
 
-  // 2. Gamma API search
-  let candidates = await searchMarkets(query, 5);
+  // 2. Gamma API search with improved matching
+  let candidates = await searchMarkets(query, 10);
+  
+  // 2.1 If no results, try removing punctuation and common words
+  if (candidates.length === 0) {
+    const simplifiedQuery = query
+      .replace(/[.,!?;:'"]/g, '')
+      .replace(/\b(will|the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (simplifiedQuery && simplifiedQuery !== query) {
+      candidates = await searchMarkets(simplifiedQuery, 10);
+    }
+  }
+  
+  // 2.2 If still no results, try searching with key terms only
+  if (candidates.length === 0) {
+    const words = query.toLowerCase().split(/\s+/);
+    const keyTerms = words.filter(word => word.length > 3 && !['will', 'the', 'and'].includes(word));
+    
+    if (keyTerms.length > 0) {
+      const keyQuery = keyTerms.slice(0, 5).join(' ');
+      candidates = await searchMarkets(keyQuery, 10);
+    }
+  }
 
-  // 2.5 Cross-lingual fallback: if no results, try English translation
+  // 2.3 Cross-lingual fallback: if no results, try English translation
   if (candidates.length === 0) {
     const translated = translateQuery(query);
     if (translated !== query) {
-      candidates = await searchMarkets(translated, 5);
+      candidates = await searchMarkets(translated, 10);
     }
   }
 
@@ -161,9 +185,41 @@ export async function resolveMarketSlug(query: string): Promise<{
     return { slug: null, candidates: [], matched: 'none' };
   }
 
-  // Use the top result's slug
+  // 3. Improved selection: consider both volume and title relevance
+  const queryLower = query.toLowerCase();
+  let bestMatch = candidates[0];
+  let bestScore = 0;
+  
+  for (const candidate of candidates) {
+    const titleLower = candidate.title.toLowerCase();
+    let score = 0;
+    
+    // Calculate relevance score
+    if (titleLower === queryLower) {
+      score = 100; // Exact match
+    } else if (titleLower.includes(queryLower) || queryLower.includes(titleLower)) {
+      score = 70; // Contains or is contained
+    } else {
+      // Calculate keyword overlap
+      const queryWords = new Set(queryLower.split(/\s+/).filter(w => w.length > 2));
+      const titleWords = new Set(titleLower.split(/\s+/).filter(w => w.length > 2));
+      const overlap = [...queryWords].filter(word => titleWords.has(word)).length;
+      const total = Math.max(queryWords.size, titleWords.size);
+      score = (overlap / total) * 60;
+    }
+    
+    // Add volume weight (up to 20 points)
+    const volumeWeight = Math.min((candidate.volume24h || 0) / 10000, 1) * 20;
+    score += volumeWeight;
+    
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = candidate;
+    }
+  }
+
   return {
-    slug: candidates[0].slug || query, // fallback to raw query if no slug
+    slug: bestMatch.slug || query,
     candidates,
     matched: 'search',
   };
