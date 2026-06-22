@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-// Use node runtime to keep static generation available during builds.
 export const runtime = 'nodejs';
-// Prevent Next from trying to prerender OG routes during `next build`.
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const size = { width: 1200, height: 630 };
@@ -19,53 +17,54 @@ export default function OpenGraphImage() {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '64px',
-          background:
-            'linear-gradient(135deg, rgba(2,6,23,1) 0%, rgba(10,6,24,1) 40%, rgba(6,182,212,0.08) 100%)',
-          color: '#ffffff',
-          fontFamily: 'Arial, Helvetica, sans-serif',
+          background: '#FAFAF9',
+          color: '#171717',
+          fontFamily: 'Georgia, serif',
         }}
       >
+        {/* Top row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: 16, letterSpacing: 2, color: '#a1a1aa', fontWeight: 700 }}>
-              SIGHT WHALE
+            <div style={{ fontSize: 14, letterSpacing: 3, color: '#8A8A8A', fontWeight: 600, textTransform: 'uppercase' }}>
+              SightWhale.com
             </div>
-            <div style={{ fontSize: 52, fontWeight: 800, marginTop: 18, lineHeight: 1.05 }}>
-              Follow
-              <span style={{ color: '#c4b5fd' }}> Whale Score</span>.
+            <div style={{ fontSize: 52, fontWeight: 700, marginTop: 20, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+              Follow the top 1%
               <br />
-              Frontrun the Market.
+              of Polymarket whales.
             </div>
-            <div style={{ fontSize: 22, marginTop: 16, color: '#cbd5f5', lineHeight: 1.35 }}>
-              Real-time Telegram alerts for high-conviction bets on Polymarket.
+            <div style={{ fontSize: 22, marginTop: 18, color: '#525252', lineHeight: 1.4 }}>
+              Real-time Telegram alerts for high-conviction bets
+              <br />
+              on Elections, Sports, and Crypto.
             </div>
           </div>
 
+          {/* Whale icon */}
           <div
             style={{
-              width: 140,
-              height: 140,
-              borderRadius: 28,
-              background: 'rgba(139, 92, 246, 0.15)',
-              border: '1px solid rgba(139, 92, 246, 0.35)',
+              width: 120,
+              height: 120,
+              borderRadius: 12,
+              background: 'rgba(13, 92, 63, 0.06)',
+              border: '1px solid rgba(13, 92, 63, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 900,
-              color: '#a5b4fc',
-              boxShadow: '0 0 40px rgba(139,92,246,0.25)',
+              fontSize: 64,
             }}
           >
             🐋
           </div>
         </div>
 
+        {/* Bottom row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 14, letterSpacing: 1.2, color: '#94a3b8', fontWeight: 700 }}>
-            Whale Score™ · Telegram Delivery
+          <div style={{ fontSize: 14, letterSpacing: 1, color: '#8A8A8A', fontWeight: 600 }}>
+            Whale Score™ · Real-time Polymarket Signals
           </div>
-          <div style={{ fontSize: 14, color: '#94a3b8' }}>
-            Generated for web sharing
+          <div style={{ fontSize: 14, color: '#8A8A8A' }}>
+            sightwhale.com
           </div>
         </div>
       </div>
@@ -73,4 +72,3 @@ export default function OpenGraphImage() {
     { width: 1200, height: 630 },
   );
 }
-

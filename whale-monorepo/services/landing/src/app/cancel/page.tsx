@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Checkout Canceled - SightWhale.com',
+  title: { absolute: 'Checkout Canceled - SightWhale.com' },
   description: 'Your checkout was canceled. You can try again anytime.',
   robots: {
     index: false,

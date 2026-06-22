@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import SuccessClient from './SuccessClient';
 
 export const metadata = {
-  title: 'Payment Successful - SightWhale.com',
+  title: { absolute: 'Payment Successful - SightWhale.com' },
   description: 'Your payment was received. Subscription will activate after processing.',
   robots: {
     index: false,

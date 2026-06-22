@@ -9,7 +9,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Historical Signals — SightWhale',
+  title: { absolute: 'Historical Signals — SightWhale.com' },
   description:
     'Verified historical whale alerts through end of yesterday UTC. Today\'s live feed is available to paid members.',
   alternates: {

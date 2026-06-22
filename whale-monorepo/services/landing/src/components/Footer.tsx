@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { WhaleLogo } from './WhaleLogo';
 
-const SUPPORT_EMAIL = 'support@sightwhale.com';
+const SUPPORT_EMAIL = 'castro.liu@me.com';
 
 export default function Footer() {
   return (

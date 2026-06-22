@@ -3,7 +3,7 @@ import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 import { Check, Sparkles } from 'lucide-react';
 
 export const metadata = {
-  title: 'Pricing — SightWhale',
+  title: { absolute: 'Pricing — SightWhale.com' },
   description: 'Real-time Polymarket whale signals. Full refund if the product does not meet expectations.',
   alternates: {
     canonical: '/pricing',
@@ -13,7 +13,7 @@ export const metadata = {
 const FAQ = [
   {
     q: 'How does the refund work?',
-    a: 'If SightWhale is not profitable for you in your first month, email support@sightwhale.com and we will refund your subscription in full. No forms, no arguing.',
+    a: 'If SightWhale is not profitable for you in your first month, email castro.liu@me.com and we will refund your subscription in full. No forms, no arguing.',
   },
   {
     q: 'What do I get before paying?',
@@ -45,8 +45,8 @@ export default function PricingPage() {
         <div className="mb-10 rounded-lg border border-accent/20 bg-accent/5 px-5 py-4">
           <p className="text-sm font-medium text-foreground">
             Money-back guarantee: not satisfied this month? Email{' '}
-            <a href="mailto:support@sightwhale.com" className="underline decoration-accent/30 underline-offset-4 text-accent font-semibold">
-              support@sightwhale.com
+            <a href="mailto:castro.liu@me.com" className="underline decoration-accent/30 underline-offset-4 text-accent font-semibold">
+              castro.liu@me.com
             </a>{' '}
             for a full refund.
           </p>

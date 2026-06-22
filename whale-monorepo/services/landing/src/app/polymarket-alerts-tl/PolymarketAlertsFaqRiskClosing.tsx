@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { trackEvent } from '@/lib/analytics';
 
-const SUPPORT_MAIL = 'mailto:support@sightwhale.com';
+const SUPPORT_MAIL = 'mailto:castro.liu@me.com';
 
 const faqEntries = [
   {

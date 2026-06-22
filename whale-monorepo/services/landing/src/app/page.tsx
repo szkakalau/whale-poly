@@ -173,7 +173,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What if the signals don\'t make me money?',
-    a: 'First month is covered by our money-back guarantee. Email support@sightwhale.com and we\'ll refund your subscription in full. We\'d rather earn your trust than keep $29.',
+    a: 'First month is covered by our money-back guarantee. Email castro.liu@me.com and we\'ll refund your subscription in full. We\'d rather earn your trust than keep $29.',
   },
   {
     q: 'Do I need Telegram?',

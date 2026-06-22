@@ -193,7 +193,7 @@ function SubscribeForm() {
             {error.actions.map((a) => <li key={a}>{a}</li>)}
           </ul>
           <a
-            href="mailto:support@sightwhale.com"
+            href="mailto:castro.liu@me.com"
             onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'error' })}
             className="inline-block mt-3 text-sm text-red-600 underline underline-offset-2 hover:text-red-700"
           >
@@ -236,7 +236,7 @@ export default function SubscribePage() {
           <p className="text-sm text-foreground">
             <span className="font-semibold text-accent">7-day money-back guarantee.</span>{' '}
             Not satisfied? Email{' '}
-            <a href="mailto:support@sightwhale.com" className="text-accent font-medium underline underline-offset-2">support@sightwhale.com</a>{' '}
+            <a href="mailto:castro.liu@me.com" className="text-accent font-medium underline underline-offset-2">castro.liu@me.com</a>{' '}
             for a full refund.
           </p>
         </div>
