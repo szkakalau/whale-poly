@@ -69,9 +69,8 @@ async def health():
 @app.get("/diag/score-system")
 async def diag_score_system(session: AsyncSession = Depends(get_session)):
   """
-  Diagnose which Whale Score system is effectively in use:
-  - New stats-engine system requires whale_stats + whale_trade_history and periodic recompute.
-  - Fallback system computes score on demand from 30D volume + whale_profiles.
+  Whale Score system diagnostics: table health, freshness, and score distribution.
+  The stats engine (multi-window 5-factor model) is the sole scoring system.
   """
   try:
     whale_stats_reg = (await session.execute(text("select to_regclass('public.whale_stats')"))).scalar_one_or_none()
@@ -125,12 +124,34 @@ async def diag_score_system(session: AsyncSession = Depends(get_session)):
       dt = dt.replace(tzinfo=timezone.utc)
     history_recent = (now - dt).total_seconds() < 3600
 
-  effective_system = "fallback"
-  if has_whale_stats and has_whale_trade_history and stats_recent:
-    effective_system = "stats_engine"
-  elif has_whale_stats and has_whale_trade_history and whale_stats_rows:
-    # tables exist but may not be recomputing on schedule
-    effective_system = "stats_engine_stale"
+  # Score distribution for monitoring calibration
+  distribution = None
+  if has_whale_stats and whale_stats_rows:
+    try:
+      dist_result = await session.execute(text("""
+        SELECT
+          COUNT(*) FILTER (WHERE whale_score >= 90) AS tier_90_plus,
+          COUNT(*) FILTER (WHERE whale_score >= 80 AND whale_score < 90) AS tier_80_89,
+          COUNT(*) FILTER (WHERE whale_score >= 70 AND whale_score < 80) AS tier_70_79,
+          COUNT(*) FILTER (WHERE whale_score < 70) AS tier_below_70,
+          ROUND(AVG(whale_score)::numeric, 1) AS mean_score,
+          MIN(whale_score) AS min_score,
+          MAX(whale_score) AS max_score
+        FROM whale_stats
+      """))
+      row = dist_result.first()
+      if row:
+        distribution = {
+          "tier_90_plus": int(row.tier_90_plus),
+          "tier_80_89": int(row.tier_80_89),
+          "tier_70_79": int(row.tier_70_79),
+          "tier_below_70": int(row.tier_below_70),
+          "mean_score": float(row.mean_score) if row.mean_score is not None else None,
+          "min_score": int(row.min_score) if row.min_score is not None else None,
+          "max_score": int(row.max_score) if row.max_score is not None else None,
+        }
+    except Exception:
+      pass
 
   def _iso(dt: object) -> str | None:
     if isinstance(dt, datetime):
@@ -140,7 +161,7 @@ async def diag_score_system(session: AsyncSession = Depends(get_session)):
     return None
 
   return {
-    "effective_system": effective_system,
+    "effective_system": "stats_engine" if has_whale_stats else "no_stats_table",
     "has_whale_stats": has_whale_stats,
     "whale_stats_rows": int(whale_stats_rows) if whale_stats_rows is not None else None,
     "whale_stats_max_updated_at": _iso(whale_stats_max_updated_at),
@@ -149,7 +170,8 @@ async def diag_score_system(session: AsyncSession = Depends(get_session)):
     "whale_trade_history_rows": int(whale_hist_rows) if whale_hist_rows is not None else None,
     "whale_trade_history_max_timestamp": _iso(whale_hist_max_ts),
     "whale_trade_history_recent_1h": bool(history_recent),
-    "note": "If effective_system is fallback or stats_engine_stale, whale scores may be computed via 30D volume/profile heuristics or using stale whale_stats.",
+    "score_distribution": distribution,
+    "note": "Scores computed by stats_engine (multi-window 5-factor model). Distribution shows current calibration across alert tiers.",
   }
 
 
