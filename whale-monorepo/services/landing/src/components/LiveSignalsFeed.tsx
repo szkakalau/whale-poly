@@ -185,10 +185,11 @@ export default function LiveSignalsFeed({
   }
 
   return (
-    <div className="relative rounded-xl sm:rounded-[2rem] border border-border bg-surface/80 overflow-hidden">
+    <div className="relative rounded-xl sm:rounded-2xl border border-border bg-surface overflow-hidden">
+      {/* Toast — new signal notification */}
       {toast ? (
         <div className="fixed bottom-6 left-4 right-4 z-50 mx-auto max-w-lg sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
-          <div className="flex items-start gap-3 rounded-xl border border-red-500/50 bg-red-950/95 px-4 py-3 shadow-2xl backdrop-blur-md">
+          <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-surface px-4 py-3 shadow-lg">
             <button
               type="button"
               className="min-w-0 flex-1 text-left"
@@ -197,13 +198,13 @@ export default function LiveSignalsFeed({
                 router.push(toast.href);
               }}
             >
-              <p className="text-xs font-black uppercase tracking-wider text-red-200">New signal</p>
-              <p className="mt-1 text-sm font-semibold text-white">Tap to view · {toast.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-accent">New signal</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">Tap to view · {toast.label}</p>
             </button>
             <button
               type="button"
               aria-label="Dismiss"
-              className="shrink-0 rounded-lg p-1 text-red-200 hover:bg-white/10"
+              className="shrink-0 rounded-lg p-1 text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
               onClick={() => setToast(null)}
             >
               ✕
@@ -212,17 +213,18 @@ export default function LiveSignalsFeed({
         </div>
       ) : null}
 
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-          <div className="text-xs font-black tracking-[0.25em] uppercase text-emerald-300">
+          <span className="inline-flex h-2 w-2 rounded-full bg-accent" />
+          <div className="text-xs font-semibold tracking-[0.2em] uppercase text-accent">
             Live Signals
           </div>
           {isPaid ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-300">
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
               </span>
               Live
             </span>
@@ -234,7 +236,7 @@ export default function LiveSignalsFeed({
             <label className="flex cursor-pointer items-center gap-2 text-[10px] text-subtle select-none">
               <input
                 type="checkbox"
-                className="rounded border-border"
+                className="rounded border-border accent-accent"
                 defaultChecked={readSoundEnabled()}
                 onChange={(e) => {
                   window.localStorage.setItem(SOUND_STORAGE_KEY, e.target.checked ? '1' : '0');
@@ -245,18 +247,19 @@ export default function LiveSignalsFeed({
           ) : null}
           <Link
             href="/pricing"
-            className="text-xs font-semibold text-[#7AA2FF] hover:text-[#5B8CFF] underline underline-offset-4"
+            className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors"
           >
             Get full feed
           </Link>
         </div>
       </div>
 
+      {/* Signal rows */}
       <div className="px-3 sm:px-4 py-3">
         {windowed.length === 0 ? (
           <div className="px-3 py-10 sm:py-12 text-center max-w-md mx-auto">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-primary/12 border border-accent-primary/25 mb-4">
-              <Zap className="w-6 h-6 text-accent-secondary" aria-hidden />
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 mb-4">
+              <Zap className="w-6 h-6 text-accent" aria-hidden />
             </div>
             <p className="text-sm font-semibold text-foreground mb-1">No live rows to show yet</p>
             <p className="text-xs text-subtle leading-relaxed mb-5">
@@ -274,13 +277,13 @@ export default function LiveSignalsFeed({
                 type="button"
                 onClick={() => void handleRefresh()}
                 disabled={refreshing}
-                className="inline-flex items-center justify-center rounded-xl min-h-[44px] px-4 py-2.5 text-xs font-semibold bg-[#5B8CFF] text-white hover:bg-[#7AA2FF] active:bg-[#3D6FE0] disabled:opacity-60 transition-colors"
+                className="btn-primary text-xs px-4 min-h-[44px] inline-flex items-center justify-center disabled:opacity-60"
               >
                 {refreshing ? 'Refreshing…' : 'Refresh feed'}
               </button>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-xl min-h-[44px] px-4 py-2.5 text-xs font-semibold border border-border text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+                className="btn-secondary text-xs px-4 min-h-[44px] inline-flex items-center justify-center"
               >
                 Unlock real-time
               </Link>
@@ -290,18 +293,18 @@ export default function LiveSignalsFeed({
           <div className="space-y-2">
             {windowed.map((s) => {
               const row = (
-                <div className="rounded-2xl border border-border bg-background/60 px-4 py-3 flex items-center justify-between gap-4 hover:bg-surface-hover transition-colors">
+                <div className="rounded-xl border border-border bg-background px-4 py-3 flex items-center justify-between gap-4 hover:bg-surface-hover transition-colors">
                   <div className="min-w-0">
                     <div className="flex items-center gap-3">
                       <span
-                        className={`text-[10px] font-black tracking-[0.2em] uppercase ${
-                          s.side === 'BUY' ? 'text-emerald-300' : s.side === 'SELL' ? 'text-red-300' : 'text-muted'
+                        className={`text-[10px] font-semibold tracking-[0.15em] uppercase ${
+                          s.side === 'BUY' ? 'text-accent' : s.side === 'SELL' ? 'text-red-500' : 'text-muted'
                         }`}
                       >
                         {s.side}
                       </span>
                       {typeof s.whaleScore === 'number' && Number.isFinite(s.whaleScore) ? (
-                        <span className="text-[10px] font-black text-[#7AA2FF]/90 bg-[#5B8CFF]/12 border border-[#5B8CFF]/25 rounded-full px-2 py-0.5">
+                        <span className="text-[10px] font-semibold text-accent bg-accent/10 border border-accent/20 rounded-full px-2 py-0.5">
                           Score {s.whaleScore.toFixed(0)}
                         </span>
                       ) : null}
@@ -311,7 +314,7 @@ export default function LiveSignalsFeed({
                     <div className="mt-1 text-[11px] text-subtle font-mono">{s.walletMasked}</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-black text-foreground">{formatUsdCompact(s.sizeUsd)}</div>
+                    <div className="text-sm font-semibold text-foreground">{formatUsdCompact(s.sizeUsd)}</div>
                     <div className="text-[10px] text-subtle mt-1">trade size</div>
                   </div>
                 </div>

@@ -5,12 +5,12 @@ const SUPPORT_EMAIL = 'support@sightwhale.com';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-background py-12 sm:py-16 relative z-10 pb-[calc(1.5rem+env(safe-area-inset-bottom,0))]">
+    <footer className="border-t border-border bg-background py-12 sm:py-16 relative z-10 pb-safe">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
           <div className="flex items-center gap-3">
-            <WhaleLogo className="h-9 w-9 text-foreground drop-shadow-[0_0_14px_oklch(0.62_0.17_220_/_0.35)]" />
-            <span className="font-bold text-foreground text-lg tracking-tight font-display">SightWhale</span>
+            <WhaleLogo className="h-9 w-9 text-accent" />
+            <span className="font-semibold text-foreground text-lg tracking-tight font-display">SightWhale</span>
           </div>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
@@ -21,7 +21,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-border-muted flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="text-subtle text-xs font-light">
+          <div className="text-subtle text-xs">
             © {new Date().getFullYear()} SightWhale. All rights reserved.
           </div>
           <div className="flex gap-8">

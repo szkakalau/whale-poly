@@ -56,10 +56,10 @@ type AnalysisData = {
 // ── Direction helpers ───────────────────────────────
 
 const DIR = {
-  bullish: { icon: ArrowUpRight, label: 'BULLISH', ring: 'ring-emerald-400/40', text: 'text-emerald-300', bg: 'bg-emerald-400/5', dot: 'bg-emerald-400' },
-  bearish: { icon: ArrowDownRight, label: 'BEARISH', ring: 'ring-red-400/40', text: 'text-red-300', bg: 'bg-red-400/5', dot: 'bg-red-400' },
+  bullish: { icon: ArrowUpRight, label: 'BULLISH', ring: 'ring-emerald-300/50', text: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  bearish: { icon: ArrowDownRight, label: 'BEARISH', ring: 'ring-red-300/50', text: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500' },
   neutral: { icon: Minus, label: 'NEUTRAL', ring: 'ring-muted/30', text: 'text-muted', bg: 'bg-surface-hover/50', dot: 'bg-muted' },
-  mixed:   { icon: AlertTriangle, label: 'MIXED', ring: 'ring-amber-400/40', text: 'text-amber-300', bg: 'bg-amber-400/5', dot: 'bg-amber-400' },
+  mixed:   { icon: AlertTriangle, label: 'MIXED', ring: 'ring-amber-300/50', text: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
 } as const;
 
 // ── Component ────────────────────────────────────────
@@ -145,7 +145,7 @@ export default function AnalyzePage() {
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-border-muted text-[10px] uppercase tracking-[0.25em] text-muted/50">
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               SYS.ONLINE
             </span>
             <span className="text-border-muted">|</span>
@@ -212,16 +212,16 @@ export default function AnalyzePage() {
 
             {/* Error */}
             {error && !loading && (
-              <div className="border border-red-500/20 bg-red-500/5 p-6 mb-8" role="alert">
+              <div className="border border-red-300 bg-red-50 rounded-lg p-6 mb-8" role="alert">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
+                  <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-red-300 font-bold mb-1">ERR:NO_MATCH</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-red-600 font-bold mb-1">ERR:NO_MATCH</p>
                     <p className="text-xs text-muted">{error}</p>
                   </div>
                 </div>
                 {result?.candidates && result.candidates.length > 0 && (
-                  <nav className="mt-4 pt-4 border-t border-red-500/10" aria-label="Candidate markets">
+                  <nav className="mt-4 pt-4 border-t border-red-200" aria-label="Candidate markets">
                     <p className="text-[9px] uppercase tracking-[0.25em] text-muted/40 mb-2">DID YOU MEAN</p>
                     <ul className="space-y-1">
                       {result.candidates.slice(0, 3).map((c) => (
@@ -284,8 +284,8 @@ export default function AnalyzePage() {
                 {/* METRICS — 4-col stat grid */}
                 <div className="grid grid-cols-4 border border-border-muted">
                   {[
-                    { label: 'VOL YES', value: `$${(result.yesVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-emerald-300' },
-                    { label: 'VOL NO', value: `$${(result.noVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-red-300' },
+                    { label: 'VOL YES', value: `$${(result.yesVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-emerald-700' },
+                    { label: 'VOL NO', value: `$${(result.noVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-red-600' },
                     { label: 'TRADES', value: String(result.whaleTradeCount), cls: 'text-foreground' },
                     { label: 'STALE', value: result.dataFreshness.stalenessMinutes < 60 ? `${result.dataFreshness.stalenessMinutes}m` : `${Math.floor(result.dataFreshness.stalenessMinutes / 60)}h`, cls: 'text-foreground' },
                   ].map((s, i) => (
@@ -298,9 +298,9 @@ export default function AnalyzePage() {
 
                 {/* Partial data warning */}
                 {result.partialData && (
-                  <div className="flex items-start gap-2 border border-amber-500/15 bg-amber-500/5 px-3.5 py-2.5" role="alert">
-                    <ShieldAlert className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" aria-hidden="true" />
-                    <p className="text-[10px] text-amber-300/80 font-mono">
+                  <div className="flex items-start gap-2 border border-amber-300 bg-amber-50 px-3.5 py-2.5" role="alert">
+                    <ShieldAlert className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
+                    <p className="text-[10px] text-amber-700 font-mono">
                       Some wallet data unavailable. Analysis based on available data.
                     </p>
                   </div>
@@ -335,7 +335,7 @@ export default function AnalyzePage() {
                                         key={cs.category}
                                         className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold border ${
                                           cs.winRate >= 0.6
-                                            ? 'border-emerald-400/20 text-emerald-300/80'
+                                            ? 'border-emerald-300 text-emerald-700'
                                             : 'border-border-muted text-muted/40'
                                         }`}
                                       >
@@ -347,7 +347,7 @@ export default function AnalyzePage() {
                                 )}
                               </td>
                               <td className="px-3 py-2.5">
-                                <span className={`font-bold ${w.outcome === 'YES' ? 'text-emerald-300/80' : w.outcome === 'NO' ? 'text-red-300/80' : 'text-muted/40'}`}>
+                                <span className={`font-bold ${w.outcome === 'YES' ? 'text-emerald-700' : w.outcome === 'NO' ? 'text-red-600' : 'text-muted/40'}`}>
                                   {w.action}
                                 </span>
                               </td>
@@ -368,25 +368,25 @@ export default function AnalyzePage() {
                 {/* Warnings */}
                 <div className="space-y-1.5">
                   {result.whaleTradeCount < 3 && (
-                    <div className="flex items-start gap-2 border border-amber-500/10 bg-amber-500/3 px-3 py-2" role="alert">
-                      <ShieldAlert className="w-3 h-3 text-amber-400/60 mt-0.5 shrink-0" aria-hidden="true" />
-                      <p className="text-[10px] text-amber-300/60 font-mono">
+                    <div className="flex items-start gap-2 border border-amber-200 bg-amber-50 px-3 py-2" role="alert">
+                      <ShieldAlert className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <p className="text-[10px] text-amber-600 font-mono">
                         WARN: Only {result.whaleTradeCount} trade(s) in window. Low signal quality.
                       </p>
                     </div>
                   )}
                   {result.dataFreshness.stalenessMinutes > 360 && (
-                    <div className="flex items-start gap-2 border border-amber-500/10 bg-amber-500/3 px-3 py-2" role="alert">
-                      <Clock className="w-3 h-3 text-amber-400/60 mt-0.5 shrink-0" aria-hidden="true" />
-                      <p className="text-[10px] text-amber-300/60 font-mono">
+                    <div className="flex items-start gap-2 border border-amber-200 bg-amber-50 px-3 py-2" role="alert">
+                      <Clock className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <p className="text-[10px] text-amber-600 font-mono">
                         WARN: Data stale ({Math.floor(result.dataFreshness.stalenessMinutes / 60)}h old).
                       </p>
                     </div>
                   )}
                   {result.direction === 'mixed' && (
-                    <div className="flex items-start gap-2 border border-amber-500/10 bg-amber-500/3 px-3 py-2" role="alert">
-                      <AlertTriangle className="w-3 h-3 text-amber-400/60 mt-0.5 shrink-0" aria-hidden="true" />
-                      <p className="text-[10px] text-amber-300/60 font-mono">
+                    <div className="flex items-start gap-2 border border-amber-200 bg-amber-50 px-3 py-2" role="alert">
+                      <AlertTriangle className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <p className="text-[10px] text-amber-600 font-mono">
                         WARN: Divided signals. No consensus.
                       </p>
                     </div>

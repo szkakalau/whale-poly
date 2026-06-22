@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { IBM_Plex_Sans, JetBrains_Mono, Syne } from "next/font/google";
+import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-const ibmPlexSans = IBM_Plex_Sans({
+const newsreader = Newsreader({
   subsets: ["latin"],
-  variable: "--font-body",
-  weight: ["400", "500", "600"],
+  variable: "--font-heading",
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
-const syne = Syne({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-heading",
-  weight: ["600", "700", "800"],
+  variable: "--font-body",
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -97,9 +98,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexSans.variable} ${syne.variable} ${jetbrainsMono.variable}`}
+      className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body className={`${ibmPlexSans.className} antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <Header />
         <main className="min-h-screen pt-14 sm:pt-16">{children}</main>
         <Footer />
