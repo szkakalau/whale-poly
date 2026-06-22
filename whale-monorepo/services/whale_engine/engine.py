@@ -561,12 +561,9 @@ def _compute_scores(m: _WindowMetrics, wallet_age_days: float, wash_suspected: b
     risk *= 0.85
     impact *= 0.75
 
-  if wallet_age_days < 7:
-    age_mult = 0.4
-  elif wallet_age_days < 14:
-    age_mult = 0.7
-  else:
-    age_mult = 1.0
+  # Smooth age multiplier: ramps from 0.70 to ~1.0 over ~10 days.
+  # A perfect new whale (day 0) reaches score 70 — the lowest alert threshold.
+  age_mult = 1.0 - 0.3 * math.exp(-wallet_age_days / 3.0)
 
   if wash_suspected:
     age_mult *= 0.2
