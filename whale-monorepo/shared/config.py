@@ -76,6 +76,13 @@ class Settings:
     self.whale_build_usd_threshold = float(os.getenv("WHALE_BUILD_USD_THRESHOLD", "10000"))
     self.whale_exit_usd_threshold = float(os.getenv("WHALE_EXIT_USD_THRESHOLD", "5000"))
 
+    # Whale Score factor weights — must sum to 1.0.
+    self.whale_weight_performance = float(os.getenv("WHALE_WEIGHT_PERFORMANCE", "0.30"))
+    self.whale_weight_consistency = float(os.getenv("WHALE_WEIGHT_CONSISTENCY", "0.25"))
+    self.whale_weight_timing = float(os.getenv("WHALE_WEIGHT_TIMING", "0.20"))
+    self.whale_weight_risk = float(os.getenv("WHALE_WEIGHT_RISK", "0.15"))
+    self.whale_weight_impact = float(os.getenv("WHALE_WEIGHT_IMPACT", "0.10"))
+
     self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "8443902552:AAFcI90mdlQ0UOdtzlvAmb7i16ohaBV8fxA")
     self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "879397306")
     self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "@sightwhale_HealthBot")

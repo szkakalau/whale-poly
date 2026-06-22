@@ -572,11 +572,11 @@ def _compute_scores(m: _WindowMetrics, wallet_age_days: float, wash_suspected: b
   impact = _clamp(impact, 0.0, 100.0)
 
   whale_score = (
-    0.30 * performance +
-    0.25 * consistency +
-    0.20 * timing +
-    0.15 * risk +
-    0.10 * impact
+    settings.whale_weight_performance * performance +
+    settings.whale_weight_consistency * consistency +
+    settings.whale_weight_timing * timing +
+    settings.whale_weight_risk * risk +
+    settings.whale_weight_impact * impact
   ) * age_mult
 
   # Wash trading penalty: applied to final score, independent from age.
