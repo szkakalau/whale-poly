@@ -109,6 +109,12 @@ a:hover {
   color: #FFFFFF;
 }
 
+.text-xs,
+.text-sm,
+.text-base {
+  color: inherit;
+}
+
 /* ═══════════════════════════════════════════
    BUTTONS — single accent color
    ═══════════════════════════════════════════ */
@@ -381,12 +387,6 @@ a:hover {
   color: var(--text-secondary) !important;
 }
 
-.text-xs,
-.text-sm,
-.text-base {
-  color: inherit;
-}
-
 /* Accent text — force to green */
 .text-accent-sharp,
 .text-accent-primary,
@@ -507,6 +507,7 @@ a:hover {
 
 .bg-accent-sharp {
   background-color: var(--accent) !important;
+  color: #FFFFFF;
 }
 
 .bg-accent-sharp\/10 {
