@@ -42,7 +42,7 @@ export default function PricingPage() {
         </header>
 
         {/* Money-back guarantee banner */}
-        <div className="mb-10 rounded-lg border border-accent/20 bg-accent/5 px-5 py-4 max-w-3xl">
+        <div className="mb-10 rounded-lg border border-accent/20 bg-accent/5 px-5 py-4">
           <p className="text-sm font-medium text-foreground">
             Money-back guarantee: not satisfied this month? Email{' '}
             <a href="mailto:support@sightwhale.com" className="underline decoration-accent/30 underline-offset-4 text-accent font-semibold">
@@ -53,11 +53,11 @@ export default function PricingPage() {
         </div>
 
         {/* Plan cards */}
-        <div className="grid gap-6 lg:grid-cols-2 mb-16 max-w-3xl">
+        <div className="grid gap-6 lg:grid-cols-2 mb-16">
           {[firstPlan, secondPlan].map((plan) => (
             <div
               key={plan.tier}
-              className={`rounded-2xl border p-8 flex flex-col ${
+              className={`rounded-lg border p-8 flex flex-col ${
                 plan.highlighted
                   ? 'border-accent/30 bg-accent/[0.04]'
                   : 'border-border bg-surface'
@@ -100,11 +100,11 @@ export default function PricingPage() {
         </div>
 
         {/* FAQ */}
-        <section className="rounded-2xl border border-border bg-surface p-6 sm:p-10 mb-12 max-w-3xl">
+        <section className="mb-16">
           <h2 className="font-display text-lg font-semibold text-foreground mb-6">Common questions</h2>
-          <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2">
             {FAQ.map((item) => (
-              <div key={item.q}>
+              <div key={item.q} className="rounded-lg border border-border bg-surface px-6 py-5">
                 <h3 className="text-sm font-semibold text-foreground mb-2">{item.q}</h3>
                 <p className="text-sm text-muted leading-relaxed">{item.a}</p>
               </div>
@@ -113,12 +113,12 @@ export default function PricingPage() {
         </section>
 
         {/* Bottom CTA */}
-        <div className="rounded-2xl border border-border bg-surface px-6 py-12 max-w-xl">
-          <p className="font-display text-lg font-semibold text-foreground mb-2">Ready for real-time signals?</p>
-          <p className="text-sm text-muted mb-6 max-w-md">
+        <div className="rounded-lg border border-border bg-surface px-8 py-12 text-center">
+          <p className="font-display text-xl font-semibold text-foreground mb-2">Ready for real-time signals?</p>
+          <p className="text-sm text-muted mb-6 max-w-md mx-auto">
             Secure checkout with Stripe. Cancel anytime.
           </p>
-          <Link href="/subscribe?plan=pro" className="btn-primary inline-flex px-8 py-3.5 text-sm font-semibold">
+          <Link href="/subscribe?plan=pro" className="btn-primary inline-flex px-10 py-3.5 text-sm font-semibold">
             Start checkout
           </Link>
         </div>
