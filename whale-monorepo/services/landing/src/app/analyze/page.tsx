@@ -128,23 +128,12 @@ export default function AnalyzePage() {
     <div className="min-h-screen font-mono text-foreground selection:bg-accent-sharp/30">
       {/* Fixed background structure */}
       <div className="fixed inset-0 -z-10 bg-background" aria-hidden>
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-        {/* Ambient glows */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent-primary/4 rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" />
-        <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent-sharp/3 rounded-full blur-[120px] -translate-x-1/4 translate-y-1/4" />
       </div>
 
       {/* Main layout — brutalist 3-column grid */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {/* Top bar: status line */}
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-border-muted text-[10px] uppercase tracking-[0.25em] text-muted/50">
+        <div className="flex items-center justify-between mb-8 pb-4 border-b border-border-muted text-[11px] uppercase tracking-[0.25em] text-muted/70">
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -166,12 +155,12 @@ export default function AnalyzePage() {
           <div>
             {/* Search — monospace, raw */}
             <form onSubmit={handleSubmit} className="mb-10" role="search" aria-label="Market analysis search">
-              <label htmlFor="market-query" className="block text-[10px] uppercase tracking-[0.3em] text-muted/40 mb-3 font-semibold">
+              <label htmlFor="market-query" className="block text-[10px] uppercase tracking-[0.3em] text-muted/60 mb-3 font-semibold">
                 Market Query
               </label>
               <div className="flex gap-0 border border-border-muted focus-within:border-accent-sharp/40 transition-colors">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/40 pointer-events-none" aria-hidden="true" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/60 pointer-events-none" aria-hidden="true" />
                   <input
                     ref={inputRef}
                     id="market-query"
@@ -179,7 +168,7 @@ export default function AnalyzePage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="> paste link or keyword…"
-                    className="w-full bg-transparent pl-9 pr-4 py-3.5 text-sm font-mono text-foreground placeholder:text-muted/25 focus:outline-none"
+                    className="w-full bg-transparent pl-9 pr-4 py-3.5 text-sm font-mono text-foreground placeholder:text-muted/50 focus:outline-none"
                     disabled={loading}
                     autoComplete="off"
                     autoFocus
@@ -188,7 +177,7 @@ export default function AnalyzePage() {
                 <button
                   type="submit"
                   disabled={loading || !query.trim()}
-                  className="shrink-0 bg-accent-sharp px-6 py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-background hover:opacity-90 disabled:opacity-20 transition-opacity"
+                  className="shrink-0 bg-accent-sharp px-6 py-3.5 text-[12px] font-bold uppercase tracking-[0.2em] hover:opacity-90 disabled:opacity-40 transition-opacity"
                   aria-label={loading ? 'Analyzing…' : 'Run Analysis'}
                 >
                   {loading ? (
@@ -224,7 +213,7 @@ export default function AnalyzePage() {
                 </div>
                 {result?.candidates && result.candidates.length > 0 && (
                   <nav className="mt-4 pt-4 border-t border-red-200" aria-label="Candidate markets">
-                    <p className="text-[9px] uppercase tracking-[0.25em] text-muted/40 mb-2">DID YOU MEAN</p>
+                    <p className="text-[9px] uppercase tracking-[0.25em] text-muted/60 mb-2">DID YOU MEAN</p>
                     <ul className="space-y-1">
                       {result.candidates.slice(0, 3).map((c) => (
                         <li key={c.slug}>
@@ -233,7 +222,7 @@ export default function AnalyzePage() {
                             className="block w-full text-left text-xs font-mono text-foreground/80 hover:text-foreground hover:bg-surface/30 px-2 py-1.5 transition-colors"
                           >
                             {c.title}
-                            {c.volume24h ? <span className="text-muted/40 ml-2">${(c.volume24h / 1000).toFixed(0)}k</span> : null}
+                            {c.volume24h ? <span className="text-muted/60 ml-2">${(c.volume24h / 1000).toFixed(0)}k</span> : null}
                           </button>
                         </li>
                       ))}
@@ -260,7 +249,7 @@ export default function AnalyzePage() {
                         <div className="flex items-center gap-4 min-w-0">
                           <Icon className={`w-7 h-7 ${d.text} shrink-0`} aria-hidden="true" />
                           <div className="min-w-0">
-                            <p className="text-[9px] uppercase tracking-[0.3em] text-muted/40 mb-0.5 font-semibold">
+                            <p className="text-[9px] uppercase tracking-[0.3em] text-muted/60 mb-0.5 font-semibold">
                               {result.matchMethod === 'url' ? 'URL MATCH' : 'GAMMA SEARCH'} · SIGNAL
                             </p>
                             <p className={`font-mono text-xl sm:text-2xl font-black tracking-tight ${d.text}`}>
@@ -272,11 +261,11 @@ export default function AnalyzePage() {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-[9px] uppercase tracking-[0.25em] text-muted/40 mb-0.5 font-semibold">CONFIDENCE</p>
+                          <p className="text-[9px] uppercase tracking-[0.25em] text-muted/60 mb-0.5 font-semibold">CONFIDENCE</p>
                           <p className="font-mono text-3xl font-black text-foreground tabular-nums">
                             {result.confidenceScore}
                           </p>
-                          <p className="text-[9px] uppercase tracking-[0.2em] text-muted/40 mt-0.5">{result.confidenceLevel}</p>
+                          <p className="text-[9px] uppercase tracking-[0.2em] text-muted/60 mt-0.5">{result.confidenceLevel}</p>
                         </div>
                       </div>
                     </div>
@@ -292,7 +281,7 @@ export default function AnalyzePage() {
                     { label: 'STALE', value: result.dataFreshness.stalenessMinutes < 60 ? `${result.dataFreshness.stalenessMinutes}m` : `${Math.floor(result.dataFreshness.stalenessMinutes / 60)}h`, cls: 'text-foreground' },
                   ].map((s, i) => (
                     <div key={s.label} className={`px-3 py-3 text-center ${i < 3 ? 'border-r border-border-muted' : ''}`}>
-                      <p className="text-[8px] uppercase tracking-[0.25em] text-muted/30 font-semibold mb-1">{s.label}</p>
+                      <p className="text-[10px] uppercase tracking-[0.25em] text-muted/50 font-semibold mb-1">{s.label}</p>
                       <p className={`font-mono text-sm font-black tabular-nums ${s.cls}`}>{s.value}</p>
                     </div>
                   ))}
@@ -312,13 +301,13 @@ export default function AnalyzePage() {
                 {result.topWallets.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Hash className="w-3.5 h-3.5 text-muted/40" aria-hidden="true" />
-                      <p className="text-[9px] uppercase tracking-[0.3em] text-muted/40 font-bold">Wallet Blotter</p>
+                      <Hash className="w-3.5 h-3.5 text-muted/60" aria-hidden="true" />
+                      <p className="text-[9px] uppercase tracking-[0.3em] text-muted/60 font-bold">Wallet Blotter</p>
                     </div>
                     <div className="border border-border-muted overflow-x-auto">
                       <table className="w-full text-xs font-mono" aria-label="Wallet activity table">
                         <thead>
-                          <tr className="border-b border-border-muted text-[9px] uppercase tracking-[0.2em] text-muted/30">
+                          <tr className="border-b border-border-muted text-[9px] uppercase tracking-[0.2em] text-muted/50">
                             <th className="text-left px-3 py-2 font-semibold">Address</th>
                             <th className="text-left px-3 py-2 font-semibold w-16">Side</th>
                             <th className="text-right px-3 py-2 font-semibold w-20">Size</th>
@@ -335,10 +324,10 @@ export default function AnalyzePage() {
                                     {w.categoryStats.slice(0, 2).map((cs) => (
                                       <span
                                         key={cs.category}
-                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold border ${
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-bold border ${
                                           cs.winRate >= 0.6
                                             ? 'border-emerald-300 text-emerald-700'
-                                            : 'border-border-muted text-muted/40'
+                                            : 'border-border-muted text-muted/60'
                                         }`}
                                       >
                                         {cs.category}
@@ -349,14 +338,14 @@ export default function AnalyzePage() {
                                 )}
                               </td>
                               <td className="px-3 py-2.5">
-                                <span className={`font-bold ${w.outcome === 'YES' ? 'text-emerald-700' : w.outcome === 'NO' ? 'text-red-600' : 'text-muted/40'}`}>
+                                <span className={`font-bold ${w.outcome === 'YES' ? 'text-emerald-700' : w.outcome === 'NO' ? 'text-red-600' : 'text-muted/60'}`}>
                                   {w.action}
                                 </span>
                               </td>
                               <td className="px-3 py-2.5 text-right tabular-nums text-muted/70">
                                 ${(w.amountUsd / 1000).toFixed(0)}k
                               </td>
-                              <td className="px-3 py-2.5 text-right tabular-nums text-muted/30">
+                              <td className="px-3 py-2.5 text-right tabular-nums text-muted/50">
                                 {w.walletWeight}
                               </td>
                             </tr>
@@ -396,7 +385,7 @@ export default function AnalyzePage() {
                 </div>
 
                 {/* Disclaimer */}
-                <p className="text-[9px] text-muted/25 font-mono border-t border-border-muted pt-3">
+                <p className="text-[9px] text-muted/50 font-mono border-t border-border-muted pt-3">
                   {result.disclaimer}
                 </p>
               </div>
@@ -407,16 +396,16 @@ export default function AnalyzePage() {
               <div className="border border-dashed border-border-muted p-6 sm:p-8" role="region" aria-label="No whale activity">
                 <div className="flex items-start gap-4">
                   <div className="w-8 h-8 border border-border-muted flex items-center justify-center shrink-0 mt-0.5">
-                    <Search className="w-3.5 h-3.5 text-muted/30" aria-hidden="true" />
+                    <Search className="w-3.5 h-3.5 text-muted/50" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted/40 font-bold mb-1">NO SIGNAL</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted/60 font-bold mb-1">NO SIGNAL</p>
                     <p className="text-xs font-mono text-muted/60 mb-4">
                       {result.message || 'No whale trades ≥ $5k matched this market in the past 24 hours. This may reflect no qualifying activity, delayed ingestion, or a market-slug mismatch.'}
                     </p>
                     {activeTrending.length > 0 && (
                       <div className="pt-3 border-t border-border-muted">
-                        <p className="text-[8px] uppercase tracking-[0.3em] text-muted/30 mb-2 font-bold">Active Markets</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-muted/50 mb-2 font-bold">Active Markets</p>
                         <div className="flex flex-wrap gap-1.5">
                           {activeTrending.slice(0, 6).map((m) => (
                             <button
@@ -442,8 +431,8 @@ export default function AnalyzePage() {
               {/* Status panel */}
               <div className="border border-border-muted p-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <BarChart3 className="w-3 h-3 text-muted/30" aria-hidden="true" />
-                  <p className="text-[9px] uppercase tracking-[0.3em] text-muted/40 font-bold">Market Feed</p>
+                  <BarChart3 className="w-3 h-3 text-muted/50" aria-hidden="true" />
+                  <p className="text-[9px] uppercase tracking-[0.3em] text-muted/60 font-bold">Market Feed</p>
                 </div>
                 {activeTrending.length > 0 ? (
                   <div className="space-y-0.5">
@@ -461,17 +450,17 @@ export default function AnalyzePage() {
                                 {m.title}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`text-[8px] uppercase tracking-wider font-bold ${d.text}`}>
+                                <span className={`text-[10px] uppercase tracking-wider font-bold ${d.text}`}>
                                   {d.label}
                                 </span>
-                                <span className="text-[8px] text-muted/30 tabular-nums">{m.confidenceScore}/100</span>
+                                <span className="text-[10px] text-muted/50 tabular-nums">{m.confidenceScore}/100</span>
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-[9px] font-mono font-bold text-foreground/50 tabular-nums">
+                              <p className="text-[9px] font-mono font-bold text-foreground/60 tabular-nums">
                                 ${(m.volume24h / 1000).toFixed(0)}k
                               </p>
-                              <p className="text-[7px] text-muted/25">{m.whaleTradeCount}t</p>
+                              <p className="text-[9px] text-muted/50">{m.whaleTradeCount}t</p>
                             </div>
                           </div>
                         </button>
@@ -479,16 +468,16 @@ export default function AnalyzePage() {
                     })}
                   </div>
                 ) : trendingLoading ? (
-                  <p className="text-[10px] font-mono text-muted/25">Loading market data…</p>
+                  <p className="text-[10px] font-mono text-muted/50">Loading market data…</p>
                 ) : (
-                  <p className="text-[10px] font-mono text-muted/40">No trending markets available</p>
+                  <p className="text-[10px] font-mono text-muted/60">No trending markets available</p>
                 )}
               </div>
 
               {/* Quick help */}
               <div className="border border-border-muted p-4">
-                <p className="text-[9px] uppercase tracking-[0.3em] text-muted/40 font-bold mb-3">Usage</p>
-                <div className="space-y-2 text-[10px] font-mono text-muted/40">
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted/60 font-bold mb-3">Usage</p>
+                <div className="space-y-2 text-[10px] font-mono text-muted/60">
                   <p><span className="text-muted/60">{'>'}</span> Paste a Polymarket URL</p>
                   <p><span className="text-muted/60">{'>'}</span> Type a keyword (e.g. Trump, BTC)</p>
                   <p><span className="text-muted/60">{'>'}</span> Chinese queries auto-translate</p>
