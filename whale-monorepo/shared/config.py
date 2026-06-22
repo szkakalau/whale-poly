@@ -138,20 +138,20 @@ def _alert_config_defaults() -> dict[str, Any]:
       "free": {
         "alerts_delay": "10m",
         "max_alerts_per_day": 3,
-        "low_confidence_whales": True,
+        "min_whale_score": 0,
         "max_follow_whales": 0,
       },
       "pro": {
         "alerts_delay": "0m",
         "max_alerts_per_day": "unlimited",
-        "low_confidence_whales": True,
+        "min_whale_score": 70,
         "max_follow_whales": 20,
         "smart_collections": "partial",
       },
       "elite": {
         "alerts_delay": "0m",
         "max_alerts_per_day": "unlimited",
-        "low_confidence_whales": True,
+        "min_whale_score": 80,
         "max_follow_whales": 100,
         "smart_collections": "full",
         "high_confidence_first": True,

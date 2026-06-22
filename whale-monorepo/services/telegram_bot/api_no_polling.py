@@ -184,17 +184,18 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     config = get_alert_config()
     plan_cfg = config.get("user_plans", {})
 
-    def _plan_limits(name: str, default_delay_minutes: int, default_max_alerts):
+    def _plan_limits(name: str, default_delay_minutes: int, default_max_alerts, default_min_score: int):
       data = plan_cfg.get(name, {})
       delay_seconds = parse_duration(data.get("alerts_delay"), default_delay_minutes * 60)
       delay_minutes = int(delay_seconds / 60)
       max_alerts = data.get("max_alerts_per_day", default_max_alerts)
-      return {"max_alerts_per_day": max_alerts, "alert_delay_minutes": delay_minutes}
+      min_score = data.get("min_whale_score", default_min_score)
+      return {"max_alerts_per_day": max_alerts, "alert_delay_minutes": delay_minutes, "min_whale_score": int(min_score)}
 
     PLAN_LIMITS_MAP = {
-      "FREE": _plan_limits("free", 10, 3),
-      "PRO": _plan_limits("pro", 0, "unlimited"),
-      "ELITE": _plan_limits("elite", 0, "unlimited"),
+      "FREE": _plan_limits("free", 10, 3, 0),
+      "PRO": _plan_limits("pro", 0, "unlimited", 70),
+      "ELITE": _plan_limits("elite", 0, "unlimited", 80),
     }
 
     async def _send_with_rules(
@@ -210,15 +211,9 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       behavior = p_json.get("behavior")
       score_value = _safe_float(p_json.get("whale_score") or p_json.get("score")) or 0.0
       size_value = _safe_float(p_json.get("size") or p_json.get("amount")) or 0.0
-      thresholds = config.get("alert_thresholds", {})
-      confidence = thresholds.get("confidence_scores", {})
-      usd_thresholds = thresholds.get("usd_thresholds", {})
-      high_score = float(confidence.get("high_confidence", 85))
-      high_usd = float(usd_thresholds.get("high", 400))
-      high_confidence = (score_value >= high_score and size_value >= high_usd) or bool(behavior)
       market_id = str(p_json.get("market_id") or p_json.get("raw_token_id") or "")
       wallet_value = str(p_json.get("wallet_address") or "").lower()
-      
+
       # 1. Check Daily Limit
       if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
         logger.warning("daily_limit_reached telegram_id=%s plan=%s", tid, plan_name)
@@ -229,7 +224,9 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         await redis.rpush(settings.alert_created_queue, p_raw)
         return False
 
-      if plan_name == "PRO" and not high_confidence:
+      # Plan-based score filter: Pro ≥70, Elite ≥80 (see alert_engine_config.yaml)
+      min_score = limits.get("min_whale_score", 0)
+      if score_value < min_score:
         return False
 
       if plan_name == "ELITE" and settings.elite_delivery_filters_enabled:
