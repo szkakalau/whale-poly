@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { trackEvent } from '@/lib/analytics';
@@ -8,817 +8,244 @@ import { trackEvent } from '@/lib/analytics';
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 const SUBSCRIBE_START_PARAM = 'subscribe_pro';
 
-type PaidTier = 'pro' | 'elite';
-type Mode = 'paid' | 'free';
-type BillingPeriod = 'monthly' | 'yearly';
+type Plan = 'pro' | 'elite';
+type Period = 'monthly' | 'yearly';
 
-const PLAN_COPY: Record<
-  PaidTier,
-  {
-    label: string;
-    monthlyPrice: number;
-    yearlyPrice: number;
-    monthlySuffix: string;
-    yearlySuffix: string;
-    kicker: string;
-    description: string;
-    features: string[];
-  }
-> = {
+const PLANS: Record<Plan, { label: string; monthly: number; yearly: number; features: string[] }> = {
   pro: {
     label: 'Pro',
-    monthlyPrice: 29,
-    yearlyPrice: 290,
-    monthlySuffix: '/mo',
-    yearlySuffix: '/yr',
-    kicker: 'Best for most traders',
-    description: 'Unlock today’s real-time signals—in-app refresh plus optional Telegram.',
-    features: [
-      'All real-time signals (in-app)',
-      'All 70+ Whale Score signals',
-      'Optional Telegram (~30s)',
-      'Follow up to 20 whales · 5 smart collections',
-    ],
+    monthly: 29,
+    yearly: 290,
+    features: ['Real-time signals in-app', 'Whale Score 70+', 'Optional Telegram (~30s)', 'Follow 20 whales · 5 collections'],
   },
   elite: {
     label: 'Elite',
-    monthlyPrice: 59,
-    yearlyPrice: 590,
-    monthlySuffix: '/mo',
-    yearlySuffix: '/yr',
-    kicker: 'Priority for active traders',
-    description: 'Pro plus higher-confidence filtering and faster optional Telegram.',
-    features: [
-      'Everything in Pro',
-      '80+ high-conviction signals (where applicable)',
-      'Optional Telegram (~10s priority)',
-      'Follow up to 100 whales · 20 smart collections',
-    ],
+    monthly: 59,
+    yearly: 590,
+    features: ['Everything in Pro', 'Whale Score 80+', 'Optional Telegram (~10s)', 'Follow 100 whales · 20 collections'],
   },
 };
 
-const FREE_PLAN_FEATURES = [
-  'Full history through yesterday (UTC)',
-  'Feed shows signals before today 00:00 UTC',
-  'No paid real-time / Telegram',
-];
-
-function getPlanAmount(tier: PaidTier, period: BillingPeriod): number {
-  return period === 'yearly' ? PLAN_COPY[tier].yearlyPrice : PLAN_COPY[tier].monthlyPrice;
-}
-
-function getPlanSuffix(tier: PaidTier, period: BillingPeriod): string {
-  return period === 'yearly' ? PLAN_COPY[tier].yearlySuffix : PLAN_COPY[tier].monthlySuffix;
-}
-
-function resolveBotDomain(baseUrl: string): string {
-  try {
-    const u = new URL(baseUrl);
-    if (u.hostname === 't.me' && u.pathname.length > 1) {
-      const seg = u.pathname.replace(/^\//, '').split('/')[0];
-      if (seg) return seg;
-    }
-  } catch {
-    /* ignore */
-  }
-  return 'sightwhale_bot';
-}
-
-function isLikelyInAppBrowser(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent || '';
-  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|LinkedInApp|Snapchat/i.test(ua);
-}
-
-const NARROW_QUERY = '(max-width: 639px)';
-
-function subscribeNarrowViewport(onStoreChange: () => void) {
-  const mq = window.matchMedia(NARROW_QUERY);
-  mq.addEventListener('change', onStoreChange);
-  return () => mq.removeEventListener('change', onStoreChange);
-}
-
-function getNarrowViewportSnapshot() {
-  return window.matchMedia(NARROW_QUERY).matches;
-}
-
-function TrackedSection({
-  section,
-  children,
-}: {
-  section: string;
-  children: ReactNode;
-}) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const hasTrackedRef = useRef(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node || hasTrackedRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.some((entry) => entry.isIntersecting);
-        if (!visible || hasTrackedRef.current) return;
-
-        hasTrackedRef.current = true;
-        trackEvent('subscribe_section_view', { page: 'subscribe', section });
-        observer.disconnect();
-      },
-      { threshold: 0.35 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [section]);
-
-  return <div ref={ref}>{children}</div>;
-}
-
-function TelegramActivationLinks() {
-  const { httpsUrl, tgAppUrl } = useMemo(() => {
-    const httpsUrl = `${TELEGRAM_BOT_URL}?start=${SUBSCRIBE_START_PARAM}`;
-    const domain = resolveBotDomain(TELEGRAM_BOT_URL);
-    const tgAppUrl = `tg://resolve?domain=${encodeURIComponent(domain)}&start=${SUBSCRIBE_START_PARAM}`;
-    return { httpsUrl, tgAppUrl };
-  }, []);
-
-  const isNarrow = useSyncExternalStore(subscribeNarrowViewport, getNarrowViewportSnapshot, () => false);
-  const showWebViewHint = useSyncExternalStore(
-    () => () => {},
-    isLikelyInAppBrowser,
-    () => false
-  );
-  const [copied, setCopied] = useState(false);
-
-  async function copyBotLink() {
-    try {
-      await navigator.clipboard.writeText(httpsUrl);
-      setCopied(true);
-      trackEvent('telegram_link_copy', { page: 'subscribe', source: 'subscribe_sidebar' });
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const webLinkProps = isNarrow
-    ? ({ rel: 'noopener noreferrer' } as const)
-    : ({ target: '_blank' as const, rel: 'noopener noreferrer' as const });
-
-  return (
-    <div className="space-y-4 sm:space-y-5">
-      {showWebViewHint ? (
-        <div
-          className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-100/95 sm:text-sm"
-          role="status"
-        >
-          If the button does not open Telegram, use your browser&apos;s menu to open this page in Safari or Chrome, then
-          try again.
-        </div>
-      ) : null}
-
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Step 1 of 3</p>
-        <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Open Telegram and generate your activation code</h2>
-        <p className="mt-3 text-sm leading-relaxed text-gray-300">
-          Open{' '}
-          <a
-            href={httpsUrl}
-            {...webLinkProps}
-            className="font-medium text-violet-400 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-300"
-          >
-            @sightwhale_bot
-          </a>{' '}
-          and run <code className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-violet-300">/start</code>.
-          Then tap <span className="font-medium text-white">Generate Code</span>. You need this code before checkout can start.
-        </p>
-
-        <div className="mt-4 flex flex-col gap-3">
-          <a
-            href={httpsUrl}
-            {...webLinkProps}
-            onClick={() => trackEvent('telegram_open_click', { page: 'subscribe', source: 'step_1_primary', url_type: 'https' })}
-            className="btn-primary inline-flex min-h-[48px] w-full items-center justify-center px-4 py-3.5 text-center text-base shadow-lg transition-all active:scale-[0.98] sm:text-lg"
-          >
-            Open @sightwhale_bot
-          </a>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <a
-              href={tgAppUrl}
-              onClick={() => trackEvent('telegram_open_click', { page: 'subscribe', source: 'step_1_secondary', url_type: 'tg' })}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-medium text-gray-200 transition-colors hover:border-white/25 hover:bg-white/10"
-            >
-              Open in Telegram app
-            </a>
-            <button
-              type="button"
-              onClick={copyBotLink}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-medium text-gray-200 transition-colors hover:border-white/25 hover:bg-white/10"
-            >
-              {copied ? 'Link copied' : 'Copy bot link'}
-            </button>
-          </div>
-          <p className="text-xs text-gray-500">If Telegram sends you back here, the code may auto-fill automatically.</p>
-        </div>
-      </div>
-    </div>
-  );
+function getAmount(plan: Plan, period: Period) {
+  return period === 'yearly' ? PLANS[plan].yearly : PLANS[plan].monthly;
 }
 
 function SubscribeForm() {
   const searchParams = useSearchParams();
-  const checkoutButtonRef = useRef<HTMLButtonElement>(null);
+  const checkoutBtnRef = useRef<HTMLButtonElement>(null);
+
+  const [plan, setPlan] = useState<Plan>('pro');
+  const [period, setPeriod] = useState<Period>('monthly');
   const [code, setCode] = useState('');
-  const [mode, setMode] = useState<Mode>('paid');
-  const [tier, setTier] = useState<PaidTier>('pro');
-  const [period, setPeriod] = useState<BillingPeriod>('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; actions: string[] } | null>(null);
 
   useEffect(() => {
     const p = (searchParams.get('plan') || '').toLowerCase();
-    const codeFromUrl = (searchParams.get('code') || '').trim();
-    const periodFromUrl = (searchParams.get('period') || '').toLowerCase();
+    const periodParam = (searchParams.get('period') || '').toLowerCase();
+    const codeParam = (searchParams.get('code') || '').trim();
 
-    if (p === 'free') {
-      setMode('free');
-      setTier('pro');
-    } else if (p === 'elite' || p === 'institutional') {
-      setMode('paid');
-      setTier('elite');
-    } else {
-      setMode('paid');
-      setTier('pro');
-    }
+    if (p === 'elite' || p === 'institutional') setPlan('elite');
+    else setPlan('pro');
 
-    if (periodFromUrl === 'yearly' || periodFromUrl === 'annual') {
-      setPeriod('yearly');
-    } else if (periodFromUrl === 'monthly') {
-      setPeriod('monthly');
-    }
+    if (periodParam === 'yearly' || periodParam === 'annual') setPeriod('yearly');
+    else if (periodParam === 'monthly') setPeriod('monthly');
 
-    if (codeFromUrl && !code) {
-      setCode(codeFromUrl.toUpperCase());
-    }
-  }, [searchParams, code]);
+    if (codeParam && !code) setCode(codeParam.toUpperCase());
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sanitizedCode = code.replace(/\s+/g, '').toUpperCase();
-  const hasCode = sanitizedCode.length >= 6;
-  const isFreeMode = mode === 'free';
-  const selectedPlan = PLAN_COPY[tier];
-  const selectedAmount = getPlanAmount(tier, period);
-  const selectedSuffix = getPlanSuffix(tier, period);
-  const yearlySavings = tier === 'pro' ? 58 : 118;
+  const sanitized = code.replace(/\s+/g, '').toUpperCase();
+  const hasCode = sanitized.length >= 6;
+  const amount = getAmount(plan, period);
+  const planLabel = PLANS[plan].label;
 
   useEffect(() => {
-    if (hasCode) {
-      trackEvent('activation_code_detected', { page: 'subscribe', source: 'input', mode });
-    }
-  }, [hasCode, mode]);
+    trackEvent('subscribe_view', { page: 'subscribe' });
+  }, []);
 
   useEffect(() => {
-    const codeFromUrl = (searchParams.get('code') || '').trim();
-    if (!codeFromUrl || isFreeMode || !hasCode) return;
-
-    const button = checkoutButtonRef.current;
-    if (!button) return;
-
-    const rafId = window.requestAnimationFrame(() => {
-      button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      button.focus({ preventScroll: true });
-    });
-
-    return () => window.cancelAnimationFrame(rafId);
-  }, [searchParams, hasCode, isFreeMode]);
-
-  function mapCheckoutError(detail: unknown, status: number): { message: string; actions: string[] } {
-    const raw = typeof detail === 'string' ? detail : '';
-    const normalized = raw.toLowerCase();
-
-    if (!normalized) {
-      if (status === 429) {
-        return {
-          message: 'Too many attempts. Please wait a moment before trying again.',
-          actions: ['Wait 60 seconds and resubmit.', 'Keep the same activation code from Telegram.'],
-        };
-      }
-      return {
-        message: 'Checkout failed. Please try again.',
-        actions: ['Confirm your Telegram activation code is valid.', 'Retry in a moment.'],
-      };
-    }
-
-    if (normalized.includes('invalid json') || normalized === 'invalid_json') {
-      return {
-        message: 'Something went wrong with the request.',
-        actions: ['Refresh the page and retry.', 'Make sure your activation code is complete.'],
-      };
-    }
-    if (normalized.includes('telegram_activation_code and plan are required')) {
-      return {
-        message: 'Activation code and plan are required.',
-        actions: ['Enter your Telegram activation code.', 'Select a plan and billing period.'],
-      };
-    }
-    if (normalized.includes('payment api unreachable') || normalized.includes('payment api returned non-json')) {
-      return {
-        message: 'Payment service is temporarily unavailable.',
-        actions: ['Wait a few minutes and try again.', 'If this repeats, contact support.'],
-      };
-    }
-    if (normalized.includes('activation') && normalized.includes('code')) {
-      return {
-        message: 'Activation code was not accepted.',
-        actions: ['Open @sightwhale_bot and generate a new code.', 'Paste the full code and retry.'],
-      };
-    }
-    if (normalized.includes('invalid plan')) {
-      return {
-        message: 'Selected plan is not available right now.',
-        actions: ['Switch to Pro or Elite and retry.', 'If this looks wrong, contact support.'],
-      };
-    }
-    if (normalized.includes('payment_api_base_url is required')) {
-      return {
-        message: 'Subscription service is not configured yet.',
-        actions: ['Try again later.', 'Contact support if you need immediate access.'],
-      };
-    }
-    return {
-      message: 'Checkout failed.',
-      actions: ['Retry in a minute.', 'Contact support if the issue persists.'],
-    };
-  }
+    if (hasCode) trackEvent('activation_code_detected', { page: 'subscribe' });
+  }, [hasCode]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    if (mode === 'free') {
-      try {
-        const res = await fetch('/api/upgrade', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ plan: 'FREE' }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-        trackEvent('checkout_error', { page: 'subscribe', mode: 'free', stage: 'upgrade', status: res.status });
-          setError({
-            message: typeof data.error === 'string' ? data.error : 'Activation failed.',
-            actions: ['Retry in a moment.', 'Contact support if this keeps happening.'],
-          });
-          return;
-        }
-        window.location.href = '/history';
-      } catch {
-        trackEvent('checkout_error', { page: 'subscribe', mode: 'free', stage: 'network' });
-        setError({
-          message: 'Network error while activating Free plan.',
-          actions: ['Check your connection and retry.', 'Contact support if the issue persists.'],
-        });
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    const planName = period === 'yearly' ? `${tier}_yearly` : tier;
-    trackEvent('checkout_start', { page: 'subscribe', tier, period, amount: selectedAmount });
+    const planName = period === 'yearly' ? `${plan}_yearly` : plan;
+    trackEvent('checkout_start', { page: 'subscribe', plan, period, amount });
 
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ telegram_activation_code: sanitizedCode, plan: planName }),
+        body: JSON.stringify({ telegram_activation_code: sanitized, plan: planName }),
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        detail?: string;
-        checkout_url?: string;
-      };
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        trackEvent('checkout_error', { page: 'subscribe', mode: 'paid', stage: 'api', status: res.status, tier, period });
-        setError(mapCheckoutError(data.detail, res.status));
+        trackEvent('checkout_error', { page: 'subscribe', stage: 'api', status: res.status, plan, period });
+        const msg = typeof data.detail === 'string' ? data.detail : '';
+        const lower = msg.toLowerCase();
+
+        if (lower.includes('activation') && lower.includes('code')) {
+          setError({ message: 'Activation code was not accepted.', actions: ['Open @sightwhale_bot and generate a new code.', 'Paste the full code and retry.'] });
+        } else if (lower.includes('payment api')) {
+          setError({ message: 'Payment service is temporarily unavailable.', actions: ['Wait a moment and try again.', 'Contact support if this persists.'] });
+        } else if (res.status === 429) {
+          setError({ message: 'Too many attempts. Please wait before trying again.', actions: ['Wait 60 seconds.', 'Use the same activation code.'] });
+        } else {
+          setError({ message: msg || 'Checkout failed. Please try again.', actions: ['Confirm your activation code is valid.', 'Retry in a moment.'] });
+        }
         return;
       }
 
       const url = String(data.checkout_url || '');
       if (!url) {
-        trackEvent('checkout_error', { page: 'subscribe', mode: 'paid', stage: 'missing_checkout_url', tier, period });
-        setError({
-          message: 'Checkout session could not be created.',
-          actions: ['Retry in a moment.', 'Contact support if the issue persists.'],
-        });
+        setError({ message: 'Checkout session could not be created.', actions: ['Retry in a moment.', 'Contact support if this persists.'] });
         return;
       }
 
       window.location.href = url;
     } catch {
-      trackEvent('checkout_error', { page: 'subscribe', mode: 'paid', stage: 'network', tier, period });
-      setError({
-        message: 'Network error while starting checkout.',
-        actions: ['Check your connection and retry.', 'Contact support if the issue persists.'],
-      });
+      trackEvent('checkout_error', { page: 'subscribe', stage: 'network', plan, period });
+      setError({ message: 'Network error while starting checkout.', actions: ['Check your connection and retry.', 'Contact support if the issue persists.'] });
     } finally {
       setLoading(false);
     }
   }
 
+  const botHref = `${TELEGRAM_BOT_URL}?start=${SUBSCRIBE_START_PARAM}`;
+
   return (
-    <form onSubmit={onSubmit} className="glass space-y-6 rounded-[28px] border border-white/10 p-5 sm:p-6">
-      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Step 2 of 3</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Paste your activation code</h2>
+    <form onSubmit={onSubmit} className="rounded-lg border border-border bg-surface p-6 sm:p-8 space-y-6">
+      {/* ── Telegram steps ── */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">Before checkout — get your activation code</h2>
+        <div className="space-y-2 text-sm text-muted">
+          <div className="flex gap-3">
+            <span className="text-accent font-semibold shrink-0">1.</span>
+            <p>
+              Open{' '}
+              <a href={botHref} target="_blank" rel="noopener noreferrer" className="text-accent font-medium hover:text-accent-hover underline underline-offset-2">
+                @sightwhale_bot
+              </a>{' '}
+              on Telegram and tap <span className="font-medium text-foreground">/start</span>.
+            </p>
           </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              hasCode ? 'bg-emerald-500/15 text-emerald-200' : 'bg-white/10 text-gray-300'
-            }`}
-          >
-            {hasCode ? 'Code detected' : 'Waiting for code'}
-          </span>
+          <div className="flex gap-3">
+            <span className="text-accent font-semibold shrink-0">2.</span>
+            <p>Tap <span className="font-medium text-foreground">Generate Code</span>.</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-accent font-semibold shrink-0">3.</span>
+            <p>Paste the code here:</p>
+          </div>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-gray-300">
-          Return from Telegram after tapping <span className="font-medium text-white">Generate Code</span>. If Telegram
-          sends you back here, the field may auto-fill.
-        </p>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm text-gray-400">Activation Code</label>
+      {/* ── Activation code input ── */}
+      <div>
+        <label htmlFor="activation-code" className="block text-sm font-medium text-foreground mb-1.5">
+          Activation Code
+        </label>
         <input
+          id="activation-code"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          onFocus={() => trackEvent('code_input_focus', { page: 'subscribe', section: 'activation_code' })}
-          placeholder={isFreeMode ? 'Not required for Free' : 'ABCD1234'}
-          className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-lg uppercase tracking-[0.14em] text-white outline-none transition-all focus:border-violet-500/60"
-          required={!isFreeMode}
-          disabled={isFreeMode}
+          onFocus={() => trackEvent('code_input_focus', { page: 'subscribe' })}
+          placeholder="ABCD1234"
+          className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg uppercase tracking-[0.15em] text-foreground placeholder:text-subtle outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+          required
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
         />
-        <p className="text-xs text-gray-500">
-          {isFreeMode ? 'Free preview skips payment and does not need a code.' : 'Once your code is detected, you are ready to start checkout.'}
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-sm text-gray-400">{isFreeMode ? 'Preview mode' : 'Step 3 of 3'}</label>
-          <button
-            type="button"
-            onClick={() => {
-              const nextMode: Mode = isFreeMode ? 'paid' : 'free';
-              setMode(nextMode);
-              if (nextMode === 'paid') setTier('pro');
-              trackEvent('plan_mode_toggle', { page: 'subscribe', mode: nextMode });
-            }}
-            className="text-xs font-medium text-gray-400 underline decoration-white/15 underline-offset-4 hover:text-gray-200"
-          >
-            {isFreeMode ? 'Back to Pro' : 'Not ready yet? Explore the limited free version'}
-          </button>
-        </div>
-
-        {isFreeMode ? (
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Limited preview</p>
-                <h3 className="mt-1 text-xl font-semibold text-white">Free</h3>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold tracking-tight text-white">$0</p>
-                <p className="text-xs text-gray-400">No card</p>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-gray-300">
-              Use this only if you want a slower preview before paying. It is intentionally limited compared with Pro.
-            </p>
-            <ul className="mt-4 grid gap-2 text-xs text-gray-300 sm:grid-cols-2">
-              {FREE_PLAN_FEATURES.map((feature) => (
-                <li key={feature} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <>
-            <div className="rounded-2xl border border-violet-400 bg-violet-500/12 p-4 shadow-[0_0_0_1px_rgba(167,139,250,0.18)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">{PLAN_COPY.pro.kicker}</p>
-                  <h3 className="mt-1 text-xl font-semibold text-white">Start with Pro</h3>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold tracking-tight text-white">${getPlanAmount('pro', period)}</p>
-                  <p className="text-xs text-gray-400">{getPlanSuffix('pro', period)}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-gray-300">{PLAN_COPY.pro.description}</p>
-              <ul className="mt-4 grid gap-2 text-xs text-gray-300 sm:grid-cols-2">
-                {[
-                  'Real-time whale alerts',
-                  'Typical delivery in under 30 seconds',
-                  'Whale Score 70+ only',
-                  'Telegram delivery',
-                  '2-minute one-time setup',
-                  '7-day full refund',
-                ].map((feature) => (
-                  <li key={feature} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400">
-                <span>Start with Pro now and upgrade later if you need more coverage.</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextTier: PaidTier = tier === 'pro' ? 'elite' : 'pro';
-                    setTier(nextTier);
-                    trackEvent('plan_select', { page: 'subscribe', mode: 'paid', tier: nextTier, period });
-                  }}
-                  className="underline decoration-white/15 underline-offset-4 hover:text-gray-200"
-                >
-                  {tier === 'pro' ? 'Need more coverage? Switch to Elite' : 'Back to Pro'}
-                </button>
-              </div>
-            </div>
-
-            {tier === 'elite' ? (
-              <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{PLAN_COPY.elite.kicker}</p>
-                    <h3 className="mt-1 text-xl font-semibold text-white">Elite</h3>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold tracking-tight text-white">${getPlanAmount('elite', period)}</p>
-                    <p className="text-xs text-gray-400">{getPlanSuffix('elite', period)}</p>
-                  </div>
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-gray-300">{PLAN_COPY.elite.description}</p>
-              </div>
-            ) : null}
-          </>
+        {hasCode && (
+          <p className="mt-1.5 text-xs text-accent font-medium">Code detected — ready for checkout.</p>
         )}
       </div>
 
-      <div className={`space-y-3 ${isFreeMode ? 'opacity-60' : ''}`}>
-        <label className="text-sm text-gray-400">Billing</label>
-        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/25 p-1">
-          {(['monthly', 'yearly'] as const).map((value) => {
-            const active = period === value;
-            const isYearly = value === 'yearly';
-
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => {
-                  setPeriod(value);
-                  trackEvent('billing_select', { page: 'subscribe', mode, tier, period: value });
-                }}
-                disabled={isFreeMode}
-                className={`rounded-xl px-4 py-3 text-left transition-all ${
-                  active ? 'bg-white text-black' : 'text-gray-300 hover:bg-white/5'
-                } disabled:cursor-not-allowed`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold capitalize">{value}</span>
-                  {isYearly && !isFreeMode ? (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        active ? 'bg-black text-white' : 'bg-violet-500/20 text-violet-200'
-                      }`}
-                    >
-                      Save ${yearlySavings}
-                    </span>
-                  ) : null}
-                </div>
-                <p className={`mt-1 text-xs ${active ? 'text-black/70' : 'text-gray-500'}`}>
-                  {!isFreeMode ? `$${getPlanAmount(tier, value)} ${getPlanSuffix(tier, value)}` : 'Paid plans only'}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/8 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      {/* ── Plan summary ── */}
+      <div className="rounded-lg border border-border bg-surface-hover px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">{isFreeMode ? 'Preview mode' : 'Ready to finish'}</p>
-            <h3 className="mt-1 text-lg font-semibold text-white">
-              {isFreeMode ? 'Activate the limited free preview' : 'Start secure checkout'}
-            </h3>
+            <p className="text-sm font-semibold text-foreground">
+              {planLabel} · ${amount}{period === 'yearly' ? '/yr' : '/mo'}
+            </p>
+            <p className="text-xs text-subtle mt-0.5">7-day full refund · Cancel anytime</p>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-2xl font-bold tracking-tight text-white">{isFreeMode ? '$0' : `$${selectedAmount}`}</p>
-            <p className="text-xs text-emerald-200/80">{isFreeMode ? 'No payment' : selectedSuffix}</p>
+          <div className="text-right text-xs text-subtle">
+            {plan === 'elite' ? (
+              <span>Whale Score 80+ · 100 whales</span>
+            ) : (
+              <span>Whale Score 70+ · 20 whales</span>
+            )}
           </div>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-gray-300">
-          {isFreeMode
-            ? 'Free gets you a limited preview with no card required.'
-            : `${selectedPlan.label} includes a 7-day full refund. If the alerts are not useful, email support and get your money back.`}
-        </p>
       </div>
 
-      {error ? (
-        <div className="space-y-2 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">
-          <div className="font-semibold">{error.message}</div>
-          <ul className="list-disc list-inside space-y-1 text-red-300">
-            {error.actions.map((action) => (
-              <li key={action}>{action}</li>
-            ))}
+      {/* ── Error ── */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm" role="alert">
+          <p className="font-semibold text-red-700">{error.message}</p>
+          <ul className="mt-2 space-y-1 text-red-600 list-disc list-inside">
+            {error.actions.map((a) => <li key={a}>{a}</li>)}
           </ul>
           <a
             href="mailto:support@sightwhale.com"
-            onClick={() =>
-              trackEvent('contact_support_click', {
-                page: 'subscribe',
-                section: 'checkout_error',
-                destination: 'mailto:support@sightwhale.com',
-              })
-            }
-            className="text-red-200 underline underline-offset-4"
+            onClick={() => trackEvent('contact_support_click', { page: 'subscribe', section: 'error' })}
+            className="inline-block mt-3 text-sm text-red-600 underline underline-offset-2 hover:text-red-700"
           >
             Contact support
           </a>
         </div>
-      ) : null}
+      )}
 
+      {/* ── Submit ── */}
       <button
-        ref={checkoutButtonRef}
+        ref={checkoutBtnRef}
         type="submit"
-        disabled={loading || (!isFreeMode && !hasCode)}
-        className="btn-primary w-full py-4 text-base shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:text-lg"
+        disabled={loading || !hasCode}
+        className="btn-primary w-full py-4 text-base"
       >
-        {loading
-          ? isFreeMode
-            ? 'Activating...'
-            : 'Redirecting to checkout...'
-          : isFreeMode
-            ? 'Explore Free Instead'
-            : 'Start Secure Checkout'}
+        {loading ? 'Redirecting to Stripe…' : 'Start Secure Checkout'}
       </button>
 
-      <div className="space-y-2 text-center text-xs text-gray-500">
-        <p>{isFreeMode ? 'No card required.' : 'Secure web checkout · 7-day refund · Cancel anytime.'}</p>
-        {!isFreeMode ? <p>{selectedPlan.label} · ${selectedAmount}{selectedSuffix}</p> : null}
-        <Link href="/" className="inline-block transition-colors hover:text-gray-300">
-          ← Back to home
-        </Link>
-      </div>
+      <p className="text-center text-xs text-subtle">
+        Secure Stripe checkout · Cancel anytime ·{' '}
+        <Link href="/pricing" className="text-accent hover:text-accent-hover underline underline-offset-2">Compare plans</Link>
+      </p>
     </form>
   );
 }
 
-function CheckoutSidebar() {
-  return (
-    <aside className="order-2 space-y-6 lg:order-1">
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">How this works</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Three quick steps, then alerts go to Telegram</h2>
-        <div className="mt-5 space-y-4">
-          {[
-            'Open @sightwhale_bot.',
-            'Tap Generate Code.',
-            'Paste the code here and finish secure checkout.',
-          ].map((line, index) => (
-            <div key={line} className="flex gap-3 rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
-              <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-200">
-                {index + 1}
-              </span>
-              <p className="text-sm leading-relaxed text-gray-300">{line}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="hidden lg:block">
-        <TelegramActivationLinks />
-      </div>
-
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">Why users complete payment</p>
-        <ul className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">7-day refund lowers first-week risk.</li>
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Telegram delivery means no extra dashboard setup after payment.</li>
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Start with Pro now and upgrade later if you need more coverage.</li>
-          <li className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">Secure web checkout. Cancel anytime.</li>
-        </ul>
-      </div>
-    </aside>
-  );
-}
-
 export default function SubscribePage() {
-  useEffect(() => {
-    trackEvent('subscribe_view', { page: 'subscribe' });
-  }, []);
-
   return (
-    <div className="min-h-screen overflow-hidden bg-background text-foreground selection:bg-accent-primary/30">
-      <main className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 sm:py-28">
-        <div className="absolute top-0 right-0 -z-10 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 -z-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
+    <div className="min-h-screen selection:bg-accent selection:text-white">
+      <div className="max-w-xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-24 sm:pb-32">
+        {/* ── Hero ── */}
+        <p className="eyebrow mb-4">Subscribe</p>
+        <h1 className="text-balance mb-3">Start Pro</h1>
+        <p className="text-base text-muted leading-relaxed mb-8">
+          Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
+        </p>
 
-        <TrackedSection section="hero">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300">Subscribe</p>
-            <h1 className="mt-3 text-[34px] font-bold tracking-tight text-white text-balance sm:text-5xl">
-              Start Pro in about 2 minutes
-            </h1>
-            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-400 sm:text-lg">
-              Open the bot, generate your activation code, and complete secure checkout. Alerts will be delivered in
-              Telegram.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-300">
-              {['Telegram delivery', 'Whale Score 70+ only', '7-day full refund', 'Cancel anytime'].map((item) => (
-                <span key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        </TrackedSection>
-
-        <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-8">
-          <TrackedSection section="sidebar">
-            <CheckoutSidebar />
-          </TrackedSection>
-
-          <div className="order-1 space-y-5 lg:order-2 lg:space-y-6">
-            <TrackedSection section="telegram_activation">
-              <div className="lg:hidden">
-                <TelegramActivationLinks />
-              </div>
-            </TrackedSection>
-
-            <TrackedSection section="checkout_form">
-              <Suspense
-                fallback={
-                  <div className="glass rounded-[28px] border border-white/10 p-8 text-center text-gray-500 sm:p-12">
-                    Loading checkout options...
-                  </div>
-                }
-              >
-                <SubscribeForm />
-              </Suspense>
-            </TrackedSection>
-
-            <TrackedSection section="faq">
-              <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Questions before checkout?</h2>
-                  <p className="mt-2 text-xs text-gray-400">The basics most users want confirmed before paying.</p>
-                </div>
-                <div className="grid gap-3 text-sm md:grid-cols-2">
-                  {[
-                    ['Do I need Telegram before I pay?', 'Yes. You need a Telegram activation code before checkout can begin.', 'telegram_required'],
-                    ['Where will I receive alerts?', 'Directly in Telegram.', 'delivery_destination'],
-                    ['Can I cancel anytime?', 'Yes.', 'cancel_anytime'],
-                    ['What if the alerts are not useful?', 'Email us within 7 days for a full refund.', 'refund_policy'],
-                  ].map(([question, answer, faqId]) => (
-                    <button
-                      key={question}
-                      type="button"
-                      onClick={() => trackEvent('faq_open', { page: 'subscribe', section: 'faq', faq_id: faqId })}
-                      className="rounded-2xl border border-white/8 bg-black/20 p-4 text-left"
-                    >
-                      <div className="text-sm font-semibold text-white">{question}</div>
-                      <div className="mt-2 text-xs leading-relaxed text-gray-400">{answer}</div>
-                    </button>
-                  ))}
-                </div>
-                <a
-                  href="mailto:support@sightwhale.com"
-                  onClick={() =>
-                    trackEvent('contact_support_click', {
-                      page: 'subscribe',
-                      section: 'faq',
-                      destination: 'mailto:support@sightwhale.com',
-                    })
-                  }
-                  className="inline-flex text-sm text-violet-300 underline decoration-violet-500/30 underline-offset-4 hover:text-violet-200"
-                >
-                  Need help? Email support
-                </a>
-              </section>
-            </TrackedSection>
-          </div>
+        {/* ── Money-back badge ── */}
+        <div className="mb-8 rounded-lg border border-accent/20 bg-accent/5 px-5 py-3">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold text-accent">7-day money-back guarantee.</span>{' '}
+            Not satisfied? Email{' '}
+            <a href="mailto:support@sightwhale.com" className="text-accent font-medium underline underline-offset-2">support@sightwhale.com</a>{' '}
+            for a full refund.
+          </p>
         </div>
-      </main>
+
+        {/* ── Form ── */}
+        <Suspense fallback={<div className="rounded-lg border border-border bg-surface p-8 text-center text-subtle">Loading checkout…</div>}>
+          <SubscribeForm />
+        </Suspense>
+      </div>
     </div>
   );
 }
