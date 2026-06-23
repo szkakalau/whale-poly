@@ -62,16 +62,37 @@ export default async function HistoryPage() {
   return (
     <div className="min-h-screen text-foreground selection:bg-accent selection:text-white pb-28">
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-36 pb-12">
-        <header className="mb-10">
-          <h1 className="text-balance mb-4">
+        {/* ── Hero + summary stats (above the fold) ── */}
+        <header className="mb-8">
+          <h1 className="text-balance mb-6">
             Historical signal performance
           </h1>
-          <p className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm font-medium text-foreground">
-            Data through {cutoffLabel} 23:59 UTC · Today&apos;s live feed is for paid members only
-          </p>
-          <p className="mt-4 text-sm text-muted max-w-3xl">
-            Every alert stays on the ledger—we don&apos;t delete losing trades.
-          </p>
+
+          <div className="rounded-xl border border-border bg-surface px-6 py-5 sm:px-8">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted mb-3">
+              <span>
+                <span className="font-semibold tabular-nums text-foreground stat-number">{total}</span>{' '}
+                resolved signals
+              </span>
+              <span className="text-border hidden sm:inline">·</span>
+              <span>
+                <span className="font-semibold tabular-nums text-accent stat-number">
+                  {winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—'}
+                </span>{' '}
+                win rate
+              </span>
+              <span className="text-border hidden sm:inline">·</span>
+              <span>
+                <span className="font-semibold tabular-nums text-accent stat-number">
+                  {avgRoi != null ? formatPct(avgRoi) : '—'}
+                </span>{' '}
+                avg ROI
+              </span>
+            </div>
+            <p className="text-xs text-subtle">
+              Data through {cutoffLabel} 23:59 UTC · Today&apos;s live feed is for paid members only
+            </p>
+          </div>
         </header>
 
         {/* Table */}
@@ -154,35 +175,19 @@ export default async function HistoryPage() {
           </table>
         </div>
 
-        {/* Summary section */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-subtle mb-4">Summary</h2>
-          <dl className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-12 sm:gap-y-6">
-            <div>
-              <dt className="text-[11px] text-muted">Total signals</dt>
-              <dd className="font-display text-3xl font-semibold tabular-nums">{total}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-muted">Win rate</dt>
-              <dd className="font-display text-3xl font-semibold tabular-nums text-accent">
-                {winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-muted">Average ROI</dt>
-              <dd className="font-display text-3xl font-semibold tabular-nums text-accent">
-                {avgRoi != null ? formatPct(avgRoi) : '—'}
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-[11px] text-subtle leading-relaxed">
-            <strong className="text-foreground">ROI notes:</strong> we prefer realized PnL from{' '}
-            <code className="text-[10px]">whale_trade_history</code> when present and meaningful. When Gamma shows a clear
+        {/* Methodology — collapsible, reference only */}
+        <details className="mt-8 group">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.2em] text-subtle hover:text-muted transition-colors select-none">
+            How ROI is calculated
+          </summary>
+          <p className="mt-3 text-xs text-subtle leading-relaxed max-w-3xl">
+            We prefer realized PnL from{' '}
+            <code className="text-[11px]">whale_trade_history</code> when present and meaningful. When Gamma shows a clear
             resolved winner, ROI uses that leg price; if the market is still trading, ROI uses the same leg price as the
             settlement column (mark-to-market vs entry): BUY (S − entry) / entry, SELL (entry − S) / (1 − entry). Rows with no
             entry price, side, or Gamma match show &quot;—&quot;. Up to {MAX_GAMMA_CONDITION_LOOKUPS} distinct Gamma queries per request.
           </p>
-        </section>
+        </details>
       </main>
 
       {/* Sticky bottom CTA */}
