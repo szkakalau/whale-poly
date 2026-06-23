@@ -42,16 +42,35 @@ function formatPnlUsd(v: number | null): string {
 const loadCachedHistorySummary = unstable_cache(
   async () => {
     const rows = await loadPublicHistorySignals(500);
-    return summarizeHistoryRows(rows);
+    const summary = summarizeHistoryRows(rows);
+    // Don't cache empty results — a transient DB/query failure
+    // would otherwise poison the cache for the full revalidate window.
+    if (summary.total === 0) {
+      throw new Error('Empty history summary — skip cache');
+    }
+    return summary;
   },
-  ['home-history-summary-v5'],
+  ['home-history-summary-v6'],
   { revalidate: 120 },
 );
 
 /* ── Data-fetching sub-components ── */
 
 async function StatsBar() {
-  const { total, winRate, avgRoi, totalPnl } = await loadCachedHistorySummary();
+  let total: number;
+  let winRate: number | null;
+  let avgRoi: number | null;
+  let totalPnl: number | null;
+  try {
+    const summary = await loadCachedHistorySummary();
+    total = summary.total;
+    winRate = summary.winRate;
+    avgRoi = summary.avgRoi;
+    totalPnl = summary.totalPnl;
+  } catch {
+    return <StatsFallback />;
+  }
+
   const wr = winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—';
   const pnlColor = totalPnl != null && totalPnl > 0 ? 'text-accent' : totalPnl != null && totalPnl < 0 ? 'text-red-500' : '';
 
