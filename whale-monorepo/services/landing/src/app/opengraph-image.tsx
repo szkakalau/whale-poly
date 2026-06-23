@@ -27,19 +27,17 @@ export default function OpenGraphImage() {
             <div style={{ fontSize: 14, letterSpacing: 3, color: '#8A8A8A', fontWeight: 600, textTransform: 'uppercase' }}>
               SightWhale.com
             </div>
-            <div style={{ fontSize: 52, fontWeight: 700, marginTop: 20, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
-              Follow the top 1%
-              <br />
-              of Polymarket whales.
+            <div style={{ display: 'flex', flexDirection: 'column', fontSize: 52, fontWeight: 700, marginTop: 20, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+              <span>Follow the top 1%</span>
+              <span>of Polymarket whales.</span>
             </div>
-            <div style={{ fontSize: 22, marginTop: 18, color: '#525252', lineHeight: 1.4 }}>
-              Real-time Telegram alerts for high-conviction bets
-              <br />
-              on Elections, Sports, and Crypto.
+            <div style={{ display: 'flex', flexDirection: 'column', fontSize: 22, marginTop: 18, color: '#525252', lineHeight: 1.4 }}>
+              <span>Real-time Telegram alerts for high-conviction bets</span>
+              <span>on Elections, Sports, and Crypto.</span>
             </div>
           </div>
 
-          {/* Whale icon */}
+          {/* Whale icon — single child, no flex needed beyond existing */}
           <div
             style={{
               width: 120,
