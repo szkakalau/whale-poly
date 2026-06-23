@@ -76,20 +76,20 @@ export default async function HistoryPage() {
 
         {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="w-full min-w-[1200px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-border bg-surface-hover text-[11px] font-semibold uppercase tracking-wider text-subtle">
               <tr>
-                <th className="px-4 py-3">Published</th>
-                <th className="px-4 py-3">Market</th>
-                <th className="px-4 py-3 text-right">Whale score</th>
-                <th className="px-4 py-3 text-right normal-case">Entry (price)</th>
-                <th className="px-4 py-3">Outcome</th>
-                <th className="px-4 py-3">Side</th>
-                <th className="px-4 py-3 text-right">Size</th>
-                <th className="px-4 py-3 font-mono">Wallet</th>
-                <th className="px-4 py-3 text-right normal-case">Settlement (price)</th>
-                <th className="px-4 py-3 text-right normal-case">PnL</th>
-                <th className="px-4 py-3 text-right normal-case">ROI</th>
+                <th className="px-3 py-2.5">Date</th>
+                <th className="px-4 py-2.5">Market</th>
+                <th className="px-2.5 py-2.5 text-right">Score</th>
+                <th className="px-2.5 py-2.5 text-right normal-case">Entry</th>
+                <th className="px-3 py-2.5">Outcome</th>
+                <th className="px-2.5 py-2.5">Side</th>
+                <th className="px-2.5 py-2.5 text-right">Size</th>
+                <th className="px-2 py-2.5 font-mono">Wallet</th>
+                <th className="px-2.5 py-2.5 text-right normal-case">Settl.</th>
+                <th className="px-2.5 py-2.5 text-right normal-case">PnL</th>
+                <th className="px-2.5 py-2.5 text-right normal-case">ROI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-muted">
@@ -119,27 +119,31 @@ export default async function HistoryPage() {
                         : pnl < 0
                           ? 'text-red-500 font-semibold'
                           : 'text-muted';
+                  const pubDate = new Date(row.publishedAt);
+                  const dateStr = pubDate.toISOString().slice(0, 10);
+                  const timeStr = pubDate.toISOString().slice(11, 16);
                   return (
                     <tr key={row.id} className="hover:bg-surface-hover">
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-subtle">
-                        {new Date(row.publishedAt).toISOString().replace('T', ' ').slice(0, 19)} UTC
+                      <td className="px-3 py-2.5 font-mono text-[11px] leading-tight text-subtle">
+                        <div>{dateStr}</div>
+                        <div className="text-[10px] text-muted">{timeStr} UTC</div>
                       </td>
-                      <td className="max-w-[280px] px-4 py-3 text-foreground">{row.marketTitle}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">
+                      <td className="max-w-[260px] px-4 py-2.5 text-foreground">{row.marketTitle}</td>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums text-xs">
                         {row.whaleScore != null ? row.whaleScore.toFixed(0) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">{formatPrice(row.publishPrice)}</td>
-                      <td className="max-w-[140px] px-4 py-3 text-foreground">
+                      <td className="px-2.5 py-2.5 text-right tabular-nums text-xs">{formatPrice(row.publishPrice)}</td>
+                      <td className="max-w-[120px] px-3 py-2.5 text-xs text-foreground">
                         {row.outcomeLabel ?? '—'}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{row.sideLabel ?? '—'}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{formatUsdCompact(row.sizeUsd)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-subtle">{row.walletMasked}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted">{formatPrice(row.endPrice)}</td>
-                      <td className={`px-4 py-3 text-right tabular-nums ${pnlColorClass}`}>
+                      <td className="px-2.5 py-2.5 font-mono text-[11px]">{row.sideLabel ?? '—'}</td>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums text-xs">{formatUsdCompact(row.sizeUsd)}</td>
+                      <td className="px-2 py-2.5 font-mono text-[11px] text-subtle">{row.walletMasked}</td>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums text-xs text-muted">{formatPrice(row.endPrice)}</td>
+                      <td className={`px-2.5 py-2.5 text-right tabular-nums text-xs ${pnlColorClass}`}>
                         {pnl != null ? formatSignedPnlUsd(pnl) : '—'}
                       </td>
-                      <td className={`px-4 py-3 text-right tabular-nums ${roiColorClass}`}>
+                      <td className={`px-2.5 py-2.5 text-right tabular-nums text-xs ${roiColorClass}`}>
                         {formatPct(roi)}
                       </td>
                     </tr>
