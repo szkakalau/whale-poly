@@ -268,7 +268,7 @@ export default function LiveSignalsFeed({
               {!isPaid && planLoaded ? (
                 <>
                   {' '}
-                  Free accounts only see signals before today (UTC). Upgrade for full real-time feed.
+                  Public preview shows signals delayed by ~1 hour. Upgrade for real-time delivery.
                 </>
               ) : null}
             </p>

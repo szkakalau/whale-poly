@@ -16,14 +16,15 @@ export function isPaidLiveSignalsUser(user: AuthUser | null): boolean {
 }
 
 /**
- * Guests and free users: only signals strictly before today's UTC midnight (i.e. through end of yesterday).
- * Paid (active Pro/Elite): no filter.
+ * Guests and free users: signals delayed by 1 hour.
+ * Paid (active Pro/Elite): no filter — full real-time feed.
  */
 export function filterLiveSignalsForUser(signals: LiveSignal[], user: AuthUser | null): LiveSignal[] {
   if (isPaidLiveSignalsUser(user)) {
     return signals;
   }
-  const boundary = getUtcTodayStart();
+  // Non-paid users see all signals except the most recent 1 hour
+  const boundary = Date.now() - 60 * 60 * 1000;
   return signals.filter((s) => {
     const t = new Date(s.occurredAt).getTime();
     return Number.isFinite(t) && t < boundary;
