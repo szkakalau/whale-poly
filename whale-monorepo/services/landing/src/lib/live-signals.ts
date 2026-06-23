@@ -207,17 +207,19 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
 
 async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
   try {
-    const primary = await getWalletAddressesFromProfiles();
-    let signals = await buildSignalsFromWallets(primary);
+    // Primary: direct DB query for the most recent ingested whale trades (always freshest).
+    let signals = await loadSignalsFromWhaleTradesJoin();
 
+    // Fallback: whale-engine API by top wallets (works when DB isn't populated yet).
     if (signals.length === 0) {
-      const fallback = await fetchPolymarketVolumeLeaderWallets(20);
-      const merged = [...new Set([...primary, ...fallback])];
-      signals = await buildSignalsFromWallets(merged.slice(0, 24));
+      const primary = await getWalletAddressesFromProfiles();
+      signals = await buildSignalsFromWallets(primary);
     }
 
     if (signals.length === 0) {
-      signals = await loadSignalsFromWhaleTradesJoin();
+      const fallback = await fetchPolymarketVolumeLeaderWallets(20);
+      const merged = [...new Set([...(await getWalletAddressesFromProfiles()), ...fallback])];
+      signals = await buildSignalsFromWallets(merged.slice(0, 24));
     }
 
     signals = signals.filter((s) => !shouldExcludeMarketFromPublicFeeds(s.market));
@@ -229,7 +231,7 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
 }
 
 /** Bump key when loader logic changes (avoids long-lived empty cache). */
-export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v3'], {
+export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v4'], {
   revalidate: 60,
 });
 
