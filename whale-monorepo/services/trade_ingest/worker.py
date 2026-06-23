@@ -24,6 +24,7 @@ from shared.logging import configure_logging
 from shared.models import Alert, Market, TradeRaw, WalletName, WhaleProfile, WhaleStats, WhaleTrade
 from services.trade_ingest.smart_collections import rebuild_smart_collections
 from services.trade_ingest.polymarket import ingest_smart_money_leaderboard
+from services.trade_ingest.blog_generator import generate_daily_article
 
 
 configure_logging(settings.log_level)
@@ -48,6 +49,7 @@ celery_app.conf.beat_schedule = {
   "consume-incoming-trades": {"task": "services.trade_ingest.consume_incoming_trades", "schedule": settings.trade_ingest_batch_seconds},
   "full-health-check": {"task": "services.trade_ingest.health_check", "schedule": 3600.0},
   "daily-spotlight": {"task": "services.trade_ingest.daily_spotlight", "schedule": crontab(hour=20, minute=0)},
+  "generate-daily-article": {"task": "services.trade_ingest.generate_daily_article", "schedule": crontab(hour=20, minute=5)},
   "rebuild-smart-collections": {"task": "services.trade_ingest.rebuild_smart_collections", "schedule": 86400.0},
   "ingest-smart-money-leaderboard": {"task": "services.trade_ingest.ingest_smart_money_leaderboard", "schedule": 43200.0},
 }
@@ -790,6 +792,15 @@ def rebuild_smart_collections_task() -> int:
 @celery_app.task(name="services.trade_ingest.daily_spotlight")
 def daily_spotlight_task() -> dict:
   return _run(run_daily_spotlight())
+
+
+@celery_app.task(name="services.trade_ingest.generate_daily_article")
+def generate_daily_article_task() -> dict:
+  try:
+    return _run(generate_daily_article())
+  except Exception:
+    logger.exception("generate_daily_article_failed")
+    return {"status": "error"}
 
 
 @celery_app.task(name="services.trade_ingest.ingest_smart_money_leaderboard")

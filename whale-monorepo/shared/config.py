@@ -92,6 +92,12 @@ class Settings:
     self.health_payment_api_url = os.getenv("HEALTH_PAYMENT_API_URL", "https://payment-api.onrender.com")
     self.health_telegram_bot_api_url = os.getenv("HEALTH_TELEGRAM_BOT_API_URL", "https://telegram-bot.onrender.com")
 
+    # Blog / LLM
+    self.blog_llm_api_key = self._get("BLOG_LLM_API_KEY")
+    self.blog_llm_base_url = os.getenv("BLOG_LLM_BASE_URL", "https://api.deepseek.com/v1")
+    self.blog_llm_model = os.getenv("BLOG_LLM_MODEL", "deepseek-chat")
+    self.blog_daily_enabled = os.getenv("BLOG_DAILY_ENABLED", "true").strip().lower() in _env_truthy
+
     # Plan Gating Limits
     self.plan_limits = {
         "free": {
@@ -123,6 +129,11 @@ class Settings:
       u = "postgresql+asyncpg://" + u[len("postgres://") :]
     if u.startswith("postgresql://"):
       u = "postgresql+asyncpg://" + u[len("postgresql://") :]
+    # asyncpg uses 'ssl' parameter, not 'sslmode' (which is a psycopg2/libpq param)
+    if "+asyncpg" in u and "sslmode=" in u:
+      u = u.replace("sslmode=require", "ssl=require")
+      u = u.replace("sslmode=verify-full", "ssl=verify-full")
+      u = u.replace("sslmode=verify-ca", "ssl=verify-ca")
     if u.startswith("sqlite:///"):
       u = "sqlite+aiosqlite:///" + u[len("sqlite:///") :]
     return u

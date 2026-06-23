@@ -2,8 +2,6 @@ import type { NextConfig } from "next";
 
 /** Legacy marketing routes removed — send to home. */
 const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
-  { source: "/blog", destination: "/" },
-  { source: "/blog/:path*", destination: "/" },
   { source: "/about", destination: "/" },
   { source: "/contact", destination: "/" },
   { source: "/backtesting", destination: "/" },
