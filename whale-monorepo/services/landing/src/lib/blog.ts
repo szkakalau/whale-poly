@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -171,24 +170,6 @@ export async function getAllTags(language: string): Promise<TagWithCount[]> {
   `);
   return rows;
 }
-
-// ---------------------------------------------------------------------------
-// Cached wrappers for ISR pages
-// ---------------------------------------------------------------------------
-
-export const getCachedPost = (slug: string, language: string) =>
-  unstable_cache(
-    () => getPost(slug, language),
-    [`blog-post-${language}-${slug}`],
-    { revalidate: 86400, tags: [`blog-post-${slug}`] },
-  )();
-
-export const getCachedPosts = (language: string, page: number, tag?: string) =>
-  unstable_cache(
-    () => getPosts(language, page, 12, tag),
-    [`blog-posts-${language}-${page}-${tag ?? 'all'}`],
-    { revalidate: 3600, tags: ['blog-posts'] },
-  )();
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCachedPosts, getAllTags } from '@/lib/blog';
+import { getPosts, getAllTags } from '@/lib/blog';
 import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
+
+export const revalidate = 3600;
 
 type Props = {
   params: Promise<{ language: string }>;
@@ -65,7 +67,7 @@ export default async function BlogListPage({ params, searchParams }: Props) {
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
 
   const [postsData, allTags] = await Promise.all([
-    getCachedPosts(language, page, tag),
+    getPosts(language, page, 12, tag),
     getAllTags(language),
   ]);
   const { posts, total } = postsData;
