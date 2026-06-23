@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { WhaleLogo } from './WhaleLogo';
 import { Menu, X } from 'lucide-react';
-import { getLoginUrl } from '@/lib/external-urls';
+import { getLoginUrl, getDashboardUrl } from '@/lib/external-urls';
+import type { AuthUser } from '@/lib/auth';
 
 const LOGIN_URL = getLoginUrl();
+const DASHBOARD_URL = getDashboardUrl();
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -15,8 +17,47 @@ const navLinks = [
   { href: '/pricing', label: 'Pricing' },
 ];
 
-export default function Header() {
+function maskEmail(email: string): string {
+  const [name, domain] = email.split('@');
+  if (!domain) return email;
+  return `${name.slice(0, Math.min(3, name.length))}***@${domain}`;
+}
+
+export default function Header({ user }: { user: AuthUser | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const accountLink = user ? (
+    <Link
+      href={DASHBOARD_URL}
+      className="text-[13px] font-medium text-accent hover:text-accent-hover transition-colors"
+      title={user.email}
+    >
+      {maskEmail(user.email)}
+    </Link>
+  ) : (
+    <a
+      href={LOGIN_URL}
+      className="text-[13px] font-medium text-muted hover:text-foreground transition-colors"
+    >
+      Log in
+    </a>
+  );
+
+  const ctaButton = user ? (
+    <Link
+      href={DASHBOARD_URL}
+      className="btn-primary text-xs px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center"
+    >
+      Dashboard
+    </Link>
+  ) : (
+    <Link
+      href="/pricing"
+      className="btn-primary text-xs px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center"
+    >
+      Get real-time
+    </Link>
+  );
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 header-nav transition-colors duration-300 pt-[env(safe-area-inset-top,0)]">
@@ -34,27 +75,26 @@ export default function Header() {
               {label}
             </Link>
           ))}
-          <a
-            href={LOGIN_URL}
-            className="text-[13px] font-medium text-muted hover:text-foreground transition-colors"
-          >
-            Log in
-          </a>
-          <Link
-            href="/pricing"
-            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center"
-          >
-            Get real-time
-          </Link>
+          {accountLink}
+          {ctaButton}
         </nav>
 
         <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
-          <Link
-            href="/pricing"
-            className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
-          >
-            Pricing
-          </Link>
+          {user ? (
+            <Link
+              href={DASHBOARD_URL}
+              className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+            >
+              Account
+            </Link>
+          ) : (
+            <Link
+              href="/pricing"
+              className="btn-primary text-xs px-4 py-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+            >
+              Pricing
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setMobileOpen((o) => !o)}
@@ -91,19 +131,29 @@ export default function Header() {
               {label}
             </Link>
           ))}
-          <a
-            href={LOGIN_URL}
-            onClick={() => setMobileOpen(false)}
-            className="py-3.5 px-4 rounded-xl text-[15px] font-medium text-muted hover:text-foreground hover:bg-surface-hover active:bg-surface transition-colors min-h-[48px] flex items-center"
-          >
-            Log in
-          </a>
+          {user ? (
+            <Link
+              href={DASHBOARD_URL}
+              onClick={() => setMobileOpen(false)}
+              className="py-3.5 px-4 rounded-xl text-[15px] font-medium text-accent hover:text-foreground hover:bg-surface-hover active:bg-surface transition-colors min-h-[48px] flex items-center"
+            >
+              Dashboard · {maskEmail(user.email)}
+            </Link>
+          ) : (
+            <a
+              href={LOGIN_URL}
+              onClick={() => setMobileOpen(false)}
+              className="py-3.5 px-4 rounded-xl text-[15px] font-medium text-muted hover:text-foreground hover:bg-surface-hover active:bg-surface transition-colors min-h-[48px] flex items-center"
+            >
+              Log in
+            </a>
+          )}
           <Link
-            href="/pricing"
+            href={user ? DASHBOARD_URL : '/pricing'}
             onClick={() => setMobileOpen(false)}
             className="mt-4 btn-primary text-sm px-6 py-3.5 min-h-[48px] flex items-center justify-center"
           >
-            Get real-time signals
+            {user ? 'Dashboard' : 'Get real-time signals'}
           </Link>
         </nav>
       </div>

@@ -12,7 +12,17 @@ export function getLoginUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_LOGIN_URL?.trim();
   if (explicit) return explicit;
   const base = getAppBaseUrl();
-  return base ? `${base}/login` : '/subscribe';
+  if (base) return `${base}/login`;
+  // Fallback: when no external app is configured, pricing page is at least
+  // a relevant destination (it explains the product and has a CTA).
+  return '/pricing';
+}
+
+export function getDashboardUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_DASHBOARD_URL?.trim();
+  if (explicit) return explicit;
+  const base = getAppBaseUrl();
+  return base ? `${base}/dashboard` : '/pricing';
 }
 
 export function getRegisterUrl(): string {

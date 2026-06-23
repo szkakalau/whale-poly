@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
+import { getCurrentUser } from "@/lib/auth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -90,18 +91,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
   return (
     <html
       lang="en"
       className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className={`${inter.className} antialiased`}>
-        <Header />
+        <Header user={user} />
         <main className="min-h-screen pt-14 sm:pt-16">{children}</main>
         <Footer />
         <Analytics />
