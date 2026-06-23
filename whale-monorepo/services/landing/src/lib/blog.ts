@@ -153,17 +153,20 @@ export async function getLatestPosts(limit: number = 20): Promise<BlogPostCard[]
   return rows.map((p) => ({ ...p, tags: _parseTags(p.tags) }));
 }
 
+export type TagWithCount = { tag: string; count: number };
+
 /**
- * Get all unique tags for a language.
+ * Get all tags with article counts for a language, sorted by count descending.
  */
-export async function getAllTags(language: string): Promise<string[]> {
-  const rows = await prisma.$queryRaw<[{ tag: string }]>(Prisma.sql`
-    select distinct unnest(tags) as tag
+export async function getAllTags(language: string): Promise<TagWithCount[]> {
+  const rows = await prisma.$queryRaw<TagWithCount[]>(Prisma.sql`
+    select unnest(tags) as tag, count(*)::int as count
     from blog_posts
     where status = 'published' and language = ${language}
-    order by tag
+    group by tag
+    order by count desc, tag
   `);
-  return rows.map((r) => r.tag);
+  return rows;
 }
 
 // ---------------------------------------------------------------------------

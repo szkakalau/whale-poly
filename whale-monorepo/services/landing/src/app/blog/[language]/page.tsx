@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCachedPosts, getAllTags } from '@/lib/blog';
+import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
 
 type Props = {
@@ -83,33 +84,12 @@ export default async function BlogListPage({ params, searchParams }: Props) {
       </div>
 
       {/* Tag filter */}
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-10">
-          <Link
-            href={`/blog/${language}`}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              !tag
-                ? 'bg-accent text-white'
-                : 'bg-surface border border-border text-muted hover:text-foreground hover:bg-surface-hover'
-            }`}
-          >
-            {LABELS.all}
-          </Link>
-          {allTags.map((t) => (
-            <Link
-              key={t}
-              href={`/blog/${language}?tag=${encodeURIComponent(t)}`}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                tag === t
-                  ? 'bg-accent text-white'
-                  : 'bg-surface border border-border text-muted hover:text-foreground hover:bg-surface-hover'
-              }`}
-            >
-              {t}
-            </Link>
-          ))}
-        </div>
-      )}
+      <TagFilter
+        tags={allTags}
+        language={language}
+        activeTag={tag}
+        allLabel={LABELS.all}
+      />
 
       {/* Posts grid */}
       {posts.length === 0 ? (
