@@ -28,20 +28,32 @@ function formatPct(v: number | null): string {
   return `${sign}${(v * 100).toFixed(1)}%`;
 }
 
+function formatPnlUsd(v: number | null): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  const abs = Math.abs(v);
+  let body: string;
+  if (abs >= 1_000_000) body = `$${(abs / 1_000_000).toFixed(1)}M`;
+  else if (abs >= 1_000) body = `$${(abs / 1_000).toFixed(1)}K`;
+  else body = `$${abs.toFixed(0)}`;
+  return `${sign}${body}`;
+}
+
 const loadCachedHistorySummary = unstable_cache(
   async () => {
     const rows = await loadPublicHistorySignals(500);
     return summarizeHistoryRows(rows);
   },
-  ['home-history-summary-v4'],
+  ['home-history-summary-v5'],
   { revalidate: 120 },
 );
 
 /* ── Data-fetching sub-components ── */
 
 async function StatsBar() {
-  const { total, winRate, avgRoi } = await loadCachedHistorySummary();
+  const { total, winRate, avgRoi, totalPnl } = await loadCachedHistorySummary();
   const wr = winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—';
+  const pnlColor = totalPnl != null && totalPnl > 0 ? 'text-accent' : totalPnl != null && totalPnl < 0 ? 'text-red-500' : '';
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted">
@@ -53,6 +65,11 @@ async function StatsBar() {
       <span>
         <span className="font-semibold tabular-nums text-foreground stat-number">{wr}</span>{' '}
         win rate
+      </span>
+      <span className="text-border hidden sm:inline">·</span>
+      <span>
+        <span className={`font-semibold tabular-nums stat-number ${pnlColor}`}>{formatPnlUsd(totalPnl)}</span>{' '}
+        total PnL
       </span>
       <span className="text-border hidden sm:inline">·</span>
       <span>

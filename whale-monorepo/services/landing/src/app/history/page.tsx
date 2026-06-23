@@ -57,8 +57,10 @@ function yesterdayUtcIsoDate(): string {
 export default async function HistoryPage() {
   const rows = await loadPublicHistorySignals();
   const withRoi = rows.filter((r) => r.roiPct != null);
-  const { winRate, avgRoi } = summarizeHistoryRows(withRoi);
+  const { winRate, avgRoi, totalPnl } = summarizeHistoryRows(withRoi);
   const cutoffLabel = yesterdayUtcIsoDate();
+
+  const pnlColor = totalPnl != null && totalPnl > 0 ? 'text-accent' : totalPnl != null && totalPnl < 0 ? 'text-red-500' : '';
 
   return (
     <div className="min-h-screen text-foreground selection:bg-accent selection:text-white pb-28">
@@ -81,6 +83,13 @@ export default async function HistoryPage() {
                   {winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—'}
                 </span>{' '}
                 win rate
+              </span>
+              <span className="text-border hidden sm:inline">·</span>
+              <span>
+                <span className={`font-semibold tabular-nums stat-number ${pnlColor}`}>
+                  {totalPnl != null ? formatSignedPnlUsd(totalPnl) : '—'}
+                </span>{' '}
+                total PnL
               </span>
               <span className="text-border hidden sm:inline">·</span>
               <span>

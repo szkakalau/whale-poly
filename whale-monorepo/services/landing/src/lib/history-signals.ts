@@ -262,16 +262,19 @@ export function summarizeHistoryRows(rows: HistorySignalRow[]): {
   total: number;
   winRate: number | null;
   avgRoi: number | null;
+  totalPnl: number | null;
 } {
   const withRoi = rows.filter((r) => r.roiPct != null && Number.isFinite(r.roiPct));
   if (withRoi.length === 0) {
-    return { total: rows.length, winRate: null, avgRoi: null };
+    return { total: rows.length, winRate: null, avgRoi: null, totalPnl: null };
   }
   const wins = withRoi.filter((r) => (r.roiPct as number) > 0).length;
   const avgRoi = withRoi.reduce((s, r) => s + (r.roiPct as number), 0) / withRoi.length;
+  const totalPnl = withRoi.reduce((s, r) => s + (r.computedPnlUsd ?? 0), 0);
   return {
     total: rows.length,
     winRate: wins / withRoi.length,
     avgRoi,
+    totalPnl: Number.isFinite(totalPnl) ? totalPnl : null,
   };
 }
