@@ -139,8 +139,10 @@ a:hover {
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  color: #FFFFFF;
+  background: #107A4E;
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(13, 92, 63, 0.25);
 }
 
 .btn-primary:active {
