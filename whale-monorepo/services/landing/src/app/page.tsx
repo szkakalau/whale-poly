@@ -33,7 +33,7 @@ const loadCachedHistorySummary = unstable_cache(
     const rows = await loadPublicHistorySignals(500);
     return summarizeHistoryRows(rows);
   },
-  ['home-history-summary-v3'],
+  ['home-history-summary-v4'],
   { revalidate: 120 },
 );
 

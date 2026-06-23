@@ -169,12 +169,21 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
       return !shouldExcludeMarketFromPublicFeeds(title);
     });
 
-    const rawTokenIds = orderedUniqueValues(visibleRows, (r) => r.raw_token_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
-    const gammaIds = orderedUniqueValues(visibleRows, (r) => r.condition_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
-    const [gammaTokenCache, gammaConditionCache] = await Promise.all([
-      fetchGammaMarketsByTokenBatched(rawTokenIds),
-      fetchGammaMarketsBatched(gammaIds),
-    ]);
+    // Gamma enrichment — best-effort, non-fatal.
+    let gammaTokenCache: Map<string, Awaited<ReturnType<typeof fetchGammaMarketByClobTokenId>>> = new Map();
+    let gammaConditionCache: Map<string, Awaited<ReturnType<typeof fetchGammaMarketByConditionId>>> = new Map();
+    try {
+      const rawTokenIds = orderedUniqueValues(visibleRows, (r) => r.raw_token_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
+      const gammaIds = orderedUniqueValues(visibleRows, (r) => r.condition_id).slice(0, MAX_GAMMA_CONDITION_LOOKUPS);
+      const [tc, cc] = await Promise.all([
+        fetchGammaMarketsByTokenBatched(rawTokenIds),
+        fetchGammaMarketsBatched(gammaIds),
+      ]);
+      gammaTokenCache = tc;
+      gammaConditionCache = cc;
+    } catch {
+      // Gamma enrichment unavailable — continue with empty caches (ROI from hist_pnl still works).
+    }
 
     return visibleRows.map((row) => {
       const publishPrice = safeNum(row.publish_price);
