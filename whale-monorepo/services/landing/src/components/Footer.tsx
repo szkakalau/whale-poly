@@ -24,7 +24,22 @@ export default function Footer() {
           <div className="text-subtle text-xs">
             © {new Date().getFullYear()} SightWhale. All rights reserved.
           </div>
-          <div className="flex gap-8">
+          <div className="flex flex-wrap gap-x-8 gap-y-3">
+            <Link href="/" className="text-subtle hover:text-muted text-xs transition-colors">
+              Home
+            </Link>
+            <Link href="/analyze" className="text-subtle hover:text-muted text-xs transition-colors">
+              Analyze
+            </Link>
+            <Link href="/history" className="text-subtle hover:text-muted text-xs transition-colors">
+              History
+            </Link>
+            <Link href="/blog" className="text-subtle hover:text-muted text-xs transition-colors">
+              Blog
+            </Link>
+            <Link href="/pricing" className="text-subtle hover:text-muted text-xs transition-colors">
+              Pricing
+            </Link>
             <Link href="/terms" className="text-subtle hover:text-muted text-xs transition-colors">
               Terms
             </Link>

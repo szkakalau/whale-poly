@@ -4,7 +4,23 @@ import { Check, Sparkles } from 'lucide-react';
 
 export const metadata = {
   title: { absolute: 'Pricing — SightWhale.com' },
-  description: 'Real-time Polymarket whale signals. Full refund if the product does not meet expectations.',
+  description:
+    'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+  openGraph: {
+    title: 'Pricing — SightWhale.com',
+    description:
+      'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+    type: 'website',
+    url: 'https://www.sightwhale.com/pricing',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pricing — SightWhale.com',
+    description:
+      'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+    images: ['/opengraph-image'],
+  },
   alternates: {
     canonical: '/pricing',
   },

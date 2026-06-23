@@ -11,7 +11,22 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: { absolute: 'Historical Signals — SightWhale.com' },
   description:
-    'Verified historical whale alerts through end of yesterday UTC. Today\'s live feed is available to paid members.',
+    'Verified historical Polymarket whale alerts with win rates, average ROI, and total PnL data. Free to browse — live feed for paid members only.',
+  openGraph: {
+    title: 'Historical Signals — SightWhale.com',
+    description:
+      'Verified historical Polymarket whale alerts with win rates, average ROI, and total PnL data. Free to browse — live feed for paid members only.',
+    type: 'website',
+    url: 'https://www.sightwhale.com/history',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Historical Signals — SightWhale.com',
+    description:
+      'Verified historical Polymarket whale alerts with win rates, average ROI, and total PnL data. Free to browse — live feed for paid members only.',
+    images: ['/opengraph-image'],
+  },
   alternates: {
     canonical: '/history',
   },

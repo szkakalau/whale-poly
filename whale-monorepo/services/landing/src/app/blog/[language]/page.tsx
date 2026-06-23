@@ -13,11 +13,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { language } = await params;
   const langLabel = language === 'zh' ? '博客' : 'Blog';
   return {
-    title: `${langLabel} — Polymarket Insights & Whale Trading Strategies`,
+    title:
+      language === 'zh'
+        ? '博客 — Polymarket 预测市场洞察与鲸鱼交易策略'
+        : 'Blog — Polymarket Insights & Whale Trading Strategies',
     description:
       language === 'zh'
         ? 'SightWhale 博客 — 深度解析 Polymarket 预测市场、鲸鱼交易策略与数据洞察。每日更新。'
         : 'SightWhale Blog — deep dives into Polymarket prediction markets, whale trading strategies, and data insights. Updated daily.',
+    openGraph: {
+      title:
+        language === 'zh'
+          ? 'SightWhale 博客 — Polymarket 预测市场与鲸鱼策略'
+          : 'SightWhale Blog — Polymarket Insights & Whale Trading Strategies',
+      description:
+        language === 'zh'
+          ? '深度解析 Polymarket 预测市场、鲸鱼交易策略与数据洞察。每日更新。'
+          : 'Deep dives into Polymarket prediction markets, whale trading strategies, and data insights. Updated daily.',
+      type: 'website',
+      url: `https://www.sightwhale.com/blog/${language}`,
+      siteName: 'SightWhale.com',
+      images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title:
+        language === 'zh'
+          ? 'SightWhale 博客 — Polymarket 预测市场与鲸鱼策略'
+          : 'SightWhale Blog — Polymarket Insights',
+      description:
+        language === 'zh'
+          ? '深度解析 Polymarket 预测市场、鲸鱼交易策略与数据洞察。每日更新。'
+          : 'Deep dives into Polymarket prediction markets, whale trading strategies, and data insights.',
+      images: ['/opengraph-image'],
+    },
     alternates: {
       canonical: `/blog/${language}`,
       languages: {

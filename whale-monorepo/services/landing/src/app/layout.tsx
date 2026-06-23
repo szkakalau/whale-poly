@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
     template: "%s · SightWhale.com",
   },
   description:
-    "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
+    "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
   keywords: [
     "Polymarket",
     "Polymarket Whale Intelligence",
@@ -97,9 +98,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  const headersList = await headers();
+  const lang = headersList.get('x-html-lang') || 'en';
   return (
     <html
-      lang="en"
+      lang={lang}
       className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className={`${inter.className} antialiased`}>

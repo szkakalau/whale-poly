@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   metadataBase: new URL('https://www.sightwhale.com'),
-  alternates: { canonical: '/blog' },
+  alternates: { canonical: '/blog/en' },
 };
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

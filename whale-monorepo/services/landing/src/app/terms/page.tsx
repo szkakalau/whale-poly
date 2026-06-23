@@ -2,13 +2,23 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: { absolute: 'Terms — SightWhale.com' },
-  description: 'Terms of service for SightWhale.com.',
+  description:
+    'SightWhale terms of service covering subscriptions, data accuracy, no-investment-advice policy, and account responsibilities.',
   alternates: { canonical: '/terms' },
   openGraph: {
     title: 'Terms — SightWhale.com',
-    description: 'Terms of service for SightWhale.com.',
+    description:
+      'SightWhale terms of service covering subscriptions, data accuracy, no-investment-advice policy, and account responsibilities.',
     type: 'website',
     url: 'https://www.sightwhale.com/terms',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms — SightWhale.com',
+    description:
+      'SightWhale terms of service covering subscriptions, data accuracy, no-investment-advice policy, and account responsibilities.',
+    images: ['/opengraph-image'],
   },
 };
 

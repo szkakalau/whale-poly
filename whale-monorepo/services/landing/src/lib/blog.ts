@@ -140,13 +140,16 @@ export async function getAllPublishedSlugs(): Promise<{ slug: string; language: 
 }
 
 /**
- * Get latest posts for RSS feed.
+ * Get latest posts for RSS feed, optionally filtered by language.
  */
-export async function getLatestPosts(limit: number = 20): Promise<BlogPostCard[]> {
+export async function getLatestPosts(limit: number = 20, language?: string): Promise<BlogPostCard[]> {
+  const langFilter = language
+    ? Prisma.sql`and language = ${language}`
+    : Prisma.empty;
   const rows = await prisma.$queryRaw<BlogPostCard[]>(Prisma.sql`
     select ${POST_CARD_SELECT}
     from blog_posts
-    where status = 'published'
+    where status = 'published' ${langFilter}
     order by published_at desc
     limit ${limit}
   `);

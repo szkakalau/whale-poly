@@ -39,11 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'SightWhale.com',
       publishedTime: post.published_at,
       tags: post.tags,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
+      images: ['/opengraph-image'],
     },
     robots: { index: true, follow: true },
   };
@@ -155,7 +157,7 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </header>
 
-      {/* Structured data */}
+      {/* Structured data — Article */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -169,6 +171,21 @@ export default async function BlogPostPage({ params }: Props) {
             author: { '@type': 'Organization', name: post.author },
             inLanguage: post.language,
             about: post.tags.map((t) => ({ '@type': 'Thing', name: t })),
+          }),
+        }}
+      />
+      {/* Structured data — BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: LABELS.home, item: 'https://www.sightwhale.com/' },
+              { '@type': 'ListItem', position: 2, name: LABELS.blog, item: `https://www.sightwhale.com/blog/${language}` },
+              { '@type': 'ListItem', position: 3, name: post.title },
+            ],
           }),
         }}
       />

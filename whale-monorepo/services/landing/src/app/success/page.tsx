@@ -3,7 +3,23 @@ import SuccessClient from './SuccessClient';
 
 export const metadata = {
   title: { absolute: 'Payment Successful - SightWhale.com' },
-  description: 'Your payment was received. Subscription will activate after processing.',
+  description:
+    'Payment received — your SightWhale subscription will activate shortly. Get real-time Polymarket whale trade alerts and Telegram notifications.',
+  openGraph: {
+    title: 'Payment Successful - SightWhale.com',
+    description:
+      'Payment received — your SightWhale subscription will activate shortly. Get real-time Polymarket whale trade alerts and Telegram notifications.',
+    type: 'website',
+    url: 'https://www.sightwhale.com/success',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Payment Successful - SightWhale.com',
+    description:
+      'Payment received — your SightWhale subscription will activate shortly. Get real-time Polymarket whale trade alerts and Telegram notifications.',
+    images: ['/opengraph-image'],
+  },
   robots: {
     index: false,
     follow: false,

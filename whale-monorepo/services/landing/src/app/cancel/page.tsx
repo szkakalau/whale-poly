@@ -2,7 +2,23 @@ import Link from 'next/link';
 
 export const metadata = {
   title: { absolute: 'Checkout Canceled - SightWhale.com' },
-  description: 'Your checkout was canceled. You can try again anytime.',
+  description:
+    'Checkout was canceled — no charges were made. Return to SightWhale anytime to subscribe for real-time Polymarket whale alerts.',
+  openGraph: {
+    title: 'Checkout Canceled - SightWhale.com',
+    description:
+      'Checkout was canceled — no charges were made. Return to SightWhale anytime to subscribe for real-time Polymarket whale alerts.',
+    type: 'website',
+    url: 'https://www.sightwhale.com/cancel',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Checkout Canceled - SightWhale.com',
+    description:
+      'Checkout was canceled — no charges were made. Return to SightWhale anytime to subscribe for real-time Polymarket whale alerts.',
+    images: ['/opengraph-image'],
+  },
   robots: {
     index: false,
     follow: false,
