@@ -13,9 +13,8 @@ export function getLoginUrl(): string {
   if (explicit) return explicit;
   const base = getAppBaseUrl();
   if (base) return `${base}/login`;
-  // Fallback: when no external app is configured, pricing page is at least
-  // a relevant destination (it explains the product and has a CTA).
-  return '/pricing';
+  // Primary auth is via Telegram — open the bot.
+  return process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 }
 
 export function getDashboardUrl(): string {
