@@ -76,7 +76,7 @@ export default async function HistoryPage() {
 
         {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="w-full min-w-[1100px] text-left text-sm">
+          <table className="w-full min-w-[1200px] text-left text-sm">
             <thead className="border-b border-border bg-surface-hover text-[11px] font-semibold uppercase tracking-wider text-subtle">
               <tr>
                 <th className="px-4 py-3">Published</th>
@@ -88,13 +88,14 @@ export default async function HistoryPage() {
                 <th className="px-4 py-3 text-right">Size</th>
                 <th className="px-4 py-3 font-mono">Wallet</th>
                 <th className="px-4 py-3 text-right normal-case">Settlement (price)</th>
-                <th className="px-4 py-3 text-right normal-case">ROI (realized)</th>
+                <th className="px-4 py-3 text-right normal-case">PnL</th>
+                <th className="px-4 py-3 text-right normal-case">ROI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-muted">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-muted">
+                  <td colSpan={11} className="px-4 py-16 text-center text-muted">
                     No historical rows yet, or alerts haven&apos;t synced to this database.
                   </td>
                 </tr>
@@ -107,6 +108,15 @@ export default async function HistoryPage() {
                       : roi > 0
                         ? 'text-accent font-semibold'
                         : roi < 0
+                          ? 'text-red-500 font-semibold'
+                          : 'text-muted';
+                  const pnl = row.computedPnlUsd;
+                  const pnlColorClass =
+                    pnl == null
+                      ? 'text-muted'
+                      : pnl > 0
+                        ? 'text-accent font-semibold'
+                        : pnl < 0
                           ? 'text-red-500 font-semibold'
                           : 'text-muted';
                   return (
@@ -126,11 +136,11 @@ export default async function HistoryPage() {
                       <td className="px-4 py-3 text-right tabular-nums">{formatUsdCompact(row.sizeUsd)}</td>
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-subtle">{row.walletMasked}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted">{formatPrice(row.endPrice)}</td>
-                      <td className={`px-4 py-3 text-right align-top tabular-nums ${roiColorClass}`}>
-                        <div>{formatPct(roi)}</div>
-                        {row.realizedPnlUsd != null && Number.isFinite(row.realizedPnlUsd) && (
-                          <div className="mt-0.5 text-[11px] font-medium text-muted">{formatSignedPnlUsd(row.realizedPnlUsd)}</div>
-                        )}
+                      <td className={`px-4 py-3 text-right tabular-nums ${pnlColorClass}`}>
+                        {pnl != null ? formatSignedPnlUsd(pnl) : '—'}
+                      </td>
+                      <td className={`px-4 py-3 text-right tabular-nums ${roiColorClass}`}>
+                        {formatPct(roi)}
                       </td>
                     </tr>
                   );

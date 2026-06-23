@@ -22,6 +22,8 @@ export type HistorySignalRow = {
   endPrice: number | null;
   /** Realized PnL (USD) from whale_trade_history when present. */
   realizedPnlUsd: number | null;
+  /** Best-effort PnL: prefers DB hist_pnl, falls back to sizeUsd × roiPct. */
+  computedPnlUsd: number | null;
   roiPct: number | null;
 };
 
@@ -221,6 +223,14 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         if (mtm.roiPct != null) roiPct = mtm.roiPct;
       }
 
+      const sizeUsd = safeNum(row.trade_size_usd);
+      const pnlFromHist = histPnl != null && Number.isFinite(histPnl) && Math.abs(histPnl) >= 0.01 ? histPnl : null;
+      const pnlFromRoi =
+        sizeUsd != null && roiPct != null && Number.isFinite(sizeUsd) && Number.isFinite(roiPct)
+          ? sizeUsd * roiPct
+          : null;
+      const computedPnlUsd: number | null = pnlFromHist ?? pnlFromRoi ?? null;
+
       const sideRaw = String(row.trade_side ?? '')
         .trim()
         .toUpperCase();
@@ -235,11 +245,11 @@ export async function loadPublicHistorySignals(limit = 500): Promise<HistorySign
         publishPrice,
         outcomeLabel: row.outcome_token?.trim() ? row.outcome_token.trim() : null,
         sideLabel,
-        sizeUsd: safeNum(row.trade_size_usd),
+        sizeUsd,
         walletMasked: formatShortWallet(row.wallet_address),
         endPrice,
-        realizedPnlUsd:
-          histPnl != null && Number.isFinite(histPnl) && Math.abs(histPnl) >= 0.01 ? histPnl : null,
+        realizedPnlUsd: pnlFromHist,
+        computedPnlUsd,
         roiPct,
       };
     });
