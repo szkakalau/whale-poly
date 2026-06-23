@@ -375,8 +375,8 @@ export default function Home() {
             <p className="eyebrow mb-2">Live preview</p>
             <h2 className="text-balance">See it in action</h2>
             <p className="text-sm text-muted mt-1.5 max-w-md">
-              Three recent signals from the live feed. Today&apos;s full stream and Telegram delivery
-              are available to paid members.
+              Three recent signals from the live feed, delayed by ~1 hour. Subscribers get
+              real-time delivery to Telegram in ~30 seconds.
             </p>
           </div>
           <HomeCtaLink
