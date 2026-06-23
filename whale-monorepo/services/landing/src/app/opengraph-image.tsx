@@ -23,7 +23,7 @@ export default function OpenGraphImage() {
       >
         {/* Top row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 14, letterSpacing: 3, color: '#8A8A8A', fontWeight: 600, textTransform: 'uppercase' }}>
               SightWhale.com
             </div>
