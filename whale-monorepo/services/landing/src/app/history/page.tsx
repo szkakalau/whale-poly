@@ -56,7 +56,8 @@ function yesterdayUtcIsoDate(): string {
 
 export default async function HistoryPage() {
   const rows = await loadPublicHistorySignals();
-  const { total, winRate, avgRoi } = summarizeHistoryRows(rows);
+  const withRoi = rows.filter((r) => r.roiPct != null);
+  const { winRate, avgRoi } = summarizeHistoryRows(withRoi);
   const cutoffLabel = yesterdayUtcIsoDate();
 
   return (
@@ -71,7 +72,7 @@ export default async function HistoryPage() {
           <div className="rounded-xl border border-border bg-surface px-6 py-5 sm:px-8">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted mb-3">
               <span>
-                <span className="font-semibold tabular-nums text-foreground stat-number">{total}</span>{' '}
+                <span className="font-semibold tabular-nums text-foreground stat-number">{withRoi.length}</span>{' '}
                 resolved signals
               </span>
               <span className="text-border hidden sm:inline">·</span>
@@ -114,14 +115,14 @@ export default async function HistoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-muted">
-              {rows.length === 0 ? (
+              {withRoi.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center text-muted">
-                    No historical rows yet, or alerts haven&apos;t synced to this database.
+                    No resolved signals yet.
                   </td>
                 </tr>
               ) : (
-                rows.map((row) => {
+                withRoi.map((row) => {
                   const roi = row.roiPct;
                   const roiColorClass =
                     roi == null
