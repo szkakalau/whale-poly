@@ -108,8 +108,13 @@ export default async function HistoryPage() {
           <div className="rounded-xl border border-border bg-surface px-6 py-5 sm:px-8">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted mb-3">
               <span>
+                <span className="font-semibold tabular-nums text-foreground stat-number">{rows.length}</span>{' '}
+                total signals
+              </span>
+              <span className="text-border hidden sm:inline">·</span>
+              <span>
                 <span className="font-semibold tabular-nums text-foreground stat-number">{withRoi.length}</span>{' '}
-                resolved signals
+                resolved
               </span>
               <span className="text-border hidden sm:inline">·</span>
               <span>
@@ -158,14 +163,14 @@ export default async function HistoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-muted">
-              {withRoi.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center text-muted">
-                    No resolved signals yet.
+                    No signals yet.
                   </td>
                 </tr>
               ) : (
-                withRoi.map((row) => {
+                rows.map((row) => {
                   const roi = row.roiPct;
                   const roiColorClass =
                     roi == null
