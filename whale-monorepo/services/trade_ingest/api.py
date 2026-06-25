@@ -247,68 +247,57 @@ async def pricing_stats():
 
 @app.get("/history")
 async def history_signals(limit: int = 500):
-    """Public history page data. Returns alerts with basic PnL info."""
+    """Public history page data. Returns alerts with basic info."""
     from shared.models import Alert, WhaleTrade, TradeRaw, Market
-    from sqlalchemy import desc
 
     async with SessionLocal() as session:
-        stmt = (
-            select(
-                Alert.id,
-                Alert.created_at,
-                Alert.market_id,
-                Alert.whale_score,
-                TradeRaw.price,
-                TradeRaw.side,
-                TradeRaw.outcome,
-                TradeRaw.amount,
-                TradeRaw.wallet,
-                Market.title.label("market_title"),
-                Market.status.label("market_status"),
-            )
-            .join(WhaleTrade, WhaleTrade.id == Alert.whale_trade_id)
-            .join(TradeRaw, TradeRaw.trade_id == WhaleTrade.trade_id)
-            .outerjoin(Market, Market.id == Alert.market_id)
-            .order_by(desc(Alert.created_at))
-            .limit(limit)
-        )
+        from sqlalchemy import desc, text as sa_text
+
+        # Use raw SQL for reliability — ORM joins with Numeric columns can be tricky
+        stmt = sa_text(
+            """SELECT a.id, a.created_at, a.whale_score::int AS whale_score,
+                      tr.price::float AS price, tr.side, tr.outcome,
+                      tr.amount::float AS amount,
+                      COALESCE(tr.wallet, a.wallet_address) AS wallet,
+                      COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title
+               FROM alerts a
+               JOIN whale_trades wt ON wt.id = a.whale_trade_id
+               JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+               LEFT JOIN markets m ON m.id = a.market_id
+               ORDER BY a.created_at DESC
+               LIMIT :limit"""
+        ).bindparams(limit=limit)
         result = await session.execute(stmt)
         rows = result.all()
 
     signals = []
     for r in rows:
-        price = float(r.price) if r.price else None
-        amount = float(r.amount) if r.amount else 1
-        size_usd = price * amount if price else None
+        price = r.price
+        amount = r.amount or 1
+        size_usd = round(price * amount, 2) if price else None
+        wallet = r.wallet or ""
         signals.append({
             "id": r.id,
-            "publishedAt": r.created_at.isoformat() if r.created_at else None,
+            "publishedAt": r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at),
             "marketTitle": r.market_title or "—",
-            "whaleScore": int(r.whale_score) if r.whale_score else None,
-            "publishPrice": price,
+            "whaleScore": r.whale_score,
+            "publishPrice": round(price, 3) if price else None,
             "outcomeLabel": r.outcome or None,
-            "sideLabel": (r.side or "").upper() or None,
+            "sideLabel": (r.side or "").upper()[:4] if r.side else None,
             "sizeUsd": size_usd,
-            "walletMasked": f"{r.wallet[:6]}…{r.wallet[-4:]}" if r.wallet and len(r.wallet) > 10 else (r.wallet or "—"),
+            "walletMasked": f"{wallet[:6]}…{wallet[-4:]}" if len(wallet) > 10 else (wallet or "—"),
             "endPrice": None,
             "realizedPnlUsd": None,
             "computedPnlUsd": None,
             "roiPct": None,
         })
 
-    # Compute summary
-    total = len(signals)
-    with_roi = [s for s in signals if s["roiPct"] is not None]
-    win_rate = len([s for s in with_roi if (s["roiPct"] or 0) > 0]) / len(with_roi) if with_roi else None
-    avg_roi = sum(s["roiPct"] for s in with_roi) / len(with_roi) if with_roi else None
-    total_pnl = sum(s["computedPnlUsd"] for s in with_roi if s["computedPnlUsd"]) if with_roi else None
-
     return {
         "signals": signals,
         "summary": {
-            "total": total,
-            "winRate": win_rate,
-            "avgRoi": avg_roi,
-            "totalPnl": total_pnl,
+            "total": len(signals),
+            "winRate": None,
+            "avgRoi": None,
+            "totalPnl": None,
         },
     }
