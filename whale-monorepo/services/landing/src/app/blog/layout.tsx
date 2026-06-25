@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 
+// All /blog routes are fully dynamic. Render PostgreSQL rejects
+// connections from Vercel build servers so ISR pre-rendering fails.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: {
     default: 'Blog — Polymarket Strategies, Whale Insights & Prediction Markets',
