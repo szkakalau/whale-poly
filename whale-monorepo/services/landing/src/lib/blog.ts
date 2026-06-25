@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 // Types
 // ---------------------------------------------------------------------------
 
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
 export type BlogPost = {
   id: string;
   slug: string;
@@ -59,8 +61,14 @@ function mapPostCard(row: any): BlogPostCard {
   };
 }
 
+async function apiFetch(path: string) {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`Blog API ${res.status} for ${path}`);
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
-// Queries — use $queryRawUnsafe (Prisma.sql returns 0 rows on Vercel runtime)
+// Queries — post detail uses API; listing/tags use $queryRawUnsafe as fallback
 // ---------------------------------------------------------------------------
 
 /**
@@ -99,48 +107,15 @@ export async function getPosts(
 }
 
 /**
- * Get a single post by slug and language (with full content).
+ * Get a single post by slug and language (via API — includes sibling).
  */
 export async function getPost(slug: string, language: string): Promise<BlogPost | null> {
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `select * from blog_posts
-     where slug = '${slug.replace(/'/g, "''")}' and language = '${language.replace(/'/g, "''")}' and status = 'published'
-     limit 1`,
-  );
-  if (!rows.length) return null;
-
-  const row = rows[0];
-  const post: BlogPost = {
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    excerpt: row.excerpt,
-    content: row.content,
-    author: row.author,
-    read_time: row.read_time,
-    cover_image: row.cover_image,
-    tags: parseTags(row.tags),
-    published_at: row.published_at instanceof Date ? row.published_at.toISOString() : String(row.published_at),
-    created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
-    updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
-    language: row.language,
-    group_slug: row.group_slug,
-    status: row.status,
-  };
-
-  // Fetch sibling (same group_slug, different language) — inline
-  if (post.group_slug) {
-    const sibRows = await prisma.$queryRawUnsafe<{ slug: string; language: string }[]>(
-      `select slug, language from blog_posts
-       where group_slug = '${post.group_slug.replace(/'/g, "''")}' and language != '${language.replace(/'/g, "''")}' and status = 'published'
-       limit 1`,
-    );
-    if (sibRows.length > 0) {
-      post.sibling = { slug: sibRows[0].slug, language: sibRows[0].language };
-    }
+  try {
+    const data = await apiFetch(`/blog/post?slug=${encodeURIComponent(slug)}&language=${language}`);
+    return data as BlogPost | null;
+  } catch {
+    return null;
   }
-
-  return post;
 }
 
 /**
