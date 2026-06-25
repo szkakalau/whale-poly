@@ -86,6 +86,239 @@ async def ingest_trade(payload: TradeIn):
 
 from shared.db import SessionLocal
 from sqlalchemy import text
+import concurrent.futures
+import json as _json
+import urllib.request
+import re as _re
+
+# ---------------------------------------------------------------------------
+# Gamma API helpers — settlement prices & ROI for resolved Polymarket markets
+# ---------------------------------------------------------------------------
+
+GAMMA_API = "https://gamma-api.polymarket.com/markets"
+MAX_GAMMA_LOOKUPS = 520
+
+
+def _gamma_fetch(param: str, value: str) -> dict | None:
+    """Fetch one Gamma market by a single param (condition_ids or clobTokenIds)."""
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        url = f"{GAMMA_API}?{param}={value}&limit=1"
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = _json.loads(resp.read())
+            if isinstance(data, list) and len(data) > 0:
+                return data[0]
+    except Exception:
+        pass
+    return None
+
+
+def _gamma_fetch_batch(param: str, values: list[str], batch_size: int = 24) -> dict[str, dict]:
+    """Batch-fetch Gamma markets, returns dict keyed by value."""
+    cache: dict[str, dict] = {}
+    unique = list(dict.fromkeys(v.strip() for v in values if v and v.strip()))
+    unique = unique[:MAX_GAMMA_LOOKUPS]
+
+    def _fetch_one(v: str):
+        return v, _gamma_fetch(param, v)
+
+    for i in range(0, len(unique), batch_size):
+        chunk = unique[i:i + batch_size]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(chunk), 24)) as pool:
+            for v, result in pool.map(_fetch_one, chunk):
+                if result:
+                    cache[v] = result
+    return cache
+
+
+def _parse_gamma_market(row: dict, fallback_cid: str) -> dict | None:
+    """Parse raw Gamma API row into a simplified slice."""
+    def _arr(raw):
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, str):
+            try:
+                return _json.loads(raw)
+            except Exception:
+                return []
+        return []
+
+    outcomes_raw = _arr(row.get("outcomes", []))
+    prices_raw = _arr(row.get("outcomePrices", []))
+    tokens_raw = _arr(row.get("clobTokenIds", []))
+
+    if not outcomes_raw or not prices_raw:
+        return None
+
+    n = min(len(outcomes_raw), len(prices_raw))
+    outcomes = []
+    prices = []
+    tokens = []
+    for i in range(n):
+        try:
+            p = float(prices_raw[i])
+        except (ValueError, TypeError):
+            continue
+        outcomes.append(str(outcomes_raw[i]).strip())
+        prices.append(p)
+        tokens.append(str(tokens_raw[i]).strip().lower() if i < len(tokens_raw) else "")
+
+    if not outcomes:
+        return None
+
+    cid = str(row.get("conditionId") or row.get("condition_id") or fallback_cid).strip()
+    closed = row.get("closed") in (True, "true") or row.get("isResolved") in (True, "true")
+
+    return {
+        "conditionId": cid,
+        "closed": closed,
+        "outcomes": outcomes,
+        "outcomePrices": prices,
+        "clobTokenIds": tokens,
+    }
+
+
+def _winning_outcome_index(prices: list[float]) -> int | None:
+    """Index of winning outcome (price ~= 1). Same logic as TS winningOutcomeIndex."""
+    if not prices:
+        return None
+    best_i = -1
+    best_p = -1.0
+    second_p = -1.0
+    for i, p in enumerate(prices):
+        if p > best_p:
+            second_p = best_p
+            best_p = p
+            best_i = i
+        elif p > second_p:
+            second_p = p
+    if best_i < 0 or best_p < 0.51:
+        return None
+    if best_p >= 0.85:
+        return best_i
+    if best_p >= 0.72 and second_p >= 0 and best_p - second_p >= 0.38:
+        return best_i
+    return None
+
+
+def _traded_outcome_index(gamma: dict, outcome_token: str | None, token_id: str | None = None) -> int | None:
+    """Find index of traded outcome in Gamma's outcomes/clobTokenIds arrays."""
+    if not gamma or not outcome_token:
+        return None
+    outcomes = gamma.get("outcomes", [])
+    tokens = gamma.get("clobTokenIds", [])
+
+    # Exact token ID match
+    if token_id:
+        tid = token_id.strip().lower()
+        for i, t in enumerate(tokens):
+            if t == tid:
+                return i
+
+    traded = outcome_token.strip().lower()
+    # Exact outcome match
+    for i, o in enumerate(outcomes):
+        if o.strip().lower() == traded:
+            return i
+    # Strip parenthetical labels
+    traded_stripped = _re.sub(r'\s*\([^)]*\)', '', traded).strip()
+    for i, o in enumerate(outcomes):
+        if _re.sub(r'\s*\([^)]*\)', '', o.strip().lower()).strip() == traded_stripped:
+            return i
+    # Yes/No short
+    if traded in ("yes", "y"):
+        for i, o in enumerate(outcomes):
+            if o.strip().lower() in ("yes", "y"):
+                return i
+    if traded in ("no", "n"):
+        for i, o in enumerate(outcomes):
+            if o.strip().lower() in ("no", "n"):
+                return i
+    return None
+
+
+def _gamma_settlement_price(gamma: dict, outcome_token: str | None, token_id: str | None = None) -> float | None:
+    """Settlement price when Gamma shows a clear winner."""
+    if not gamma:
+        return None
+    if _winning_outcome_index(gamma.get("outcomePrices", [])) is None:
+        return None
+    idx = _traded_outcome_index(gamma, outcome_token, token_id)
+    if idx is None:
+        return None
+    prices = gamma.get("outcomePrices", [])
+    if idx < len(prices):
+        return float(prices[idx])
+    return None
+
+
+def _gamma_leg_price(gamma: dict, outcome_token: str | None, token_id: str | None = None) -> float | None:
+    """Current leg price regardless of resolution."""
+    if not gamma:
+        return None
+    idx = _traded_outcome_index(gamma, outcome_token, token_id)
+    if idx is None:
+        return None
+    prices = gamma.get("outcomePrices", [])
+    if idx < len(prices):
+        return float(prices[idx])
+    return None
+
+
+def _roi_from_gamma(side: str | None, outcome_token: str | None, entry_price: float | None,
+                    gamma: dict | None, token_id: str | None = None,
+                    require_resolved: bool = True) -> tuple[float | None, float | None]:
+    """
+    Compute ROI from Gamma outcome prices.
+    BUY:  (S − entry) / entry
+    SELL: (entry − S) / (1 − entry)
+    Returns (roi_pct, end_price).
+    """
+    if not gamma or entry_price is None or not (0 < entry_price < 1):
+        return None, None
+
+    side = (side or "").strip().upper()
+    if side not in ("BUY", "SELL"):
+        return None, None
+
+    if require_resolved and _winning_outcome_index(gamma.get("outcomePrices", [])) is None:
+        return None, None
+
+    idx = _traded_outcome_index(gamma, outcome_token, token_id)
+    if idx is None:
+        return None, None
+
+    prices = gamma.get("outcomePrices", [])
+    if idx >= len(prices):
+        return None, None
+
+    S = prices[idx]
+    if S is None or abs(S) >= float('inf'):
+        return None, None
+
+    end_price = float(S)
+
+    if side == "BUY":
+        roi = (S - entry_price) / entry_price
+        return roi, end_price
+    else:
+        at_risk = 1.0 - entry_price
+        if at_risk <= 1e-14:
+            return None, end_price
+        roi = (entry_price - S) / at_risk
+        return roi, end_price
+
+
+def _format_short_wallet(addr: str | None) -> str:
+    if not addr:
+        return "—"
+    addr = addr.strip()
+    if len(addr) <= 10:
+        return addr
+    return f"{addr[:6]}…{addr[-4:]}"
 
 
 @app.get("/blog/posts")
@@ -252,7 +485,7 @@ async def pricing_stats():
 
 @app.get("/history")
 async def history_signals(limit: int = 500):
-    """Public history page data with PnL from whale_trade_history."""
+    """Public history page data with PnL from whale_trade_history + Gamma enrichment."""
     from sqlalchemy import text
     async with SessionLocal() as session:
         result = await session.execute(
@@ -263,7 +496,17 @@ async def history_signals(limit: int = 500):
                           COALESCE(NULLIF(TRIM(tr.wallet), ''), a.wallet_address) AS wallet,
                           COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title,
                           wth.pnl::float AS hist_pnl,
-                          wth.trade_usd::float AS hist_trade_usd
+                          wth.trade_usd::float AS hist_trade_usd,
+                          COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), '')) AS raw_token_id,
+                          (SELECT tc.condition_id
+                           FROM token_conditions tc
+                           WHERE tc.token_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), ''))
+                              OR tc.market_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), ''))
+                           ORDER BY CASE
+                             WHEN tc.token_id = COALESCE(NULLIF(TRIM(tr.market_id), ''), NULLIF(TRIM(a.market_id), '')) THEN 0
+                             ELSE 1
+                           END
+                           LIMIT 1) AS condition_id
                    FROM alerts a
                    JOIN whale_trades wt ON wt.id = a.whale_trade_id
                    JOIN trades_raw tr ON tr.trade_id = wt.trade_id
@@ -275,6 +518,27 @@ async def history_signals(limit: int = 500):
         )
         rows = result.all()
 
+    # ── Collect unique Gamma lookup keys ──
+    token_ids: list[str] = []
+    condition_ids: list[str] = []
+    for r in rows:
+        raw_tid = (r.raw_token_id or "").strip()
+        cid = (r.condition_id or "").strip()
+        if raw_tid:
+            token_ids.append(raw_tid)
+        if cid:
+            condition_ids.append(cid)
+
+    # ── Batch-fetch Gamma markets (non-fatal) ──
+    gamma_by_token: dict[str, dict] = {}
+    gamma_by_condition: dict[str, dict] = {}
+    try:
+        gamma_by_token = _gamma_fetch_batch("clobTokenIds", token_ids)
+        gamma_by_condition = _gamma_fetch_batch("condition_ids", condition_ids)
+    except Exception:
+        pass  # Gamma unavailable → ROI from hist_pnl only
+
+    # ── Build signal list ──
     signals = []
     for r in rows:
         price = r.price
@@ -283,31 +547,76 @@ async def history_signals(limit: int = 500):
         wallet = r.wallet or ""
         hist_pnl = r.hist_pnl
         hist_trade_usd = r.hist_trade_usd
-        # Compute ROI from whale_trade_history PnL (same logic as history-signals.ts)
+        raw_token_id = (r.raw_token_id or "").strip()
+        condition_id = (r.condition_id or "").strip()
+
+        # ---- Step 1: ROI from whale_trade_history PnL ----
         roi_pct = None
         computed_pnl = None
         if hist_pnl is not None and abs(hist_pnl) >= 0.01:
-            computed_pnl = hist_pnl
-            if hist_trade_usd and hist_trade_usd > 0:
-                roi_pct = hist_pnl / hist_trade_usd
+            computed_pnl = float(hist_pnl)
+            if hist_trade_usd and float(hist_trade_usd) > 0:
+                roi_pct = float(hist_pnl) / float(hist_trade_usd)
+
+        # ---- Step 2: Gamma enrichment (resolved settlement price) ----
+        end_price = None
+        if roi_pct is None:
+            # Look up Gamma by token_id first, then condition_id
+            gamma = None
+            if raw_token_id:
+                gamma = gamma_by_token.get(raw_token_id.lower()) or gamma_by_token.get(raw_token_id)
+            if not gamma and condition_id:
+                gamma = gamma_by_condition.get(condition_id.lower()) or gamma_by_condition.get(condition_id)
+
+            if gamma:
+                gdata = _parse_gamma_market(gamma, condition_id or raw_token_id)
+                if gdata:
+                    # Try resolved ROI first
+                    resolved_roi, resolved_end = _roi_from_gamma(
+                        r.side, r.outcome, price, gdata, raw_token_id, require_resolved=True
+                    )
+                    if resolved_roi is not None:
+                        roi_pct = resolved_roi
+                        end_price = resolved_end
+
+                    # Settlement price
+                    if end_price is None:
+                        end_price = (
+                            _gamma_settlement_price(gdata, r.outcome, raw_token_id)
+                            or _gamma_leg_price(gdata, r.outcome, raw_token_id)
+                        )
+
+                    # Try MTM (mark-to-market) if still no resolved ROI
+                    if roi_pct is None:
+                        mtm_roi, mtm_end = _roi_from_gamma(
+                            r.side, r.outcome, price, gdata, raw_token_id, require_resolved=False
+                        )
+                        if mtm_roi is not None:
+                            roi_pct = mtm_roi
+                        if end_price is None:
+                            end_price = mtm_end
+
+        # ---- Step 3: Compute PnL from ROI if no hist_pnl ----
+        if computed_pnl is None and roi_pct is not None and size_usd is not None and size_usd > 0:
+            computed_pnl = size_usd * roi_pct
 
         signals.append({
             "id": r.id,
             "publishedAt": r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at),
             "marketTitle": r.market_title or "—",
-            "whaleScore": r.whale_score,
+            "whaleScore": int(r.whale_score) if r.whale_score is not None else None,
             "publishPrice": round(price, 3) if price else None,
             "outcomeLabel": r.outcome or None,
             "sideLabel": (r.side or "").upper()[:4] if r.side else None,
             "sizeUsd": size_usd,
-            "walletMasked": f"{wallet[:6]}…{wallet[-4:]}" if len(wallet) > 10 else (wallet or "—"),
-            "endPrice": None,
-            "realizedPnlUsd": computed_pnl,
-            "computedPnlUsd": computed_pnl,
+            "walletMasked": _format_short_wallet(wallet),
+            "endPrice": round(end_price, 4) if end_price is not None else None,
+            "realizedPnlUsd": round(computed_pnl, 2) if computed_pnl is not None else None,
+            "computedPnlUsd": round(computed_pnl, 2) if computed_pnl is not None else None,
             "roiPct": round(roi_pct, 4) if roi_pct is not None else None,
         })
 
-    # Summary from resolved signals
+    # ── Summary from resolved signals ──
     with_roi = [s for s in signals if s["roiPct"] is not None and s["computedPnlUsd"] is not None]
     wins = [s for s in with_roi if (s["roiPct"] or 0) > 0]
     total_pnl = sum(s["computedPnlUsd"] for s in with_roi)
@@ -318,6 +627,6 @@ async def history_signals(limit: int = 500):
             "total": len(signals),
             "winRate": len(wins) / len(with_roi) if with_roi else None,
             "avgRoi": sum(s["roiPct"] for s in with_roi) / len(with_roi) if with_roi else None,
-            "totalPnl": total_pnl if with_roi else None,
+            "totalPnl": round(total_pnl, 2) if with_roi else None,
         },
     }
