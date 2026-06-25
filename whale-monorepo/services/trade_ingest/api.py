@@ -372,6 +372,53 @@ async def blog_posts(language: str = "en", page: int = 1, limit: int = 12, tag: 
     return {"posts": posts, "total": total}
 
 
+@app.get("/blog/post")
+async def blog_post(slug: str, language: str = "en"):
+    """Single blog post with full content + sibling link. Called by Vercel post page."""
+    async with SessionLocal() as session:
+        result = await session.execute(
+            text(
+                """select id, slug, title, excerpt, content, author, read_time,
+                          cover_image, tags, published_at, created_at, updated_at,
+                          language, group_slug, status
+                   from blog_posts
+                   where slug = :slug and language = :lang and status = 'published'
+                   limit 1"""
+            ),
+            {"slug": slug, "lang": language},
+        )
+        row = result.first()
+        if not row:
+            return None  # FastAPI returns null → frontend calls notFound()
+
+        post = dict(row._mapping)
+        post["published_at"] = post["published_at"].isoformat() if hasattr(post["published_at"], "isoformat") else str(post["published_at"])
+        post["created_at"] = post["created_at"].isoformat() if hasattr(post["created_at"], "isoformat") else str(post["created_at"])
+        post["updated_at"] = post["updated_at"].isoformat() if hasattr(post["updated_at"], "isoformat") else str(post["updated_at"])
+        if isinstance(post.get("tags"), list):
+            pass
+        elif post.get("tags"):
+            post["tags"] = [t.strip() for t in str(post["tags"]).strip("{}").split(",") if t.strip()]
+
+        # Sibling (same group_slug, different language)
+        sibling = None
+        if post.get("group_slug"):
+            sib_result = await session.execute(
+                text(
+                    """select slug, language from blog_posts
+                       where group_slug = :gs and language != :lang and status = 'published'
+                       limit 1"""
+                ),
+                {"gs": post["group_slug"], "lang": language},
+            )
+            sib_row = sib_result.first()
+            if sib_row:
+                sibling = {"slug": sib_row.slug, "language": sib_row.language}
+        post["sibling"] = sibling
+
+    return post
+
+
 @app.get("/blog/tags")
 async def blog_tags(language: str = "en"):
     """Public blog tag listing."""

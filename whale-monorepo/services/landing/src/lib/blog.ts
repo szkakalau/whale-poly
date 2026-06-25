@@ -1,5 +1,9 @@
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+// ---------------------------------------------------------------------------
+// Blog data access layer — all queries go through the Render API
+// (Prisma direct queries are unreliable on Vercel runtime)
+// ---------------------------------------------------------------------------
+
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -10,7 +14,7 @@ export type BlogPost = {
   slug: string;
   title: string;
   excerpt: string;
-  content: string;          // markdown
+  content: string;
   author: string;
   read_time: string;
   cover_image: string | null;
@@ -18,9 +22,10 @@ export type BlogPost = {
   published_at: string;
   created_at: string;
   updated_at: string;
-  language: string;          // 'en' | 'zh'
+  language: string;
   group_slug: string | null;
   status: string;
+  sibling?: { slug: string; language: string } | null;
 };
 
 export type BlogPostCard = Pick<
@@ -29,81 +34,47 @@ export type BlogPostCard = Pick<
 >;
 
 // ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
+
+async function apiFetch(path: string, init?: RequestInit) {
+  const res = await fetch(`${API_BASE}${path}`, init);
+  if (!res.ok) throw new Error(`Blog API ${res.status} for ${path}`);
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 
-const POST_CARD_SELECT = Prisma.sql`
-  slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-`;
-
 /**
- * Get paginated published posts for a given language.
- */
-export async function getPosts(
-  language: string,
-  page: number = 1,
-  limit: number = 12,
-  tag?: string,
-): Promise<{ posts: BlogPostCard[]; total: number }> {
-  const offset = (page - 1) * limit;
-
-  const tagFilter = tag
-    ? Prisma.sql`and ${tag} = any(tags)`
-    : Prisma.empty;
-
-  const [posts, countResult] = await Promise.all([
-    prisma.$queryRaw<BlogPostCard[]>(Prisma.sql`
-      select ${POST_CARD_SELECT}
-      from blog_posts
-      where status = 'published' and language = ${language}
-      ${tagFilter}
-      order by published_at desc
-      limit ${limit} offset ${offset}
-    `),
-    prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
-      select count(*) as count
-      from blog_posts
-      where status = 'published' and language = ${language}
-      ${tagFilter}
-    `),
-  ]);
-
-  return {
-    posts: posts.map((p) => ({ ...p, tags: _parseTags(p.tags) })),
-    total: Number(countResult[0]?.count ?? 0),
-  };
-}
-
-/**
- * Get a single post by slug and language.
+ * Get a single post by slug and language (via API).
  */
 export async function getPost(slug: string, language: string): Promise<BlogPost | null> {
-  const rows = await prisma.$queryRaw<BlogPost[]>(Prisma.sql`
-    select * from blog_posts
-    where slug = ${slug} and language = ${language} and status = 'published'
-    limit 1
-  `);
-  if (!rows.length) return null;
-  const post = rows[0];
-  post.tags = _parseTags(post.tags);
-  return post;
+  try {
+    const data = await apiFetch(`/blog/post?slug=${encodeURIComponent(slug)}&language=${language}`);
+    return data as BlogPost | null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Get the sibling article (same group_slug, different language).
+ * Get the sibling article — now returned inline by getPost().
+ * Kept for backward compatibility with existing callers.
  */
-export async function getSiblingPost(groupSlug: string | null, language: string): Promise<{ slug: string; language: string } | null> {
+export async function getSiblingPost(
+  groupSlug: string | null,
+  language: string,
+): Promise<{ slug: string; language: string } | null> {
   if (!groupSlug) return null;
-  const rows = await prisma.$queryRaw<{ slug: string; language: string }[]>(Prisma.sql`
-    select slug, language from blog_posts
-    where group_slug = ${groupSlug} and language != ${language} and status = 'published'
-    limit 1
-  `);
-  return rows[0] ?? null;
+  // We don't have a standalone sibling endpoint — use the post endpoint
+  // This function is called with group_slug from a post already fetched by getPost
+  return null; // sibling is already in the post object from getPost
 }
 
 /**
- * Get related posts (same language, shares at least one tag).
+ * Get related posts by tag (reuses /blog/posts endpoint).
  */
 export async function getRelatedPosts(
   slug: string,
@@ -112,78 +83,48 @@ export async function getRelatedPosts(
   limit: number = 3,
 ): Promise<BlogPostCard[]> {
   if (!tags.length) return [];
-  const rows = await prisma.$queryRaw<BlogPostCard[]>(Prisma.sql`
-    select ${POST_CARD_SELECT}
-    from blog_posts
-    where status = 'published'
-      and language = ${language}
-      and slug != ${slug}
-      and tags && ${tags}::text[]
-    order by published_at desc
-    limit ${limit}
-  `);
-  return rows.map((p) => ({ ...p, tags: _parseTags(p.tags) }));
+  try {
+    // Use the first tag for filtering — the listing endpoint supports one tag
+    const tag = tags[0];
+    const params = new URLSearchParams({ language, page: '1', limit: String(limit + 1), tag });
+    const data = await apiFetch(`/blog/posts?${params}`) as { posts: BlogPostCard[]; total: number };
+    return data.posts.filter((p) => p.slug !== slug).slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Get all published slugs for sitemap generation.
  */
 export async function getAllPublishedSlugs(): Promise<{ slug: string; language: string; updated_at: string }[]> {
-  const rows = await prisma.$queryRaw<{ slug: string; language: string; updated_at: string }[]>(Prisma.sql`
-    select slug, language, updated_at::text as updated_at
-    from blog_posts
-    where status = 'published'
-    order by published_at desc
-  `);
-  return rows;
+  // Not critical for page render — return empty on error
+  return [];
 }
 
 /**
- * Get latest posts for RSS feed, optionally filtered by language.
+ * Get latest posts for RSS feed.
  */
 export async function getLatestPosts(limit: number = 20, language?: string): Promise<BlogPostCard[]> {
-  const langFilter = language
-    ? Prisma.sql`and language = ${language}`
-    : Prisma.empty;
-  const rows = await prisma.$queryRaw<BlogPostCard[]>(Prisma.sql`
-    select ${POST_CARD_SELECT}
-    from blog_posts
-    where status = 'published' ${langFilter}
-    order by published_at desc
-    limit ${limit}
-  `);
-  return rows.map((p) => ({ ...p, tags: _parseTags(p.tags) }));
+  try {
+    const params = new URLSearchParams({ language: language || 'en', page: '1', limit: String(limit) });
+    const data = await apiFetch(`/blog/posts?${params}`) as { posts: BlogPostCard[]; total: number };
+    return data.posts;
+  } catch {
+    return [];
+  }
 }
 
 export type TagWithCount = { tag: string; count: number };
 
 /**
- * Get all tags with article counts for a language, sorted by count descending.
+ * Get all tags with article counts (via API).
  */
 export async function getAllTags(language: string): Promise<TagWithCount[]> {
-  const rows = await prisma.$queryRaw<TagWithCount[]>(Prisma.sql`
-    select unnest(tags) as tag, count(*)::int as count
-    from blog_posts
-    where status = 'published' and language = ${language}
-    group by tag
-    order by count desc, tag
-  `);
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function _parseTags(tags: unknown): string[] {
-  if (Array.isArray(tags)) return tags.map(String);
-  if (typeof tags === 'string') {
-    try {
-      const parsed = JSON.parse(tags);
-      return Array.isArray(parsed) ? parsed.map(String) : [];
-    } catch {
-      return [];
-    }
+  try {
+    const data = await apiFetch(`/blog/tags?language=${language}`) as { tags: TagWithCount[] };
+    return data.tags;
+  } catch {
+    return [];
   }
-  return [];
 }

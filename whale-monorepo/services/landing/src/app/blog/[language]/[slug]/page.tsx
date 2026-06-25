@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getPost, getSiblingPost, getRelatedPosts } from '@/lib/blog';
+import { getPost, getRelatedPosts } from '@/lib/blog';
 import type { Metadata } from 'next';
 
 type Props = {
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPost(slug, language);
   if (!post) return { title: 'Not Found' };
 
-  const sibling = await getSiblingPost(post.group_slug, language);
+  const sibling = post.sibling ?? null;
 
   const alternates: { canonical: string; languages?: Record<string, string> } = {
     canonical: `/blog/${post.language}/${post.slug}`,
@@ -63,7 +63,7 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await getPost(slug, language);
   if (!post) notFound();
 
-  const sibling = await getSiblingPost(post.group_slug, language);
+  const sibling = post.sibling ?? null;
   const related = await getRelatedPosts(post.slug, post.language, post.tags, 3);
 
   const LABELS =
