@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getPosts, getAllTags } from '@/lib/blog';
+import { prisma } from '@/lib/prisma';
 import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+const COLS = 'slug, title, excerpt, author, read_time, tags, published_at, language, group_slug';
 
 type Props = {
   params: Promise<{ language: string }>;
@@ -66,9 +68,20 @@ export default async function BlogListPage({ params, searchParams }: Props) {
   const { page: pageStr, tag } = await searchParams;
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
 
+  const offset = (page - 1) * 12;
+  const tagWhere = tag ? `and '${tag}' = any(tags)` : '';
   const [postsData, allTags] = await Promise.all([
-    getPosts(language, page, 12, tag),
-    getAllTags(language),
+    Promise.all([
+      prisma.$queryRawUnsafe<any[]>(
+        `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
+      ),
+      prisma.$queryRawUnsafe<[{ count: number }]>(
+        `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
+      ),
+    ]).then(([posts, countResult]) => ({ posts, total: Number(countResult[0]?.count ?? 0) })),
+    prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
+      `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
+    ),
   ]);
   const { posts, total } = postsData;
   const totalPages = Math.max(1, Math.ceil(total / 12));
