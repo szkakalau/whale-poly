@@ -41,16 +41,14 @@ function formatPnlUsd(v: number | null): string {
 
 const loadCachedHistorySummary = unstable_cache(
   async () => {
-    const rows = await loadPublicHistorySignals(500);
-    const summary = summarizeHistoryRows(rows);
-    // Don't cache empty results — a transient DB/query failure
-    // would otherwise poison the cache for the full revalidate window.
-    if (summary.total === 0) {
-      throw new Error('Empty history summary — skip cache');
+    try {
+      const rows = await loadPublicHistorySignals(500);
+      return summarizeHistoryRows(rows);
+    } catch {
+      return { total: 0, winRate: null, avgRoi: null, totalPnl: null };
     }
-    return summary;
   },
-  ['home-history-summary-v6'],
+  ['home-history-summary-v8'],
   { revalidate: 120 },
 );
 
