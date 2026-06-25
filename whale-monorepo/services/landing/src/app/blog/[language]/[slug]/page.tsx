@@ -5,6 +5,8 @@ import remarkGfm from 'remark-gfm';
 import { getPost, getRelatedPosts } from '@/lib/blog';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 type Props = {
   params: Promise<{ language: string; slug: string }>;
 };
@@ -64,7 +66,13 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   const sibling = post.sibling ?? null;
-  const related = await getRelatedPosts(post.slug, post.language, post.tags, 3);
+
+  let related: Awaited<ReturnType<typeof getRelatedPosts>> = [];
+  try {
+    related = await getRelatedPosts(post.slug, post.language, post.tags, 3);
+  } catch {
+    // Prisma may be unreachable from Vercel runtime — non-critical
+  }
 
   const LABELS =
     language === 'zh'
