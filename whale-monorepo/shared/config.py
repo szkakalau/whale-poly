@@ -93,7 +93,7 @@ class Settings:
     self.health_telegram_bot_api_url = os.getenv("HEALTH_TELEGRAM_BOT_API_URL", "https://telegram-bot.onrender.com")
 
     # Blog / LLM
-    self.blog_llm_api_key = self._get("BLOG_LLM_API_KEY")
+    self.blog_llm_api_key = os.getenv("BLOG_LLM_API_KEY", "")
     self.blog_llm_base_url = os.getenv("BLOG_LLM_BASE_URL", "https://api.deepseek.com/v1")
     self.blog_llm_model = os.getenv("BLOG_LLM_MODEL", "deepseek-chat")
     self.blog_daily_enabled = os.getenv("BLOG_DAILY_ENABLED", "true").strip().lower() in _env_truthy
