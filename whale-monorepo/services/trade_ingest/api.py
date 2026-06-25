@@ -142,3 +142,95 @@ async def blog_tags(language: str = "en"):
         )
         tags = [dict(r._mapping) for r in result]
     return {"tags": tags}
+
+
+@app.get("/stats/home")
+async def home_stats():
+    """Aggregated stats for the landing page hero + score tiers + star whale.
+    Called by Vercel which can't reliably query Render PostgreSQL directly.
+    """
+    from datetime import datetime, timedelta, timezone
+    from shared.models import TradeRaw, Market, WalletName, WhaleProfile, WhaleStats
+
+    async with SessionLocal() as session:
+        from sqlalchemy import desc, func, select
+
+        # ── History summary ──
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        stmt = (
+            select(
+                func.count().label("total"),
+                func.avg(
+                    func.coalesce(
+                        TradeRaw.price,
+                        0,
+                    )
+                ).label("avg_price"),
+            )
+            .select_from(TradeRaw)
+            .where(TradeRaw.timestamp < today_start)
+        )
+        result = await session.execute(stmt)
+        row = result.first()
+        total = int(row.total) if row and row.total else 0
+        # Simplified: return just count for now. Full PnL/ROI needs Gamma enrichment
+        # which is too heavy for a health endpoint.
+
+        # ── Score tier breakdown ──
+        tiers = []
+        for min_s, max_s, label in [(90, 100, "Elite conviction"), (80, 89, "High conviction"), (70, 79, "Medium conviction"), (0, 69, "Baseline")]:
+            stmt2 = (
+                select(
+                    func.count().label("cnt"),
+                    func.avg(WhaleStats.win_rate).label("avg_wr"),
+                    func.avg(WhaleStats.roi).label("avg_roi"),
+                )
+                .select_from(WhaleStats)
+                .where(WhaleStats.whale_score >= min_s, WhaleStats.whale_score <= max_s)
+            )
+            r2 = await session.execute(stmt2)
+            r = r2.first()
+            cnt = int(r.cnt) if r and r.cnt else 0
+            tiers.append({
+                "tier": f"{min_s}–{max_s}" if max_s < 100 else f"{min_s}–{max_s}",
+                "labelName": label,
+                "count": cnt,
+                "winRate": float(r.avg_wr) if r and r.avg_wr else None,
+                "avgRoi": float(r.avg_roi) if r and r.avg_roi else None,
+            })
+
+        # ── Star whale ──
+        stmt3 = (
+            select(
+                WhaleProfile.wallet_address,
+                WhaleProfile.total_volume,
+                WhaleProfile.realized_pnl,
+                WhaleProfile.total_trades,
+                WhaleStats.roi,
+                WhaleStats.win_rate,
+                WhaleStats.whale_score,
+            )
+            .join(WhaleStats, WhaleStats.wallet_address == WhaleProfile.wallet_address)
+            .where(WhaleProfile.realized_pnl > 0)
+            .order_by(desc(WhaleProfile.realized_pnl))
+            .limit(1)
+        )
+        r3 = await session.execute(stmt3)
+        sw_row = r3.first()
+        star = None
+        if sw_row:
+            addr = sw_row.wallet_address
+            star = {
+                "walletMasked": f"{addr[:6]}…{addr[-4:]}" if len(addr) > 10 else addr,
+                "totalPnl": float(sw_row.realized_pnl or 0),
+                "roi": float(sw_row.roi or 0),
+                "winRate": float(sw_row.win_rate or 0),
+                "whaleScore": int(sw_row.whale_score or 0),
+                "totalTrades": int(sw_row.total_trades or 0),
+            }
+
+    return {
+        "historyTotal": total,
+        "scoreTiers": tiers,
+        "starWhale": star,
+    }
