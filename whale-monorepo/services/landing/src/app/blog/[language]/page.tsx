@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
@@ -7,6 +8,34 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 const COLS = 'slug, title, excerpt, author, read_time, tags, published_at, language, group_slug';
+
+const getCachedBlogData = unstable_cache(
+  async (language: string, page: number, tag?: string) => {
+    const offset = (page - 1) * 12;
+    const tagWhere = tag ? `and '${tag}' = any(tags)` : '';
+    const [posts, countResult] = await Promise.all([
+      prisma.$queryRawUnsafe<any[]>(
+        `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
+      ),
+      prisma.$queryRawUnsafe<[{ count: number }]>(
+        `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
+      ),
+    ]);
+    return { posts, total: Number(countResult[0]?.count ?? 0) };
+  },
+  ['blog-list-data-v1'],
+  { revalidate: 120 },
+);
+
+const getCachedBlogTags = unstable_cache(
+  async (language: string) => {
+    return prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
+      `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
+    );
+  },
+  ['blog-list-tags-v1'],
+  { revalidate: 300 },
+);
 
 type Props = {
   params: Promise<{ language: string }>;
@@ -68,23 +97,12 @@ export default async function BlogListPage({ params, searchParams }: Props) {
   const { page: pageStr, tag } = await searchParams;
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
 
-  const offset = (page - 1) * 12;
-  const tagWhere = tag ? `and '${tag}' = any(tags)` : '';
   let postsData = { posts: [] as any[], total: 0 };
   let allTags: { tag: string; count: number }[] = [];
   try {
     [postsData, allTags] = await Promise.all([
-      Promise.all([
-        prisma.$queryRawUnsafe<any[]>(
-          `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
-        ),
-        prisma.$queryRawUnsafe<[{ count: number }]>(
-          `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
-        ),
-      ]).then(([posts, countResult]) => ({ posts, total: Number(countResult[0]?.count ?? 0) })),
-      prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
-        `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
-      ),
+      getCachedBlogData(language, page, tag),
+      getCachedBlogTags(language),
     ]);
   } catch (e) {
     console.error('BlogListPage error:', e);
