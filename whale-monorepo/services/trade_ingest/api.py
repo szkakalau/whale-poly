@@ -158,7 +158,8 @@ async def home_stats():
         stmt = select(func.count()).select_from(Alert)
         total = (await session.execute(stmt)).scalar() or 0
 
-        # ── Score tier breakdown with ROI/win rate from whale_stats ──
+        # ── Score tier breakdown: count alerts per whale_score range ──
+        #     Win rate & ROI from whale_trade_history (resolved signals only)
         tiers = []
         for min_s, max_s, label in [
             (90, 100, "Elite conviction"),
@@ -166,38 +167,43 @@ async def home_stats():
             (70, 79, "Medium conviction"),
             (0, 69, "Baseline"),
         ]:
-            stmt2 = (
-                select(
-                    func.count().label("cnt"),
-                    func.avg(WhaleStats.win_rate).label("avg_wr"),
-                    func.avg(WhaleStats.roi).label("avg_roi"),
-                )
-                .select_from(WhaleScore)
-                .join(WhaleStats, WhaleStats.wallet_address == WhaleScore.wallet_address, isouter=True)
-                .where(WhaleScore.final_score >= min_s, WhaleScore.final_score <= max_s)
+            r2 = await session.execute(
+                text(f"""SELECT
+                    COUNT(*)::int AS cnt,
+                    COUNT(*) FILTER (WHERE wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS resolved,
+                    COUNT(*) FILTER (WHERE wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS wins,
+                    AVG(CASE WHEN wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0
+                        THEN wth.pnl::float / wth.trade_usd::float END) AS avg_roi
+                FROM alerts a
+                JOIN whale_trades wt ON wt.id = a.whale_trade_id
+                LEFT JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id
+                WHERE a.whale_score >= {min_s} AND a.whale_score <= {max_s}""")
             )
-            r2 = await session.execute(stmt2)
             r = r2.first()
             cnt = int(r.cnt) if r and r.cnt else 0
+            resolved = int(r.resolved) if r and r.resolved else 0
+            wins = int(r.wins) if r and r.wins else 0
+            avg_roi = float(r.avg_roi) if r and r.avg_roi is not None else None
             tiers.append({
                 "tier": f"{min_s}–{max_s}",
                 "labelName": label,
                 "count": cnt,
-                "winRate": float(r.avg_wr) if r and r.avg_wr is not None else None,
-                "avgRoi": float(r.avg_roi) if r and r.avg_roi is not None else None,
+                "winRate": wins / resolved if resolved > 0 else None,
+                "avgRoi": avg_roi,
             })
 
-        # ── Star whale: top by realized_pnl, use whale_score from whale_scores ──
+        # ── Star whale: top by realized_pnl, with ROI/win_rate from whale_stats ──
         stmt3 = (
             select(
                 WhaleProfile.wallet_address,
                 WhaleProfile.realized_pnl,
                 WhaleProfile.total_trades,
-                WhaleProfile.wins,
-                WhaleProfile.losses,
                 WhaleScore.final_score,
+                WhaleStats.roi,
+                WhaleStats.win_rate,
             )
             .join(WhaleScore, WhaleScore.wallet_address == WhaleProfile.wallet_address)
+            .join(WhaleStats, WhaleStats.wallet_address == WhaleProfile.wallet_address, isouter=True)
             .where(WhaleProfile.realized_pnl > 0)
             .order_by(desc(WhaleProfile.realized_pnl))
             .limit(1)
@@ -208,12 +214,11 @@ async def home_stats():
         if sw_row:
             addr = sw_row.wallet_address
             pnl = float(sw_row.realized_pnl or 0)
-            wr = float(sw_row.wins or 0) / float(sw_row.total_trades or 1) if sw_row.total_trades else 0
             star = {
                 "walletMasked": f"{addr[:6]}…{addr[-4:]}" if len(addr) > 10 else addr,
                 "totalPnl": pnl,
-                "roi": 0,
-                "winRate": wr,
+                "roi": float(sw_row.roi or 0),
+                "winRate": float(sw_row.win_rate or 0),
                 "whaleScore": int(sw_row.final_score or 0),
                 "totalTrades": int(sw_row.total_trades or 0),
             }
