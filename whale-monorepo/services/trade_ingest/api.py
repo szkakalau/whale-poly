@@ -243,3 +243,72 @@ async def pricing_stats():
         "total": total,
         "avgSize": float(avg_size) if avg_size else None,
     }
+
+
+@app.get("/history")
+async def history_signals(limit: int = 500):
+    """Public history page data. Returns alerts with basic PnL info."""
+    from shared.models import Alert, WhaleTrade, TradeRaw, Market
+    from sqlalchemy import desc
+
+    async with SessionLocal() as session:
+        stmt = (
+            select(
+                Alert.id,
+                Alert.created_at,
+                Alert.market_id,
+                Alert.whale_score,
+                TradeRaw.price,
+                TradeRaw.side,
+                TradeRaw.outcome,
+                TradeRaw.amount,
+                TradeRaw.wallet,
+                Market.title.label("market_title"),
+                Market.status.label("market_status"),
+            )
+            .join(WhaleTrade, WhaleTrade.id == Alert.whale_trade_id)
+            .join(TradeRaw, TradeRaw.trade_id == WhaleTrade.trade_id)
+            .outerjoin(Market, Market.id == Alert.market_id)
+            .order_by(desc(Alert.created_at))
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        rows = result.all()
+
+    signals = []
+    for r in rows:
+        price = float(r.price) if r.price else None
+        amount = float(r.amount) if r.amount else 1
+        size_usd = price * amount if price else None
+        signals.append({
+            "id": r.id,
+            "publishedAt": r.created_at.isoformat() if r.created_at else None,
+            "marketTitle": r.market_title or "—",
+            "whaleScore": int(r.whale_score) if r.whale_score else None,
+            "publishPrice": price,
+            "outcomeLabel": r.outcome or None,
+            "sideLabel": (r.side or "").upper() or None,
+            "sizeUsd": size_usd,
+            "walletMasked": f"{r.wallet[:6]}…{r.wallet[-4:]}" if r.wallet and len(r.wallet) > 10 else (r.wallet or "—"),
+            "endPrice": None,
+            "realizedPnlUsd": None,
+            "computedPnlUsd": None,
+            "roiPct": None,
+        })
+
+    # Compute summary
+    total = len(signals)
+    with_roi = [s for s in signals if s["roiPct"] is not None]
+    win_rate = len([s for s in with_roi if (s["roiPct"] or 0) > 0]) / len(with_roi) if with_roi else None
+    avg_roi = sum(s["roiPct"] for s in with_roi) / len(with_roi) if with_roi else None
+    total_pnl = sum(s["computedPnlUsd"] for s in with_roi if s["computedPnlUsd"]) if with_roi else None
+
+    return {
+        "signals": signals,
+        "summary": {
+            "total": total,
+            "winRate": win_rate,
+            "avgRoi": avg_roi,
+            "totalPnl": total_pnl,
+        },
+    }

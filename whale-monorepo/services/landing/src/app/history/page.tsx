@@ -1,12 +1,30 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import {
-  loadPublicHistorySignals,
-  summarizeHistoryRows,
-  MAX_GAMMA_CONDITION_LOOKUPS,
-} from '@/lib/history-signals';
+import { unstable_cache } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
+
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
+const loadHistory = unstable_cache(
+  async () => {
+    const res = await fetch(`${API_BASE}/history?limit=500`);
+    if (!res.ok) throw new Error(`History API ${res.status}`);
+    return res.json() as Promise<{
+      signals: {
+        id: string; publishedAt: string | null; marketTitle: string;
+        whaleScore: number | null; publishPrice: number | null;
+        outcomeLabel: string | null; sideLabel: string | null;
+        sizeUsd: number | null; walletMasked: string;
+        endPrice: number | null; realizedPnlUsd: number | null;
+        computedPnlUsd: number | null; roiPct: number | null;
+      }[];
+      summary: { total: number; winRate: number | null; avgRoi: number | null; totalPnl: number | null };
+    }>;
+  },
+  ['history-page-v1'],
+  { revalidate: 120 },
+);
 
 export const metadata = {
   title: { absolute: 'Historical Signals — SightWhale.com' },
@@ -70,9 +88,10 @@ function yesterdayUtcIsoDate(): string {
 }
 
 export default async function HistoryPage() {
-  const rows = await loadPublicHistorySignals();
+  const data = await loadHistory();
+  const rows = data.signals;
   const withRoi = rows.filter((r) => r.roiPct != null);
-  const { winRate, avgRoi, totalPnl } = summarizeHistoryRows(withRoi);
+  const { winRate, avgRoi, totalPnl } = data.summary;
   const cutoffLabel = yesterdayUtcIsoDate();
 
   const pnlColor = totalPnl != null && totalPnl > 0 ? 'text-accent' : totalPnl != null && totalPnl < 0 ? 'text-red-500' : '';
@@ -165,7 +184,7 @@ export default async function HistoryPage() {
                         : pnl < 0
                           ? 'text-red-500 font-semibold'
                           : 'text-muted';
-                  const pubDate = new Date(row.publishedAt);
+                  const pubDate = new Date(row.publishedAt ?? '');
                   const dateStr = pubDate.toISOString().slice(0, 10);
                   const timeStr = pubDate.toISOString().slice(11, 16);
                   return (
@@ -210,7 +229,7 @@ export default async function HistoryPage() {
             <code className="text-[11px]">whale_trade_history</code> when present and meaningful. When Gamma shows a clear
             resolved winner, ROI uses that leg price; if the market is still trading, ROI uses the same leg price as the
             settlement column (mark-to-market vs entry): BUY (S − entry) / entry, SELL (entry − S) / (1 − entry). Rows with no
-            entry price, side, or Gamma match show &quot;—&quot;. Up to {MAX_GAMMA_CONDITION_LOOKUPS} distinct Gamma queries per request.
+            entry price, side, or Gamma match show &quot;—&quot;. Up to 520 distinct Gamma queries per request.
           </p>
         </details>
       </main>
