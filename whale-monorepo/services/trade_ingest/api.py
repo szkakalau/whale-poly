@@ -248,26 +248,23 @@ async def pricing_stats():
 @app.get("/history")
 async def history_signals(limit: int = 500):
     """Public history page data. Returns alerts with basic info."""
-    from shared.models import Alert, WhaleTrade, TradeRaw, Market
-
+    from sqlalchemy import text
     async with SessionLocal() as session:
-        from sqlalchemy import desc, text as sa_text
-
-        # Use raw SQL for reliability — ORM joins with Numeric columns can be tricky
-        stmt = sa_text(
-            """SELECT a.id, a.created_at, a.whale_score::int AS whale_score,
-                      tr.price::float AS price, tr.side, tr.outcome,
-                      tr.amount::float AS amount,
-                      COALESCE(tr.wallet, a.wallet_address) AS wallet,
-                      COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title
-               FROM alerts a
-               JOIN whale_trades wt ON wt.id = a.whale_trade_id
-               JOIN trades_raw tr ON tr.trade_id = wt.trade_id
-               LEFT JOIN markets m ON m.id = a.market_id
-               ORDER BY a.created_at DESC
-               LIMIT :limit"""
-        ).bindparams(limit=limit)
-        result = await session.execute(stmt)
+        result = await session.execute(
+            text(
+                f"""SELECT a.id, a.created_at, a.whale_score::int AS whale_score,
+                          tr.price::float AS price, tr.side, tr.outcome,
+                          tr.amount::float AS amount,
+                          COALESCE(NULLIF(TRIM(tr.wallet), ''), a.wallet_address) AS wallet,
+                          COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title
+                   FROM alerts a
+                   JOIN whale_trades wt ON wt.id = a.whale_trade_id
+                   JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+                   LEFT JOIN markets m ON m.id = a.market_id
+                   ORDER BY a.created_at DESC
+                   LIMIT {int(limit)}"""
+            )
+        )
         rows = result.all()
 
     signals = []
