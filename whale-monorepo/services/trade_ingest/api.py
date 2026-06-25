@@ -99,39 +99,46 @@ GAMMA_API = "https://gamma-api.polymarket.com/markets"
 MAX_GAMMA_LOOKUPS = 520
 
 
-def _gamma_fetch(param: str, value: str) -> dict | None:
-    """Fetch one Gamma market by a single param (condition_ids or clobTokenIds)."""
+def _gamma_fetch(param: str, value: str) -> tuple[dict | None, str | None]:
+    """Fetch one Gamma market. Returns (data, error_message)."""
     value = value.strip()
     if not value:
-        return None
+        return None, "empty value"
     try:
         url = f"{GAMMA_API}?{param}={value}&limit=1"
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=10) as resp:
-            data = _json.loads(resp.read())
+            raw = resp.read()
+            data = _json.loads(raw)
             if isinstance(data, list) and len(data) > 0:
-                return data[0]
-    except Exception:
-        pass
-    return None
+                return data[0], None
+            return None, f"empty response: {str(raw[:200])}"
+    except Exception as exc:
+        return None, f"{type(exc).__name__}: {exc}"
 
 
-def _gamma_fetch_batch(param: str, values: list[str], batch_size: int = 24) -> dict[str, dict]:
-    """Batch-fetch Gamma markets, returns dict keyed by value."""
+def _gamma_fetch_batch(param: str, values: list[str], batch_size: int = 24) -> tuple[dict[str, dict], list[str]]:
+    """Batch-fetch Gamma markets. Returns (cache, errors)."""
     cache: dict[str, dict] = {}
+    errors: list[str] = []
     unique = list(dict.fromkeys(v.strip() for v in values if v and v.strip()))
     unique = unique[:MAX_GAMMA_LOOKUPS]
 
     def _fetch_one(v: str):
-        return v, _gamma_fetch(param, v)
+        data, err = _gamma_fetch(param, v)
+        if err:
+            return v, None, err
+        return v, data, None
 
     for i in range(0, len(unique), batch_size):
         chunk = unique[i:i + batch_size]
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(chunk), 24)) as pool:
-            for v, result in pool.map(_fetch_one, chunk):
+            for v, result, err in pool.map(_fetch_one, chunk):
+                if err:
+                    errors.append(f"{param}={v[:20]}…: {err}")
                 if result:
                     cache[v] = result
-    return cache
+    return cache, errors
 
 
 def _parse_gamma_market(row: dict, fallback_cid: str) -> dict | None:
@@ -532,9 +539,12 @@ async def history_signals(limit: int = 500):
     # ── Batch-fetch Gamma markets (non-fatal) ──
     gamma_by_token: dict[str, dict] = {}
     gamma_by_condition: dict[str, dict] = {}
+    gamma_errors: list[str] = []
     try:
-        gamma_by_token = _gamma_fetch_batch("clobTokenIds", token_ids)
-        gamma_by_condition = _gamma_fetch_batch("condition_ids", condition_ids)
+        gamma_by_token, tok_errors = _gamma_fetch_batch("clobTokenIds", token_ids)
+        gamma_errors.extend(tok_errors)
+        gamma_by_condition, cond_errors = _gamma_fetch_batch("condition_ids", condition_ids)
+        gamma_errors.extend(cond_errors)
     except Exception:
         pass  # Gamma unavailable → ROI from hist_pnl only
 
@@ -644,5 +654,6 @@ async def history_signals(limit: int = 500):
             "unique_condition_ids": len(condition_ids),
             "gamma_token_cache_size": len(gamma_by_token),
             "gamma_condition_cache_size": len(gamma_by_condition),
+            "gamma_errors": gamma_errors[:10],
         },
     }
