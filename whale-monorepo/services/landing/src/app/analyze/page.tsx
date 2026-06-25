@@ -82,6 +82,14 @@ export default function AnalyzePage() {
       .then((d) => setTrending(d.markets || []))
       .catch(() => {})
       .finally(() => setTrendingLoading(false));
+
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q) {
+      setQuery(q);
+      search(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const search = useCallback(async (q: string) => {

@@ -1,6 +1,26 @@
+import { Suspense } from 'react';
+import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
+import { loadPublicHistorySignals, summarizeHistoryRows } from '@/lib/history-signals';
 import { Check, Sparkles } from 'lucide-react';
+
+function formatPct(v: number | null): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${(v * 100).toFixed(1)}%`;
+}
+
+const loadCachedPricingStats = unstable_cache(
+  async () => {
+    const rows = await loadPublicHistorySignals(200);
+    const summary = summarizeHistoryRows(rows);
+    const avgSize = rows.length > 0 ? rows.reduce((s, r) => s + (r.sizeUsd ?? 0), 0) / rows.length : null;
+    return { total: summary.total, avgRoi: summary.avgRoi, avgSize };
+  },
+  ['pricing-stats-v1'],
+  { revalidate: 300 },
+);
 
 export const metadata = {
   title: { absolute: 'Pricing — SightWhale.com' },
@@ -41,6 +61,32 @@ const FAQ = [
   },
 ];
 
+async function PricingValueAnchor() {
+  try {
+    const stats = await loadCachedPricingStats();
+    return (
+      <div className="grid gap-5 sm:grid-cols-3 mb-10">
+        <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
+          <p className="text-2xl font-bold tabular-nums stat-number text-foreground">
+            {stats.avgSize != null ? `$${(stats.avgSize / 1000).toFixed(0)}k` : '—'}
+          </p>
+          <p className="text-xs text-muted mt-1">Avg signal size</p>
+        </div>
+        <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
+          <p className="text-2xl font-bold tabular-nums stat-number text-accent">{formatPct(stats.avgRoi)}</p>
+          <p className="text-xs text-muted mt-1">Avg whale ROI</p>
+        </div>
+        <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
+          <p className="text-2xl font-bold tabular-nums stat-number text-foreground">{stats.total}</p>
+          <p className="text-xs text-muted mt-1">Verified signals</p>
+        </div>
+      </div>
+    );
+  } catch {
+    return null;
+  }
+}
+
 export default function PricingPage() {
   const [firstPlan, secondPlan] = PRICING_PLAN_CARDS;
 
@@ -57,15 +103,22 @@ export default function PricingPage() {
           </p>
         </header>
 
-        {/* Money-back guarantee banner */}
-        <div className="mb-10 rounded-lg border border-accent/20 bg-accent/5 px-5 py-4">
-          <p className="text-sm font-medium text-foreground">
-            Money-back guarantee: not satisfied this month? Email{' '}
-            <a href="mailto:castro.liu@me.com" className="underline decoration-accent/30 underline-offset-4 text-accent font-semibold">
-              castro.liu@me.com
-            </a>{' '}
-            for a full refund.
-          </p>
+        <Suspense fallback={null}>
+          <PricingValueAnchor />
+        </Suspense>
+
+        <div className="mb-10 rounded-lg border border-accent/30 bg-accent/[0.06] px-6 py-5">
+          <div className="flex items-start gap-3">
+            <span className="text-lg shrink-0">🛡️</span>
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1">Money-back guarantee — first month, full refund</p>
+              <p className="text-sm text-muted leading-relaxed">
+                Not satisfied? Email{' '}
+                <a href="mailto:castro.liu@me.com" className="underline decoration-accent/30 underline-offset-4 text-accent font-semibold">castro.liu@me.com</a>
+                {' '}within your first month. No forms, no arguing.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Plan cards */}

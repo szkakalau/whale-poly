@@ -278,3 +278,43 @@ export function summarizeHistoryRows(rows: HistorySignalRow[]): {
     totalPnl: Number.isFinite(totalPnl) ? totalPnl : null,
   };
 }
+
+export type ScoreTierSummary = {
+  tier: string;
+  labelName: string;
+  count: number;
+  winRate: number | null;
+  avgRoi: number | null;
+};
+
+const SCORE_TIERS = [
+  { min: 90, max: 100, tier: '90–100', labelName: 'Elite conviction' },
+  { min: 80, max: 89,  tier: '80–89',  labelName: 'High conviction' },
+  { min: 70, max: 79,  tier: '70–79',  labelName: 'Medium conviction' },
+  { min: 0,  max: 69,  tier: '<70',    labelName: 'Baseline' },
+];
+
+export function summarizeHistoryByScoreTier(rows: HistorySignalRow[]): ScoreTierSummary[] {
+  return SCORE_TIERS.map(({ min, max, tier, labelName }) => {
+    const subset = rows.filter(
+      (r) =>
+        r.whaleScore != null &&
+        r.whaleScore >= min &&
+        r.whaleScore <= max &&
+        r.roiPct != null &&
+        Number.isFinite(r.roiPct),
+    );
+    const wins = subset.filter((r) => (r.roiPct as number) > 0).length;
+    const avgRoi =
+      subset.length > 0
+        ? subset.reduce((s, r) => s + (r.roiPct as number), 0) / subset.length
+        : null;
+    return {
+      tier,
+      labelName,
+      count: subset.length,
+      winRate: subset.length > 0 ? wins / subset.length : null,
+      avgRoi,
+    };
+  });
+}
