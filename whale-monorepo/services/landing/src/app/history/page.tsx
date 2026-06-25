@@ -89,8 +89,8 @@ function yesterdayUtcIsoDate(): string {
 
 export default async function HistoryPage() {
   const data = await loadHistory();
-  const rows = data.signals;
-  const withRoi = rows.filter((r) => r.roiPct != null);
+  const allRows = data.signals;
+  const rows = allRows.filter((r) => r.roiPct != null);
   const { winRate, avgRoi, totalPnl } = data.summary;
   const cutoffLabel = yesterdayUtcIsoDate();
 
@@ -109,12 +109,7 @@ export default async function HistoryPage() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted mb-3">
               <span>
                 <span className="font-semibold tabular-nums text-foreground stat-number">{rows.length}</span>{' '}
-                total signals
-              </span>
-              <span className="text-border hidden sm:inline">·</span>
-              <span>
-                <span className="font-semibold tabular-nums text-foreground stat-number">{withRoi.length}</span>{' '}
-                resolved
+                resolved signals
               </span>
               <span className="text-border hidden sm:inline">·</span>
               <span>
@@ -139,7 +134,7 @@ export default async function HistoryPage() {
               </span>
             </div>
             <p className="text-xs text-subtle">
-              Data through {cutoffLabel} 23:59 UTC · Today&apos;s live feed is for paid members only
+              Data through {cutoffLabel} 23:59 UTC · Only resolved markets shown · Today&apos;s live feed is for paid members only
             </p>
           </div>
         </header>
@@ -166,7 +161,7 @@ export default async function HistoryPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center text-muted">
-                    No signals yet.
+                    No resolved signals yet. Active markets settle continuously — check back soon.
                   </td>
                 </tr>
               ) : (
