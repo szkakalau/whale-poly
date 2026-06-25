@@ -104,7 +104,6 @@ async function StarWhaleSection() {
               <p className="text-xs text-subtle mb-1">Wallet</p>
               <p className="text-base font-mono font-semibold text-foreground tabular-nums">{whale.walletMasked}</p>
               <div className="flex items-center gap-3 mt-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">Score {whale.whaleScore}</span>
                 <span className="text-xs text-muted">{whale.totalTrades} lifetime trades</span>
               </div>
             </div>
