@@ -70,19 +70,25 @@ export default async function BlogListPage({ params, searchParams }: Props) {
 
   const offset = (page - 1) * 12;
   const tagWhere = tag ? `and '${tag}' = any(tags)` : '';
-  const [postsData, allTags] = await Promise.all([
-    Promise.all([
-      prisma.$queryRawUnsafe<any[]>(
-        `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
+  let postsData = { posts: [] as any[], total: 0 };
+  let allTags: { tag: string; count: number }[] = [];
+  try {
+    [postsData, allTags] = await Promise.all([
+      Promise.all([
+        prisma.$queryRawUnsafe<any[]>(
+          `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
+        ),
+        prisma.$queryRawUnsafe<[{ count: number }]>(
+          `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
+        ),
+      ]).then(([posts, countResult]) => ({ posts, total: Number(countResult[0]?.count ?? 0) })),
+      prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
+        `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
       ),
-      prisma.$queryRawUnsafe<[{ count: number }]>(
-        `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
-      ),
-    ]).then(([posts, countResult]) => ({ posts, total: Number(countResult[0]?.count ?? 0) })),
-    prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
-      `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
-    ),
-  ]);
+    ]);
+  } catch (e) {
+    console.error('BlogListPage error:', e);
+  }
   const { posts, total } = postsData;
   const totalPages = Math.max(1, Math.ceil(total / 12));
 
