@@ -1,39 +1,33 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
-import { prisma } from '@/lib/prisma';
 import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-const COLS = 'slug, title, excerpt, author, read_time, tags, published_at, language, group_slug';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
 const getCachedBlogData = unstable_cache(
   async (language: string, page: number, tag?: string) => {
-    const offset = (page - 1) * 12;
-    const tagWhere = tag ? `and '${tag}' = any(tags)` : '';
-    const [posts, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe<any[]>(
-        `select ${COLS} from blog_posts where status = 'published' and language = '${language}' ${tagWhere} order by published_at desc limit 12 offset ${offset}`
-      ),
-      prisma.$queryRawUnsafe<[{ count: number }]>(
-        `select count(*) as count from blog_posts where status = 'published' and language = '${language}' ${tagWhere}`
-      ),
-    ]);
-    return { posts, total: Number(countResult[0]?.count ?? 0) };
+    const params = new URLSearchParams({ language, page: String(page), limit: '12' });
+    if (tag) params.set('tag', tag);
+    const res = await fetch(`${API_BASE}/blog/posts?${params}`);
+    if (!res.ok) throw new Error(`Blog API ${res.status}`);
+    return res.json() as Promise<{ posts: any[]; total: number }>;
   },
-  ['blog-list-data-v1'],
+  ['blog-list-data-v2'],
   { revalidate: 120 },
 );
 
 const getCachedBlogTags = unstable_cache(
   async (language: string) => {
-    return prisma.$queryRawUnsafe<{ tag: string; count: number }[]>(
-      `select unnest(tags) as tag, count(*)::int as count from blog_posts where status = 'published' and language = '${language}' group by tag order by count desc, tag`
-    );
+    const res = await fetch(`${API_BASE}/blog/tags?language=${language}`);
+    if (!res.ok) throw new Error(`Blog tags API ${res.status}`);
+    const data = await res.json() as { tags: { tag: string; count: number }[] };
+    return data.tags;
   },
-  ['blog-list-tags-v1'],
+  ['blog-list-tags-v2'],
   { revalidate: 300 },
 );
 
