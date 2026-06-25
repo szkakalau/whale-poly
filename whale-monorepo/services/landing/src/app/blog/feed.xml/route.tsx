@@ -1,6 +1,6 @@
 import { getLatestPosts, type BlogPostCard } from '@/lib/blog';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const siteUrl = 'https://www.sightwhale.com';
