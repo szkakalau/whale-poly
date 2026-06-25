@@ -543,12 +543,9 @@ async def history_signals(limit: int = 500):
     # ── Batch-fetch Gamma markets (non-fatal) ──
     gamma_by_token: dict[str, dict] = {}
     gamma_by_condition: dict[str, dict] = {}
-    gamma_errors: list[str] = []
     try:
-        gamma_by_token, tok_errors = _gamma_fetch_batch("clobTokenIds", token_ids)
-        gamma_errors.extend(tok_errors)
-        gamma_by_condition, cond_errors = _gamma_fetch_batch("condition_ids", condition_ids)
-        gamma_errors.extend(cond_errors)
+        gamma_by_token, _ = _gamma_fetch_batch("clobTokenIds", token_ids)
+        gamma_by_condition, _ = _gamma_fetch_batch("condition_ids", condition_ids)
     except Exception:
         pass  # Gamma unavailable → ROI from hist_pnl only
 
@@ -614,13 +611,6 @@ async def history_signals(limit: int = 500):
         if computed_pnl is None and roi_pct is not None and size_usd is not None and size_usd > 0:
             computed_pnl = size_usd * roi_pct
 
-        # ---- Debug: Gamma lookup keys ----
-        gamma_lookup = None
-        if raw_token_id:
-            gamma_lookup = gamma_by_token.get(raw_token_id.lower()) or gamma_by_token.get(raw_token_id)
-        if not gamma_lookup and condition_id:
-            gamma_lookup = gamma_by_condition.get(condition_id.lower()) or gamma_by_condition.get(condition_id)
-
         signals.append({
             "id": r.id,
             "publishedAt": r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at),
@@ -635,9 +625,6 @@ async def history_signals(limit: int = 500):
             "realizedPnlUsd": round(computed_pnl, 2) if computed_pnl is not None else None,
             "computedPnlUsd": round(computed_pnl, 2) if computed_pnl is not None else None,
             "roiPct": round(roi_pct, 4) if roi_pct is not None else None,
-            "_dbg_token_id": raw_token_id[:30] if raw_token_id else None,
-            "_dbg_condition_id": condition_id[:30] if condition_id else None,
-            "_dbg_gamma_hit": gamma_lookup is not None,
         })
 
     # ── Summary from resolved signals ──
@@ -652,12 +639,5 @@ async def history_signals(limit: int = 500):
             "winRate": len(wins) / len(with_roi) if with_roi else None,
             "avgRoi": sum(s["roiPct"] for s in with_roi) / len(with_roi) if with_roi else None,
             "totalPnl": round(total_pnl, 2) if with_roi else None,
-        },
-        "_dbg": {
-            "unique_token_ids": len(token_ids),
-            "unique_condition_ids": len(condition_ids),
-            "gamma_token_cache_size": len(gamma_by_token),
-            "gamma_condition_cache_size": len(gamma_by_condition),
-            "gamma_errors": gamma_errors[:10],
         },
     }
