@@ -36,7 +36,7 @@ const loadHomeStats = unstable_cache(
     if (!res.ok) throw new Error(`Stats API ${res.status}`);
     return res.json() as Promise<{
       historyTotal: number;
-      scoreTiers: { tier: string; labelName: string; count: number; winRate: number | null; avgRoi: number | null }[];
+      scoreTiers: { tier: string; labelName: string; count: number; resolvedCount: number; winRate: number | null; avgRoi: number | null }[];
       starWhale: { walletMasked: string; totalPnl: number; roi: number; winRate: number; whaleScore: number; totalTrades: number } | null;
     }>;
   },
@@ -127,12 +127,13 @@ async function StatsBar() {
     const stats = await loadHomeStats();
     const total = stats.historyTotal;
     const allTiers = stats.scoreTiers;
-    const totalSignals = allTiers.reduce((s, t) => s + t.count, 0);
-    const avgRoi = totalSignals > 0
-      ? allTiers.reduce((s, t) => s + (t.avgRoi ?? 0) * t.count, 0) / totalSignals
+    // Weight by resolvedCount so only settled signals contribute to ROI / win rate
+    const totalResolved = allTiers.reduce((s, t) => s + (t.resolvedCount ?? 0), 0);
+    const avgRoi = totalResolved > 0
+      ? allTiers.reduce((s, t) => s + (t.avgRoi ?? 0) * (t.resolvedCount ?? 0), 0) / totalResolved
       : null;
-    const totalWins = allTiers.reduce((s, t) => s + (t.winRate ?? 0) * t.count, 0);
-    const winRate = totalSignals > 0 ? totalWins / totalSignals : null;
+    const totalWins = allTiers.reduce((s, t) => s + (t.winRate ?? 0) * (t.resolvedCount ?? 0), 0);
+    const winRate = totalResolved > 0 ? totalWins / totalResolved : null;
     const wr = winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—';
 
     return (
@@ -140,6 +141,11 @@ async function StatsBar() {
         <span>
           <span className="font-semibold tabular-nums text-foreground stat-number">{total}</span>{' '}
           audited signals
+        </span>
+        <span className="text-border hidden sm:inline">·</span>
+        <span>
+          <span className="font-semibold tabular-nums text-muted stat-number">{totalResolved}</span>{' '}
+          resolved
         </span>
         <span className="text-border hidden sm:inline">·</span>
         <span>

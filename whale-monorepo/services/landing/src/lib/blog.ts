@@ -1,9 +1,4 @@
-// ---------------------------------------------------------------------------
-// Blog data access layer — all queries go through the Render API
-// (Prisma direct queries are unreliable on Vercel runtime)
-// ---------------------------------------------------------------------------
-
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+import { prisma } from '@/lib/prisma';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,47 +29,138 @@ export type BlogPostCard = Pick<
 >;
 
 // ---------------------------------------------------------------------------
-// API helpers
+// Helpers
 // ---------------------------------------------------------------------------
 
-async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, init);
-  if (!res.ok) throw new Error(`Blog API ${res.status} for ${path}`);
-  return res.json();
+function parseTags(tags: unknown): string[] {
+  if (Array.isArray(tags)) return tags.map(String);
+  if (typeof tags === 'string') {
+    try {
+      const parsed = JSON.parse(tags);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function mapPostCard(row: any): BlogPostCard {
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    author: row.author,
+    read_time: row.read_time,
+    tags: parseTags(row.tags),
+    published_at: row.published_at instanceof Date ? row.published_at.toISOString() : String(row.published_at),
+    language: row.language,
+    group_slug: row.group_slug,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Queries
+// Queries — use $queryRawUnsafe (Prisma.sql returns 0 rows on Vercel runtime)
 // ---------------------------------------------------------------------------
 
 /**
- * Get a single post by slug and language (via API).
+ * Get paginated published posts for a given language.
+ */
+export async function getPosts(
+  language: string,
+  page: number = 1,
+  limit: number = 12,
+  tag?: string,
+): Promise<{ posts: BlogPostCard[]; total: number }> {
+  const offset = (page - 1) * limit;
+  const tagWhere = tag ? `and '${tag.replace(/'/g, "''")}' = any(tags)` : '';
+
+  const [posts, countResult] = await Promise.all([
+    prisma.$queryRawUnsafe<any[]>(
+      `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+       from blog_posts
+       where status = 'published' and language = '${language.replace(/'/g, "''")}'
+       ${tagWhere}
+       order by published_at desc
+       limit ${limit} offset ${offset}`,
+    ),
+    prisma.$queryRawUnsafe<[{ count: bigint }]>(
+      `select count(*) as count
+       from blog_posts
+       where status = 'published' and language = '${language.replace(/'/g, "''")}'
+       ${tagWhere}`,
+    ),
+  ]);
+
+  return {
+    posts: posts.map(mapPostCard),
+    total: Number(countResult[0]?.count ?? 0),
+  };
+}
+
+/**
+ * Get a single post by slug and language (with full content).
  */
 export async function getPost(slug: string, language: string): Promise<BlogPost | null> {
-  try {
-    const data = await apiFetch(`/blog/post?slug=${encodeURIComponent(slug)}&language=${language}`);
-    return data as BlogPost | null;
-  } catch {
-    return null;
+  const rows = await prisma.$queryRawUnsafe<any[]>(
+    `select * from blog_posts
+     where slug = '${slug.replace(/'/g, "''")}' and language = '${language.replace(/'/g, "''")}' and status = 'published'
+     limit 1`,
+  );
+  if (!rows.length) return null;
+
+  const row = rows[0];
+  const post: BlogPost = {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    author: row.author,
+    read_time: row.read_time,
+    cover_image: row.cover_image,
+    tags: parseTags(row.tags),
+    published_at: row.published_at instanceof Date ? row.published_at.toISOString() : String(row.published_at),
+    created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+    updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
+    language: row.language,
+    group_slug: row.group_slug,
+    status: row.status,
+  };
+
+  // Fetch sibling (same group_slug, different language) — inline
+  if (post.group_slug) {
+    const sibRows = await prisma.$queryRawUnsafe<{ slug: string; language: string }[]>(
+      `select slug, language from blog_posts
+       where group_slug = '${post.group_slug.replace(/'/g, "''")}' and language != '${language.replace(/'/g, "''")}' and status = 'published'
+       limit 1`,
+    );
+    if (sibRows.length > 0) {
+      post.sibling = { slug: sibRows[0].slug, language: sibRows[0].language };
+    }
   }
+
+  return post;
 }
 
 /**
- * Get the sibling article — now returned inline by getPost().
- * Kept for backward compatibility with existing callers.
+ * Get the sibling article (kept for existing callers).
  */
 export async function getSiblingPost(
   groupSlug: string | null,
   language: string,
 ): Promise<{ slug: string; language: string } | null> {
   if (!groupSlug) return null;
-  // We don't have a standalone sibling endpoint — use the post endpoint
-  // This function is called with group_slug from a post already fetched by getPost
-  return null; // sibling is already in the post object from getPost
+  const rows = await prisma.$queryRawUnsafe<{ slug: string; language: string }[]>(
+    `select slug, language from blog_posts
+     where group_slug = '${groupSlug.replace(/'/g, "''")}' and language != '${language.replace(/'/g, "''")}' and status = 'published'
+     limit 1`,
+  );
+  return rows[0] ?? null;
 }
 
 /**
- * Get related posts by tag (reuses /blog/posts endpoint).
+ * Get related posts (same language, shares at least one tag).
  */
 export async function getRelatedPosts(
   slug: string,
@@ -83,48 +169,60 @@ export async function getRelatedPosts(
   limit: number = 3,
 ): Promise<BlogPostCard[]> {
   if (!tags.length) return [];
-  try {
-    // Use the first tag for filtering — the listing endpoint supports one tag
-    const tag = tags[0];
-    const params = new URLSearchParams({ language, page: '1', limit: String(limit + 1), tag });
-    const data = await apiFetch(`/blog/posts?${params}`) as { posts: BlogPostCard[]; total: number };
-    return data.posts.filter((p) => p.slug !== slug).slice(0, limit);
-  } catch {
-    return [];
-  }
+  const tagList = tags.map((t) => `'${t.replace(/'/g, "''")}'`).join(',');
+  const rows = await prisma.$queryRawUnsafe<any[]>(
+    `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+     from blog_posts
+     where status = 'published'
+       and language = '${language.replace(/'/g, "''")}'
+       and slug != '${slug.replace(/'/g, "''")}'
+       and tags && array[${tagList}]::text[]
+     order by published_at desc
+     limit ${limit}`,
+  );
+  return rows.map(mapPostCard);
 }
 
 /**
- * Get all published slugs for sitemap generation.
+ * Get all published slugs for sitemap / RSS generation.
  */
 export async function getAllPublishedSlugs(): Promise<{ slug: string; language: string; updated_at: string }[]> {
-  // Not critical for page render — return empty on error
-  return [];
+  const rows = await prisma.$queryRawUnsafe<{ slug: string; language: string; updated_at: string }[]>(
+    `select slug, language, updated_at::text as updated_at
+     from blog_posts
+     where status = 'published'
+     order by published_at desc`,
+  );
+  return rows;
 }
 
 /**
  * Get latest posts for RSS feed.
  */
 export async function getLatestPosts(limit: number = 20, language?: string): Promise<BlogPostCard[]> {
-  try {
-    const params = new URLSearchParams({ language: language || 'en', page: '1', limit: String(limit) });
-    const data = await apiFetch(`/blog/posts?${params}`) as { posts: BlogPostCard[]; total: number };
-    return data.posts;
-  } catch {
-    return [];
-  }
+  const langWhere = language ? `and language = '${language.replace(/'/g, "''")}'` : '';
+  const rows = await prisma.$queryRawUnsafe<any[]>(
+    `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+     from blog_posts
+     where status = 'published' ${langWhere}
+     order by published_at desc
+     limit ${limit}`,
+  );
+  return rows.map(mapPostCard);
 }
 
 export type TagWithCount = { tag: string; count: number };
 
 /**
- * Get all tags with article counts (via API).
+ * Get all tags with article counts for a language.
  */
 export async function getAllTags(language: string): Promise<TagWithCount[]> {
-  try {
-    const data = await apiFetch(`/blog/tags?language=${language}`) as { tags: TagWithCount[] };
-    return data.tags;
-  } catch {
-    return [];
-  }
+  const rows = await prisma.$queryRawUnsafe<TagWithCount[]>(
+    `select unnest(tags) as tag, count(*)::int as count
+     from blog_posts
+     where status = 'published' and language = '${language.replace(/'/g, "''")}'
+     group by tag
+     order by count desc, tag`,
+  );
+  return rows;
 }

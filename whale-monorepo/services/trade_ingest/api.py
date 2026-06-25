@@ -479,6 +479,7 @@ async def home_stats():
                 "tier": f"{min_s}–{max_s}",
                 "labelName": label,
                 "count": cnt,
+                "resolvedCount": resolved,
                 "winRate": wins / resolved if resolved > 0 else None,
                 "avgRoi": avg_roi,
             })
