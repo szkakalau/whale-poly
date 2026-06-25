@@ -149,7 +149,7 @@ async def home_stats():
     """Aggregated stats for the landing page hero + score tiers + star whale.
     Called by Vercel which can't reliably query Render PostgreSQL directly.
     """
-    from shared.models import Alert, WhaleProfile, WhaleScore
+    from shared.models import Alert, WhaleProfile, WhaleScore, WhaleStats
 
     async with SessionLocal() as session:
         from sqlalchemy import desc, func, select
@@ -158,7 +158,7 @@ async def home_stats():
         stmt = select(func.count()).select_from(Alert)
         total = (await session.execute(stmt)).scalar() or 0
 
-        # ── Score tier breakdown: use whale_scores (realtime, 0-100 range) ──
+        # ── Score tier breakdown with ROI/win rate from whale_stats ──
         tiers = []
         for min_s, max_s, label in [
             (90, 100, "Elite conviction"),
@@ -166,18 +166,25 @@ async def home_stats():
             (70, 79, "Medium conviction"),
             (0, 69, "Baseline"),
         ]:
-            cnt_stmt = (
-                select(func.count())
+            stmt2 = (
+                select(
+                    func.count().label("cnt"),
+                    func.avg(WhaleStats.win_rate).label("avg_wr"),
+                    func.avg(WhaleStats.roi).label("avg_roi"),
+                )
                 .select_from(WhaleScore)
+                .join(WhaleStats, WhaleStats.wallet_address == WhaleScore.wallet_address, isouter=True)
                 .where(WhaleScore.final_score >= min_s, WhaleScore.final_score <= max_s)
             )
-            cnt = (await session.execute(cnt_stmt)).scalar() or 0
+            r2 = await session.execute(stmt2)
+            r = r2.first()
+            cnt = int(r.cnt) if r and r.cnt else 0
             tiers.append({
                 "tier": f"{min_s}–{max_s}",
                 "labelName": label,
                 "count": cnt,
-                "winRate": None,
-                "avgRoi": None,
+                "winRate": float(r.avg_wr) if r and r.avg_wr is not None else None,
+                "avgRoi": float(r.avg_roi) if r and r.avg_roi is not None else None,
             })
 
         # ── Star whale: top by realized_pnl, use whale_score from whale_scores ──
