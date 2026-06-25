@@ -57,7 +57,7 @@ function formatPnlCompact(v: number): string {
 async function ScorePerformanceSection() {
   try {
     const stats = await loadHomeStats();
-    const visible = stats.scoreTiers.filter((t) => t.count > 0);
+    const visible = stats.scoreTiers;
     if (visible.length === 0) return null;
 
     return (
