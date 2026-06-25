@@ -87,9 +87,8 @@ async def ingest_trade(payload: TradeIn):
 from shared.db import SessionLocal
 from sqlalchemy import text
 import concurrent.futures
-import json as _json
-import urllib.request
 import re as _re
+import httpx
 
 # ---------------------------------------------------------------------------
 # Gamma API helpers — settlement prices & ROI for resolved Polymarket markets
@@ -98,6 +97,13 @@ import re as _re
 GAMMA_API = "https://gamma-api.polymarket.com/markets"
 MAX_GAMMA_LOOKUPS = 520
 
+# Shared httpx client (sync, thread-safe) — respects HTTPS_PROXY env var
+_gamma_http = httpx.Client(
+    headers={"Accept": "application/json"},
+    timeout=httpx.Timeout(10.0),
+    follow_redirects=True,
+)
+
 
 def _gamma_fetch(param: str, value: str) -> tuple[dict | None, str | None]:
     """Fetch one Gamma market. Returns (data, error_message)."""
@@ -105,14 +111,12 @@ def _gamma_fetch(param: str, value: str) -> tuple[dict | None, str | None]:
     if not value:
         return None, "empty value"
     try:
-        url = f"{GAMMA_API}?{param}={value}&limit=1"
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            raw = resp.read()
-            data = _json.loads(raw)
-            if isinstance(data, list) and len(data) > 0:
-                return data[0], None
-            return None, f"empty response: {str(raw[:200])}"
+        resp = _gamma_http.get(f"{GAMMA_API}", params={param: value, "limit": "1"})
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list) and len(data) > 0:
+            return data[0], None
+        return None, f"empty response: {resp.text[:200]}"
     except Exception as exc:
         return None, f"{type(exc).__name__}: {exc}"
 
@@ -148,7 +152,7 @@ def _parse_gamma_market(row: dict, fallback_cid: str) -> dict | None:
             return raw
         if isinstance(raw, str):
             try:
-                return _json.loads(raw)
+                return json.loads(raw)
             except Exception:
                 return []
         return []
