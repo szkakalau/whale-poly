@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { unstable_cache } from 'next/cache';
 import { loadLiveSignals } from '@/lib/live-signals';
 import { getCurrentUser } from '@/lib/auth';
 import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
@@ -7,8 +8,6 @@ import { HomeCtaLink } from '@/components/HomeCtaLink';
 import HomeStickyCta from '@/components/HomeStickyCta';
 import HeroAnalyzeInput from '@/components/HeroAnalyzeInput';
 import { PRICING_PRO_MONTHLY } from '@/lib/pricing-plans';
-import { loadPublicHistorySignals, summarizeHistoryByScoreTier, summarizeHistoryRows } from '@/lib/history-signals';
-import { getStarWhale } from '@/lib/whale-profiles';
 import {
   ArrowRight,
   BarChart3,
@@ -29,6 +28,22 @@ function formatPct(v: number | null): string {
   return `${sign}${(v * 100).toFixed(1)}%`;
 }
 
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
+const loadHomeStats = unstable_cache(
+  async () => {
+    const res = await fetch(`${API_BASE}/stats/home`);
+    if (!res.ok) throw new Error(`Stats API ${res.status}`);
+    return res.json() as Promise<{
+      historyTotal: number;
+      scoreTiers: { tier: string; labelName: string; count: number; winRate: number | null; avgRoi: number | null }[];
+      starWhale: { walletMasked: string; totalPnl: number; roi: number; winRate: number; whaleScore: number; totalTrades: number } | null;
+    }>;
+  },
+  ['home-stats-v2'],
+  { revalidate: 120 },
+);
+
 function formatPnlCompact(v: number): string {
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
   const abs = Math.abs(v);
@@ -41,9 +56,8 @@ function formatPnlCompact(v: number): string {
 
 async function ScorePerformanceSection() {
   try {
-    const rows = await loadPublicHistorySignals(500);
-    const tiers = summarizeHistoryByScoreTier(rows);
-    const visible = tiers.filter((t) => t.count > 0);
+    const stats = await loadHomeStats();
+    const visible = stats.scoreTiers.filter((t) => t.count > 0);
     if (visible.length === 0) return null;
 
     return (
@@ -76,7 +90,8 @@ async function ScorePerformanceSection() {
 
 async function StarWhaleSection() {
   try {
-    const whale = await getStarWhale();
+    const stats = await loadHomeStats();
+    const whale = stats.starWhale;
     if (!whale) return null;
 
     return (
@@ -105,13 +120,20 @@ async function StarWhaleSection() {
   } catch { return null; }
 }
 
+/* ── Data-fetching sub-components ── */
+
 async function StatsBar() {
   try {
-    const rows = await loadPublicHistorySignals(500);
-    const summary = summarizeHistoryRows(rows);
-    const total = summary.total;
-    const avgRoi = summary.avgRoi;
-    const wr = summary.winRate != null ? `${(summary.winRate * 100).toFixed(1)}%` : '—';
+    const stats = await loadHomeStats();
+    const total = stats.historyTotal;
+    const allTiers = stats.scoreTiers;
+    const totalSignals = allTiers.reduce((s, t) => s + t.count, 0);
+    const avgRoi = totalSignals > 0
+      ? allTiers.reduce((s, t) => s + (t.avgRoi ?? 0) * t.count, 0) / totalSignals
+      : null;
+    const totalWins = allTiers.reduce((s, t) => s + (t.winRate ?? 0) * t.count, 0);
+    const winRate = totalSignals > 0 ? totalWins / totalSignals : null;
+    const wr = winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—';
 
     return (
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted">
@@ -262,9 +284,12 @@ const FAQ_ITEMS = [
 
 async function HeroStat() {
   try {
-    const rows = await loadPublicHistorySignals(500);
-    const summary = summarizeHistoryRows(rows);
-    const wr = summary.winRate != null && summary.winRate > 0 ? `${(summary.winRate * 100).toFixed(1)}%` : null;
+    const stats = await loadHomeStats();
+    const tiers = stats.scoreTiers;
+    const totalSignals = tiers.reduce((s, t) => s + t.count, 0);
+    const totalWins = tiers.reduce((s, t) => s + (t.winRate ?? 0) * t.count, 0);
+    const winRate = totalSignals > 0 ? totalWins / totalSignals : null;
+    const wr = winRate != null && winRate > 0 ? `${(winRate * 100).toFixed(1)}%` : null;
 
     if (!wr) {
       return (

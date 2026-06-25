@@ -1,8 +1,30 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { loadPublicHistorySignals, summarizeHistoryRows } from '@/lib/history-signals';
+import { unstable_cache } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
+
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
+const loadHistory = unstable_cache(
+  async () => {
+    const res = await fetch(`${API_BASE}/history?limit=500`);
+    if (!res.ok) throw new Error(`History API ${res.status}`);
+    return res.json() as Promise<{
+      signals: {
+        id: string; publishedAt: string | null; marketTitle: string;
+        whaleScore: number | null; publishPrice: number | null;
+        outcomeLabel: string | null; sideLabel: string | null;
+        sizeUsd: number | null; walletMasked: string;
+        endPrice: number | null; realizedPnlUsd: number | null;
+        computedPnlUsd: number | null; roiPct: number | null;
+      }[];
+      summary: { total: number; winRate: number | null; avgRoi: number | null; totalPnl: number | null };
+    }>;
+  },
+  ['history-page-v2'],
+  { revalidate: 60 },
+);
 
 export const metadata = {
   title: { absolute: 'Historical Signals — SightWhale.com' },
@@ -66,9 +88,10 @@ function yesterdayUtcIsoDate(): string {
 }
 
 export default async function HistoryPage() {
-  const rows = await loadPublicHistorySignals(500);
+  const data = await loadHistory();
+  const rows = data.signals;
   const withRoi = rows.filter((r) => r.roiPct != null);
-  const { winRate, avgRoi, totalPnl } = summarizeHistoryRows(rows);
+  const { winRate, avgRoi, totalPnl } = data.summary;
   const cutoffLabel = yesterdayUtcIsoDate();
 
   const pnlColor = totalPnl != null && totalPnl > 0 ? 'text-accent' : totalPnl != null && totalPnl < 0 ? 'text-red-500' : '';
