@@ -109,7 +109,6 @@ async function StarWhaleSection() {
             </div>
             <div className="flex flex-wrap gap-6 sm:gap-8 shrink-0">
               <div className="text-center sm:text-right"><p className="text-xs text-subtle mb-0.5">Historical ROI</p><p className="text-xl font-bold tabular-nums stat-number text-accent">{formatPct(whale.roi)}</p></div>
-              <div className="text-center sm:text-right"><p className="text-xs text-subtle mb-0.5">Win Rate</p><p className="text-xl font-bold tabular-nums stat-number text-foreground">{(whale.winRate * 100).toFixed(1)}%</p></div>
               <div className="text-center sm:text-right"><p className="text-xs text-subtle mb-0.5">Total Profit</p><p className="text-xl font-bold tabular-nums stat-number text-accent">{formatPnlCompact(whale.totalPnl)}</p></div>
             </div>
           </div>
