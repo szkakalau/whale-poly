@@ -166,7 +166,7 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
       FROM whale_trades wt
       INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
       ORDER BY wt.created_at DESC NULLS LAST
-      LIMIT 24
+      LIMIT 120
       `,
     );
 
@@ -224,14 +224,14 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
 
     signals = signals.filter((s) => !shouldExcludeMarketFromPublicFeeds(s.market));
 
-    return signals.slice(0, 10);
+    return signals.slice(0, 30);
   } catch {
     return [];
   }
 }
 
 /** Bump key when loader logic changes (avoids long-lived empty cache). */
-export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v4'], {
+export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v5'], {
   revalidate: 60,
 });
 
