@@ -247,7 +247,7 @@ async def pricing_stats():
 
 @app.get("/history")
 async def history_signals(limit: int = 500):
-    """Public history page data. Returns alerts with basic info."""
+    """Public history page data with PnL from whale_trade_history."""
     from sqlalchemy import text
     async with SessionLocal() as session:
         result = await session.execute(
@@ -256,11 +256,14 @@ async def history_signals(limit: int = 500):
                           tr.price::float AS price, tr.side, tr.outcome,
                           tr.amount::float AS amount,
                           COALESCE(NULLIF(TRIM(tr.wallet), ''), a.wallet_address) AS wallet,
-                          COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title
+                          COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title,
+                          wth.pnl::float AS hist_pnl,
+                          wth.trade_usd::float AS hist_trade_usd
                    FROM alerts a
                    JOIN whale_trades wt ON wt.id = a.whale_trade_id
                    JOIN trades_raw tr ON tr.trade_id = wt.trade_id
                    LEFT JOIN markets m ON m.id = a.market_id
+                   LEFT JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id
                    ORDER BY a.created_at DESC
                    LIMIT {int(limit)}"""
             )
@@ -273,6 +276,16 @@ async def history_signals(limit: int = 500):
         amount = r.amount or 1
         size_usd = round(price * amount, 2) if price else None
         wallet = r.wallet or ""
+        hist_pnl = r.hist_pnl
+        hist_trade_usd = r.hist_trade_usd
+        # Compute ROI from whale_trade_history PnL (same logic as history-signals.ts)
+        roi_pct = None
+        computed_pnl = None
+        if hist_pnl is not None and abs(hist_pnl) >= 0.01:
+            computed_pnl = hist_pnl
+            if hist_trade_usd and hist_trade_usd > 0:
+                roi_pct = hist_pnl / hist_trade_usd
+
         signals.append({
             "id": r.id,
             "publishedAt": r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at),
@@ -284,17 +297,22 @@ async def history_signals(limit: int = 500):
             "sizeUsd": size_usd,
             "walletMasked": f"{wallet[:6]}…{wallet[-4:]}" if len(wallet) > 10 else (wallet or "—"),
             "endPrice": None,
-            "realizedPnlUsd": None,
-            "computedPnlUsd": None,
-            "roiPct": None,
+            "realizedPnlUsd": computed_pnl,
+            "computedPnlUsd": computed_pnl,
+            "roiPct": round(roi_pct, 4) if roi_pct is not None else None,
         })
+
+    # Summary from resolved signals
+    with_roi = [s for s in signals if s["roiPct"] is not None and s["computedPnlUsd"] is not None]
+    wins = [s for s in with_roi if (s["roiPct"] or 0) > 0]
+    total_pnl = sum(s["computedPnlUsd"] for s in with_roi)
 
     return {
         "signals": signals,
         "summary": {
             "total": len(signals),
-            "winRate": None,
-            "avgRoi": None,
-            "totalPnl": None,
+            "winRate": len(wins) / len(with_roi) if with_roi else None,
+            "avgRoi": sum(s["roiPct"] for s in with_roi) / len(with_roi) if with_roi else None,
+            "totalPnl": total_pnl if with_roi else None,
         },
     }
