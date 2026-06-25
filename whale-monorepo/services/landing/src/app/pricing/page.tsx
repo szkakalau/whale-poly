@@ -2,23 +2,17 @@ import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
-import { loadPublicHistorySignals, summarizeHistoryRows } from '@/lib/history-signals';
 import { Check, Sparkles } from 'lucide-react';
 
-function formatPct(v: number | null): string {
-  if (v == null || !Number.isFinite(v)) return '—';
-  const sign = v > 0 ? '+' : '';
-  return `${sign}${(v * 100).toFixed(1)}%`;
-}
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
 const loadCachedPricingStats = unstable_cache(
   async () => {
-    const rows = await loadPublicHistorySignals(200);
-    const summary = summarizeHistoryRows(rows);
-    const avgSize = rows.length > 0 ? rows.reduce((s, r) => s + (r.sizeUsd ?? 0), 0) / rows.length : null;
-    return { total: summary.total, avgRoi: summary.avgRoi, avgSize };
+    const res = await fetch(`${API_BASE}/stats/pricing`);
+    if (!res.ok) throw new Error(`Pricing stats API ${res.status}`);
+    return res.json() as Promise<{ total: number; avgSize: number | null }>;
   },
-  ['pricing-stats-v1'],
+  ['pricing-stats-v2'],
   { revalidate: 300 },
 );
 
@@ -65,16 +59,12 @@ async function PricingValueAnchor() {
   try {
     const stats = await loadCachedPricingStats();
     return (
-      <div className="grid gap-5 sm:grid-cols-3 mb-10">
+      <div className="grid gap-5 sm:grid-cols-2 mb-10">
         <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
           <p className="text-2xl font-bold tabular-nums stat-number text-foreground">
             {stats.avgSize != null ? `$${(stats.avgSize / 1000).toFixed(0)}k` : '—'}
           </p>
           <p className="text-xs text-muted mt-1">Avg signal size</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
-          <p className="text-2xl font-bold tabular-nums stat-number text-accent">{formatPct(stats.avgRoi)}</p>
-          <p className="text-xs text-muted mt-1">Avg whale ROI</p>
         </div>
         <div className="rounded-lg border border-border bg-surface px-5 py-4 text-center">
           <p className="text-2xl font-bold tabular-nums stat-number text-foreground">{stats.total}</p>

@@ -216,3 +216,23 @@ async def home_stats():
         "scoreTiers": tiers,
         "starWhale": star,
     }
+
+
+@app.get("/stats/pricing")
+async def pricing_stats():
+    """Stats for the pricing page value anchor."""
+    from shared.models import Alert, WhaleProfile
+    from sqlalchemy import func, select
+
+    async with SessionLocal() as session:
+        # Signal count
+        total = (await session.execute(select(func.count()).select_from(Alert))).scalar() or 0
+
+        # Avg trade size from whale_profiles
+        avg_size_stmt = select(func.avg(WhaleProfile.total_volume / func.nullif(WhaleProfile.total_trades, 0)))
+        avg_size = (await session.execute(avg_size_stmt)).scalar()
+
+    return {
+        "total": total,
+        "avgSize": float(avg_size) if avg_size else None,
+    }
