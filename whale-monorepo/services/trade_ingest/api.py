@@ -699,6 +699,8 @@ async def market_whale_trades(slug: str, hours: int = 24):
     from sqlalchemy import text
 
     lookback_hours = max(1, min(hours, 168))  # clamp 1–168
+    safe_slug = slug.replace("'", "''")  # escape single quotes
+    pattern = f"%{safe_slug}%"
     async with SessionLocal() as session:
         result = await session.execute(
             text(
@@ -712,32 +714,32 @@ async def market_whale_trades(slug: str, hours: int = 24):
                     FROM whale_trades wt
                     INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
                     WHERE (
-                      wt.market_id ILIKE :q
-                      OR tr.market_title ILIKE :q
-                      OR tr.market_slug ILIKE :q
+                      wt.market_id ILIKE '{pattern}'
+                      OR tr.market_title ILIKE '{pattern}'
                     )
                     AND wt.created_at >= NOW() - INTERVAL '{lookback_hours} hours'
                     ORDER BY wt.created_at DESC NULLS LAST
                     LIMIT 100"""
-            ),
-            {"q": f"%{slug}%"},
+            )
         )
         rows = result.all()
 
     signals = []
     for r in rows:
+        wallet = r.wallet_address or ""
         side_raw = (r.side or "").strip().upper()
         side = side_raw if side_raw in ("BUY", "SELL") else "UNKNOWN"
         ws = r.whale_score
+        occurred = r.created_at.isoformat() if r.created_at else ""
         signals.append({
-            "id": f"api-{r.wallet_address}-{r.created_at.isoformat()}",
-            "occurredAt": r.created_at.isoformat(),
-            "walletMasked": f"{r.wallet_address[:6]}…{r.wallet_address[-4:]}" if r.wallet_address and len(r.wallet_address) > 10 else (r.wallet_address or ""),
+            "id": f"api-{wallet}-{occurred}",
+            "occurredAt": occurred,
+            "walletMasked": f"{wallet[:6]}…{wallet[-4:]}" if wallet and len(wallet) > 10 else wallet,
             "market": (r.market or "").strip() or slug,
             "side": side,
             "sizeUsd": round(float(r.trade_usd or 0), 2),
             "whaleScore": round(float(ws), 1) if ws is not None else None,
-            "href": f"/whales/{r.wallet_address}",
+            "href": f"/whales/{wallet}" if wallet else None,
         })
 
     return {"signals": signals, "slug": slug, "lookbackHours": lookback_hours}
