@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import AliasChoices, BaseModel, Field
 from redis.asyncio import Redis
 from shared.config import settings
@@ -449,7 +449,7 @@ class BlogPostIn(BaseModel):
 
 
 @app.post("/blog/post")
-async def blog_post_create(payload: BlogPostIn, x_admin_key: str = ""):
+async def blog_post_create(payload: BlogPostIn, x_admin_key: str = Header("")):
     """Admin endpoint: insert or update a blog post. Requires BLOG_LLM_API_KEY."""
     import uuid
 
