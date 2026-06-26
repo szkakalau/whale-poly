@@ -694,11 +694,12 @@ async def history_signals(limit: int = 500):
 # ── Market trades endpoint (for /analyze page) ──────────────────────────
 
 @app.get("/market/{slug}/trades")
-async def market_whale_trades(slug: str, hours: int = 24):
+async def market_whale_trades(slug: str, hours: int = 24, minSize: int = 0):
     """Return recent whale trades for a market, for the /analyze page."""
     from sqlalchemy import text
 
     lookback_hours = max(1, min(hours, 168))  # clamp 1–168
+    min_size = max(0, min(minSize, 1_000_000))  # clamp 0–1M
     safe_slug = slug.replace("'", "''")  # escape single quotes
     pattern = f"%{safe_slug}%"
     async with SessionLocal() as session:
@@ -717,6 +718,7 @@ async def market_whale_trades(slug: str, hours: int = 24):
                       wt.market_id ILIKE '{pattern}'
                       OR tr.market_title ILIKE '{pattern}'
                     )
+                    AND (tr.amount::numeric * tr.price::numeric) >= {min_size}
                     AND wt.created_at >= NOW() - INTERVAL '{lookback_hours} hours'
                     ORDER BY wt.created_at DESC NULLS LAST
                     LIMIT 100"""
@@ -742,4 +744,4 @@ async def market_whale_trades(slug: str, hours: int = 24):
             "href": f"/whales/{wallet}" if wallet else None,
         })
 
-    return {"signals": signals, "slug": slug, "lookbackHours": lookback_hours}
+    return {"signals": signals, "slug": slug, "lookbackHours": lookback_hours, "minSize": min_size}
