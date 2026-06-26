@@ -435,6 +435,85 @@ async def blog_tags(language: str = "en"):
     return {"tags": tags}
 
 
+class BlogPostIn(BaseModel):
+    slug: str
+    title: str
+    excerpt: str = ""
+    content: str
+    author: str = "SightWhale"
+    read_time: str = "8 min"
+    tags: list[str] = []
+    language: str = "en"
+    group_slug: str | None = None
+    status: str = "published"
+
+
+@app.post("/blog/post")
+async def blog_post_create(payload: BlogPostIn, x_admin_key: str = ""):
+    """Admin endpoint: insert or update a blog post. Requires BLOG_LLM_API_KEY."""
+    import uuid
+
+    if not settings.blog_llm_api_key:
+        return {"error": "not configured"}
+    if x_admin_key != settings.blog_llm_api_key:
+        return {"error": "unauthorized"}
+
+    now_utc = datetime.now(timezone.utc)
+    post_id = str(uuid.uuid4())
+
+    async with SessionLocal() as session:
+        await session.execute(
+            text(
+                """create table if not exists blog_posts (
+                    id text primary key, slug text not null, title text not null,
+                    excerpt text not null, content text not null, author text not null,
+                    read_time text not null, cover_image text, tags text[] default '{}',
+                    published_at timestamptz not null, created_at timestamptz not null default now(),
+                    updated_at timestamptz not null default now(),
+                    language text not null default 'en', group_slug text,
+                    status text not null default 'published'
+                )"""
+            )
+        )
+        try:
+            await session.execute(
+                text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
+            )
+        except Exception:
+            pass
+        await session.commit()
+
+        await session.execute(
+            text(
+                """insert into blog_posts (id, slug, title, excerpt, content, author, read_time, tags, published_at, created_at, updated_at, language, group_slug, status)
+                values (:id, :slug, :title, :excerpt, :content, :author, :read_time, :tags, :published_at, :created_at, :updated_at, :language, :group_slug, :status)
+                on conflict (slug, language) do update set
+                    title=excluded.title, excerpt=excluded.excerpt, content=excluded.content,
+                    author=excluded.author, read_time=excluded.read_time, tags=excluded.tags,
+                    group_slug=excluded.group_slug, updated_at=excluded.updated_at"""
+            ),
+            {
+                "id": post_id,
+                "slug": payload.slug,
+                "title": payload.title,
+                "excerpt": payload.excerpt,
+                "content": payload.content,
+                "author": payload.author,
+                "read_time": payload.read_time,
+                "tags": payload.tags,
+                "published_at": now_utc,
+                "created_at": now_utc,
+                "updated_at": now_utc,
+                "language": payload.language,
+                "group_slug": payload.group_slug,
+                "status": payload.status,
+            },
+        )
+        await session.commit()
+
+    return {"status": "ok", "slug": payload.slug, "language": payload.language}
+
+
 @app.get("/stats/home")
 async def home_stats():
     """Aggregated stats for the landing page hero + score tiers + star whale.
