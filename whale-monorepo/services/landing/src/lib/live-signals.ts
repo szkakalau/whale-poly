@@ -2,6 +2,9 @@ import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
+/** Minimum trade size in USD for a signal to be surfaced. Filters out noise ($10–$450 trades). */
+export const MIN_SIGNAL_SIZE_USD = 500;
+
 export type LiveSignal = {
   id: string;
   occurredAt: string;
@@ -165,6 +168,7 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
         wt.whale_score
       FROM whale_trades wt
       INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+      WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
       ORDER BY wt.created_at DESC NULLS LAST
       LIMIT 120
       `,
@@ -224,6 +228,11 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
 
     signals = signals.filter((s) => !shouldExcludeMarketFromPublicFeeds(s.market));
 
+    // Post-filter: drop signals below the minimum trade size.
+    // Primary source (loadSignalsFromWhaleTradesJoin) already filters in SQL;
+    // this catches fallback paths (whale-engine API, Polymarket leaderboard).
+    signals = signals.filter((s) => s.sizeUsd >= MIN_SIGNAL_SIZE_USD);
+
     return signals.slice(0, 30);
   } catch {
     return [];
@@ -245,9 +254,10 @@ const TRADE_INGEST_BASE =
 export async function loadSignalsForMarket(
   marketSlug: string,
   lookbackHours = 24,
+  minSizeUsd = MIN_SIGNAL_SIZE_USD,
 ): Promise<LiveSignal[]> {
   try {
-    const url = `${TRADE_INGEST_BASE}/market/${encodeURIComponent(marketSlug)}/trades?hours=${lookbackHours}`;
+    const url = `${TRADE_INGEST_BASE}/market/${encodeURIComponent(marketSlug)}/trades?hours=${lookbackHours}&minSize=${minSizeUsd}`;
     const res = await fetch(url, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     const data = (await res.json()) as { signals?: LiveSignal[] };
