@@ -280,7 +280,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Do I need Telegram?',
-    a: 'No. Telegram is optional. Paid plans include the live signal feed in-app, and you can use /analyze to actively query any market. Telegram is just the fastest delivery channel.',
+    a: 'No. Telegram is optional. Use /analyze to query any market live, or browse the History page anytime. Telegram is simply the fastest way to receive signals — nothing to install, no dashboard to refresh.',
   },
 ];
 
