@@ -235,9 +235,11 @@ export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-si
   revalidate: 60,
 });
 
+const TRADE_INGEST_BASE =
+  process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
 /**
- * Query whale trades for a specific market, with a configurable lookback window.
- * Reuses the same JOIN pattern as loadSignalsFromWhaleTradesJoin() but filters by market.
+ * Query whale trades for a specific market via the trade-ingest API.
  * Used by the /analyze decision engine.
  */
 export async function loadSignalsForMarket(
@@ -245,70 +247,17 @@ export async function loadSignalsForMarket(
   lookbackHours = 24,
 ): Promise<LiveSignal[]> {
   try {
-    const lookback = new Date(Date.now() - lookbackHours * 60 * 60 * 1000).toISOString();
-    const rows = await prisma.$queryRawUnsafe<
-      {
-        wallet_address: string;
-        created_at: Date;
-        market_title: string | null;
-        side: string | null;
-        trade_usd: unknown;
-        whale_score: unknown;
-      }[]
-    >(
-      `
-      SELECT
-        wt.wallet_address,
-        wt.created_at,
-        COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
-        tr.side,
-        (tr.amount::numeric * tr.price::numeric) AS trade_usd,
-        wt.whale_score
-      FROM whale_trades wt
-      INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
-      WHERE (
-        wt.market_id ILIKE $1
-        OR tr.market_title ILIKE $1
-        OR tr.market_slug ILIKE $1
-      )
-      AND wt.created_at >= $2::timestamp
-      ORDER BY wt.created_at DESC NULLS LAST
-      LIMIT 100
-      `,
-      `%${marketSlug}%`,
-      lookback,
-    );
+    const url = `${TRADE_INGEST_BASE}/market/${encodeURIComponent(marketSlug)}/trades?hours=${lookbackHours}`;
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { signals?: LiveSignal[] };
+    if (!Array.isArray(data.signals)) return [];
 
-    const out: LiveSignal[] = [];
-    for (const row of rows) {
-      const sizeUsd = safeNumber(row.trade_usd, 0);
-      const sideRaw = safeString(row.side, '').toUpperCase();
-      const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
-      const market = safeString(row.market_title, '').trim() || marketSlug;
-      const wallet = safeString(row.wallet_address, '').trim();
-      const occurredAt =
-        row.created_at instanceof Date ? row.created_at.toISOString() : safeString(row.created_at, '');
-      if (
-        !occurredAt ||
-        !wallet ||
-        !Number.isFinite(sizeUsd) ||
-        sizeUsd <= 0 ||
-        shouldExcludeMarketFromPublicFeeds(market)
-      )
-        continue;
-      const ws = safeNumber(row.whale_score, NaN);
-      out.push({
-        id: `analyze-${wallet}-${occurredAt}`,
-        occurredAt,
-        walletMasked: shortenWallet(wallet),
-        market,
-        side,
-        sizeUsd,
-        whaleScore: Number.isFinite(ws) ? ws : undefined,
-        href: `/whales/${encodeURIComponent(wallet)}`,
-      });
-    }
-    return out;
+    return data.signals.filter((s) => {
+      if (!s.occurredAt || !s.walletMasked || !s.sizeUsd || s.sizeUsd <= 0) return false;
+      if (shouldExcludeMarketFromPublicFeeds(s.market)) return false;
+      return true;
+    });
   } catch {
     return [];
   }
