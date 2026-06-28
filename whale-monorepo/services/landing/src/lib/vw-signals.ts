@@ -45,36 +45,40 @@ export async function getVwMetrics(
   sortBy: 'volume' | 'divergence' | 'strength' = 'volume',
   limit = 50
 ): Promise<VwMetricsRow[]> {
-  const orderMap: Record<string, string> = {
+  const orderMap: Record<'volume' | 'divergence' | 'strength', string> = {
     volume: 'total_volume_usd DESC',
     divergence: 'ABS(vw_divergence) DESC',
     strength: 'signal_strength DESC NULLS LAST',
   };
 
-  const rows = await prisma.$queryRawUnsafe<VwMetricsRow[]>(
-    `SELECT
-       vw.market_id AS "marketId",
-       m.title AS "marketTitle",
-       vw.total_volume_usd::float AS "totalVolumeUsd",
-       vw.yes_volume_usd::float AS "yesVolumeUsd",
-       vw.no_volume_usd::float AS "noVolumeUsd",
-       vw.yes_vw_price::float AS "yesVwPrice",
-       vw.no_vw_price::float AS "noVwPrice",
-       vw.yes_market_price::float AS "yesMarketPrice",
-       vw.vw_divergence::float AS "vwDivergence",
-       vw.uai::float AS "uai",
-       vw.vw_velocity_5m::float AS "vwVelocity5m",
-       vw.signal_direction AS "signalDirection",
-       vw.signal_strength AS "signalStrength",
-       vw.status,
-       vw.computed_at AS "computedAt"
-     FROM market_vw_metrics vw
-     JOIN markets m ON vw.market_id = m.id
-     WHERE vw.status = 'active'
-     ORDER BY ${orderMap[sortBy]}
-     LIMIT ${limit}`
-  );
-  return rows;
+  try {
+    const rows = await prisma.$queryRawUnsafe<VwMetricsRow[]>(
+      `SELECT
+         vw.market_id AS "marketId",
+         m.title AS "marketTitle",
+         vw.total_volume_usd::float AS "totalVolumeUsd",
+         vw.yes_volume_usd::float AS "yesVolumeUsd",
+         vw.no_volume_usd::float AS "noVolumeUsd",
+         vw.yes_vw_price::float AS "yesVwPrice",
+         vw.no_vw_price::float AS "noVwPrice",
+         vw.yes_market_price::float AS "yesMarketPrice",
+         vw.vw_divergence::float AS "vwDivergence",
+         vw.uai::float AS "uai",
+         vw.vw_velocity_5m::float AS "vwVelocity5m",
+         vw.signal_direction AS "signalDirection",
+         vw.signal_strength AS "signalStrength",
+         vw.status,
+         vw.computed_at AS "computedAt"
+       FROM market_vw_metrics vw
+       JOIN markets m ON vw.market_id = m.id
+       WHERE vw.status = 'active'
+       ORDER BY ${orderMap[sortBy]}
+       LIMIT ${limit}`
+    );
+    return rows;
+  } catch {
+    return [];
+  }
 }
 
 /** Get snapshot data points for a single market's trend chart. */
@@ -82,65 +86,73 @@ export async function getVwSnapshots(
   marketId: string,
   hours = 24
 ): Promise<VwSnapshotPoint[]> {
-  const rows = await prisma.$queryRawUnsafe<VwSnapshotPoint[]>(
-    `SELECT
-       snapshot_at AS "snapshotAt",
-       vw_divergence::float AS "vwDivergence",
-       yes_market_price::float AS "yesMarketPrice"
-     FROM market_vw_snapshots
-     WHERE market_id = $1
-       AND snapshot_at > NOW() - INTERVAL '${hours} hours'
-     ORDER BY snapshot_at ASC`,
-    marketId
-  );
-  return rows;
+  try {
+    const rows = await prisma.$queryRawUnsafe<VwSnapshotPoint[]>(
+      `SELECT
+         snapshot_at AS "snapshotAt",
+         vw_divergence::float AS "vwDivergence",
+         yes_market_price::float AS "yesMarketPrice"
+       FROM market_vw_snapshots
+       WHERE market_id = $1
+         AND snapshot_at > NOW() - INTERVAL '${hours} hours'
+       ORDER BY snapshot_at ASC`,
+      marketId
+    );
+    return rows;
+  } catch {
+    return [];
+  }
 }
 
 /** Calculate Whale x VW cross signal. */
 export async function getCrossSignals(
   marketId: string
 ): Promise<CrossSignal | null> {
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `WITH whale_dir AS (
+  try {
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `WITH whale_dir AS (
+         SELECT
+           market_id,
+           CASE
+             WHEN SUM(CASE WHEN wt.side = 'BUY' THEN wt.size * wt.price ELSE 0 END)
+                  > SUM(CASE WHEN wt.side = 'SELL' THEN wt.size * wt.price ELSE 0 END)
+             THEN 'bullish'
+             ELSE 'bearish'
+           END AS whale_direction
+         FROM whale_trade_history wt
+         WHERE wt.market_id = $1
+           AND wt.timestamp > NOW() - INTERVAL '24 hours'
+         GROUP BY wt.market_id
+       )
        SELECT
-         market_id,
-         CASE
-           WHEN SUM(CASE WHEN wt.side = 'BUY' THEN wt.size * wt.price ELSE 0 END)
-                > SUM(CASE WHEN wt.side = 'SELL' THEN wt.size * wt.price ELSE 0 END)
-           THEN 'bullish'
-           ELSE 'bearish'
-         END AS whale_direction
-       FROM whale_trade_history wt
-       WHERE wt.market_id = $1
-         AND wt.timestamp > NOW() - INTERVAL '24 hours'
-       GROUP BY wt.market_id
-     )
-     SELECT
-       vw.market_id AS "marketId",
-       m.title AS "marketTitle",
-       vw.signal_direction AS "vwDirection",
-       vw.vw_divergence::float AS "vwDivergence",
-       wd.whale_direction AS "whaleDirection"
-     FROM market_vw_metrics vw
-     JOIN markets m ON vw.market_id = m.id
-     LEFT JOIN whale_dir wd ON vw.market_id = wd.market_id
-     WHERE vw.market_id = $1`,
-    marketId
-  );
+         vw.market_id AS "marketId",
+         m.title AS "marketTitle",
+         vw.signal_direction AS "vwDirection",
+         vw.vw_divergence::float AS "vwDivergence",
+         wd.whale_direction AS "whaleDirection"
+       FROM market_vw_metrics vw
+       JOIN markets m ON vw.market_id = m.id
+       LEFT JOIN whale_dir wd ON vw.market_id = wd.market_id
+       WHERE vw.market_id = $1`,
+      marketId
+    );
 
-  if (rows.length === 0) return null;
+    if (rows.length === 0) return null;
 
-  const row = rows[0];
-  const confidence = deriveConfidence(row.vwDirection, row.whaleDirection);
+    const row = rows[0];
+    const confidence = deriveConfidence(row.vwDirection, row.whaleDirection);
 
-  return {
-    marketId: row.marketId,
-    marketTitle: row.marketTitle,
-    vwDirection: row.vwDirection,
-    vwDivergence: row.vwDivergence,
-    whaleDirection: row.whaleDirection || 'neutral',
-    confidenceLevel: confidence,
-  };
+    return {
+      marketId: row.marketId,
+      marketTitle: row.marketTitle,
+      vwDirection: row.vwDirection,
+      vwDivergence: row.vwDivergence,
+      whaleDirection: row.whaleDirection || 'neutral',
+      confidenceLevel: confidence,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // —— Helpers ——
