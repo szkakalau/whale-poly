@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, String, Integer, Boolean, Numeric, UniqueConstraint, BigInteger
+from sqlalchemy import Column, DateTime, Float, ForeignKey, String, Integer, Boolean, Numeric, UniqueConstraint, BigInteger
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 
@@ -252,3 +252,38 @@ class SmartCollectionSubscription(Base):
     smart_collection_id = Column(String(64), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# 量价分析模型
+class MarketVwMetrics(Base):
+    __tablename__ = "market_vw_metrics"
+    market_id = Column(String(512), ForeignKey("markets.id"), primary_key=True)
+    total_volume_usd = Column(Numeric(38, 2), server_default="0")
+    yes_volume_usd = Column(Numeric(38, 2), server_default="0")
+    no_volume_usd = Column(Numeric(38, 2), server_default="0")
+    yes_vw_price = Column(Numeric(10, 8), nullable=True)
+    no_vw_price = Column(Numeric(10, 8), nullable=True)
+    yes_market_price = Column(Numeric(10, 8), nullable=True)
+    no_market_price = Column(Numeric(10, 8), nullable=True)
+    vw_divergence = Column(Numeric(10, 8), nullable=True)
+    uai = Column(Numeric(10, 8), nullable=True)
+    vw_velocity_5m = Column(Numeric(10, 8), nullable=True)
+    vw_velocity_15m = Column(Numeric(10, 8), nullable=True)
+    vw_velocity_1h = Column(Numeric(10, 8), nullable=True)
+    signal_direction = Column(String(16), nullable=True)  # bullish|bearish|neutral
+    signal_strength = Column(Integer, nullable=True)
+    status = Column(String(16), server_default="active")  # active|dormant
+    computed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class MarketVwSnapshot(Base):
+    __tablename__ = "market_vw_snapshots"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    market_id = Column(String(512), ForeignKey("markets.id"), nullable=False, index=True)
+    vw_divergence = Column(Numeric(10, 8), nullable=True)
+    uai = Column(Numeric(10, 8), nullable=True)
+    yes_vw_price = Column(Numeric(10, 8), nullable=True)
+    no_vw_price = Column(Numeric(10, 8), nullable=True)
+    yes_market_price = Column(Numeric(10, 8), nullable=True)
+    total_volume_usd = Column(Numeric(38, 2), server_default="0")
+    snapshot_at = Column(DateTime(timezone=True), nullable=False, index=True)

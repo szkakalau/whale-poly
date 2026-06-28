@@ -23,6 +23,10 @@ def get_database_url() -> str:
     url = "postgresql+asyncpg://" + url[len("postgres://") :]
   if url.startswith("postgresql://"):
     url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+  if "+asyncpg" in url and "sslmode=" in url:
+    url = url.replace("sslmode=require", "ssl=require")
+    url = url.replace("sslmode=verify-full", "ssl=verify-full")
+    url = url.replace("sslmode=verify-ca", "ssl=verify-ca")
   if url.startswith("sqlite:///"):
     url = "sqlite+aiosqlite:///" + url[len("sqlite:///") :]
   return url
