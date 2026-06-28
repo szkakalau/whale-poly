@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { getVwSnapshots, getCrossSignals, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-signals';
+import { getVwSnapshotsApi, getCrossSignalsApi, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-signals';
 import DivergenceChart from './DivergenceChart';
 
 interface Props {
@@ -18,8 +18,8 @@ export default function DetailDrawer({ market, onClose }: Props) {
   useEffect(() => {
     async function load() {
       const [snaps, cs] = await Promise.all([
-        getVwSnapshots(market.marketId),
-        getCrossSignals(market.marketId),
+        getVwSnapshotsApi(market.marketId),
+        getCrossSignalsApi(market.marketId),
       ]);
       setSnapshots(snaps);
       setCross(cs);

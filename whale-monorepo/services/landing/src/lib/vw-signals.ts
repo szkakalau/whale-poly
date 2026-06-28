@@ -155,6 +155,58 @@ export async function getCrossSignals(
   }
 }
 
+// —— Client-side fetch wrappers (call API route instead of Prisma directly) ——
+
+/** Fetch VW metrics list via the /api/vw API route. Safe for client components. */
+export async function getVwMetricsApi(
+  sortBy: 'volume' | 'divergence' | 'strength' = 'volume',
+  limit = 50
+): Promise<VwMetricsRow[]> {
+  try {
+    const res = await fetch(
+      `/api/vw?action=metrics&sortBy=${sortBy}&limit=${limit}`
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+/** Fetch VW snapshots via the /api/vw API route. Safe for client components. */
+export async function getVwSnapshotsApi(
+  marketId: string,
+  hours = 24
+): Promise<VwSnapshotPoint[]> {
+  try {
+    const res = await fetch(
+      `/api/vw?action=snapshots&marketId=${encodeURIComponent(marketId)}&hours=${hours}`
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+/** Fetch cross signal via the /api/vw API route. Safe for client components. */
+export async function getCrossSignalsApi(
+  marketId: string
+): Promise<CrossSignal | null> {
+  try {
+    const res = await fetch(
+      `/api/vw?action=cross&marketId=${encodeURIComponent(marketId)}`
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch {
+    return null;
+  }
+}
+
 // —— Helpers ——
 
 function deriveConfidence(

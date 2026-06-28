@@ -8,7 +8,7 @@ from sqlalchemy import text
 from telegram import Bot
 from telegram.error import TelegramError
 
-from shared.config import settings
+from shared.config import settings, get_alert_config
 from shared.db import SessionLocal
 from services.telegram_bot.recipients import get_active_subscribers
 
@@ -22,15 +22,19 @@ _alert_count = 0
 
 def _format_alert(payload: dict, market_title: str) -> str:
     """格式化异动消息"""
+    vw_cfg = get_alert_config().get("vw_analysis", {})
+    uai_low = vw_cfg.get("uai_low_threshold", 0.3)
+    uai_high = vw_cfg.get("uai_high_threshold", 0.8)
+
     div = payload["divergence"]
     direction_text = "YES" if div > 0 else "NO"
     arrow = "📈" if div > 0 else "📉"
     uai = payload.get("uai")
     uai_text = ""
     if uai is not None:
-        if uai < 0.3:
+        if uai < uai_low:
             uai_text = f"UAI {uai:.2f}（极度冷门厌恶）"
-        elif uai < 0.6:
+        elif uai < uai_high:
             uai_text = f"UAI {uai:.2f}（中等）"
         else:
             uai_text = f"UAI {uai:.2f}（资金关注冷门⚠️）"

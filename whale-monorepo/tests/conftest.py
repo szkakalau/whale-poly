@@ -193,6 +193,10 @@ class FakeAsyncSession:
       if not metrics_rows:
         return _FakeResult([])
       m = metrics_rows[-1]
+      # Handle SELECT signal_direction only (direction-change check)
+      if "SELECT SIGNAL_DIRECTION FROM" in sql_upper:
+        sd = m.get("sd", None)
+        return _FakeResult([_FakeRow((sd,))])
       # Build a row with full column names (map abbreviated INSERT keys)
       row_obj = _FakeRow()
       for k, v in m.items():

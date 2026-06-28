@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2 } from 'lucide-react';
-import { getVwMetrics, VwMetricsRow } from '@/lib/vw-signals';
+import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-signals';
 import { useAuth } from '@/lib/use-auth';
 import FullAccessGating from '@/components/FullAccessGating';
 import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
 
 export default function VolumeAnalysisPage() {
-  const { user, plan, loading: authLoading } = useAuth();
+  const { plan, loading: authLoading } = useAuth();
   const [markets, setMarkets] = useState<VwMetricsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'volume' | 'divergence' | 'strength'>('volume');
   const [selected, setSelected] = useState<VwMetricsRow | null>(null);
 
   useEffect(() => {
-    getVwMetrics(sortBy).then(setMarkets).finally(() => setLoading(false));
+    getVwMetricsApi(sortBy).then(setMarkets).finally(() => setLoading(false));
   }, [sortBy]);
 
   // Show loading while auth is being resolved

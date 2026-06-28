@@ -194,25 +194,26 @@ async def test_compute_vw_metrics_writes_metrics():
     mock_redis = AsyncMock()
 
     mock_session.execute.side_effect = [
-        _make_result(rows=[("market_1",)]),               # 0: active markets
-        _make_result(rows=[                                # 1: trades
+        _make_result(rows=[("market_1", Decimal("200"))]),  # 0: active markets (market_id, vol_24h)
+        _make_result(rows=[                                 # 1: trades
             ("Yes", Decimal("100"), Decimal("0.60")),
             ("No", Decimal("50"), Decimal("0.40")),
         ]),
-        _make_result(rows=[(Decimal("0.55"),)]),           # 2: market price
-        _make_result(rows=[]),                              # 3: past_5m snapshot
-        _make_result(rows=[]),                              # 4: past_15m snapshot
-        _make_result(rows=[]),                              # 5: past_1h snapshot
-        _make_result(scalar_val=5),                         # 6: snapshot count
-        _make_result(rowcount=1),                           # 7: UPSERT metrics
-        _make_result(rowcount=1),                           # 8: INSERT snapshot
+        _make_result(rows=[(Decimal("0.55"),)]),            # 2: market price
+        _make_result(rows=[]),                               # 3: past_5m snapshot
+        _make_result(rows=[]),                               # 4: past_15m snapshot
+        _make_result(rows=[]),                               # 5: past_1h snapshot
+        _make_result(scalar_val=5),                          # 6: snapshot count
+        _make_result(rows=[]),                               # 7: prev signal_direction
+        _make_result(rowcount=1),                            # 8: UPSERT metrics
+        _make_result(rowcount=1),                            # 9: INSERT snapshot
     ]
     mock_redis.get.return_value = None
 
     count = await compute_vw_metrics(mock_session, mock_redis, {})
     assert count == 1
-    # 9 DB calls: active + trades + price + 3×past + count + upsert + insert
-    assert mock_session.execute.call_count == 9
+    # 10 DB calls: active + trades + price + 3×past + count + prev_dir + upsert + insert
+    assert mock_session.execute.call_count == 10
 
 
 @pytest.mark.asyncio

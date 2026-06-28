@@ -214,7 +214,8 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
         """),
         {"min_vol": min_24h_vol},
     )
-    active_markets = [row[0] for row in result.fetchall()]
+    # Build dict: market_id → vol_24h
+    active_markets = {row[0]: row[1] for row in result.fetchall()}
 
     if not active_markets:
         return 0
@@ -222,7 +223,7 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
     computed_count = 0
     now = datetime.now(timezone.utc)
 
-    for market_id in active_markets:
+    for market_id, vol_24h in active_markets.items():
         try:
             # 2a. 聚合过去 N 天交易
             trade_result = await session.execute(
@@ -290,9 +291,10 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
             if is_mutation:
                 signal_strength = min(100, int(signal_strength * 1.5))
 
-            # 确定市场状态
+            # 确定市场状态（基于 24h 成交量）
             total_vol = vw_data["yes_volume_usd"] + vw_data["no_volume_usd"]
-            status = "active" if total_vol >= min_alert_vol else "dormant"
+            vol_24h_dec = Decimal(str(vol_24h))
+            status = "active" if vol_24h_dec >= min_24h_vol else "dormant"
 
             # 2e. UPSERT market_vw_metrics
             await session.execute(
@@ -378,9 +380,22 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
                 },
             )
 
+            # 查询上一次信号方向（用于检测方向翻转）
+            prev_dir_result = await session.execute(
+                text("SELECT signal_direction FROM market_vw_metrics WHERE market_id = :mid"),
+                {"mid": market_id},
+            )
+            prev_dir_row = prev_dir_result.fetchone()
+            prev_direction = prev_dir_row[0] if prev_dir_row else None
+            direction_changed = (
+                prev_direction is not None
+                and prev_direction != signal_direction
+                and signal_direction != "neutral"
+            )
+
             # 2g. 推送检查
             should_push = False
-            if is_mutation and status == "active":
+            if (is_mutation or direction_changed) and status == "active":
                 last_alert = await _get_last_alert_time(redis, market_id)
                 if last_alert is None or (datetime.now(timezone.utc).timestamp() - last_alert) > cooldown_minutes * 60:
                     should_push = True
@@ -393,7 +408,8 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
                     "uai": float(uai) if uai else None,
                     "signal_direction": signal_direction,
                     "signal_strength": signal_strength,
-                    "is_mutation": True,
+                    "is_mutation": is_mutation,
+                    "is_direction_change": direction_changed and not is_mutation,
                 })
                 await redis.rpush("vw_alert_queue", payload)
                 await _set_last_alert_time(redis, market_id)

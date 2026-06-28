@@ -6,7 +6,7 @@ from sqlalchemy import text
 from telegram import Bot
 from telegram.error import TelegramError
 
-from shared.config import settings
+from shared.config import settings, get_alert_config
 from shared.db import SessionLocal
 from services.telegram_bot.recipients import get_active_subscribers
 
@@ -30,7 +30,7 @@ async def _query_top_divergence(session, limit: int = 3):
     return result.fetchall()
 
 
-async def _query_uai_anomalies(session, uai_threshold: float = 0.2):
+async def _query_uai_anomalies(session, uai_threshold: float = 0.3):
     """查询 UAI 异常低的市场（极度冷门厌恶）"""
     result = await session.execute(
         text("""
@@ -76,7 +76,7 @@ async def _query_cross_signals(session):
     return result.fetchall(), total_count
 
 
-def _format_digest(top, uai_anomalies, cross_count: int, uai_threshold: float = 0.2) -> str:
+def _format_digest(top, uai_anomalies, cross_count: int, uai_threshold: float = 0.3) -> str:
     lines = ["📊 昨日量价综述 · " + datetime.now(timezone.utc).strftime("%m月%d日"), ""]
 
     if top:
@@ -123,7 +123,8 @@ async def run_daily_digest(stop: asyncio.Event, bot: Bot) -> None:
 
         try:
             async with SessionLocal() as session:
-                uai_threshold = 0.2
+                vw_cfg = get_alert_config().get("vw_analysis", {})
+                uai_threshold = vw_cfg.get("uai_low_threshold", 0.3)
                 top = await _query_top_divergence(session)
                 uai = await _query_uai_anomalies(session, uai_threshold)
                 cross_rows, cross_count = await _query_cross_signals(session)
