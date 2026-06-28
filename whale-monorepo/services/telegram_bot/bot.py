@@ -33,9 +33,14 @@ async def run_polling(stop: asyncio.Event, application) -> None:
   await application.bot.set_my_commands(_COMMANDS)
   await application.updater.start_polling(allowed_updates=["message", "callback_query"])
   logger.info("bot_polling_started")
+
+  from services.telegram_bot.vw_pusher import run_vw_pusher
+  vw_task = asyncio.create_task(run_vw_pusher(stop, application.bot))
+
   try:
     await stop.wait()
   finally:
+    vw_task.cancel()
     await application.updater.stop()
     await application.stop()
     await application.shutdown()

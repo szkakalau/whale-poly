@@ -7,6 +7,12 @@ dicts keyed only by telegram_id (which overwrote duplicate users and lost source
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from shared.db import SessionLocal
+from shared.models import Subscription
 
 # Order used when the same user matches multiple subscription rows with conflicting plans.
 _PLAN_RANK: dict[str, int] = {"FREE": 0, "PRO": 1, "ELITE": 2}
@@ -67,3 +73,22 @@ def group_recipients_by_telegram(
     plan = best_plan([g.plan for g in group])
     grouped.append((tid, plan, group))
   return grouped
+
+
+async def get_active_subscribers(paid_only: bool = False) -> list[str]:
+  """Return distinct telegram_ids with active subscriptions.
+
+  When paid_only is True, only returns Pro/Elite subscribers.
+  """
+  now = datetime.now(timezone.utc)
+  async with SessionLocal() as session:
+    stmt = (
+      select(Subscription.telegram_id)
+      .where(Subscription.status.in_(["active", "trialing"]))
+      .where(Subscription.current_period_end > now)
+    )
+    if paid_only:
+      stmt = stmt.where(Subscription.plan.in_(["pro", "elite"]))
+    stmt = stmt.distinct()
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
