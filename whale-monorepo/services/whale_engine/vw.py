@@ -125,6 +125,7 @@ async def _get_market_price(session: AsyncSession, market_id: str) -> Optional[D
     """
     获取市场最新 YES 价格。
     从 trades_raw 取最新一笔 YES 方向的成交价作为快照价格。
+    若没有 YES 成交，则用最新 NO 成交价推导：yes_price = 1 - no_price。
     """
     result = await session.execute(
         text("""
@@ -135,7 +136,23 @@ async def _get_market_price(session: AsyncSession, market_id: str) -> Optional[D
         {"mid": market_id},
     )
     row = result.fetchone()
-    return row[0] if row else None
+    if row:
+        return row[0]
+
+    # Fallback: derive from last NO trade price
+    result = await session.execute(
+        text("""
+            SELECT price FROM trades_raw
+            WHERE market_id = :mid AND outcome = 'No'
+            ORDER BY timestamp DESC LIMIT 1
+        """),
+        {"mid": market_id},
+    )
+    row = result.fetchone()
+    if row:
+        return Decimal("1") - row[0]
+
+    return None
 
 
 async def _get_previous_snapshot(
@@ -164,8 +181,7 @@ async def _get_last_alert_time(redis: Redis, market_id: str) -> Optional[float]:
 async def _set_last_alert_time(redis: Redis, market_id: str):
     """记录本次推送时间"""
     key = f"vw_alert_last:{market_id}"
-    import time
-    await redis.set(key, str(time.time()))
+    await redis.set(key, str(datetime.now(timezone.utc).timestamp()))
 
 
 async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) -> int:
@@ -366,7 +382,7 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
             should_push = False
             if is_mutation and status == "active":
                 last_alert = await _get_last_alert_time(redis, market_id)
-                if last_alert is None or (time.time() - last_alert) > cooldown_minutes * 60:
+                if last_alert is None or (datetime.now(timezone.utc).timestamp() - last_alert) > cooldown_minutes * 60:
                     should_push = True
 
             if should_push:
@@ -395,8 +411,7 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
 async def prune_vw_snapshots(session: AsyncSession, config: dict) -> int:
     """清理过期快照，执行三级降采样"""
     retention_days = config.get("snapshot_retention_days", 7)
-    hourly_days = config.get("hourly_retention_days", 30)
-    daily_days = config.get("daily_retention_days", 90)
+    # TODO: implement hourly/daily aggregation in future enhancement
     deleted = 0
 
     # 删除超过保留期的原始快照

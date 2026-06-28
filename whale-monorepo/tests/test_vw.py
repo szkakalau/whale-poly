@@ -3,16 +3,38 @@
 import pytest
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock
 
-# 将被测函数 import（此时函数尚不存在，测试将失败）
-# from services.whale_engine.vw import (
-#     _calc_vw_prices,
-#     _calc_divergence,
-#     _calc_uai,
-#     _calc_velocity,
-#     _determine_signal,
-# )
+from services.whale_engine.vw import (
+    _calc_vw_prices,
+    _calc_divergence,
+    _calc_uai,
+    _calc_velocity,
+    _determine_signal,
+    compute_vw_metrics,
+    prune_vw_snapshots,
+)
 
+
+# ---------------------------------------------------------------------------
+# Helpers for async DB/Redis tests
+# ---------------------------------------------------------------------------
+
+def _make_result(rows=None, scalar_val=None, rowcount=0):
+    """Build a MagicMock that mimics SQLAlchemy Result for text() queries."""
+    r = MagicMock()
+    if rows is not None:
+        r.fetchall.return_value = rows
+        r.fetchone.return_value = rows[0] if rows else None
+    if scalar_val is not None:
+        r.scalar.return_value = scalar_val
+    r.rowcount = rowcount
+    return r
+
+
+# ---------------------------------------------------------------------------
+# Pure computation tests (unchanged except imports at top)
+# ---------------------------------------------------------------------------
 
 class TestCalcVwPrices:
     def test_mixed_yes_no_trades(self):
@@ -23,7 +45,6 @@ class TestCalcVwPrices:
             ("Yes", Decimal("200"), Decimal("0.65")),
             ("No", Decimal("50"), Decimal("0.38")),
         ]
-        from services.whale_engine.vw import _calc_vw_prices
         result = _calc_vw_prices(trades)
         # VW_yes = (100*0.60 + 200*0.65) / (100+200) = 190/300 = 0.6333...
         assert abs(float(result["yes_vw_price"] - Decimal("0.6333333"))) < 0.001
@@ -39,7 +60,6 @@ class TestCalcVwPrices:
             ("Yes", Decimal("500"), Decimal("0.70")),
             ("Yes", Decimal("300"), Decimal("0.72")),
         ]
-        from services.whale_engine.vw import _calc_vw_prices
         result = _calc_vw_prices(trades)
         assert result["yes_vw_price"] is not None
         assert result["no_vw_price"] is None  # NO 方向无交易
@@ -47,7 +67,6 @@ class TestCalcVwPrices:
 
     def test_empty_trades(self):
         """空交易列表返回 None"""
-        from services.whale_engine.vw import _calc_vw_prices
         result = _calc_vw_prices([])
         assert result is None
 
@@ -55,7 +74,6 @@ class TestCalcVwPrices:
 class TestCalcDivergence:
     def test_positive_divergence(self):
         """资金比价格更看好 YES"""
-        from services.whale_engine.vw import _calc_divergence
         result = _calc_divergence(
             yes_vw_price=Decimal("0.80"),
             no_vw_price=Decimal("0.20"),
@@ -66,7 +84,6 @@ class TestCalcDivergence:
 
     def test_negative_divergence(self):
         """资金不如价格看好 YES"""
-        from services.whale_engine.vw import _calc_divergence
         result = _calc_divergence(
             yes_vw_price=Decimal("0.45"),
             no_vw_price=Decimal("0.55"),
@@ -79,7 +96,6 @@ class TestCalcDivergence:
 class TestCalcUai:
     def test_underdog_aversion_yes_is_underdog(self):
         """YES 是冷门方（价格<0.5），资金回避 YES"""
-        from services.whale_engine.vw import _calc_uai
         uai = _calc_uai(
             yes_vw_price=Decimal("0.10"),
             no_vw_price=Decimal("0.90"),
@@ -91,7 +107,6 @@ class TestCalcUai:
 
     def test_uai_null_for_extreme_price(self):
         """冷门方价格 < 0.02，UAI 返回 None"""
-        from services.whale_engine.vw import _calc_uai
         uai = _calc_uai(
             yes_vw_price=Decimal("0.005"),
             no_vw_price=Decimal("0.995"),
@@ -102,7 +117,6 @@ class TestCalcUai:
 
     def test_uai_no_underdog_price_is_50(self):
         """价格正好 0.5 时无冷门方"""
-        from services.whale_engine.vw import _calc_uai
         uai = _calc_uai(
             yes_vw_price=Decimal("0.50"),
             no_vw_price=Decimal("0.50"),
@@ -115,7 +129,6 @@ class TestCalcUai:
 class TestCalcVelocity:
     def test_velocity_normal(self):
         """正常计算 5 分钟速率"""
-        from services.whale_engine.vw import _calc_velocity
         v = _calc_velocity(
             divergence_now=Decimal("0.25"),
             divergence_past=Decimal("0.10"),
@@ -126,7 +139,6 @@ class TestCalcVelocity:
 
     def test_velocity_past_is_none(self):
         """无历史数据返回 None"""
-        from services.whale_engine.vw import _calc_velocity
         v = _calc_velocity(
             divergence_now=Decimal("0.25"),
             divergence_past=None,
@@ -137,7 +149,6 @@ class TestCalcVelocity:
 
 class TestDetermineSignal:
     def test_bullish(self):
-        from services.whale_engine.vw import _determine_signal
         direction, strength = _determine_signal(
             divergence=Decimal("0.15"), threshold=Decimal("0.10")
         )
@@ -145,10 +156,73 @@ class TestDetermineSignal:
         # strength = min(100, 0.15 * 200) = 30
         assert strength == 30
 
+    def test_bearish(self):
+        """看空信号：divergence = -0.15, threshold = 0.10 → bearish, strength=30"""
+        direction, strength = _determine_signal(
+            divergence=Decimal("-0.15"), threshold=Decimal("0.10")
+        )
+        assert direction == "bearish"
+        assert strength == 30
+
     def test_neutral(self):
-        from services.whale_engine.vw import _determine_signal
         direction, strength = _determine_signal(
             divergence=Decimal("0.05"), threshold=Decimal("0.10")
         )
         assert direction == "neutral"
         assert strength == 10  # 0.05 * 200
+
+
+# ---------------------------------------------------------------------------
+# Public interface tests (async — mocked DB / Redis)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_compute_vw_metrics_no_active_markets():
+    """没有活跃市场时返回 0"""
+    mock_session = AsyncMock()
+    mock_redis = AsyncMock()
+    mock_session.execute.return_value = _make_result(rows=[])
+
+    count = await compute_vw_metrics(mock_session, mock_redis, {})
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_compute_vw_metrics_writes_metrics():
+    """活跃市场计算后写入 market_vw_metrics（校验 execute 调用次数）"""
+    mock_session = AsyncMock()
+    mock_redis = AsyncMock()
+
+    mock_session.execute.side_effect = [
+        _make_result(rows=[("market_1",)]),               # 0: active markets
+        _make_result(rows=[                                # 1: trades
+            ("Yes", Decimal("100"), Decimal("0.60")),
+            ("No", Decimal("50"), Decimal("0.40")),
+        ]),
+        _make_result(rows=[(Decimal("0.55"),)]),           # 2: market price
+        _make_result(rows=[]),                              # 3: past_5m snapshot
+        _make_result(rows=[]),                              # 4: past_15m snapshot
+        _make_result(rows=[]),                              # 5: past_1h snapshot
+        _make_result(scalar_val=5),                         # 6: snapshot count
+        _make_result(rowcount=1),                           # 7: UPSERT metrics
+        _make_result(rowcount=1),                           # 8: INSERT snapshot
+    ]
+    mock_redis.get.return_value = None
+
+    count = await compute_vw_metrics(mock_session, mock_redis, {})
+    assert count == 1
+    # 9 DB calls: active + trades + price + 3×past + count + upsert + insert
+    assert mock_session.execute.call_count == 9
+
+
+@pytest.mark.asyncio
+async def test_prune_vw_snapshots_deletes_old():
+    """prune_vw_snapshots 删除过期快照并返回删除数"""
+    mock_session = AsyncMock()
+    delete_result = MagicMock()
+    delete_result.rowcount = 5
+    mock_session.execute.return_value = delete_result
+
+    deleted = await prune_vw_snapshots(mock_session, {})
+    assert deleted == 5
+    mock_session.execute.assert_called_once()
