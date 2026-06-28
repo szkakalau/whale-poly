@@ -226,3 +226,86 @@ async def test_prune_vw_snapshots_deletes_old():
     deleted = await prune_vw_snapshots(mock_session, {})
     assert deleted == 5
     mock_session.execute.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Integration tests (requires test DB + Redis)
+# ---------------------------------------------------------------------------
+
+import pytest_asyncio
+from unittest.mock import patch
+
+from shared.models.models import TradeRaw, Market
+
+
+@pytest.mark.integration
+class TestComputeVwMetricsIntegration:
+    """集成测试：端到端 VW 计算流程"""
+
+    @pytest_asyncio.fixture
+    async def seed_data(self, db_session):
+        """写入测试数据"""
+        now = datetime.now(timezone.utc)
+        market_id = "test-market-vw-001"
+
+        # 创建市场
+        db_session.add(Market(id=market_id, title="测试市场 VW", status="active"))
+
+        # 写入交易（过去 7 天内）
+        trades = [
+            TradeRaw(
+                trade_id=f"vw-test-{i}",
+                market_id=market_id,
+                outcome="Yes" if i % 2 == 0 else "No",
+                wallet=f"0xwallet{i}",
+                side="BUY",
+                amount=Decimal(str(100 * (i + 1))),
+                price=Decimal("0.60") if i % 2 == 0 else Decimal("0.38"),
+                timestamp=now - timedelta(hours=i),
+            )
+            for i in range(20)
+        ]
+        for t in trades:
+            db_session.add(t)
+
+        await db_session.commit()
+        return market_id
+
+    @patch("services.whale_engine.vw._get_last_alert_time", new_callable=AsyncMock)
+    async def test_full_compute_cycle(sef, mock_alert_time, db_session, redis_client, seed_data):
+        """完整计算周期：交易 → VW 指标 → DB 写入"""
+        from services.whale_engine.vw import compute_vw_metrics
+
+        mock_alert_time.return_value = None  # 无上次推送记录
+        market_id = seed_data
+
+        config = {
+            "computation_window_days": 7,
+            "min_24h_volume_usd": 100,
+            "min_alert_volume_usd": 50000,
+            "divergence_threshold": 0.10,
+            "velocity_5m_threshold": 0.03,
+            "new_market_warmup_snapshots": 3,
+            "alert_cooldown_minutes": 30,
+            "uai_extreme_price_threshold": 0.02,
+        }
+
+        count = await compute_vw_metrics(db_session, redis_client, config)
+        assert count == 1
+
+        # 验证 market_vw_metrics 写入
+        result = await db_session.execute(
+            "SELECT * FROM market_vw_metrics WHERE market_id = :mid",
+            {"mid": market_id},
+        )
+        row = result.fetchone()
+        assert row is not None
+        assert row.vw_divergence is not None
+        assert row.signal_direction is not None
+
+        # 验证 market_vw_snapshots 写入
+        snap_result = await db_session.execute(
+            "SELECT COUNT(*) FROM market_vw_snapshots WHERE market_id = :mid",
+            {"mid": market_id},
+        )
+        assert snap_result.scalar() >= 1
