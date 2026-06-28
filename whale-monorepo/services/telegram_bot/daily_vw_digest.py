@@ -47,7 +47,19 @@ async def _query_uai_anomalies(session, uai_threshold: float = 0.2):
 
 
 async def _query_cross_signals(session):
-    """查询有 Whale + VW 交叉信号的市场"""
+    """查询有 Whale + VW 交叉信号的市场，返回 (rows, total_count)"""
+    count_result = await session.execute(
+        text("""
+            SELECT COUNT(DISTINCT m.id)
+            FROM market_vw_metrics vw
+            JOIN markets m ON vw.market_id = m.id
+            JOIN whale_trades wt ON vw.market_id = wt.market_id
+            WHERE vw.status = 'active'
+              AND wt.created_at > NOW() - INTERVAL '24 hours'
+        """),
+    )
+    total_count = count_result.scalar()
+
     result = await session.execute(
         text("""
             SELECT DISTINCT m.title, vw.signal_direction AS vw_dir,
@@ -57,13 +69,14 @@ async def _query_cross_signals(session):
             JOIN whale_trades wt ON vw.market_id = wt.market_id
             WHERE vw.status = 'active'
               AND wt.created_at > NOW() - INTERVAL '24 hours'
+            ORDER BY ABS(vw.vw_divergence) DESC
             LIMIT 10
         """),
     )
-    return result.fetchall()
+    return result.fetchall(), total_count
 
 
-def _format_digest(top, uai_anomalies, cross_count: int) -> str:
+def _format_digest(top, uai_anomalies, cross_count: int, uai_threshold: float = 0.2) -> str:
     lines = ["📊 昨日量价综述 · " + datetime.now(timezone.utc).strftime("%m月%d日"), ""]
 
     if top:
@@ -76,7 +89,7 @@ def _format_digest(top, uai_anomalies, cross_count: int) -> str:
         lines.append("")
 
     if uai_anomalies:
-        lines.append("❄️ 冷门厌恶异常（UAI < 0.2）:")
+        lines.append(f"❄️ 冷门厌恶异常（UAI < {uai_threshold}）:")
         for row in uai_anomalies:
             lines.append(f"· {row[0]} UAI={float(row[1]):.2f}")
         lines.append("")
@@ -89,11 +102,11 @@ def _format_digest(top, uai_anomalies, cross_count: int) -> str:
     return "\n".join(lines)
 
 
-async def run_daily_digest(bot: Bot) -> None:
+async def run_daily_digest(stop: asyncio.Event, bot: Bot) -> None:
     """发送每日量价综述（北京时间 09:00）"""
     logger.info("daily_vw_digest_started")
 
-    while True:
+    while not stop.is_set():
         now = datetime.now(timezone.utc)
         # 北京时间 09:00 = UTC 01:00
         target_utc = time(1, 0)
@@ -110,10 +123,11 @@ async def run_daily_digest(bot: Bot) -> None:
 
         try:
             async with SessionLocal() as session:
+                uai_threshold = 0.2
                 top = await _query_top_divergence(session)
-                uai = await _query_uai_anomalies(session)
-                cross = await _query_cross_signals(session)
-                message = _format_digest(top, uai, len(cross))
+                uai = await _query_uai_anomalies(session, uai_threshold)
+                cross_rows, cross_count = await _query_cross_signals(session)
+                message = _format_digest(top, uai, cross_count, uai_threshold)
 
             subscribers = await get_active_subscribers(paid_only=True)
             sent = 0
@@ -122,6 +136,7 @@ async def run_daily_digest(bot: Bot) -> None:
                     await bot.send_message(tg_id, message, disable_web_page_preview=True)
                     sent += 1
                 except TelegramError:
+                    await asyncio.sleep(0.05)
                     continue
 
             logger.info(f"daily_vw_digest_sent recipients={sent}")

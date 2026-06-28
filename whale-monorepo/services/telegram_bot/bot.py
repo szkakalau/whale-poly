@@ -38,7 +38,7 @@ async def run_polling(stop: asyncio.Event, application) -> None:
   vw_task = asyncio.create_task(run_vw_pusher(stop, application.bot))
 
   from services.telegram_bot.daily_vw_digest import run_daily_digest
-  digest_task = asyncio.create_task(run_daily_digest(application.bot))
+  digest_task = asyncio.create_task(run_daily_digest(stop, application.bot))
 
   try:
     await stop.wait()
