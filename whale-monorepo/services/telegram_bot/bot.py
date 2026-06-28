@@ -41,6 +41,10 @@ async def run_polling(stop: asyncio.Event, application) -> None:
     await stop.wait()
   finally:
     vw_task.cancel()
+    try:
+      await vw_task
+    except asyncio.CancelledError:
+      pass
     await application.updater.stop()
     await application.stop()
     await application.shutdown()

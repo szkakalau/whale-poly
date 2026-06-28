@@ -4,16 +4,20 @@ import logging
 from datetime import datetime, timezone
 
 from redis.asyncio import Redis
+from sqlalchemy import text
 from telegram import Bot
 from telegram.error import TelegramError
 
 from shared.config import settings
+from shared.db import SessionLocal
 from services.telegram_bot.recipients import get_active_subscribers
 
 logger = logging.getLogger(__name__)
 
 # 服务级冷却：同市场 30 分钟内只推一次
 _COOLDOWN: dict[str, float] = {}
+_CLEANUP_EVERY = 100
+_alert_count = 0
 
 
 def _format_alert(payload: dict, market_title: str) -> str:
@@ -40,17 +44,16 @@ def _format_alert(payload: dict, market_title: str) -> str:
     )
 
 
-async def _get_market_title(db_pool, market_id: str) -> str:
+async def _get_market_title(market_id: str) -> str:
     """从 DB 获取市场标题（fallback 到 market_id）"""
-    # 简化实现：直接查 markets 表
-    import asyncpg
     try:
-        conn = await asyncpg.connect(settings.database_url)
-        row = await conn.fetchrow(
-            "SELECT title FROM markets WHERE id = $1", market_id
-        )
-        await conn.close()
-        return row["title"] if row else market_id
+        async with SessionLocal() as session:
+            result = await session.execute(
+                text("SELECT title FROM markets WHERE id = :mid"),
+                {"mid": market_id}
+            )
+            row = result.fetchone()
+            return row[0] if row else market_id
     except Exception:
         return market_id
 
@@ -80,7 +83,16 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
                     continue
                 _COOLDOWN[market_id] = now
 
-                market_title = await _get_market_title(None, market_id)
+                # 定期清理过期冷却条目，防止内存泄漏
+                global _alert_count
+                _alert_count += 1
+                if _alert_count % _CLEANUP_EVERY == 0:
+                    cutoff = now - 3600
+                    for mid in list(_COOLDOWN.keys()):
+                        if _COOLDOWN[mid] < cutoff:
+                            del _COOLDOWN[mid]
+
+                market_title = await _get_market_title(market_id)
                 message = _format_alert(payload, market_title)
 
                 # 推送给 Pro/Elite 用户
@@ -91,7 +103,8 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
                         await bot.send_message(tg_id, message, disable_web_page_preview=True)
                         sent += 1
                     except TelegramError:
-                        continue
+                        pass
+                    await asyncio.sleep(0.05)
 
                 logger.info(f"vw_alert_delivered market={market_id} recipients={sent}")
 

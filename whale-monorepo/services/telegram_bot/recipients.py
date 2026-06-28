@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from shared.db import SessionLocal
 from shared.models import Subscription
@@ -88,7 +88,7 @@ async def get_active_subscribers(paid_only: bool = False) -> list[str]:
       .where(Subscription.current_period_end > now)
     )
     if paid_only:
-      stmt = stmt.where(Subscription.plan.in_(["pro", "elite"]))
+      stmt = stmt.where(func.lower(Subscription.plan).in_(["pro", "elite"]))
     stmt = stmt.distinct()
     result = await session.execute(stmt)
     return list(result.scalars().all())
