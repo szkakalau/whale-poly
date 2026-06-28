@@ -43,3 +43,18 @@ behavior_detection:
   spike_threshold: 5000
   build_threshold: 10000
   exit_threshold: 10000
+
+vw_analysis:
+  computation_window_days: 7
+  min_24h_volume_usd: 10000
+  min_alert_volume_usd: 50000
+  divergence_threshold: 0.10
+  velocity_5m_threshold: 0.03
+  new_market_warmup_snapshots: 3
+  alert_cooldown_minutes: 30
+  snapshot_retention_days: 7
+  hourly_retention_days: 30
+  daily_retention_days: 90
+  uai_extreme_price_threshold: 0.02
+  uai_low_threshold: 0.3
+  uai_high_threshold: 0.8
