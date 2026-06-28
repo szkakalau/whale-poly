@@ -36,9 +36,8 @@ recompute_seconds = float(os.getenv("WHALE_RECOMPUTE_SECONDS", "900"))
 celery_app.conf.beat_schedule = {
   "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": consume_seconds},
   "recompute-whale-stats": {"task": "services.whale_engine.recompute_whale_stats", "schedule": recompute_seconds},
-  # 新增：
-  "compute-vw-metrics": {"task": "services.whale_engine.compute_vw_metrics", "schedule": 300.0},      # 每 5 分钟
-  "prune-vw-snapshots": {"task": "services.whale_engine.prune_vw_snapshots", "schedule": 21600.0},     # 每 6 小时
+  "compute-vw-metrics": {"task": "services.whale_engine.compute_vw_metrics", "schedule": 300.0},
+  "prune-vw-snapshots": {"task": "services.whale_engine.prune_vw_snapshots", "schedule": 21600.0},
 }
 
 
@@ -121,40 +120,40 @@ def recompute_whale_stats_task() -> int:
 
 
 async def _compute_vw_once() -> int:
-    """执行一轮 VW 指标计算"""
-    config = get_alert_config().get("vw_analysis", {})
-    redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    try:
-        async with SessionLocal() as session:
-            n = await compute_vw_metrics(session, redis, config)
-            await session.commit()
-        return n
-    finally:
-        await redis.aclose()
+  """执行一轮 VW 指标计算"""
+  config = get_alert_config().get("vw_analysis", {})
+  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  try:
+    async with SessionLocal() as session:
+      n = await compute_vw_metrics(session, redis, config)
+      await session.commit()
+    return n
+  finally:
+    await redis.aclose()
 
 
 @celery_app.task(name="services.whale_engine.compute_vw_metrics")
 def compute_vw_metrics_task() -> int:
-    try:
-        return _run(_compute_vw_once())
-    except Exception:
-        logger.exception("compute_vw_metrics_failed")
-        return 0
+  try:
+    return _run(_compute_vw_once())
+  except Exception:
+    logger.exception("compute_vw_metrics_failed")
+    return 0
 
 
 async def _prune_vw_once() -> int:
-    """执行一轮 VW 快照清理"""
-    config = get_alert_config().get("vw_analysis", {})
-    async with SessionLocal() as session:
-        n = await prune_vw_snapshots(session, config)
-        await session.commit()
-    return n
+  """执行一轮 VW 快照清理"""
+  config = get_alert_config().get("vw_analysis", {})
+  async with SessionLocal() as session:
+    n = await prune_vw_snapshots(session, config)
+    await session.commit()
+  return n
 
 
 @celery_app.task(name="services.whale_engine.prune_vw_snapshots")
 def prune_vw_snapshots_task() -> int:
-    try:
-        return _run(_prune_vw_once())
-    except Exception:
-        logger.exception("prune_vw_snapshots_failed")
-        return 0
+  try:
+    return _run(_prune_vw_once())
+  except Exception:
+    logger.exception("prune_vw_snapshots_failed")
+    return 0
