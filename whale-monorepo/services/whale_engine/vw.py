@@ -15,6 +15,22 @@ from shared.models.models import MarketVwMetrics, MarketVwSnapshot
 logger = logging.getLogger(__name__)
 
 
+def _normalize_outcome(outcome: Optional[str]) -> Optional[str]:
+    """Normalize Polymarket outcome names to 'yes' or 'no'.
+
+    Polymarket binary markets use either "Yes"/"No" or "Up"/"Down" convention.
+    This normalizes both to lowercase for consistent handling.
+    """
+    if not outcome:
+        return None
+    o = outcome.strip().lower()
+    if o in ("yes", "up", "y", "1"):
+        return "yes"
+    if o in ("no", "down", "n", "0"):
+        return "no"
+    return None  # Unknown outcome — skip
+
+
 def _calc_vw_prices(trades: list[tuple]) -> Optional[dict]:
     """
     从交易列表计算 VW 价格和交易量。
@@ -32,11 +48,14 @@ def _calc_vw_prices(trades: list[tuple]) -> Optional[dict]:
     no_turnover = Decimal("0")
 
     for outcome, amount, price in trades:
+        direction = _normalize_outcome(outcome)
+        if direction is None:
+            continue
         usd = amount * price
-        if outcome and outcome.lower() == "yes":
+        if direction == "yes":
             yes_turnover += usd
             yes_token_sum += amount
-        elif outcome and outcome.lower() == "no":
+        elif direction == "no":
             no_turnover += usd
             no_token_sum += amount
 
@@ -123,14 +142,14 @@ def _determine_signal(
 
 async def _get_market_price(session: AsyncSession, market_id: str) -> Optional[Decimal]:
     """
-    获取市场最新 YES 价格。
-    从 trades_raw 取最新一笔 YES 方向的成交价作为快照价格。
-    若没有 YES 成交，则用最新 NO 成交价推导：yes_price = 1 - no_price。
+    获取市场最新 YES 价格（快照）。
+    支持多种 outcome 命名：Yes/Up → yes 方向，No/Down → no 方向。
+    若只有 no 方向成交，用 yes = 1 - no 推导。
     """
     result = await session.execute(
         text("""
             SELECT price FROM trades_raw
-            WHERE market_id = :mid AND outcome = 'Yes'
+            WHERE market_id = :mid AND outcome IN ('Yes', 'Up', 'yes', 'YES')
             ORDER BY timestamp DESC LIMIT 1
         """),
         {"mid": market_id},
@@ -139,11 +158,11 @@ async def _get_market_price(session: AsyncSession, market_id: str) -> Optional[D
     if row:
         return row[0]
 
-    # Fallback: derive from last NO trade price
+    # Fallback: derive from last NO/Down trade price
     result = await session.execute(
         text("""
             SELECT price FROM trades_raw
-            WHERE market_id = :mid AND outcome = 'No'
+            WHERE market_id = :mid AND outcome IN ('No', 'Down', 'no', 'NO')
             ORDER BY timestamp DESC LIMIT 1
         """),
         {"mid": market_id},
