@@ -46,6 +46,7 @@ class Settings:
     self.landing_alerts_ingest_token = os.getenv("LANDING_ALERTS_INGEST_TOKEN", "")
 
     self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    self.landing_base_url = self._resolve_landing_base_url()
     self.bot_user_hash_secret = os.getenv("BOT_USER_HASH_SECRET", "")
     self.alert_fanout_rate_limit_per_minute = int(os.getenv("ALERT_FANOUT_RATE_LIMIT_PER_MINUTE", "50"))
     _env_truthy = frozenset({"1", "true", "yes", "on"})
@@ -116,6 +117,26 @@ class Settings:
             "collections": 50
         }
     }
+
+  def _resolve_landing_base_url(self) -> str:
+    from urllib.parse import urlparse
+
+    raw = (os.getenv("LANDING_PUBLIC_BASE_URL") or "").strip()
+    if raw:
+      return raw.rstrip("/")
+
+    for candidate in (self.landing_success_url, self.landing_cancel_url):
+      c = (candidate or "").strip()
+      if not c:
+        continue
+      try:
+        u = urlparse(c)
+        if u.scheme and u.netloc:
+          return f"{u.scheme}://{u.netloc}"
+      except Exception:
+        continue
+
+    return "https://www.sightwhale.com"
 
   def _get(self, key: str) -> str:
     value = os.getenv(key)
