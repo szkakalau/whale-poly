@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2 } from 'lucide-react';
-import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-signals';
+import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-client';
 import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
 

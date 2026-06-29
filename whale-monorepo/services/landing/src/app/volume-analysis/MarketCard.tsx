@@ -1,6 +1,6 @@
 'use client';
 
-import { VwMetricsRow } from '@/lib/vw-signals';
+import { VwMetricsRow } from '@/lib/vw-client';
 
 interface Props {
   data: VwMetricsRow;

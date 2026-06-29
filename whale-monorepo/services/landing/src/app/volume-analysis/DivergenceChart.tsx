@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import { VwSnapshotPoint } from '@/lib/vw-signals';
+import { VwSnapshotPoint } from '@/lib/vw-client';
 
 interface Props {
   snapshots: VwSnapshotPoint[];

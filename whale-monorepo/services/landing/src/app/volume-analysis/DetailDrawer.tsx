@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { getVwSnapshotsApi, getCrossSignalsApi, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-signals';
+import { getVwSnapshotsApi, getCrossSignalsApi, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-client';
 import DivergenceChart from './DivergenceChart';
 
 interface Props {
