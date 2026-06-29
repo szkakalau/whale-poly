@@ -15,13 +15,15 @@ interface AuthUser {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/me/plan')
       .then((r) => r.json())
-      .then((data: { plan: Plan; planExpireAt: string | null }) => {
+      .then((data: { plan: Plan; planExpireAt: string | null; isPaid: boolean }) => {
         setPlan(data.plan);
+        setIsPaid(data.isPaid ?? false);
         setUser({
           id: '',
           email: '',
@@ -32,10 +34,11 @@ export function useAuth() {
       })
       .catch(() => {
         setPlan('FREE');
+        setIsPaid(false);
         setUser(null);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  return { user, plan, loading };
+  return { user, plan, isPaid, loading };
 }

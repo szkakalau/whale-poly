@@ -9,7 +9,7 @@ import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
 
 export default function VolumeAnalysisPage() {
-  const { plan, loading: authLoading } = useAuth();
+  const { isPaid, loading: authLoading } = useAuth();
   const [markets, setMarkets] = useState<VwMetricsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'volume' | 'divergence' | 'strength'>('volume');
@@ -28,8 +28,8 @@ export default function VolumeAnalysisPage() {
     );
   }
 
-  // Plan gating - Free users do not have access
-  const hasAccess = plan === 'PRO' || plan === 'ELITE';
+  // Plan gating — 使用 isPaid（服务端校验过期时间），对齐 LiveSignalsFeed 模式
+  const hasAccess = isPaid;
 
   return (
     <FullAccessGating
