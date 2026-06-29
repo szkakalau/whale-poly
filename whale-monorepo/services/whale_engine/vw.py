@@ -230,14 +230,15 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
     for market_id, vol_24h in active_markets.items():
         try:
             # 2a. 聚合过去 N 天交易
+            # NOTE: INTERVAL 不支持 SQL 参数绑定，window_days 来自配置，无注入风险
             trade_result = await session.execute(
-                text("""
+                text(f"""
                     SELECT outcome, amount, price
                     FROM trades_raw
                     WHERE market_id = :mid
-                      AND timestamp > NOW() - INTERVAL :window DAY
+                      AND timestamp > NOW() - INTERVAL '{window_days} days'
                 """),
-                {"mid": market_id, "window": str(window_days)},
+                {"mid": market_id},
             )
             trades = [(row[0], row[1], row[2]) for row in trade_result.fetchall()]
 
@@ -436,11 +437,10 @@ async def prune_vw_snapshots(session: AsyncSession, config: dict) -> int:
 
     # 删除超过保留期的原始快照
     result = await session.execute(
-        text("""
+        text(f"""
             DELETE FROM market_vw_snapshots
-            WHERE snapshot_at < NOW() - INTERVAL :days DAY
-        """),
-        {"days": str(retention_days)},
+            WHERE snapshot_at < NOW() - INTERVAL '{retention_days} days'
+        """)
     )
     deleted += result.rowcount
 
