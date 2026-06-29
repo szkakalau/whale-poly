@@ -193,3 +193,41 @@ model MarketSubscription {
   @@index([marketSlug], name: "idx_marketsub_market")
   @@map("market_subscriptions")
 }
+
+model MarketVwMetrics {
+  marketId         String   @id @map("market_id") @db.VarChar(512)
+  totalVolumeUsd   Decimal  @default(0) @map("total_volume_usd") @db.Decimal(38, 2)
+  yesVolumeUsd     Decimal  @default(0) @map("yes_volume_usd") @db.Decimal(38, 2)
+  noVolumeUsd      Decimal  @default(0) @map("no_volume_usd") @db.Decimal(38, 2)
+  yesVwPrice       Decimal? @map("yes_vw_price") @db.Decimal(10, 8)
+  noVwPrice        Decimal? @map("no_vw_price") @db.Decimal(10, 8)
+  yesMarketPrice   Decimal? @map("yes_market_price") @db.Decimal(10, 8)
+  noMarketPrice    Decimal? @map("no_market_price") @db.Decimal(10, 8)
+  vwDivergence     Decimal? @map("vw_divergence") @db.Decimal(10, 8)
+  uai              Decimal? @map("uai") @db.Decimal(10, 8)
+  vwVelocity5m     Decimal? @map("vw_velocity_5m") @db.Decimal(10, 8)
+  vwVelocity15m    Decimal? @map("vw_velocity_15m") @db.Decimal(10, 8)
+  vwVelocity1h     Decimal? @map("vw_velocity_1h") @db.Decimal(10, 8)
+  signalDirection  String?  @map("signal_direction") @db.VarChar(16)
+  signalStrength   Int?
+  status           String   @default("active") @db.VarChar(16)
+  computedAt       DateTime? @map("computed_at") @db.Timestamptz()
+
+  @@map("market_vw_metrics")
+}
+
+model MarketVwSnapshot {
+  id              Int       @id @default(autoincrement())
+  marketId        String    @map("market_id") @db.VarChar(512)
+  vwDivergence    Decimal?  @map("vw_divergence") @db.Decimal(10, 8)
+  uai             Decimal?  @map("uai") @db.Decimal(10, 8)
+  yesVwPrice      Decimal?  @map("yes_vw_price") @db.Decimal(10, 8)
+  noVwPrice       Decimal?  @map("no_vw_price") @db.Decimal(10, 8)
+  yesMarketPrice  Decimal?  @map("yes_market_price") @db.Decimal(10, 8)
+  totalVolumeUsd  Decimal   @default(0) @map("total_volume_usd") @db.Decimal(38, 2)
+  snapshotAt      DateTime  @map("snapshot_at") @db.Timestamptz()
+
+  @@index([marketId])
+  @@index([snapshotAt])
+  @@map("market_vw_snapshots")
+}
