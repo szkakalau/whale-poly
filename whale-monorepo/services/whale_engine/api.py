@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
-from shared.models import Market, TradeRaw, WalletName, WhaleProfile, WhaleTrade, WhaleScore, WhaleTradeHistory, WhaleStats
+from shared.models import Market, MarketVwMetrics, MarketVwSnapshot, TradeRaw, WalletName, WhaleProfile, WhaleTrade, WhaleScore, WhaleTradeHistory, WhaleStats
 
 
 configure_logging(settings.log_level)
@@ -446,3 +446,172 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
     )
 
   return {"whales": items}
+
+
+# ── VW Analysis API ────────────────────────────────────────────
+
+@app.get("/vw/metrics")
+async def vw_metrics(
+    sort_by: str = "volume",
+    limit: int = 50,
+    session: AsyncSession = Depends(get_session),
+):
+    """Fetch VW metrics for the volume-analysis page."""
+    order_map = {
+        "volume": "total_volume_usd DESC",
+        "divergence": "ABS(vw_divergence) DESC NULLS LAST",
+        "strength": "signal_strength DESC NULLS LAST",
+    }
+    order_clause = order_map.get(sort_by, "total_volume_usd DESC")
+
+    rows = (
+        await session.execute(
+            text(f"""
+                SELECT
+                    vw.market_id,
+                    m.title AS market_title,
+                    vw.total_volume_usd::float,
+                    vw.yes_volume_usd::float,
+                    vw.no_volume_usd::float,
+                    vw.yes_vw_price::float,
+                    vw.no_vw_price::float,
+                    vw.yes_market_price::float,
+                    vw.vw_divergence::float,
+                    vw.uai::float,
+                    vw.vw_velocity_5m::float,
+                    vw.signal_direction,
+                    vw.signal_strength,
+                    vw.status,
+                    vw.computed_at
+                FROM market_vw_metrics vw
+                JOIN markets m ON vw.market_id = m.id
+                WHERE vw.status = 'active'
+                ORDER BY {order_clause}
+                LIMIT {limit}
+            """)
+        )
+    ).fetchall()
+
+    data = [
+        {
+            "marketId": row[0],
+            "marketTitle": row[1],
+            "totalVolumeUsd": row[2],
+            "yesVolumeUsd": row[3],
+            "noVolumeUsd": row[4],
+            "yesVwPrice": row[5],
+            "noVwPrice": row[6],
+            "yesMarketPrice": row[7],
+            "vwDivergence": row[8],
+            "uai": row[9],
+            "vwVelocity5m": row[10],
+            "signalDirection": row[11],
+            "signalStrength": row[12],
+            "status": row[13],
+            "computedAt": row[14].isoformat() if row[14] else None,
+        }
+        for row in rows
+    ]
+    return {"data": data}
+
+
+@app.get("/vw/snapshots")
+async def vw_snapshots(
+    marketId: str,
+    hours: int = 24,
+    session: AsyncSession = Depends(get_session),
+):
+    """Fetch snapshot data for a single market's divergence chart."""
+    rows = (
+        await session.execute(
+            text("""
+                SELECT
+                    snapshot_at,
+                    vw_divergence::float,
+                    yes_market_price::float
+                FROM market_vw_snapshots
+                WHERE market_id = :mid
+                  AND snapshot_at > NOW() - INTERVAL '1 hour' * :hours
+                ORDER BY snapshot_at ASC
+            """),
+            {"mid": marketId, "hours": hours},
+        )
+    ).fetchall()
+
+    data = [
+        {
+            "snapshotAt": row[0].isoformat() if row[0] else None,
+            "vwDivergence": row[1],
+            "yesMarketPrice": row[2],
+        }
+        for row in rows
+    ]
+    return {"data": data}
+
+
+@app.get("/vw/cross")
+async def vw_cross(
+    marketId: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Fetch Whale x VW cross signal for a single market."""
+    rows = (
+        await session.execute(
+            text("""
+                WITH whale_dir AS (
+                    SELECT
+                        market_id,
+                        CASE
+                            WHEN SUM(CASE WHEN wt.side = 'BUY' THEN wt.size * wt.price ELSE 0 END)
+                                 > SUM(CASE WHEN wt.side = 'SELL' THEN wt.size * wt.price ELSE 0 END)
+                            THEN 'bullish'
+                            ELSE 'bearish'
+                        END AS whale_direction
+                    FROM whale_trade_history wt
+                    WHERE wt.market_id = :mid
+                      AND wt.timestamp > NOW() - INTERVAL '24 hours'
+                    GROUP BY wt.market_id
+                )
+                SELECT
+                    vw.market_id,
+                    m.title AS market_title,
+                    vw.signal_direction,
+                    vw.vw_divergence::float,
+                    wd.whale_direction
+                FROM market_vw_metrics vw
+                JOIN markets m ON vw.market_id = m.id
+                LEFT JOIN whale_dir wd ON vw.market_id = wd.market_id
+                WHERE vw.market_id = :mid
+            """),
+            {"mid": marketId},
+        )
+    ).fetchall()
+
+    if not rows:
+        return {"data": None}
+
+    row = rows[0]
+    vw_dir = row[2]
+    whale_dir = row[4]
+    # Derive confidence
+    if vw_dir and whale_dir:
+        if vw_dir == whale_dir:
+            confidence = "high"
+        elif (vw_dir == "bullish" and whale_dir == "bearish") or (vw_dir == "bearish" and whale_dir == "bullish"):
+            confidence = "low"
+        else:
+            confidence = "medium"
+    else:
+        confidence = "medium"
+
+    return {
+        "data": {
+            "marketId": row[0],
+            "marketTitle": row[1],
+            "vwDirection": vw_dir,
+            "vwDivergence": row[3],
+            "whaleDirection": whale_dir or "neutral",
+            "confidenceLevel": confidence,
+        }
+    }
+
