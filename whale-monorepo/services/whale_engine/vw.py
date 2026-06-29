@@ -207,7 +207,7 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
             FROM trades_raw t
             JOIN markets m ON t.market_id = m.id
             WHERE t.timestamp > NOW() - INTERVAL '10 minutes'
-              AND m.status != 'closed'
+              AND (m.status IS NULL OR m.status != 'closed')
             GROUP BY t.market_id
             HAVING SUM(CASE WHEN t.timestamp > NOW() - INTERVAL '24 hours'
                        THEN t.amount * t.price ELSE 0 END) >= :min_vol
