@@ -3,10 +3,14 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2 } from 'lucide-react';
 import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-client';
+import { LocaleProvider, useLocale } from '@/lib/vw-i18n';
 import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
 
-export default function VolumeAnalysisPage() {
+const SORT_OPTIONS = ['volume', 'divergence', 'strength'] as const;
+
+function PageContent() {
+  const { t, locale, setLocale } = useLocale();
   const [markets, setMarkets] = useState<VwMetricsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'volume' | 'divergence' | 'strength'>('volume');
@@ -19,30 +23,46 @@ export default function VolumeAnalysisPage() {
       .finally(() => setLoading(false));
   }, [sortBy]);
 
+  const sortLabels: Record<string, string> = {
+    volume: t('sort.volume'),
+    divergence: t('sort.divergence'),
+    strength: t('sort.strength'),
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp size={22} className="text-emerald-500" />
-            量价分析
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            基于成交量加权价格的市场情绪探测
-          </p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp size={22} className="text-emerald-500" />
+              {t('page.title')}
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {t('page.subtitle')}
+            </p>
+          </div>
+          <button
+            onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
+            className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium
+                       bg-white border border-gray-200 text-gray-600
+                       hover:border-gray-300 transition-colors duration-200 ease-out"
+          >
+            {locale === 'en' ? '中文' : 'EN'}
+          </button>
         </div>
 
         {/* Sort controls */}
         <div className="flex gap-2 mb-4">
-          {(['volume', 'divergence', 'strength'] as const).map((key) => (
+          {SORT_OPTIONS.map((key) => (
             <button
               key={key}
               onClick={() => setSortBy(key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ease-out
                 ${sortBy === key ? 'bg-gray-900 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:border-gray-300'}`}
             >
-              {{ volume: '按成交额', divergence: '按偏离度', strength: '按信号强度' }[key]}
+              {sortLabels[key]}
             </button>
           ))}
         </div>
@@ -54,7 +74,7 @@ export default function VolumeAnalysisPage() {
           </div>
         ) : markets.length === 0 ? (
           <div className="text-center py-20 text-gray-400 text-sm">
-            暂无活跃市场数据，请稍后再试
+            {t('empty')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -77,5 +97,13 @@ export default function VolumeAnalysisPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function VolumeAnalysisPage() {
+  return (
+    <LocaleProvider>
+      <PageContent />
+    </LocaleProvider>
   );
 }

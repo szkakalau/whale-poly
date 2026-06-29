@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { getVwSnapshotsApi, getCrossSignalsApi, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-client';
+import { useLocale } from '@/lib/vw-i18n';
 import DivergenceChart from './DivergenceChart';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function DetailDrawer({ market, onClose }: Props) {
+  const { t } = useLocale();
   const [snapshots, setSnapshots] = useState<VwSnapshotPoint[]>([]);
   const [cross, setCross] = useState<CrossSignal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,28 @@ export default function DetailDrawer({ market, onClose }: Props) {
     }
     load();
   }, [market.marketId]);
+
+  const vwLabel = cross?.vwDirection === 'bullish'
+    ? `🟢 ${t('signal.bullish')}`
+    : cross?.vwDirection === 'bearish'
+    ? `🔴 ${t('signal.bearish')}`
+    : t('signal.neutral');
+
+  const whaleLabel = cross?.whaleDirection === 'bullish'
+    ? `🟢 ${t('drawer.long')}`
+    : cross?.whaleDirection === 'bearish'
+    ? `🔴 ${t('drawer.short')}`
+    : t('signal.neutral');
+
+  const confidenceLabel =
+    cross?.confidenceLevel === 'high' ? t('drawer.confidenceHigh')
+    : cross?.confidenceLevel === 'low' ? t('drawer.confidenceLow')
+    : t('drawer.confidenceMedium');
+
+  const confidenceColor =
+    cross?.confidenceLevel === 'high' ? 'text-emerald-600'
+    : cross?.confidenceLevel === 'low' ? 'text-red-600'
+    : 'text-amber-600';
 
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl z-50
@@ -49,39 +73,33 @@ export default function DetailDrawer({ market, onClose }: Props) {
           <>
             {/* 走势图 */}
             <section>
-              <h3 className="text-xs font-medium text-gray-500 mb-3">量价走势</h3>
+              <h3 className="text-xs font-medium text-gray-500 mb-3">{t('drawer.title')}</h3>
               <DivergenceChart snapshots={snapshots} />
             </section>
 
             {/* 交叉信号 */}
             {cross && (
               <section>
-                <h3 className="text-xs font-medium text-gray-500 mb-3">交叉信号</h3>
+                <h3 className="text-xs font-medium text-gray-500 mb-3">{t('drawer.crossSignal')}</h3>
                 <div className="rounded-lg bg-gray-50 p-4 text-sm space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">VW 信号</span>
+                    <span className="text-gray-500">{t('drawer.vwSignal')}</span>
                     <span className={cross.vwDirection === 'bullish' ? 'text-emerald-600' : 'text-red-600'}>
-                      {cross.vwDirection === 'bullish' ? '🟢 偏多' : '🔴 偏空'}
+                      {vwLabel}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Whale 信号</span>
+                    <span className="text-gray-500">{t('drawer.whaleSignal')}</span>
                     <span className={cross.whaleDirection === 'bullish' ? 'text-emerald-600' : 'text-red-600'}>
-                      {cross.whaleDirection === 'bullish' ? '🟢 做多' : '🔴 做空'}
+                      {whaleLabel}
                     </span>
                   </div>
                   <div className="flex justify-between font-medium">
-                    <span className="text-gray-500">交叉判断</span>
+                    <span className="text-gray-500">{t('drawer.crossVerdict')}</span>
                     <span>
-                      置信度：
-                      <span className={
-                        cross.confidenceLevel === 'high' ? 'text-emerald-600'
-                        : cross.confidenceLevel === 'low' ? 'text-red-600'
-                        : 'text-amber-600'
-                      }>
-                        {cross.confidenceLevel === 'high' ? '高 ✓'
-                         : cross.confidenceLevel === 'low' ? '低 ⚠️'
-                         : '中'}
+                      {t('drawer.confidence')}：
+                      <span className={confidenceColor}>
+                        {confidenceLabel}
                       </span>
                     </span>
                   </div>
