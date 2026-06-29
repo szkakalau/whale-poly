@@ -1,27 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVwMetrics, getVwSnapshots, getCrossSignals } from '@/lib/vw-signals';
-import { getCurrentUser } from '@/lib/auth';
-import { Plan } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  const user = await getCurrentUser();
-
-  // Plan gating — Free users and guests get 403
-  if (!user || (user.plan as Plan) === Plan.FREE) {
-    return NextResponse.json(
-      { error: 'Upgrade to Pro or Elite to access volume analysis.' },
-      { status: 403 }
-    );
-  }
-
-  // Check for expired plans
-  if (user.planExpireAt && new Date() > user.planExpireAt) {
-    return NextResponse.json(
-      { error: 'Your subscription has expired.' },
-      { status: 403 }
-    );
-  }
-
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'metrics';
 

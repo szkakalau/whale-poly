@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { TrendingUp, Loader2, Lock } from 'lucide-react';
+import { TrendingUp, Loader2 } from 'lucide-react';
 import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-signals';
 import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
@@ -10,48 +9,15 @@ import DetailDrawer from './DetailDrawer';
 export default function VolumeAnalysisPage() {
   const [markets, setMarkets] = useState<VwMetricsRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [forbidden, setForbidden] = useState(false);
   const [sortBy, setSortBy] = useState<'volume' | 'divergence' | 'strength'>('volume');
   const [selected, setSelected] = useState<VwMetricsRow | null>(null);
 
   useEffect(() => {
     setLoading(true);
     getVwMetricsApi(sortBy)
-      .then((data) => {
-        setMarkets(data);
-        setForbidden(false);
-      })
-      .catch((err) => {
-        if (err?.status === 403 || err?.message?.includes('403')) {
-          setForbidden(true);
-        }
-        setMarkets([]);
-      })
+      .then(setMarkets)
       .finally(() => setLoading(false));
   }, [sortBy]);
-
-  // Upgrade gate — API returned 403 (not subscribed or plan expired)
-  if (forbidden) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
-            <Lock size={22} className="text-amber-500" />
-          </div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">量价分析频道</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            此功能需要 Pro 或 Elite 订阅。升级后即可查看量价偏离排名、走势图和交叉信号分析。
-          </p>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors duration-200 ease-out"
-          >
-            查看方案
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
