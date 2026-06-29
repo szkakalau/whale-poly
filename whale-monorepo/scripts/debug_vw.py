@@ -1,125 +1,120 @@
-"""Debug VW metrics computation step by step."""
+"""Raw VW compute test — bypasses try/except to surface errors."""
 import asyncio
-import traceback
 from decimal import Decimal
+from datetime import datetime, timezone
 
 from sqlalchemy import text
-from shared.db import SessionLocal
-from shared.config import get_alert_config, settings
+from shared.db import SessionLocal, settings
+from shared.config import get_alert_config
 from redis.asyncio import Redis
+from services.whale_engine.vw import (
+    _calc_vw_prices, _calc_divergence, _calc_uai,
+    _determine_signal, _get_market_price
+)
 
 
-async def step1():
-    """Check config."""
-    config = get_alert_config().get("vw_analysis", {})
-    print(f"Full config: {config}")
-    print(f"min_24h_volume_usd: {config.get('min_24h_volume_usd')} ({type(config.get('min_24h_volume_usd'))})")
-    window_days = config.get("computation_window_days", 7)
-    print(f"window_days: {window_days}")
-    return config
+async def raw_compute():
+    config = get_alert_config().get('vw_analysis', {})
+    window_days = config.get('computation_window_days', 7)
+    min_24h = config.get('min_24h_volume_usd', 10000)
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
 
-
-async def step2(config):
-    """Run active markets query."""
-    min_24h_vol = str(config.get("min_24h_volume_usd", 10000))
-    print(f"\nStep 2: min_24h_vol = {min_24h_vol}")
-
-    async with SessionLocal() as s:
-        r = await s.execute(
-            text(f"""
+    try:
+        async with SessionLocal() as s:
+            # 1. Find active market
+            r = await s.execute(text(f"""
                 WITH vol_24h AS (
                     SELECT market_id, SUM(amount * price) AS vol
-                    FROM trades_raw
-                    WHERE timestamp > NOW() - INTERVAL '24 hours'
+                    FROM trades_raw WHERE timestamp > NOW() - INTERVAL '24 hours'
                     GROUP BY market_id
                 )
                 SELECT DISTINCT t.market_id, COALESCE(v.vol, 0) AS vol_24h
-                FROM trades_raw t
-                JOIN markets m ON t.market_id = m.id
+                FROM trades_raw t JOIN markets m ON t.market_id = m.id
                 LEFT JOIN vol_24h v ON t.market_id = v.market_id
                 WHERE t.timestamp > NOW() - INTERVAL '10 minutes'
                   AND (m.status IS NULL OR m.status != 'closed')
-                  AND COALESCE(v.vol, 0) >= {min_24h_vol}
-            """)
-        )
-        rows = r.fetchall()
-        print(f"Active markets: {len(rows)}")
-        for row in rows[:3]:
-            print(f"  mid={row[0][:50]}... vol_24h={row[1]}")
-        return rows
+                  AND COALESCE(v.vol, 0) >= {min_24h}
+            """))
+            markets = r.fetchall()
+            print(f'Active markets: {len(markets)}')
+            if not markets:
+                return
+            mid = markets[0][0]
 
-
-async def step3(config, markets):
-    """Try processing the first market."""
-    if not markets:
-        print("No markets to process!")
-        return
-
-    window_days = config.get("computation_window_days", 7)
-    mid = markets[0][0]
-    print(f"\nStep 3: Processing market {mid[:60]}...")
-    print(f"  window_days={window_days}")
-
-    async with SessionLocal() as s:
-        # Get trades
-        try:
-            r = await s.execute(
-                text(f"""
-                    SELECT outcome, amount, price
-                    FROM trades_raw
-                    WHERE market_id = :mid
-                      AND timestamp > NOW() - INTERVAL '{window_days} days'
-                """),
-                {"mid": mid},
-            )
+            # 2. Trades
+            r = await s.execute(text(f"""
+                SELECT outcome, amount, price FROM trades_raw
+                WHERE market_id = :mid
+                  AND timestamp > NOW() - INTERVAL '{window_days} days'
+            """), {'mid': mid})
             trades = [(row[0], row[1], row[2]) for row in r.fetchall()]
-            print(f"  Trades in window: {len(trades)}")
-            if trades:
-                print(f"  First: outcome={trades[0][0]}, amount={trades[0][1]}, price={trades[0][2]}")
-        except Exception as e:
-            print(f"  TRADE QUERY ERROR: {e}")
-            traceback.print_exc()
+            print(f'Trades: {len(trades)}')
 
-        # Get market price
-        try:
-            r = await s.execute(
-                text("""
-                    SELECT price FROM trades_raw
-                    WHERE market_id = :mid AND outcome = 'Yes'
-                    ORDER BY timestamp DESC LIMIT 1
-                """),
-                {"mid": mid},
-            )
-            row = r.fetchone()
-            if row:
-                print(f"  YES price: {row[0]}")
-            else:
-                # Try NO fallback
-                r = await s.execute(
-                    text("""
-                        SELECT price FROM trades_raw
-                        WHERE market_id = :mid AND outcome = 'No'
-                        ORDER BY timestamp DESC LIMIT 1
-                    """),
-                    {"mid": mid},
+            vw = _calc_vw_prices(trades)
+            print(f'VW: yes_vw={vw["yes_vw_price"]}, no_vw={vw["no_vw_price"]}')
+            print(f'Vol: yes_usd={vw["yes_volume_usd"]}, no_usd={vw["no_volume_usd"]}')
+
+            # 3. Price
+            price = await _get_market_price(s, mid)
+            print(f'YES price: {price}')
+
+            # 4. Metrics
+            div = _calc_divergence(vw['yes_vw_price'], vw['no_vw_price'], price)
+            uai = _calc_uai(vw['yes_vw_price'], vw['no_vw_price'], price, Decimal('0.02'))
+            sd, ss = _determine_signal(div, Decimal('0.10'))
+            total_vol = vw['yes_volume_usd'] + vw['no_volume_usd']
+            status = 'active' if total_vol >= 50000 else 'dormant'
+            print(f'div={div}, uai={uai}, signal={sd}/{ss}, status={status}, total_vol={total_vol}')
+
+            # 5. Write
+            now = datetime.now(timezone.utc)
+            await s.execute(text("""
+                INSERT INTO market_vw_metrics (
+                    market_id, total_volume_usd, yes_volume_usd, no_volume_usd,
+                    yes_vw_price, no_vw_price, yes_market_price, no_market_price,
+                    vw_divergence, uai, signal_direction, signal_strength,
+                    status, computed_at
+                ) VALUES (
+                    :mid, :tv, :yv, :nv, :yvp, :nvp, :ymp, :nmp,
+                    :div, :uai, :sd, :ss, :st, :now
                 )
-                row = r.fetchone()
-                if row:
-                    print(f"  NO price: {row[0]}, derived YES: {Decimal('1') - row[0]}")
-                else:
-                    print("  No price found at all!")
-        except Exception as e:
-            print(f"  PRICE QUERY ERROR: {e}")
-            traceback.print_exc()
+                ON CONFLICT (market_id) DO UPDATE SET
+                    total_volume_usd = EXCLUDED.total_volume_usd,
+                    yes_vw_price = EXCLUDED.yes_vw_price,
+                    no_vw_price = EXCLUDED.no_vw_price,
+                    vw_divergence = EXCLUDED.vw_divergence,
+                    uai = EXCLUDED.uai,
+                    signal_direction = EXCLUDED.signal_direction,
+                    signal_strength = EXCLUDED.signal_strength,
+                    status = EXCLUDED.status,
+                    computed_at = EXCLUDED.computed_at
+            """), {
+                'mid': mid, 'tv': total_vol, 'yv': vw['yes_volume_usd'],
+                'nv': vw['no_volume_usd'], 'yvp': vw['yes_vw_price'],
+                'nvp': vw['no_vw_price'], 'ymp': price,
+                'nmp': Decimal('1') - price, 'div': div, 'uai': uai,
+                'sd': sd, 'ss': ss, 'st': status, 'now': now
+            })
+            print('UPSERT metrics OK')
+
+            await s.execute(text("""
+                INSERT INTO market_vw_snapshots (
+                    market_id, vw_divergence, uai,
+                    yes_vw_price, no_vw_price, yes_market_price,
+                    total_volume_usd, snapshot_at
+                ) VALUES (:mid, :div, :uai, :yvp, :nvp, :ymp, :tv, :now)
+            """), {
+                'mid': mid, 'div': div, 'uai': uai, 'yvp': vw['yes_vw_price'],
+                'nvp': vw['no_vw_price'], 'ymp': price, 'tv': total_vol, 'now': now
+            })
+            print('INSERT snapshot OK')
+
+            await s.commit()
+            print('COMMIT OK')
+
+    finally:
+        await redis.aclose()
 
 
-async def main():
-    print("=== VW Debug ===")
-    config = await step1()
-    markets = await step2(config)
-    await step3(config, markets)
-    print("=== Done ===")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(raw_compute())
