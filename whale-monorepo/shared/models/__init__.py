@@ -27,6 +27,8 @@ from .models import (
     SmartCollection,
     SmartCollectionWhale,
     SmartCollectionSubscription,
+    MarketVwMetrics,
+    MarketVwSnapshot,
 )
 
 __all__ = [
@@ -57,4 +59,6 @@ __all__ = [
     "SmartCollection",
     "SmartCollectionWhale",
     "SmartCollectionSubscription",
+    "MarketVwMetrics",
+    "MarketVwSnapshot",
 ]
