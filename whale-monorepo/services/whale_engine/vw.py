@@ -76,13 +76,16 @@ def _calc_divergence(
     no_vw_price: Optional[Decimal],
     yes_market_price: Optional[Decimal],
 ) -> Optional[Decimal]:
-    """计算 VW divergence = VW_yes_share - Price_yes"""
-    if yes_vw_price is None or no_vw_price is None or yes_market_price is None:
+    """计算 VW divergence = VW_yes_share - Price_yes。
+    单方向市场：缺失方向 VW 当作 0。"""
+    if yes_market_price is None:
         return None
-    total = yes_vw_price + no_vw_price
+    yvp = yes_vw_price or Decimal("0")
+    nvp = no_vw_price or Decimal("0")
+    total = yvp + nvp
     if total == 0:
         return None
-    vw_yes_share = yes_vw_price / total
+    vw_yes_share = yvp / total
     return vw_yes_share - yes_market_price
 
 
@@ -92,20 +95,22 @@ def _calc_uai(
     yes_market_price: Optional[Decimal],
     extreme_threshold: Decimal,
 ) -> Optional[Decimal]:
-    """计算冷门厌恶指数 UAI"""
-    if yes_vw_price is None or no_vw_price is None or yes_market_price is None:
+    """计算冷门厌恶指数 UAI。单方向市场：缺失方向 VW 当作 0。"""
+    if yes_market_price is None:
         return None
-    total_vw = yes_vw_price + no_vw_price
+    yvp = yes_vw_price or Decimal("0")
+    nvp = no_vw_price or Decimal("0")
+    total_vw = yvp + nvp
     if total_vw == 0:
         return None
 
     # 确定冷门方（价格 < 0.5 的一方）
     if yes_market_price < Decimal("0.5"):
         underdog_price = yes_market_price
-        underdog_vw_share = yes_vw_price / total_vw
+        underdog_vw_share = yvp / total_vw
     elif yes_market_price > Decimal("0.5"):
         underdog_price = Decimal("1") - yes_market_price
-        underdog_vw_share = no_vw_price / total_vw
+        underdog_vw_share = nvp / total_vw
     else:
         return None  # 正好 0.5，无冷门方
 
