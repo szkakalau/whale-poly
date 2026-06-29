@@ -162,16 +162,17 @@ export async function getVwMetricsApi(
   sortBy: 'volume' | 'divergence' | 'strength' = 'volume',
   limit = 50
 ): Promise<VwMetricsRow[]> {
-  try {
-    const res = await fetch(
-      `/api/vw?action=metrics&sortBy=${sortBy}&limit=${limit}`
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
-  } catch {
-    return [];
+  const res = await fetch(
+    `/api/vw?action=metrics&sortBy=${sortBy}&limit=${limit}`
+  );
+  if (res.status === 403) {
+    const error: any = new Error('Forbidden');
+    error.status = 403;
+    throw error;
   }
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
 }
 
 /** Fetch VW snapshots via the /api/vw API route. Safe for client components. */

@@ -1,99 +1,115 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { TrendingUp, Loader2, Lock } from 'lucide-react';
 import { getVwMetricsApi, VwMetricsRow } from '@/lib/vw-signals';
-import { useAuth } from '@/lib/use-auth';
-import FullAccessGating from '@/components/FullAccessGating';
 import MarketCard from './MarketCard';
 import DetailDrawer from './DetailDrawer';
 
 export default function VolumeAnalysisPage() {
-  const { isPaid, loading: authLoading } = useAuth();
   const [markets, setMarkets] = useState<VwMetricsRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [forbidden, setForbidden] = useState(false);
   const [sortBy, setSortBy] = useState<'volume' | 'divergence' | 'strength'>('volume');
   const [selected, setSelected] = useState<VwMetricsRow | null>(null);
 
   useEffect(() => {
-    getVwMetricsApi(sortBy).then(setMarkets).finally(() => setLoading(false));
+    setLoading(true);
+    getVwMetricsApi(sortBy)
+      .then((data) => {
+        setMarkets(data);
+        setForbidden(false);
+      })
+      .catch((err) => {
+        if (err?.status === 403 || err?.message?.includes('403')) {
+          setForbidden(true);
+        }
+        setMarkets([]);
+      })
+      .finally(() => setLoading(false));
   }, [sortBy]);
 
-  // Show loading while auth is being resolved
-  if (authLoading) {
+  // Upgrade gate — API returned 403 (not subscribed or plan expired)
+  if (forbidden) {
     return (
-      <div className="min-h-screen bg-gray-50 flex justify-center py-20">
-        <Loader2 className="animate-spin text-gray-400" size={28} />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+            <Lock size={22} className="text-amber-500" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">量价分析频道</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            此功能需要 Pro 或 Elite 订阅。升级后即可查看量价偏离排名、走势图和交叉信号分析。
+          </p>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors duration-200 ease-out"
+          >
+            查看方案
+          </Link>
+        </div>
       </div>
     );
   }
 
-  // Plan gating — 使用 isPaid（服务端校验过期时间），对齐 LiveSignalsFeed 模式
-  const hasAccess = isPaid;
-
   return (
-    <FullAccessGating
-      hasFullAccess={hasAccess}
-      title="量价分析频道"
-      description="升级到 Pro 或 Elite 以访问量价分析频道。"
-    >
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp size={22} className="text-emerald-500" />
-              量价分析
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              基于成交量加权价格的市场情绪探测
-            </p>
-          </div>
-
-          {/* Sort controls */}
-          <div className="flex gap-2 mb-4">
-            {(['volume', 'divergence', 'strength'] as const).map((key) => (
-              <button
-                key={key}
-                onClick={() => setSortBy(key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ease-out
-                  ${sortBy === key ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'}`}
-              >
-                {{ volume: '按成交额', divergence: '按偏离度', strength: '按信号强度' }[key]}
-              </button>
-            ))}
-          </div>
-
-          {/* Market list */}
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-gray-400" size={28} />
-            </div>
-          ) : markets.length === 0 ? (
-            <div className="text-center py-20 text-gray-400 text-sm">
-              暂无活跃市场数据，请稍后再试
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {markets.map((m) => (
-                <MarketCard
-                  key={m.marketId}
-                  data={m}
-                  onSelect={() => setSelected(m)}
-                />
-              ))}
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <TrendingUp size={22} className="text-emerald-500" />
+            量价分析
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            基于成交量加权价格的市场情绪探测
+          </p>
         </div>
 
-        {/* Detail Drawer */}
-        {selected && (
-          <DetailDrawer
-            market={selected}
-            onClose={() => setSelected(null)}
-          />
+        {/* Sort controls */}
+        <div className="flex gap-2 mb-4">
+          {(['volume', 'divergence', 'strength'] as const).map((key) => (
+            <button
+              key={key}
+              onClick={() => setSortBy(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ease-out
+                ${sortBy === key ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'}`}
+            >
+              {{ volume: '按成交额', divergence: '按偏离度', strength: '按信号强度' }[key]}
+            </button>
+          ))}
+        </div>
+
+        {/* Market list */}
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin text-gray-400" size={28} />
+          </div>
+        ) : markets.length === 0 ? (
+          <div className="text-center py-20 text-gray-400 text-sm">
+            暂无活跃市场数据，请稍后再试
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {markets.map((m) => (
+              <MarketCard
+                key={m.marketId}
+                data={m}
+                onSelect={() => setSelected(m)}
+              />
+            ))}
+          </div>
         )}
       </div>
-    </FullAccessGating>
+
+      {/* Detail Drawer */}
+      {selected && (
+        <DetailDrawer
+          market={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </div>
   );
 }
