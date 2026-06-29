@@ -16,8 +16,19 @@ export async function GET(request: NextRequest) {
         const data = await getVwMetrics(sortBy, limit);
         return NextResponse.json({ data, count: data.length });
       } catch (err: any) {
+        // Try a simple query to diagnose
+        let diag = '';
+        try {
+          const { prisma } = await import('@/lib/prisma');
+          const row = await prisma.$queryRawUnsafe<Array<{cnt: bigint}>>(
+            'SELECT COUNT(*) as cnt FROM market_vw_metrics'
+          );
+          diag = `count=${Number(row[0]?.cnt ?? 0)}`;
+        } catch (e2: any) {
+          diag = `count query also failed: ${e2?.message}`;
+        }
         return NextResponse.json(
-          { error: 'metrics query failed', detail: err?.message || String(err) },
+          { error: 'metrics query failed', detail: err?.message || String(err), diag },
           { status: 500 }
         );
       }
