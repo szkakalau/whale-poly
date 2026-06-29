@@ -199,18 +199,22 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
     uai_extreme = Decimal(str(config.get("uai_extreme_price_threshold", 0.02)))
 
     # 1. 找到最近 10 分钟内有交易且 24h 量达标的活跃市场
+    # 用 CTE 先算 24h vol，避免 WHERE 10min 过滤吃掉 SUM 24h 的数据
     result = await session.execute(
         text("""
-            SELECT t.market_id,
-                   SUM(CASE WHEN t.timestamp > NOW() - INTERVAL '24 hours'
-                       THEN t.amount * t.price ELSE 0 END) AS vol_24h
+            WITH vol_24h AS (
+                SELECT market_id, SUM(amount * price) AS vol
+                FROM trades_raw
+                WHERE timestamp > NOW() - INTERVAL '24 hours'
+                GROUP BY market_id
+            )
+            SELECT DISTINCT t.market_id, COALESCE(v.vol, 0) AS vol_24h
             FROM trades_raw t
             JOIN markets m ON t.market_id = m.id
+            LEFT JOIN vol_24h v ON t.market_id = v.market_id
             WHERE t.timestamp > NOW() - INTERVAL '10 minutes'
               AND (m.status IS NULL OR m.status != 'closed')
-            GROUP BY t.market_id
-            HAVING SUM(CASE WHEN t.timestamp > NOW() - INTERVAL '24 hours'
-                       THEN t.amount * t.price ELSE 0 END) >= :min_vol
+              AND COALESCE(v.vol, 0) >= :min_vol
         """),
         {"min_vol": min_24h_vol},
     )
