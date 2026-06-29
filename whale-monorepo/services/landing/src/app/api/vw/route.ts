@@ -12,8 +12,15 @@ export async function GET(request: NextRequest) {
         | 'divergence'
         | 'strength';
       const limit = parseInt(searchParams.get('limit') || '50', 10);
-      const data = await getVwMetrics(sortBy, limit);
-      return NextResponse.json({ data });
+      try {
+        const data = await getVwMetrics(sortBy, limit);
+        return NextResponse.json({ data, count: data.length });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: 'metrics query failed', detail: err?.message || String(err) },
+          { status: 500 }
+        );
+      }
     }
 
     case 'snapshots': {

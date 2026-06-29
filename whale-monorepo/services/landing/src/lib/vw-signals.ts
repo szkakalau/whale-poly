@@ -51,34 +51,30 @@ export async function getVwMetrics(
     strength: 'signal_strength DESC NULLS LAST',
   };
 
-  try {
-    const rows = await prisma.$queryRawUnsafe<VwMetricsRow[]>(
-      `SELECT
-         vw.market_id AS "marketId",
-         m.title AS "marketTitle",
-         vw.total_volume_usd::float AS "totalVolumeUsd",
-         vw.yes_volume_usd::float AS "yesVolumeUsd",
-         vw.no_volume_usd::float AS "noVolumeUsd",
-         vw.yes_vw_price::float AS "yesVwPrice",
-         vw.no_vw_price::float AS "noVwPrice",
-         vw.yes_market_price::float AS "yesMarketPrice",
-         vw.vw_divergence::float AS "vwDivergence",
-         vw.uai::float AS "uai",
-         vw.vw_velocity_5m::float AS "vwVelocity5m",
-         vw.signal_direction AS "signalDirection",
-         vw.signal_strength AS "signalStrength",
-         vw.status,
-         vw.computed_at AS "computedAt"
-       FROM market_vw_metrics vw
-       JOIN markets m ON vw.market_id = m.id
-       WHERE vw.status = 'active'
-       ORDER BY ${orderMap[sortBy]}
-       LIMIT ${limit}`
-    );
-    return rows;
-  } catch {
-    return [];
-  }
+  const rows = await prisma.$queryRawUnsafe<VwMetricsRow[]>(
+    `SELECT
+       vw.market_id AS "marketId",
+       m.title AS "marketTitle",
+       vw.total_volume_usd::float AS "totalVolumeUsd",
+       vw.yes_volume_usd::float AS "yesVolumeUsd",
+       vw.no_volume_usd::float AS "noVolumeUsd",
+       vw.yes_vw_price::float AS "yesVwPrice",
+       vw.no_vw_price::float AS "noVwPrice",
+       vw.yes_market_price::float AS "yesMarketPrice",
+       vw.vw_divergence::float AS "vwDivergence",
+       vw.uai::float AS "uai",
+       vw.vw_velocity_5m::float AS "vwVelocity5m",
+       vw.signal_direction AS "signalDirection",
+       vw.signal_strength AS "signalStrength",
+       vw.status,
+       vw.computed_at AS "computedAt"
+     FROM market_vw_metrics vw
+     JOIN markets m ON vw.market_id = m.id
+     WHERE vw.status = 'active'
+     ORDER BY ${orderMap[sortBy]}
+     LIMIT ${limit}`
+  );
+  return (rows || []) as VwMetricsRow[];
 }
 
 /** Get snapshot data points for a single market's trend chart. */
