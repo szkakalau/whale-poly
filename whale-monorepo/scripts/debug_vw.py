@@ -31,13 +31,26 @@ async def raw_compute():
                 SELECT DISTINCT t.market_id, COALESCE(v.vol, 0) AS vol_24h
                 FROM trades_raw t JOIN markets m ON t.market_id = m.id
                 LEFT JOIN vol_24h v ON t.market_id = v.market_id
-                WHERE t.timestamp > NOW() - INTERVAL '10 minutes'
+                WHERE t.timestamp > NOW() - INTERVAL '1 hour'
                   AND (m.status IS NULL OR m.status != 'closed')
-                  AND COALESCE(v.vol, 0) >= {min_24h}
+                  AND COALESCE(v.vol, 0) >= 1000
             """))
             markets = r.fetchall()
-            print(f'Active markets: {len(markets)}')
+            print(f'Active markets (1h window, 24h_vol>=$1000): {len(markets)}')
             if not markets:
+                # Fallback: any market with $10k+ 24h vol, regardless of recency
+                r2 = await s.execute(text("""
+                    SELECT market_id, SUM(amount * price) AS vol
+                    FROM trades_raw
+                    WHERE timestamp > NOW() - INTERVAL '24 hours'
+                    GROUP BY market_id
+                    HAVING SUM(amount * price) >= 10000
+                    ORDER BY vol DESC LIMIT 3
+                """))
+                markets = r2.fetchall()
+                print(f'Fallback (any 24h_vol>=$10k): {len(markets)} markets')
+            if not markets:
+                print('No high-volume markets at all.')
                 return
             mid = markets[0][0]
 
