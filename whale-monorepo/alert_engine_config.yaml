@@ -46,8 +46,8 @@ behavior_detection:
 
 vw_analysis:
   computation_window_days: 7
-  min_24h_volume_usd: 10000
-  min_alert_volume_usd: 50000
+  min_24h_volume_usd: 1000
+  min_alert_volume_usd: 5000
   divergence_threshold: 0.10
   velocity_5m_threshold: 0.03
   new_market_warmup_snapshots: 3
