@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -8,7 +10,7 @@ depends_on = None
 
 BLOG_ID = "b0000001-0000-4000-a000-000000000001"
 SLUG = "polymarket-volume-weighted-price-analysis"
-NOW = "2026-06-30T00:00:00+00:00"
+NOW = datetime(2026, 6, 30, tzinfo=timezone.utc)
 
 TITLE = "Polymarket Volume-Weighted Price Analysis: Read the Money, Not the Price"
 
@@ -199,9 +201,9 @@ def upgrade() -> None:
             sa.bindparam("author", "Whale Team"),
             sa.bindparam("read_time", "6 min"),
             sa.bindparam("tags", ["VW Analysis", "On-Chain Analysis", "Data Science", "Trading Strategy"]),
-            sa.bindparam("published_at", NOW, type_=sa.DateTime(timezone=True)),
-            sa.bindparam("created_at", NOW, type_=sa.DateTime(timezone=True)),
-            sa.bindparam("updated_at", NOW, type_=sa.DateTime(timezone=True)),
+            sa.bindparam("published_at", NOW),
+            sa.bindparam("created_at", NOW),
+            sa.bindparam("updated_at", NOW),
             sa.bindparam("language", "en"),
             sa.bindparam("group_slug", "polymarket-volume-weighted-analysis"),
             sa.bindparam("status", "published"),
