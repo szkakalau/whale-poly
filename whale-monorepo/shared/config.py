@@ -84,9 +84,9 @@ class Settings:
     self.whale_weight_risk = float(os.getenv("WHALE_WEIGHT_RISK", "0.15"))
     self.whale_weight_impact = float(os.getenv("WHALE_WEIGHT_IMPACT", "0.10"))
 
-    self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "8443902552:AAFcI90mdlQ0UOdtzlvAmb7i16ohaBV8fxA")
-    self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "879397306")
-    self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "@sightwhale_HealthBot")
+    self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "")
+    self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
+    self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "")
     self.health_trade_ingest_api_url = os.getenv("HEALTH_TRADE_INGEST_API_URL", "https://trade-ingest-api.onrender.com")
     self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "https://whale-engine-api.onrender.com")
     self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
