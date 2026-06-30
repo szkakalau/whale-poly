@@ -615,3 +615,74 @@ async def vw_cross(
         }
     }
 
+
+# —— Blog post insertion (internal) ——
+
+from pydantic import BaseModel
+
+
+class BlogPostIn(BaseModel):
+    slug: str
+    title: str
+    excerpt: str = ""
+    content: str
+    author: str = "SightWhale"
+    read_time: str = "8 min"
+    tags: list[str] = []
+    language: str = "en"
+    group_slug: str | None = None
+    status: str = "published"
+
+
+@app.post("/blog/insert")
+async def blog_insert(payload: BlogPostIn, session: AsyncSession = Depends(get_session)):
+    import uuid
+    from datetime import datetime, timezone
+
+    post_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+
+    # Ensure table exists
+    await session.execute(text(
+        """CREATE TABLE IF NOT EXISTS blog_posts (
+            id text PRIMARY KEY,
+            slug text NOT NULL,
+            title text NOT NULL,
+            excerpt text NOT NULL,
+            content text NOT NULL,
+            author text NOT NULL,
+            read_time text NOT NULL,
+            cover_image text,
+            tags text[] DEFAULT '{}',
+            published_at timestamptz NOT NULL,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now(),
+            language text NOT NULL DEFAULT 'en',
+            group_slug text,
+            status text NOT NULL DEFAULT 'published'
+        )"""
+    ))
+    await session.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_language_idx ON blog_posts (slug, language)"
+    ))
+    await session.commit()
+
+    await session.execute(text(
+        """INSERT INTO blog_posts (id, slug, title, excerpt, content, author, read_time, tags, published_at, created_at, updated_at, language, group_slug, status)
+        VALUES (:id, :slug, :title, :excerpt, :content, :author, :read_time, :tags, :published_at, :created_at, :updated_at, :language, :group_slug, :status)
+        ON CONFLICT (slug, language) DO UPDATE SET
+            title=excluded.title, excerpt=excluded.excerpt, content=excluded.content,
+            author=excluded.author, read_time=excluded.read_time, tags=excluded.tags,
+            updated_at=excluded.updated_at"""
+    ), {
+        "id": post_id, "slug": payload.slug, "title": payload.title,
+        "excerpt": payload.excerpt, "content": payload.content,
+        "author": payload.author, "read_time": payload.read_time,
+        "tags": payload.tags, "published_at": now, "created_at": now,
+        "updated_at": now, "language": payload.language,
+        "group_slug": payload.group_slug, "status": payload.status,
+    })
+    await session.commit()
+
+    return {"ok": True, "slug": payload.slug}
+
