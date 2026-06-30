@@ -1,42 +1,64 @@
 import { prisma } from '@/lib/prisma';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
-// One-shot endpoint: insert the VW Analysis blog post into blog_posts.
-// Hit once, then delete this file.
+const BLOG = {
+  slug: 'polymarket-volume-weighted-price-analysis',
+  title: 'Polymarket Volume-Weighted Price Analysis: Read the Money, Not the Price',
+  excerpt: "Price tells you where the market is. Volume tells you where it's going. SightWhale's new VW Analysis channel measures the divergence between money flow and market price to surface hidden sentiment before it prints.",
+  author: 'Whale Team',
+  readTime: '6 min',
+  tags: ['VW Analysis', 'On-Chain Analysis', 'Data Science', 'Trading Strategy'],
+  language: 'en',
+  groupSlug: 'polymarket-volume-weighted-analysis',
+  content:
+    '# Why Price Alone Is a Losing Game\n\n' +
+    'Every Polymarket trader looks at the same number: **the price**. But the price is a lagging indicator — it reflects the last trade, not the capital behind it.\n\n' +
+    'A market trading at 65¢ looks bullish. But what if $2 million of smart money is quietly accumulating the 35¢ side? The price says one thing. **The money says another.**\n\n' +
+    'This gap — between volume-weighted execution and market price — is where alpha lives. SightWhale\'s new **Volume-Weighted Analysis** channel quantifies this gap in real time.\n\n' +
+    '---\n\n' +
+    '## What Is Volume-Weighted Analysis?\n\n' +
+    'Volume-Weighted Price (VW) answers one question: **what price did traders actually pay?**\n\n' +
+    'Unlike a simple last-trade price, VW weights every trade by its dollar volume. A $50,000 trade moves the VW more than a $50 trade. This reveals where **informed capital** is positioning — not just where noise traders are clicking.\n\n' +
+    'When VW diverges from market price, something interesting is happening.\n\n' +
+    '---\n\n' +
+    '## The VW Divergence Signal\n\n' +
+    '**VW Divergence** = VW_YES share − Market Price_YES\n\n' +
+    'A **positive divergence** means large traders are paying more for YES than the market price suggests. Money is betting the price will rise.\n\n' +
+    'A **negative divergence** means large traders are paying more for NO. Money is betting the price will fall.\n\n' +
+    '| Divergence | Direction | What It Means |\n' +
+    '|---|---|---|\n' +
+    '| > +10% | Bullish | Smart money accumulating YES above market |\n' +
+    '| < −10% | Bearish | Smart money accumulating NO above market |\n' +
+    '| −10% to +10% | Neutral | Money flow aligned with price |\n\n' +
+    '---\n\n' +
+    '## The Underdog Aversion Index (UAI)\n\n' +
+    'One of the most persistent inefficiencies in prediction markets is **underdog aversion**: traders systematically undervalue low-probability outcomes.\n\n' +
+    '- **UAI > 0.8**: Whales are actively buying the underdog. The market may be overconfident.\n' +
+    '- **UAI < 0.3**: Whales are avoiding the underdog entirely.\n' +
+    '- **0.3–0.8**: Normal range.\n\n' +
+    '---\n\n' +
+    '## How to Use SightWhale\'s VW Analysis Page\n\n' +
+    'The [Volume Analysis](https://www.sightwhale.com/volume-analysis) page is free for all users:\n\n' +
+    '1. **Market Rankings** — Sort by volume, divergence, or signal strength\n' +
+    '2. **Signal Badges** — Bullish / Bearish / Neutral labels per market\n' +
+    '3. **Trend Charts** — VW vs. Market Price over time in detail drawer\n' +
+    '4. **Cross Signals** — VW signals vs. whale trading direction\n' +
+    '5. **UAI Tracking** — Spot underdog opportunities\n\n' +
+    '---\n\n' +
+    '## Frequently Asked Questions\n\n' +
+    '### What\'s the difference between VW price and market price?\n\n' +
+    'Market price is the last trade. VW price is the dollar-weighted average of all trades. Only sustained large-volume buying moves the VW.\n\n' +
+    '### How often does the data update?\n\n' +
+    'Every 5 minutes, ingesting live Polymarket trade data.\n\n' +
+    '### Is the Volume Analysis page free?\n\n' +
+    'Yes — available to all visitors, no account required.\n\n' +
+    '### Can VW Analysis predict market resolution?\n\n' +
+    'No single indicator predicts resolution perfectly. VW Analysis measures capital flow sentiment — one input in a broader decision process.\n\n' +
+    '---\n\n' +
+    '**[Start using VW Analysis](https://www.sightwhale.com/volume-analysis)** — trade what the money trades, not what the price says.',
+};
 
 export async function GET() {
   try {
-    const filePath = join(
-      process.cwd(),
-      'src/content/posts/polymarket-volume-weighted-price-analysis.md',
-    );
-    const raw = readFileSync(filePath, 'utf-8');
-    const parts = raw.split('---');
-    if (parts.length < 3) {
-      return Response.json({ error: 'bad frontmatter' }, { status: 500 });
-    }
-
-    const body = parts.slice(2).join('---').trim();
-
-    // Parse frontmatter
-    const meta: Record<string, any> = {};
-    for (const line of parts[1].trim().split('\n')) {
-      const m = line.match(/^(\w[\w\s]*):\s*(.+)$/);
-      if (!m) continue;
-      const key = m[1].trim();
-      let val: any = m[2].trim().replace(/^["']|["']$/g, '');
-      if (val.startsWith('[') && val.endsWith(']')) {
-        val = val
-          .slice(1, -1)
-          .split(',')
-          .map((s: string) => s.trim().replace(/^["']|["']$/g, ''))
-          .filter(Boolean);
-      }
-      meta[key] = val;
-    }
-
-    const tags = Array.isArray(meta.tags) ? meta.tags : [];
     const now = new Date('2026-06-30T00:00:00Z');
 
     await prisma.$executeRawUnsafe(
@@ -59,9 +81,13 @@ export async function GET() {
       )`,
     );
 
-    await prisma.$executeRawUnsafe(
-      `CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_language_idx ON blog_posts (slug, language)`,
-    );
+    try {
+      await prisma.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_language_idx ON blog_posts (slug, language)`,
+      );
+    } catch {
+      // ignore
+    }
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO blog_posts (id, slug, title, excerpt, content, author, read_time, tags, published_at, created_at, updated_at, language, group_slug, status)
@@ -71,23 +97,23 @@ export async function GET() {
          author=excluded.author, read_time=excluded.read_time, tags=excluded.tags,
          updated_at=excluded.updated_at`,
       crypto.randomUUID(),
-      'polymarket-volume-weighted-price-analysis',
-      meta.title,
-      meta.excerpt,
-      body,
-      meta.author || 'Whale Team',
-      '6 min',
-      tags,
+      BLOG.slug,
+      BLOG.title,
+      BLOG.excerpt,
+      BLOG.content,
+      BLOG.author,
+      BLOG.readTime,
+      BLOG.tags,
       now,
       now,
       now,
-      'en',
-      'polymarket-volume-weighted-analysis',
+      BLOG.language,
+      BLOG.groupSlug,
       'published',
     );
 
-    return Response.json({ ok: true, slug: 'polymarket-volume-weighted-price-analysis' });
+    return Response.json({ ok: true, slug: BLOG.slug });
   } catch (e: any) {
-    return Response.json({ error: e.message }, { status: 500 });
+    return Response.json({ error: e.message, stack: e.stack }, { status: 500 });
   }
 }
