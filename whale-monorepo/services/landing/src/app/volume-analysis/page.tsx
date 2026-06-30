@@ -60,7 +60,7 @@ function PageContent() {
               key={key}
               onClick={() => setSortBy(key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ease-out
-                ${sortBy === key ? 'bg-[var(--accent)] text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:border-[var(--accent)] hover:text-[var(--accent)]'}`}
+                ${sortBy === key ? 'bg-accent text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:border-accent hover:text-accent'}`}
             >
               {sortLabels[key]}
             </button>
