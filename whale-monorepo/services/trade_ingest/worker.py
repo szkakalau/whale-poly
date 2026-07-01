@@ -111,9 +111,12 @@ async def _cache_trade(redis: Redis, payload: dict) -> None:
     "price": float(payload.get("price") or 0),
   }
   key = f"recent_trades:{wallet}:{market_id}"
-  await redis.rpush(key, json.dumps(body))
-  await redis.ltrim(key, -settings.recent_trades_cache_max, -1)
-  await redis.expire(key, settings.recent_trades_cache_seconds)
+  try:
+    await redis.rpush(key, json.dumps(body))
+    await redis.ltrim(key, -settings.recent_trades_cache_max, -1)
+    await redis.expire(key, settings.recent_trades_cache_seconds)
+  except Exception:
+    logger.debug("cache_trade_failed trade_id=%s", payload.get("trade_id"), exc_info=True)
 
 
 async def _fetch_health(client: httpx.AsyncClient, base_url: str) -> tuple[int | None, str]:
@@ -603,7 +606,7 @@ async def run_full_health_check() -> dict:
   return {"status": status, "trade_id": trade_id, "results": results}
 
 
-@celery_app.task(name="services.trade_ingest.ingest_markets")
+@celery_app.task(name="services.trade_ingest.ingest_markets", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def ingest_markets_task() -> int:
   async def runner():
     async with SessionLocal() as session:
@@ -614,7 +617,7 @@ def ingest_markets_task() -> int:
   return _run(runner())
 
 
-@celery_app.task(name="services.trade_ingest.ingest_trades")
+@celery_app.task(name="services.trade_ingest.ingest_trades", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def ingest_trades_task() -> int:
   async def runner():
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
@@ -760,7 +763,7 @@ async def _consume_incoming_trades_once() -> int:
     await redis.aclose()
 
 
-@celery_app.task(name="services.trade_ingest.consume_incoming_trades")
+@celery_app.task(name="services.trade_ingest.consume_incoming_trades", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def consume_incoming_trades_task() -> int:
   try:
     return _run(_consume_incoming_trades_once())
@@ -769,12 +772,16 @@ def consume_incoming_trades_task() -> int:
     return 0
 
 
-@celery_app.task(name="services.trade_ingest.health_check")
+@celery_app.task(name="services.trade_ingest.health_check", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def health_check_task() -> dict:
-  return _run(run_full_health_check())
+  try:
+    return _run(run_full_health_check())
+  except Exception:
+    logger.exception("health_check_failed")
+    return {"status": "error"}
 
 
-@celery_app.task(name="services.trade_ingest.rebuild_smart_collections")
+@celery_app.task(name="services.trade_ingest.rebuild_smart_collections", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def rebuild_smart_collections_task() -> int:
   async def runner():
     async with SessionLocal() as session:
@@ -789,12 +796,16 @@ def rebuild_smart_collections_task() -> int:
     return 0
 
 
-@celery_app.task(name="services.trade_ingest.daily_spotlight")
+@celery_app.task(name="services.trade_ingest.daily_spotlight", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def daily_spotlight_task() -> dict:
-  return _run(run_daily_spotlight())
+  try:
+    return _run(run_daily_spotlight())
+  except Exception:
+    logger.exception("daily_spotlight_failed")
+    return {"status": "error"}
 
 
-@celery_app.task(name="services.trade_ingest.generate_daily_article")
+@celery_app.task(name="services.trade_ingest.generate_daily_article", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def generate_daily_article_task() -> dict:
   try:
     return _run(generate_daily_article())
@@ -803,7 +814,7 @@ def generate_daily_article_task() -> dict:
     return {"status": "error"}
 
 
-@celery_app.task(name="services.trade_ingest.ingest_smart_money_leaderboard")
+@celery_app.task(name="services.trade_ingest.ingest_smart_money_leaderboard", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def ingest_smart_money_leaderboard_task() -> int:
   async def runner():
     async with SessionLocal() as session:

@@ -60,7 +60,7 @@ async def _consume_once() -> int:
     await redis.aclose()
 
 
-@celery_app.task(name="services.alert_engine.consume_whale_trade_created")
+@celery_app.task(name="services.alert_engine.consume_whale_trade_created", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def consume_whale_trade_created() -> int:
   try:
     return _run(_consume_once())

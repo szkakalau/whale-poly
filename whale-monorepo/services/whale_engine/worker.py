@@ -98,9 +98,13 @@ async def _consume_once() -> int:
     await redis.aclose()
 
 
-@celery_app.task(name="services.whale_engine.consume_trade_created")
+@celery_app.task(name="services.whale_engine.consume_trade_created", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def consume_trade_created() -> int:
-  return _run(_consume_once())
+  try:
+    return _run(_consume_once())
+  except Exception:
+    logger.exception("consume_trade_created_failed")
+    return 0
 
 
 async def _recompute_stats_once() -> int:
@@ -110,7 +114,7 @@ async def _recompute_stats_once() -> int:
   return int(n)
 
 
-@celery_app.task(name="services.whale_engine.recompute_whale_stats")
+@celery_app.task(name="services.whale_engine.recompute_whale_stats", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def recompute_whale_stats_task() -> int:
   try:
     return _run(_recompute_stats_once())
@@ -132,7 +136,7 @@ async def _compute_vw_once() -> int:
     await redis.aclose()
 
 
-@celery_app.task(name="services.whale_engine.compute_vw_metrics")
+@celery_app.task(name="services.whale_engine.compute_vw_metrics", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def compute_vw_metrics_task() -> int:
   try:
     return _run(_compute_vw_once())
@@ -150,7 +154,7 @@ async def _prune_vw_once() -> int:
   return n
 
 
-@celery_app.task(name="services.whale_engine.prune_vw_snapshots")
+@celery_app.task(name="services.whale_engine.prune_vw_snapshots", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def prune_vw_snapshots_task() -> int:
   try:
     return _run(_prune_vw_once())
