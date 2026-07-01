@@ -6,6 +6,7 @@ on-chain whale trade data and DeepSeek V4 Pro.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -288,7 +289,8 @@ async def generate_article(context: dict, language: str) -> dict | None:
         {"role": "user", "content": build_user_prompt(context, topic, language)},
     ]
 
-    for attempt in (1, 2):
+    import random
+    for attempt in range(1, 4):
         try:
             response = client.chat.completions.create(
                 model=settings.blog_llm_model,
@@ -300,6 +302,8 @@ async def generate_article(context: dict, language: str) -> dict | None:
             raw = response.choices[0].message.content
             if not raw:
                 logger.warning("empty response from LLM (attempt %d)", attempt)
+                if attempt < 3:
+                    await asyncio.sleep(2 ** attempt + random.random())
                 continue
 
             article = json.loads(raw)
@@ -317,8 +321,9 @@ async def generate_article(context: dict, language: str) -> dict | None:
 
         except Exception:
             logger.exception("LLM call failed (attempt %d)", attempt)
-            if attempt == 2:
+            if attempt >= 3:
                 return None
+            await asyncio.sleep(2 ** attempt + random.random())
 
     return None
 
@@ -433,8 +438,7 @@ async def _ensure_blog_posts_table(session) -> None:
                 text(f"alter table blog_posts add column if not exists {col} {col_def}")
             )
         except Exception:
-            # Column may already exist with different definition — that's ok
-            pass
+            logger.warning("blog_posts_ddl_skipped col=%s", col, exc_info=True)
     # Make slug+language unique instead of just slug
     try:
         await session.execute(
@@ -448,7 +452,7 @@ async def _ensure_blog_posts_table(session) -> None:
             )
         )
     except Exception:
-        pass  # Index may already exist
+        logger.warning("blog_posts_index_migration_failed", exc_info=True)
 
 
 async def _insert_blog_post(

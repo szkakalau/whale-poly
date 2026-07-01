@@ -254,13 +254,14 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
     for market_id, vol_24h in active_markets.items():
         try:
             # 2a. 聚合过去 N 天交易
-            # NOTE: INTERVAL 不支持 SQL 参数绑定，window_days 来自配置，无注入风险
+            # NOTE: INTERVAL 不支持 SQL 参数绑定，显式校验为整数防止注入
+            days_int = int(window_days)
             trade_result = await session.execute(
                 text(f"""
                     SELECT outcome, amount, price
                     FROM trades_raw
                     WHERE market_id = :mid
-                      AND timestamp > NOW() - INTERVAL '{window_days} days'
+                      AND timestamp > NOW() - INTERVAL '{days_int} days'
                 """),
                 {"mid": market_id},
             )
@@ -296,11 +297,12 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
             past_15m = await _get_previous_snapshot(session, market_id, 15)
             past_1h = await _get_previous_snapshot(session, market_id, 60)
 
-            # 统计快照数量判断是否预热完毕
+            # 统计近24h快照数量判断是否预热完毕
             snapshot_count = await session.execute(
                 text("""
                     SELECT COUNT(*) FROM market_vw_snapshots
                     WHERE market_id = :mid
+                      AND snapshot_at >= NOW() - INTERVAL '24 hours'
                 """),
                 {"mid": market_id},
             )
@@ -460,10 +462,11 @@ async def prune_vw_snapshots(session: AsyncSession, config: dict) -> int:
     deleted = 0
 
     # 删除超过保留期的原始快照
+    days_int = int(retention_days)
     result = await session.execute(
         text(f"""
             DELETE FROM market_vw_snapshots
-            WHERE snapshot_at < NOW() - INTERVAL '{retention_days} days'
+            WHERE snapshot_at < NOW() - INTERVAL '{days_int} days'
         """)
     )
     deleted += result.rowcount
