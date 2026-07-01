@@ -38,6 +38,8 @@ services:
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
         sync: false
+      - key: BLOG_LLM_API_KEY
+        sync: false
 
   - type: worker
     name: trade-ingest-worker
