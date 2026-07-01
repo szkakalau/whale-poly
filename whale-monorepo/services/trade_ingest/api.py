@@ -514,6 +514,28 @@ async def blog_post_create(payload: BlogPostIn, x_admin_key: str = ""):
     return {"status": "ok", "slug": payload.slug, "language": payload.language}
 
 
+@app.delete("/blog/post")
+async def blog_post_delete(slug: str, language: str = "en", x_admin_key: str = ""):
+    """Admin endpoint: delete a blog post. Requires BLOG_LLM_API_KEY."""
+    if not settings.blog_llm_api_key:
+        return {"error": "not configured"}
+    if x_admin_key != settings.blog_llm_api_key:
+        return {"error": "unauthorized"}
+
+    async with SessionLocal() as session:
+        result = await session.execute(
+            text("delete from blog_posts where slug = :slug and language = :lang returning id"),
+            {"slug": slug, "lang": language},
+        )
+        deleted = result.scalar()
+        await session.commit()
+
+    if not deleted:
+        return {"status": "not_found", "slug": slug, "language": language}
+
+    return {"status": "deleted", "slug": slug, "language": language}
+
+
 @app.get("/stats/home")
 async def home_stats():
     """Aggregated stats for the landing page hero + score tiers + star whale.
