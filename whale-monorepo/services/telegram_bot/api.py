@@ -799,7 +799,9 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             except Exception:
               logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 
-          asyncio.create_task(_delayed_send())
+          task = asyncio.create_task(_delayed_send())
+          _pending_sends.add(task)
+          task.add_done_callback(_pending_sends.discard)
           return
 
         body = _message_body()
@@ -836,24 +838,30 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
     return
 
   while not stop.is_set():
-    item = await redis.blpop(settings.alert_created_queue, timeout=1)
-    if not item:
+    try:
+      item = await redis.blpop(settings.alert_created_queue, timeout=1)
+      if not item:
+        continue
+      _, raw = item
+      raws = [raw]
+      for _ in range(max(0, settings.alert_consume_batch_size - 1)):
+        nxt = await redis.lpop(settings.alert_created_queue)
+        if not nxt:
+          break
+        raws.append(nxt)
+      for raw_item in raws:
+        await _process_raw(raw_item)
+    except Exception:
+      logger.exception("alert_consumer_error — reconnecting in 5s")
+      await asyncio.sleep(5)
       continue
-    _, raw = item
-    raws = [raw]
-    for _ in range(max(0, settings.alert_consume_batch_size - 1)):
-      nxt = await redis.lpop(settings.alert_created_queue)
-      if not nxt:
-        break
-      raws.append(nxt)
-    for raw_item in raws:
-      await _process_raw(raw_item)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
   stop = asyncio.Event()
   global _REDIS_OK
+  _pending_sends: set[asyncio.Task] = set()
   redis = None
   try:
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
@@ -897,6 +905,12 @@ async def lifespan(_: FastAPI):
     for t in tasks:
       t.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
+    # Cancel and await any pending delayed sends (prevents alert loss on shutdown)
+    for t in list(_pending_sends):
+      t.cancel()
+    if _pending_sends:
+      await asyncio.gather(*_pending_sends, return_exceptions=True)
+      logger.info("shutdown_cancelled_pending_sends count=%d", len(_pending_sends))
     await redis.aclose()
 
 

@@ -143,13 +143,15 @@ async def _any_source_allows_send(
   if not scorable:
     return True
 
+  # Each source must pass independently to prevent smart_collection sources
+  # (which often have no cooldown state) from bypassing whale_follow cooldowns.
   for r in scorable:
     key = cd2_key(telegram_id, r.source_type, r.source_id)
     last_at, last_score = await _read_cd_state(redis, key)
     if last_at is None:
-      return True
+      continue  # no prior state for this source — it passes
     if now_ts - last_at >= float(cooldown_sec):
-      return True
+      continue  # cooldown expired for this source — it passes
     if bypass and effective_score > last_score + delta:
       logger.debug(
         "cooldown_v2_bypass tid=%s key=%s eff=%s last_score=%s",
@@ -158,8 +160,10 @@ async def _any_source_allows_send(
         effective_score,
         last_score,
       )
-      return True
-  return False
+      continue  # bypass for this source — it passes
+    # This source is blocked — entire message is blocked
+    return False
+  return True  # all sources passed
 
 
 def _max_effective_from_raws(raws: list[str]) -> float:
@@ -219,14 +223,24 @@ async def handle_cooldown_before_send(
       n,
     )
     if n >= int(settings.cooldown_v2_digest_max):
-      items = await redis.lrange(dkey, 0, -1)
-      await redis.delete(dkey)
-      body = format_digest_fn(items, telegram_id)
-      return CooldownHandleResult(
-        CooldownAction.FLUSH_ONLY,
-        flush_combined_text=body,
-        flushed_raws=list(items),
-      )
+      # Distributed lock to prevent concurrent digest flush (race condition #19)
+      lock_key = f"digest_flush_lock:{telegram_id}"
+      got_lock = await redis.set(lock_key, "1", ex=10, nx=True)
+      if not got_lock:
+        return CooldownHandleResult(CooldownAction.QUEUED)
+      try:
+        items = await redis.lrange(dkey, 0, -1)
+        if not items:
+          return CooldownHandleResult(CooldownAction.QUEUED)
+        await redis.delete(dkey)
+        body = format_digest_fn(items, telegram_id)
+        return CooldownHandleResult(
+          CooldownAction.FLUSH_ONLY,
+          flush_combined_text=body,
+          flushed_raws=list(items),
+        )
+      finally:
+        await redis.delete(lock_key)
     return CooldownHandleResult(CooldownAction.QUEUED)
 
   backlog = await redis.lrange(dkey, 0, -1)
