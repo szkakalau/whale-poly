@@ -7,6 +7,8 @@ services:
       POSTGRES_PASSWORD: whale
     ports:
       - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U whale -d whale"]
       interval: 5s
@@ -17,6 +19,11 @@ services:
     image: redis:7
     ports:
       - "6382:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   landing:
     build:
@@ -42,7 +49,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8010:8010"
     command: ["uvicorn", "services.trade_ingest.api:app", "--host", "0.0.0.0", "--port", "8010"]
@@ -59,7 +66,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: ["celery", "-A", "services.trade_ingest.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "trade_ingest"]
 
   whale-engine-api:
@@ -74,7 +81,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8011:8011"
     command: ["uvicorn", "services.whale_engine.api:app", "--host", "0.0.0.0", "--port", "8011"]
@@ -91,7 +98,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: ["celery", "-A", "services.whale_engine.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "whale_engine"]
 
   alert-engine-api:
@@ -106,7 +113,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8012:8012"
     command: ["uvicorn", "services.alert_engine.api:app", "--host", "0.0.0.0", "--port", "8012"]
@@ -123,7 +130,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: ["celery", "-A", "services.alert_engine.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "alert_engine"]
 
   telegram-bot:
@@ -138,7 +145,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8013:8013"
     command: ["uvicorn", "services.telegram_bot.api:app", "--host", "0.0.0.0", "--port", "8013"]
@@ -155,7 +162,10 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8014:8014"
     command: ["uvicorn", "services.payment.api:app", "--host", "0.0.0.0", "--port", "8014"]
+
+volumes:
+  postgres_data:
