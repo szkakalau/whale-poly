@@ -213,5 +213,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute(
-        f"DELETE FROM blog_posts WHERE slug = '{SLUG}' AND language = 'en'"
+        sa.text("DELETE FROM blog_posts WHERE slug = :slug AND language = :lang"),
+        {"slug": SLUG, "lang": "en"},
     )

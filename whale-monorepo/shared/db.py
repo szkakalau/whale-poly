@@ -7,7 +7,14 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from shared.config import settings
 
 
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+engine = create_async_engine(
+    settings.database_url,
+    pool_size=5,
+    max_overflow=5,
+    pool_recycle=3600,       # Recycle connections after 1 hour to prevent stale connections
+    pool_pre_ping=True,      # Verify connections before use
+    pool_timeout=30,         # Wait up to 30s for a connection before failing
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 

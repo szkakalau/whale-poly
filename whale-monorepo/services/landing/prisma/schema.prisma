@@ -110,7 +110,7 @@ model SmartCollectionWhale {
 
   smartCollection  SmartCollection @relation(fields: [smartCollectionId], references: [id], onDelete: Cascade)
 
-  @@unique([smartCollectionId, wallet], name: "smart_collection_wallet_unique")
+  @@unique([smartCollectionId, wallet, snapshotDate], name: "smart_collection_wallet_unique")
   @@index([wallet], name: "idx_smartcollectionwhale_wallet")
   @@map("smart_collection_whales")
 }

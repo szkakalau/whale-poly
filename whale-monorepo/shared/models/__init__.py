@@ -29,6 +29,7 @@ from .models import (
     SmartCollectionSubscription,
     MarketVwMetrics,
     MarketVwSnapshot,
+    BlogPost,
 )
 
 __all__ = [
@@ -61,4 +62,5 @@ __all__ = [
     "SmartCollectionSubscription",
     "MarketVwMetrics",
     "MarketVwSnapshot",
+    "BlogPost",
 ]

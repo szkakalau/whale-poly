@@ -101,6 +101,7 @@ class WhaleTradeHistory(Base):
 
 class WhaleTrade(Base):
     __tablename__ = "whale_trades"
+    __table_args__ = (UniqueConstraint("trade_id", name="uq_whale_trades_trade_id"),)
     id = Column(String(64), primary_key=True)
     trade_id = Column(String(128), nullable=False, index=True)
     wallet_address = Column(String(128), nullable=False, index=True)
@@ -120,6 +121,7 @@ class WhalePosition(Base):
 
 class Alert(Base):
     __tablename__ = "alerts"
+    __table_args__ = (UniqueConstraint("whale_trade_id", name="uq_alerts_whale_trade_id"),)
     id = Column(String(64), primary_key=True)
     whale_trade_id = Column(String(64), nullable=False, index=True)
     market_id = Column(String(512), nullable=False, index=True)
@@ -182,7 +184,7 @@ class User(Base):
     id = Column(String(64), primary_key=True)
     email = Column(String(256), nullable=False, unique=True, index=True)
     telegram_id = Column(String(64), nullable=True, index=True)
-    plan = Column(String(16), nullable=False, server_default="FREE", index=True)
+    plan = Column(String(16), nullable=False, server_default="free", index=True)
     plan_expire_at = Column(DateTime(timezone=True), nullable=True)
 
 
@@ -287,3 +289,22 @@ class MarketVwSnapshot(Base):
     yes_market_price = Column(Numeric(10, 8), nullable=True)
     total_volume_usd = Column(Numeric(38, 2), server_default="0")
     snapshot_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class BlogPost(Base):
+    __tablename__ = "blog_posts"
+    id = Column(String(64), primary_key=True)
+    slug = Column(String(256), nullable=False)
+    title = Column(String(512), nullable=False)
+    excerpt = Column(String(1024), nullable=False)
+    content = Column(String, nullable=False)
+    author = Column(String(128), nullable=False)
+    read_time = Column(String(16), nullable=False)
+    cover_image = Column(String(1024), nullable=True)
+    tags = Column(String, nullable=True)  # PostgreSQL text[] — stored as JSON string in SQLite
+    published_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+    language = Column(String(8), nullable=False, server_default="en")
+    group_slug = Column(String(256), nullable=True)
+    status = Column(String(32), nullable=False, server_default="published")
