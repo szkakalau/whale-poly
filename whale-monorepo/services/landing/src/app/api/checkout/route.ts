@@ -58,8 +58,8 @@ export async function POST(req: Request) {
       cache: 'no-store'
     });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ detail: 'payment api unreachable', error: message }, { status: 502 });
+    console.error('checkout_upstream_fetch_failed', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ detail: 'payment service temporarily unavailable' }, { status: 502 });
   }
 
   const ct = upstream.headers.get('content-type') || '';
@@ -68,6 +68,7 @@ export async function POST(req: Request) {
     return NextResponse.json(data, { status: upstream.status });
   }
 
-  const text = await upstream.text().catch(() => '');
-  return NextResponse.json({ detail: 'payment api returned non-json', status: upstream.status, body: text.slice(0, 500) }, { status: 502 });
+  // Non-JSON response — log but don't leak upstream body to client
+  console.error('checkout_upstream_non_json', { status: upstream.status, ct });
+  return NextResponse.json({ detail: 'payment service temporarily unavailable' }, { status: 502 });
 }

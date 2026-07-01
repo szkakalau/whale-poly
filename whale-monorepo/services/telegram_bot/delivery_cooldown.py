@@ -62,7 +62,7 @@ def compute_effective_score(payload: dict) -> float:
   score, notional = compute_effective_fields(payload)
   cap = float(settings.cooldown_v2_notional_cap_usd)
   floor = float(settings.cooldown_v2_notional_floor_usd)
-  notional = max(notional, floor)
+  notional = max(notional, floor, 0.01)  # guard against log10(0)
   notional = min(notional, cap)
   return score + log10(notional) * 5.0
 

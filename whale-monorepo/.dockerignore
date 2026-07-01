@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files (may contain secrets)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+*.egg-info
+.pytest_cache
+
+# Node.js (landing app)
+services/landing/node_modules
+services/landing/.next
+services/landing/.turbo
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android (not needed in Python Docker image)
+apps/
+
+# Tests
+tests/
+.pytest_cache
+
+# Docs
+docs/
+
+# Misc
+*.log
+celerybeat-schedule.db

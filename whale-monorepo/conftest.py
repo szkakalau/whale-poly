@@ -12,9 +12,15 @@ os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 
 def pytest_ignore_collect(collection_path, config):
-  p = str(collection_path)
-  if "/whale-monorepo/.venv/" in p or p.endswith("/whale-monorepo/.venv"):
+  from pathlib import Path
+  p = Path(collection_path).resolve()
+  # Exclude virtual environments
+  if p.name == ".venv" or ".venv" in p.parts:
     return True
-  if "/whale-monorepo/services/landing/node_modules/" in p:
+  # Exclude node modules
+  if "node_modules" in p.parts:
     return True
-  return "/whale-monorepo/scripts/" in p or p.endswith("/whale-monorepo/scripts")
+  # Exclude scripts directory
+  if "scripts" in p.parts:
+    return True
+  return False

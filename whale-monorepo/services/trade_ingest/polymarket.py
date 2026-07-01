@@ -262,7 +262,7 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
       continue
     await session.execute(
       insert(Market)
-      .values(id=r["market_id"], title=title, status=None)
+      .values(id=r["market_id"], title=title)
       .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
     )
 

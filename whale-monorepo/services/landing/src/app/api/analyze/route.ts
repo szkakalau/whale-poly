@@ -124,7 +124,8 @@ export async function POST(req: Request) {
   let analyzeError: string | undefined;
   try {
     analysis = await analyzeMarket(resolved.slug, { followedWallets });
-  } catch {
+  } catch (e) {
+    console.error('analyze_market_failed', { slug: resolved.slug, error: String(e) });
     analyzeError = 'analysis_failed';
     logAnalyzeQuery({
       query,
@@ -225,7 +226,8 @@ export async function GET(req: Request) {
       matchMethod: resolved.matched,
       candidates: resolved.candidates,
     } satisfies AnalyzeResponse);
-  } catch {
+  } catch (e) {
+    console.error('analyze_route_failed', { query, error: String(e), stack: e instanceof Error ? e.stack : undefined });
     return NextResponse.json(
       { error: 'analysis_failed', message: '⚠️ Analysis temporarily unavailable. Please try again later.' } satisfies AnalyzeResponse,
       { status: 500 },

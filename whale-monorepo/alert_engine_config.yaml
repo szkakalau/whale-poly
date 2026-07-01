@@ -28,7 +28,7 @@ alert_thresholds:
   usd_thresholds:
     low: 2500
     medium: 3000
-    high: 400
+    high: 5000
   spike_build_exit_thresholds:
     whale_entry: 5000
     whale_exit: 5000

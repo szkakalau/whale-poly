@@ -736,7 +736,7 @@ async def _consume_incoming_trades_once() -> int:
       for mid, title in market_titles.items():
         await session.execute(
           insert(Market)
-          .values(id=mid, title=title, status=None)
+          .values(id=mid, title=title)
           .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
         )
 

@@ -65,7 +65,8 @@ async def _has_wallet_names_table(session: AsyncSession) -> bool:
   try:
     _HAS_WALLET_NAMES_TABLE = bool((await session.execute(text("select to_regclass('public.wallet_names')"))).scalar_one_or_none())
   except Exception:
-    _HAS_WALLET_NAMES_TABLE = True
+    logger.warning("wallet_names_table_check_failed")
+    _HAS_WALLET_NAMES_TABLE = False
   return _HAS_WALLET_NAMES_TABLE
 
 

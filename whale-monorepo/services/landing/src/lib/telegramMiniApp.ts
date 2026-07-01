@@ -93,10 +93,12 @@ function buildDataCheckString(params: URLSearchParams): string {
   return pairs.join('\n');
 }
 
-export async function verifyTelegramInitData(initData: string, botToken: string, maxAgeSeconds = 86400): Promise<TelegramWebAppAuthResult> {
+export async function verifyTelegramInitData(initData: string, botToken: string, maxAgeSeconds = 300): Promise<TelegramWebAppAuthResult> {
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
   const authDateRaw = params.get('auth_date');
+  // Guard against empty bot token — produces deterministic HMAC an attacker can forge
+  if (!botToken) throw new Error('no_bot_token');
   const userRaw = params.get('user');
 
   if (!hash || !authDateRaw || !userRaw) {
