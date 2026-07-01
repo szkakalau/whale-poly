@@ -11,6 +11,18 @@ services:
     plan: starter
     ipAllowList: []
 
+  - type: job
+    name: db-migrate
+    runtime: docker
+    rootDir: whale-monorepo
+    dockerfilePath: docker/Dockerfile
+    dockerCommand: alembic upgrade head
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whale-postgres
+          property: connectionString
+
   - type: web
     name: trade-ingest-api
     runtime: docker
@@ -37,14 +49,6 @@ services:
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
       - key: HTTPS_PROXY
-        sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_ALERT_CHAT_ID
-        sync: false
-      - key: WECHAT_WEBHOOK_URL
-        sync: false
-      - key: BLOG_LLM_API_KEY
         sync: false
 
   - type: worker
@@ -84,9 +88,9 @@ services:
       - key: TELEGRAM_ALERT_CHAT_ID
         sync: false
       - key: HEALTH_PAYMENT_API_URL
-        value: https://payment-api-6wk6.onrender.com
+        value: https://payment-api.onrender.com
       - key: HEALTH_TELEGRAM_BOT_API_URL
-        value: https://telegram-bot-qk51.onrender.com
+        value: https://telegram-bot.onrender.com
       - key: MARKET_INGEST_SECONDS
         value: "600"
       - key: TRADE_INGEST_SECONDS
