@@ -77,7 +77,7 @@ async def _get_whale_score(session: AsyncSession, wallet: str) -> int:
     if row is not None:
       return int(row)
   except Exception:
-    pass
+    logger.warning("whale_score_lookup_failed wallet=%s", wallet, exc_info=True)
   return 0
 
 
@@ -103,6 +103,8 @@ async def _load_recent_trades(redis: Redis, wallet: str, market_id: str) -> list
   if not exists:
     return None
   raws = await redis.lrange(key, 0, -1)
+  if not raws:
+    return None
   trades: list[_CachedTrade] = []
   for raw in raws:
     try:
@@ -124,6 +126,8 @@ async def _load_recent_trades(redis: Redis, wallet: str, market_id: str) -> list
         timestamp=ts,
       )
     )
+  if not trades:
+    return None
   return trades
 
 
@@ -214,9 +218,15 @@ def detect_behavior(micro_trades: list[TradeRaw], macro_trades: list[TradeRaw], 
   buys_macro = [t for t in macro_window if (t.side or "").lower() == "buy"]
   sells_macro = [t for t in macro_window if (t.side or "").lower() == "sell"]
 
-  spike_threshold = behavior_config.get("spike_threshold") or spike_build_exit.get("whale_entry") or settings.whale_single_trade_usd_threshold
-  build_threshold = behavior_config.get("build_threshold") or spike_build_exit.get("whale_build") or settings.whale_build_usd_threshold
-  exit_threshold = behavior_config.get("exit_threshold") or spike_build_exit.get("whale_exit") or settings.whale_exit_usd_threshold
+  spike_threshold = behavior_config.get("spike_threshold")
+  if spike_threshold is None:
+    spike_threshold = spike_build_exit.get("whale_entry") or settings.whale_single_trade_usd_threshold
+  build_threshold = behavior_config.get("build_threshold")
+  if build_threshold is None:
+    build_threshold = spike_build_exit.get("whale_build") or settings.whale_build_usd_threshold
+  exit_threshold = behavior_config.get("exit_threshold")
+  if exit_threshold is None:
+    exit_threshold = spike_build_exit.get("whale_exit") or settings.whale_exit_usd_threshold
 
   single_large = next((t for t in micro_window if _usd(t) >= float(spike_threshold)), None)
   if single_large:
@@ -343,9 +353,13 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   action_type = "entry" if (event_side or "").lower() != "sell" else "exit"
   realized_pnl = 0.0
   if has_positions:
+    # Use SELECT ... FOR UPDATE to prevent concurrent position updates (race condition #12)
     pos = (
       await session.execute(
-        select(WhalePosition).where(WhalePosition.wallet_address == wallet).where(WhalePosition.market_id == trade.market_id)
+        select(WhalePosition)
+        .where(WhalePosition.wallet_address == wallet)
+        .where(WhalePosition.market_id == trade.market_id)
+        .with_for_update()
       )
     ).scalars().first()
     prev_size = float(pos.net_size) if pos and pos.net_size is not None else 0.0
@@ -778,7 +792,9 @@ async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade
     market_counts: dict[str, int] = {}
     
     for t in trades:
-      pr = trade_percentiles.get(t.trade_id, 0.5)
+      pr = trade_percentiles.get(t.trade_id)
+      if pr is None:
+        continue  # skip trades with missing market price data
       side = str(t.side).lower()
       if side == 'buy':
         entry_prs.append(pr)

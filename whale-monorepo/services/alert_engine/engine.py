@@ -144,12 +144,15 @@ async def _can_alert_event(session: AsyncSession, redis: Redis, market_id: str, 
     except Exception:
       last_usd = 0.0
       last_at = None
+    # Corrupt or missing cooldown data — delete the key and proceed
     if last_usd <= 0 or not last_at:
-      return False
-    elapsed = (now - last_at).total_seconds()
-    if elapsed >= increased_position_seconds and usd >= last_usd:
-      return True
-    return usd >= 2 * last_usd
+      logger.warning("cooldown_corrupt_data wallet=%s market=%s — deleting key", wallet, market_id)
+      await redis.delete(key_wallet)
+    else:
+      elapsed = (now - last_at).total_seconds()
+      if elapsed >= increased_position_seconds and usd >= last_usd:
+        return True
+      return usd >= 2 * last_usd
 
   if different_wallet_seconds > 0:
     market_key = f"cooldown_market:{market_id}"
@@ -274,6 +277,64 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   action_type = str(event.get("action_type") or "")
   if signal_level == "low":
     logger.info("signal_level=low_confidence whale_trade_id=%s wallet=%s market=%s", whale_trade_id, wallet, raw_token_id)
+
+  # Resolve market info and outcome BEFORE DB insert so we can push to Redis first
+  market_question = await get_market_question(session, raw_token_id)
+  market_title = market_question
+  if not market_question:
+    title = await resolve_market_title(session, raw_token_id)
+    if title:
+      await session.execute(
+        insert(Market)
+        .values(id=raw_token_id, title=title, status="active", created_at=now)
+        .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+      )
+      market_question = title
+      market_title = title
+    else:
+      market_question = f"Market ({raw_token_id})"
+      market_title = None
+  outcome = (
+    event.get("outcome")
+    or event.get("outcome_name")
+    or event.get("outcomeName")
+    or event.get("tokenOutcome")
+    or event.get("outcomeToken")
+    or event.get("outcome_token")
+    or event.get("token")
+    or event.get("asset")
+  )
+  if isinstance(outcome, dict):
+    outcome = (
+      outcome.get("outcome")
+      or outcome.get("outcome_name")
+      or outcome.get("outcomeName")
+      or outcome.get("tokenOutcome")
+      or outcome.get("outcomeToken")
+      or outcome.get("outcome_token")
+      or outcome.get("label")
+      or outcome.get("name")
+    )
+  if not outcome:
+    outcome = event.get("label") or event.get("name")
+  if not outcome:
+    trade_id = event.get("trade_id")
+    if trade_id:
+      outcome = (await session.execute(select(TradeRaw.outcome).where(TradeRaw.trade_id == str(trade_id)))).scalar_one_or_none()
+  if not outcome and raw_token_id:
+    resolved = await _resolve_outcome_from_token(redis, raw_token_id)
+    if resolved:
+      outcome = resolved
+      trade_id = event.get("trade_id")
+      if trade_id:
+        await session.execute(
+          update(TradeRaw)
+          .where(TradeRaw.trade_id == str(trade_id))
+          .values(outcome=str(outcome))
+        )
+  if outcome is not None and not str(outcome).strip():
+    outcome = None
+
   alert = Alert(
     id=_id(whale_trade_id),
     whale_trade_id=whale_trade_id,
@@ -283,6 +344,34 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     alert_type=a_type,
     created_at=now,
   )
+  payload = {
+    "alert_id": alert.id,
+    "whale_trade_id": whale_trade_id,
+    "market_id": raw_token_id,
+    "raw_token_id": raw_token_id,
+    "wallet_address": wallet,
+    "wallet_name": wallet_name,
+    "whale_score": score,
+    "alert_type": a_type,
+    "action_type": action_type,
+    "behavior": event.get("behavior"),
+    "market_question": market_question,
+    "market_title": market_title,
+    "outcome": outcome,
+    "side": event.get("side") or "UNKNOWN",
+    "size": usd,
+    "price": event.get("price"),
+    "signal_level": signal_level,
+    "created_at": now.isoformat(),
+  }
+
+  # Push to Redis queue BEFORE DB insert — if Redis is down we fail without
+  # creating an orphan alert row that would never be delivered.
+  payload_raw = json.dumps(payload)
+  await redis.rpush(settings.alert_created_queue, payload_raw)
+  await redis.set("alert_created:last", payload_raw, ex=86400)
+
+  # Now insert into DB (idempotent via on_conflict_do_nothing)
   result = await session.execute(
     insert(Alert)
     .values(
@@ -316,83 +405,5 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
         json.dumps({"last_wallet": wallet, "last_at": now.isoformat()}),
         ex=int(different_wallet_seconds),
       )
-    market_question = await get_market_question(session, raw_token_id)
-    market_title = market_question
-    if not market_question:
-      title = await resolve_market_title(session, raw_token_id)
-      if title:
-        await session.execute(
-          insert(Market)
-          .values(id=raw_token_id, title=title, status="active", created_at=now)
-          .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
-        )
-        market_question = title
-        market_title = title
-      else:
-        market_question = f"Market ({raw_token_id})"
-        market_title = None
-    outcome = (
-      event.get("outcome")
-      or event.get("outcome_name")
-      or event.get("outcomeName")
-      or event.get("tokenOutcome")
-      or event.get("outcomeToken")
-      or event.get("outcome_token")
-      or event.get("token")
-      or event.get("asset")
-    )
-    if isinstance(outcome, dict):
-      outcome = (
-        outcome.get("outcome")
-        or outcome.get("outcome_name")
-        or outcome.get("outcomeName")
-        or outcome.get("tokenOutcome")
-        or outcome.get("outcomeToken")
-        or outcome.get("outcome_token")
-        or outcome.get("label")
-        or outcome.get("name")
-      )
-    if not outcome:
-      outcome = event.get("label") or event.get("name")
-    if not outcome:
-      trade_id = event.get("trade_id")
-      if trade_id:
-        outcome = (await session.execute(select(TradeRaw.outcome).where(TradeRaw.trade_id == str(trade_id)))).scalar_one_or_none()
-    if not outcome and raw_token_id:
-      resolved = await _resolve_outcome_from_token(redis, raw_token_id)
-      if resolved:
-        outcome = resolved
-        trade_id = event.get("trade_id")
-        if trade_id:
-          await session.execute(
-            update(TradeRaw)
-            .where(TradeRaw.trade_id == str(trade_id))
-            .values(outcome=str(outcome))
-          )
-    if outcome is not None and not str(outcome).strip():
-      outcome = None
-    payload = {
-      "alert_id": alert.id,
-      "whale_trade_id": whale_trade_id,
-      "market_id": raw_token_id,
-      "raw_token_id": raw_token_id,
-      "wallet_address": wallet,
-      "wallet_name": wallet_name,
-      "whale_score": score,
-      "alert_type": a_type,
-      "action_type": action_type,
-      "behavior": event.get("behavior"),
-      "market_question": market_question,
-      "market_title": market_title,
-      "outcome": outcome,
-      "side": event.get("side") or "UNKNOWN",
-      "size": usd,
-      "price": event.get("price"),
-      "signal_level": signal_level,
-      "created_at": now.isoformat(),
-    }
     await _send_landing_alert(payload)
-    payload_raw = json.dumps(payload)
-    await redis.rpush(settings.alert_created_queue, payload_raw)
-    await redis.set("alert_created:last", payload_raw, ex=86400)
   return created

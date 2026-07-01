@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,27 +104,29 @@ async def _mark_expired_forever(stop: asyncio.Event) -> None:
   while not stop.is_set():
     now = datetime.now(timezone.utc)
     async with SessionLocal() as session:
-      # Find expiring subscriptions
-      expiring = (await session.execute(
-        select(Subscription.telegram_id)
+      # Atomically mark expired subscriptions
+      result = await session.execute(
+        update(Subscription)
         .where(Subscription.status == "active")
         .where(Subscription.current_period_end < now)
-      )).scalars().all()
-
-      if expiring:
-        # Update subscription status
-        await session.execute(
-          update(Subscription)
+        .values(status="expired")
+        .returning(Subscription.telegram_id)
+      )
+      expired_ids = set(result.scalars().all())
+      if expired_ids:
+        # Only downgrade users who have NO remaining active subscriptions
+        still_active = set((await session.execute(
+          select(Subscription.telegram_id)
+          .where(Subscription.telegram_id.in_(list(expired_ids)))
           .where(Subscription.status == "active")
-          .where(Subscription.current_period_end < now)
-          .values(status="expired")
-        )
-        # Revert users to FREE plan
-        await session.execute(
-          update(User)
-          .where(User.telegram_id.in_(expiring))
-          .values(plan="FREE", plan_expire_at=None)
-        )
+        )).scalars().all())
+        to_downgrade = expired_ids - still_active
+        if to_downgrade:
+          await session.execute(
+            update(User)
+            .where(User.telegram_id.in_(list(to_downgrade)))
+            .values(plan="FREE", plan_expire_at=None)
+          )
       await session.commit()
     try:
       await asyncio.wait_for(stop.wait(), timeout=3600)
@@ -158,7 +161,15 @@ async def root():
 
 @app.get("/health")
 async def health():
-  return {"status": "ok"}
+  try:
+    async with SessionLocal() as session:
+      await session.execute(text("select 1"))
+    return {"status": "ok", "db": "ok"}
+  except Exception:
+    return JSONResponse(
+      {"status": "degraded", "db": "unavailable"},
+      status_code=503,
+    )
 
 
 @app.get("/healthz")
@@ -304,7 +315,9 @@ async def subscription_list(
 
 
 @app.get("/current-plan")
-async def current_plan(telegram_id: str, session: AsyncSession = Depends(get_session)):
+async def current_plan(telegram_id: str, x_admin_token: str | None = Header(default=None), session: AsyncSession = Depends(get_session)):
+  if not _is_admin(x_admin_token):
+    raise HTTPException(status_code=401, detail="unauthorized")
   now = datetime.now(timezone.utc)
   sub = (
     await session.execute(
