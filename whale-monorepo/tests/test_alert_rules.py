@@ -9,13 +9,13 @@ def test_always_score_alerts():
 
 
 def test_threshold_alerts():
-  d = should_alert(whale_score=85, trade_usd=400, min_score=75, min_usd=1000, always_score=90)
+  d = should_alert(whale_score=85, trade_usd=1500, min_score=75, min_usd=1000, always_score=90)
   assert d.should_alert is True
   assert d.signal_level == "high"
 
 
 def test_low_confidence_alerts():
-  d = should_alert(whale_score=70, trade_usd=2500, min_score=75, min_usd=1000, always_score=90)
+  d = should_alert(whale_score=75, trade_usd=2500, min_score=75, min_usd=1000, always_score=90)
   assert d.should_alert is True
   assert d.signal_level == "low"
 

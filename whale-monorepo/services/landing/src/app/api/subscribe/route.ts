@@ -1,55 +1,64 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
-import { Plan } from '@prisma/client';
 
+/**
+ * POST /api/subscribe
+ *
+ * Proxies to the payment API's /checkout endpoint which creates a Stripe
+ * Checkout Session. The user must be authenticated and provide a valid
+ * Telegram activation code + plan slug.
+ */
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
-    const { plan } = await req.json();
+    await requireUser();
 
-    if (!Object.values(Plan).includes(plan)) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    const base = process.env.PAYMENT_API_BASE_URL;
+    if (!base) {
+      return NextResponse.json({ detail: 'PAYMENT_API_BASE_URL is required' }, { status: 500 });
     }
 
-    if (process.env.NODE_ENV === 'production') {
-      const adminToken = process.env.ADMIN_TOKEN || '';
-      const headerToken = req.headers.get('x-admin-token') || '';
-      const isAdmin = Boolean(adminToken) && headerToken === adminToken;
-      if (!isAdmin && plan !== Plan.FREE) {
-        return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
-      }
+    let payload: unknown;
+    try {
+      payload = await req.json();
+    } catch {
+      return NextResponse.json({ detail: 'invalid json' }, { status: 400 });
     }
 
-    // Mocking Stripe integration logic here
-    // In production, you would create a Stripe checkout session
+    const data = typeof payload === 'object' && payload !== null ? (payload as Record<string, unknown>) : {};
 
-    // Update user plan immediately for testing (Stub)
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
+    const activationCode = String(data.telegram_activation_code ?? '').trim();
+    const plan = String(data.plan ?? '').trim().toLowerCase().replace('-', '_');
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: {
-          plan: plan as Plan,
-          planExpireAt: expiresAt,
-        },
+    if (!activationCode || !plan) {
+      return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
+    }
+
+    const validPlans = new Set(['pro', 'elite', 'pro_yearly', 'elite_yearly', 'free']);
+    if (!validPlans.has(plan)) {
+      return NextResponse.json({ detail: 'invalid plan', allowed: Array.from(validPlans) }, { status: 400 });
+    }
+
+    const upstream = await fetch(`${base.replace(/\/$/, '')}/checkout`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        telegram_activation_code: activationCode.toUpperCase(),
+        plan,
       }),
-      prisma.subscription.create({
-        data: {
-          userId: user.id,
-          plan: plan as Plan,
-          price: plan === Plan.PRO ? 29 : plan === Plan.ELITE ? 59 : 0,
-          status: 'active',
-          expiresAt: expiresAt,
-        },
-      }),
-    ]);
+      cache: 'no-store',
+    });
 
-    return NextResponse.json({ success: true, plan });
-  } catch (error) {
-    console.error('Subscription error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const ct = upstream.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const body = await upstream.json().catch(() => ({}));
+      return NextResponse.json(body, { status: upstream.status });
+    }
+
+    // Non-JSON response — log but don't leak upstream body to client
+    console.error('subscribe_upstream_non_json', { status: upstream.status, ct });
+    return NextResponse.json({ detail: 'payment service temporarily unavailable' }, { status: 502 });
+  } catch (e) {
+    console.error('subscribe_error', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ detail: 'internal server error' }, { status: 500 });
   }
 }
