@@ -42,13 +42,18 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
 };
 
-export function canAccessFeature(user: AuthUser, feature: Feature): boolean {
-  const plan = user.plan as Plan;
-  
-  // Check if plan is expired
+/**
+ * Return the effective plan, downgrading to FREE if the current plan has expired.
+ */
+function effectivePlan(user: AuthUser): Plan {
   if (user.planExpireAt && new Date() > user.planExpireAt) {
-    return plan === Plan.FREE; // Expired users only have FREE features
+    return Plan.FREE;
   }
+  return user.plan as Plan;
+}
+
+export function canAccessFeature(user: AuthUser, feature: Feature): boolean {
+  const plan = effectivePlan(user);
 
   switch (feature) {
     case 'whale_follow':
@@ -71,6 +76,6 @@ export function canAccessFeature(user: AuthUser, feature: Feature): boolean {
 }
 
 export function getLimitValue(user: AuthUser, limit: keyof PlanLimits): number | 'unlimited' {
-  const plan = (user.planExpireAt && new Date() > user.planExpireAt) ? Plan.FREE : user.plan as Plan;
+  const plan = effectivePlan(user);
   return PLAN_LIMITS[plan][limit];
 }

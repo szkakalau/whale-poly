@@ -1,6 +1,7 @@
 import { headers, cookies } from 'next/headers';
 import { prisma } from './prisma';
 import { verifyMiniAppSessionCookie } from './telegramMiniApp';
+import { verifyMobileAccessToken } from './mobileAuth';
 import type { MiniAppSessionPayload } from './telegramMiniApp';
 
 export type AuthUser = {
@@ -11,15 +12,31 @@ export type AuthUser = {
   planExpireAt: Date | null;
 };
 
+/**
+ * Session signing secret. Uses exactly one env var — no fallback chain.
+ * A fallback chain ending in '' means unconfigured deployments have forgeable sessions.
+ */
 function getSessionSecret(): string {
-  return process.env.TELEGRAM_MINIAPP_SECRET || process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
+  const secret = process.env.TELEGRAM_MINIAPP_SECRET || '';
+  if (!secret && process.env.NODE_ENV === 'production') {
+    console.error('FATAL: TELEGRAM_MINIAPP_SECRET is not set — sessions are insecure');
+  }
+  return secret;
 }
 
 async function resolveUserId(): Promise<string | null> {
-  // 1) Gateway-injected header (production reverse proxy).
   const hdrs = await headers();
+
+  // 1) Gateway-injected header (production reverse proxy).
+  //    Only trusted when X-Internal-Secret matches the configured value.
   const gatewayUserId = hdrs.get('x-user-id');
-  if (gatewayUserId) return gatewayUserId;
+  if (gatewayUserId) {
+    const internalSecret = process.env.INTERNAL_GATEWAY_SECRET;
+    if (internalSecret && hdrs.get('x-internal-secret') === internalSecret) {
+      return gatewayUserId;
+    }
+    // Without the internal secret, fall through to cookie/ Bearer auth
+  }
 
   // 2) Telegram Mini App session cookie (primary web auth).
   const secret = getSessionSecret();
@@ -30,6 +47,14 @@ async function resolveUserId(): Promise<string | null> {
       const payload: MiniAppSessionPayload | null = await verifyMiniAppSessionCookie(token, secret);
       if (payload) return payload.uid;
     }
+  }
+
+  // 3) Mobile Bearer token (Android app).
+  const authHeader = hdrs.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    const payload = await verifyMobileAccessToken(token);
+    if (payload?.uid) return payload.uid;
   }
 
   return null;
