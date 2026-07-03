@@ -11,7 +11,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+RUN pip install --no-cache-dir --no-warn-script-location -r requirements.txt
 
 # ── Runner stage ──────────────────────────────────────────────────────────────
 FROM python:3.11-slim
@@ -26,8 +26,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy only installed packages from builder (PF-H14: multi-stage build).
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Global install (without --user) so packages land in /usr/local, readable by non-root user.
+COPY --from=builder /usr/local /usr/local
 
 COPY . .
 
