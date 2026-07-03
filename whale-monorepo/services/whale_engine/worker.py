@@ -2,9 +2,12 @@ import asyncio
 import json
 import logging
 import os
+import signal
 import ssl
+import threading
 
 from celery import Celery
+from celery.signals import worker_ready
 from redis.asyncio import Redis
 
 from services.whale_engine.engine import process_trade_id, recompute_whale_stats
@@ -31,6 +34,64 @@ celery_app.conf.timezone = "UTC"
 celery_app.conf.task_default_queue = "whale_engine"
 celery_app.conf.task_default_exchange = "whale_engine"
 celery_app.conf.task_default_routing_key = "whale_engine"
+celery_app.conf.beat_schedule = {
+    "consume-trade-created": {"task": "services.whale_engine.consume_trade_created", "schedule": 1.0},
+    "recompute-whale-stats": {"task": "services.whale_engine.recompute_whale_stats", "schedule": 300.0},
+    "compute-vw-metrics": {"task": "services.whale_engine.compute_vw_metrics", "schedule": 3600.0},
+    "prune-vw-snapshots": {"task": "services.whale_engine.prune_vw_snapshots", "schedule": 86400.0},
+}
+
+# ── Self-driven consumption loop (bypasses Celery Beat unreliability on Render) ──
+# Beat scheduler in embedded mode (-B) can silently fail to dispatch tasks on
+# Render's ephemeral filesystem.  worker_ready signal ensures consumption starts
+# immediately and keeps running without any Beat dependency.
+
+_consume_stop: threading.Event | None = None
+_consume_thread: threading.Thread | None = None
+
+
+def _run_consume_loop(stop: threading.Event) -> None:
+    """Continuously consume from trade_created queue in a dedicated thread."""
+    logger.info("consume_loop: starting continuous consumption")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    backoff = 0.0
+    while not stop.is_set():
+        try:
+            n = loop.run_until_complete(_consume_once())
+            if n > 0:
+                backoff = 0.0  # reset backoff after successful work
+            elif backoff < 5.0:
+                backoff = min(backoff + 0.1, 5.0)  # gradual backoff when idle
+            if backoff > 0:
+                stop.wait(backoff)
+        except Exception:
+            logger.exception("consume_loop: error in _consume_once")
+            stop.wait(1.0)  # brief pause on error before retry
+    loop.close()
+    logger.info("consume_loop: stopped")
+
+
+@worker_ready.connect
+def _start_consume_loop(sender, **kwargs):
+    """Start the self-driven consumption loop as soon as the worker is ready."""
+    global _consume_stop, _consume_thread
+    if _consume_thread is not None:
+        return  # already running
+    _consume_stop = threading.Event()
+    _consume_thread = threading.Thread(target=_run_consume_loop, args=(_consume_stop,), daemon=True, name="consume-loop")
+    _consume_thread.start()
+    logger.info("worker_ready: started consume loop thread")
+
+
+# Graceful shutdown — stop the consume loop on SIGTERM/SIGINT
+def _stop_consume_loop(*_args):
+    global _consume_stop
+    if _consume_stop is not None:
+        _consume_stop.set()
+
+signal.signal(signal.SIGTERM, _stop_consume_loop)
+signal.signal(signal.SIGINT, _stop_consume_loop)
 
 
 async def _consume_once() -> int:
