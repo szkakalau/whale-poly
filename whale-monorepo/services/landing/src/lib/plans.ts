@@ -45,11 +45,11 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
 /**
  * Return the effective plan, downgrading to FREE if the current plan has expired.
  */
-function effectivePlan(user: AuthUser): Plan {
+export function effectivePlan(user: AuthUser): Plan {
   if (user.planExpireAt && new Date() > user.planExpireAt) {
     return Plan.FREE;
   }
-  return user.plan as Plan;
+  return user.plan;
 }
 
 export function canAccessFeature(user: AuthUser, feature: Feature): boolean {

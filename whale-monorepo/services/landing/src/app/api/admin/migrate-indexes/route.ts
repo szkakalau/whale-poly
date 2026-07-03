@@ -2,11 +2,20 @@
  * One-shot migration endpoint for /analyze DB indexes.
  * Hit once: GET /api/admin/migrate-indexes
  * Safe to call multiple times — uses IF NOT EXISTS.
+ *
+ * Requires x-admin-token header matching ADMIN_TOKEN env var.
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Admin authentication
+  const adminToken = process.env.ADMIN_TOKEN || '';
+  const headerToken = req.headers.get('x-admin-token') || '';
+  if (!adminToken || headerToken !== adminToken) {
+    return NextResponse.json({ detail: 'not_found' }, { status: 404 });
+  }
+
   const results: string[] = [];
 
   try {
@@ -48,7 +57,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, results, indexes: final });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: String(err), results },
+      { ok: false, error: 'migration failed', results },
       { status: 500 },
     );
   }

@@ -256,15 +256,23 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
   if not rows:
     return []
 
+  # Batch upsert markets in a single INSERT instead of N individual queries (PF-M1).
+  market_rows: dict[str, str] = {}
   for r in rows:
     title = r.get("market_title")
-    if not title:
-      continue
-    await session.execute(
-      insert(Market)
-      .values(id=r["market_id"], title=title)
-      .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+    if title and r["market_id"] not in market_rows:
+      market_rows[r["market_id"]] = title
+  if market_rows:
+    # Use pg_insert directly for proper ON CONFLICT DO UPDATE with bulk values.
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    market_stmt = pg_insert(Market).values(
+      [{"id": mid, "title": t} for mid, t in market_rows.items()]
     )
+    market_stmt = market_stmt.on_conflict_do_update(
+      index_elements=[Market.id],
+      set_={"title": market_stmt.excluded.title},
+    )
+    await session.execute(market_stmt)
 
   stmt = (
     insert(TradeRaw)

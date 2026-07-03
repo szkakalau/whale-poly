@@ -18,6 +18,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from services.trade_ingest.markets import ingest_markets
 from services.trade_ingest.polymarket import ingest_trades
+from shared.async_utils import BATCH_RPUSH_SCRIPT as _BATCH_RPUSH, get_or_create_event_loop, run_async
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
@@ -55,16 +56,20 @@ celery_app.conf.beat_schedule = {
 }
 
 
-def _run(coro):
-  try:
-    loop = asyncio.get_event_loop()
-  except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-  if loop.is_closed():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-  return loop.run_until_complete(coro)
+# Lua script: atomically move up to `count` items from source list to
+# destination list.  Uses LMOVE one-at-a-time inside a server-side script
+# so the entire move is atomic.  If the process crashes mid-batch, items
+# remain in <queue>:processing and can be recovered by a sweeper (CR-C2).
+_BATCH_LMOVE = """
+local moved = 0
+local limit = tonumber(ARGV[1])
+for i = 1, limit do
+    local item = redis.call('LMOVE', KEYS[1], KEYS[2], 'LEFT', 'RIGHT')
+    if not item then break end
+    moved = moved + 1
+end
+return moved
+"""
 
 
 def _parse_ts(value: str | None) -> datetime | None:
@@ -112,9 +117,13 @@ async def _cache_trade(redis: Redis, payload: dict) -> None:
   }
   key = f"recent_trades:{wallet}:{market_id}"
   try:
-    await redis.rpush(key, json.dumps(body))
-    await redis.ltrim(key, -settings.recent_trades_cache_max, -1)
-    await redis.expire(key, settings.recent_trades_cache_seconds)
+    # Batch RPUSH + LTRIM + EXPIRE into a single pipeline to save
+    # two network round-trips per cache write (PF-M6).
+    async with redis.pipeline(transaction=True) as pipe:
+      pipe.rpush(key, json.dumps(body))
+      pipe.ltrim(key, -settings.recent_trades_cache_max, -1)
+      pipe.expire(key, settings.recent_trades_cache_seconds)
+      await pipe.execute()
   except Exception:
     logger.debug("cache_trade_failed trade_id=%s", payload.get("trade_id"), exc_info=True)
 
@@ -344,26 +353,28 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
 
 
 async def _ensure_blog_posts_table(session) -> None:
-  await session.execute(
-    text(
-      """
-      create table if not exists blog_posts (
-        id text primary key,
-        slug text unique not null,
-        title text not null,
-        excerpt text not null,
-        content text not null,
-        author text not null,
-        read_time text not null,
-        cover_image text,
-        tags text[] default '{}',
-        published_at timestamptz not null,
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now()
-      )
-      """
+    """Create blog_posts table if missing — unified schema with api.py (CR-I6)."""
+    await session.execute(
+        text(
+            """
+            create table if not exists blog_posts (
+                id text primary key, slug text not null, title text not null,
+                excerpt text not null, content text not null, author text not null,
+                read_time text not null, cover_image text, tags text[] default '{}',
+                published_at timestamptz not null, created_at timestamptz not null default now(),
+                updated_at timestamptz not null default now(),
+                language text not null default 'en', group_slug text,
+                status text not null default 'published'
+            )
+            """
+        )
     )
-  )
+    try:
+        await session.execute(
+            text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
+        )
+    except Exception:
+        pass
 
 
 async def _upsert_blog_post(session, post: dict) -> None:
@@ -614,7 +625,7 @@ def ingest_markets_task() -> int:
       await session.commit()
     return n
 
-  return _run(runner())
+  return run_async(runner())
 
 
 @celery_app.task(name="services.trade_ingest.ingest_trades", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
@@ -648,13 +659,17 @@ def ingest_trades_task() -> int:
             )
 
       if trade_ids:
-        await redis.rpush(settings.trade_created_queue, *[json.dumps({"trade_id": tid}) for tid in trade_ids])
+        # Batch RPUSH in chunks of 50 to avoid Redis protocol limits (CR-I4).
+        messages = [json.dumps({"trade_id": tid}) for tid in trade_ids]
+        for i in range(0, len(messages), 50):
+          chunk = messages[i:i + 50]
+          await redis.eval(_BATCH_RPUSH, 1, settings.trade_created_queue, *chunk)
       return len(trade_ids)
     finally:
       await redis.aclose()
 
   try:
-    return _run(runner())
+    return run_async(runner())
   except Exception:
     logger.exception("ingest_trades_failed")
     return 0
@@ -663,16 +678,30 @@ def ingest_trades_task() -> int:
 async def _consume_incoming_trades_once() -> int:
   started = time.monotonic()
   redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  processing_key = f"{settings.trade_ingest_incoming_queue}:processing"
   try:
-    first = await redis.lpop(settings.trade_ingest_incoming_queue)
-    if not first:
+    # Recover any orphaned items from a previous crash (CR-C2).
+    # If the process died after moving items to :processing but before
+    # committing them, re-queue them back to the incoming queue.
+    orphaned = await redis.lrange(processing_key, 0, -1)
+    if orphaned:
+      logger.warning("recovering_orphaned_processing_items count=%s", len(orphaned))
+      for i in range(0, len(orphaned), 50):
+        chunk = orphaned[i:i + 50]
+        await redis.eval(_BATCH_RPUSH, 1, settings.trade_ingest_incoming_queue, *chunk)
+      await redis.delete(processing_key)
+
+    # Atomically move batch from incoming → processing (CR-C2).
+    # Items in `:processing` survive a process crash and can be
+    # recovered by a sweeper or re-processed on next iteration.
+    batch_size = max(1, settings.trade_ingest_batch_size)
+    moved = await redis.eval(_BATCH_LMOVE, 2, settings.trade_ingest_incoming_queue, processing_key, batch_size)
+    if moved == 0:
       return 0
-    raws = [first]
-    for _ in range(max(0, settings.trade_ingest_batch_size - 1)):
-      nxt = await redis.lpop(settings.trade_ingest_incoming_queue)
-      if not nxt:
-        break
-      raws.append(nxt)
+
+    raws = await redis.lrange(processing_key, 0, -1)
+    if not raws:
+      return 0
 
     payloads: list[dict] = []
     market_titles: dict[str, str] = {}
@@ -756,6 +785,11 @@ async def _consume_incoming_trades_once() -> int:
         if p["trade_id"] in inserted_set:
           await _cache_trade(redis, p)
 
+    # Delete the processing list — items have been successfully committed.
+    # If we crash before this line, items remain in :processing and will be
+    # recovered by the next iteration or a sweeper.
+    await redis.delete(processing_key)
+
     elapsed_ms = int((time.monotonic() - started) * 1000)
     logger.info("metric_trade_ingest_batch received=%s inserted=%s ms=%s", len(payloads), len(inserted), elapsed_ms)
     return len(inserted)
@@ -766,7 +800,7 @@ async def _consume_incoming_trades_once() -> int:
 @celery_app.task(name="services.trade_ingest.consume_incoming_trades", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def consume_incoming_trades_task() -> int:
   try:
-    return _run(_consume_incoming_trades_once())
+    return run_async(_consume_incoming_trades_once())
   except Exception:
     logger.exception("consume_incoming_trades_failed")
     return 0
@@ -775,7 +809,7 @@ def consume_incoming_trades_task() -> int:
 @celery_app.task(name="services.trade_ingest.health_check", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def health_check_task() -> dict:
   try:
-    return _run(run_full_health_check())
+    return run_async(run_full_health_check())
   except Exception:
     logger.exception("health_check_failed")
     return {"status": "error"}
@@ -784,13 +818,23 @@ def health_check_task() -> dict:
 @celery_app.task(name="services.trade_ingest.rebuild_smart_collections", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def rebuild_smart_collections_task() -> int:
   async def runner():
-    async with SessionLocal() as session:
-      n = await rebuild_smart_collections(session)
-      await session.commit()
-    return n
+    # Distributed lock to prevent concurrent rebuilds across worker instances (CR-I3).
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    try:
+      lock_acquired = await redis.set("lock:rebuild_smart_collections", "1", ex=600, nx=True)
+      if not lock_acquired:
+        logger.info("rebuild_smart_collections_skipped — lock held by another instance")
+        return 0
+      async with SessionLocal() as session:
+        n = await rebuild_smart_collections(session)
+        await session.commit()
+      return n
+    finally:
+      await redis.delete("lock:rebuild_smart_collections")
+      await redis.aclose()
 
   try:
-    return _run(runner())
+    return run_async(runner())
   except Exception:
     logger.exception("rebuild_smart_collections_failed")
     return 0
@@ -799,7 +843,7 @@ def rebuild_smart_collections_task() -> int:
 @celery_app.task(name="services.trade_ingest.daily_spotlight", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def daily_spotlight_task() -> dict:
   try:
-    return _run(run_daily_spotlight())
+    return run_async(run_daily_spotlight())
   except Exception:
     logger.exception("daily_spotlight_failed")
     return {"status": "error"}
@@ -808,7 +852,7 @@ def daily_spotlight_task() -> dict:
 @celery_app.task(name="services.trade_ingest.generate_daily_article", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def generate_daily_article_task() -> dict:
   try:
-    return _run(generate_daily_article())
+    return run_async(generate_daily_article())
   except Exception:
     logger.exception("generate_daily_article_failed")
     return {"status": "error"}
@@ -822,7 +866,7 @@ def ingest_smart_money_leaderboard_task() -> int:
       await session.commit()
     return n
   try:
-    return _run(runner())
+    return run_async(runner())
   except Exception:
     logger.exception("ingest_smart_money_leaderboard_failed")
     return 0

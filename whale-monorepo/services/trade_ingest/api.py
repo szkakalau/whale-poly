@@ -1,7 +1,10 @@
+import hmac
 import json
+import logging
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, Header
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Header, Query
 from pydantic import AliasChoices, BaseModel, Field
 from redis.asyncio import Redis
 from shared.config import settings
@@ -9,8 +12,63 @@ from shared.logging import configure_logging
 
 
 configure_logging(settings.log_level)
+logger = logging.getLogger("trade_ingest.api")
 
-app = FastAPI(title="trade-ingest")
+# Module-level Redis connection pool — reused across requests instead of
+# creating a new connection per POST /ingest/trade call (CR-C1).
+_redis: Redis | None = None
+
+
+async def _get_redis() -> Redis:
+    global _redis
+    if _redis is None:
+        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+async def _ensure_blog_posts_table(session) -> None:
+    """Create blog_posts table and index at startup — NOT in the request path (CR-C6)."""
+    await session.execute(
+        text(
+            """create table if not exists blog_posts (
+                id text primary key, slug text not null, title text not null,
+                excerpt text not null, content text not null, author text not null,
+                read_time text not null, cover_image text, tags text[] default '{}',
+                published_at timestamptz not null, created_at timestamptz not null default now(),
+                updated_at timestamptz not null default now(),
+                language text not null default 'en', group_slug text,
+                status text not null default 'published'
+            )"""
+        )
+    )
+    try:
+        await session.execute(
+            text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
+        )
+    except Exception:
+        pass  # index may already exist from parallel startup
+    await session.commit()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup: connect Redis + ensure blog_posts table (CR-C1, CR-C6)."""
+    global _redis
+    _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    async with SessionLocal() as session:
+        await _ensure_blog_posts_table(session)
+    try:
+        yield
+    finally:
+        if _redis is not None:
+            await _redis.aclose()
+            _redis = None
+
+
+app = FastAPI(title="trade-ingest", lifespan=lifespan)
+
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
 
 
 class TradeIn(BaseModel):
@@ -48,7 +106,11 @@ async def root():
 
 
 @app.post("/ingest/trade")
-async def ingest_trade(payload: TradeIn):
+async def ingest_trade(payload: TradeIn, x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  # 防止未认证的队列投毒攻击
+  from shared.auth import require_admin as _require_admin
+  _require_admin(x_admin_token)
+
   ts = payload.timestamp or datetime.now(timezone.utc)
   if ts.tzinfo is None:
     ts = ts.replace(tzinfo=timezone.utc)
@@ -56,26 +118,32 @@ async def ingest_trade(payload: TradeIn):
   if outcome is not None and not str(outcome).strip():
     outcome = None
 
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  # Reuse module-level Redis connection pool (CR-C1).
+  redis = await _get_redis()
+  queue_key = settings.trade_ingest_incoming_queue
+  await redis.rpush(
+    queue_key,
+    json.dumps(
+      {
+        "trade_id": payload.trade_id,
+        "market_id": payload.market_id,
+        "market_title": payload.market_title,
+        "outcome": outcome,
+        "wallet": payload.wallet.lower(),
+        "side": payload.side.lower(),
+        "amount": payload.amount,
+        "price": payload.price,
+        "timestamp": ts.isoformat(),
+      }
+    ),
+  )
+  # 队列大小监控：防止消费者故障时无限制增长导致 Redis OOM
   try:
-    await redis.rpush(
-      settings.trade_ingest_incoming_queue,
-      json.dumps(
-        {
-          "trade_id": payload.trade_id,
-          "market_id": payload.market_id,
-          "market_title": payload.market_title,
-          "outcome": outcome,
-          "wallet": payload.wallet.lower(),
-          "side": payload.side.lower(),
-          "amount": payload.amount,
-          "price": payload.price,
-          "timestamp": ts.isoformat(),
-        }
-      ),
-    )
-  finally:
-    await redis.aclose()
+    qlen = await redis.llen(queue_key)
+    if qlen > 100_000:
+      logger.warning("trade_ingest_queue_overflow qlen=%d queue=%s", qlen, queue_key)
+  except Exception:
+    pass
 
   return {"ok": True, "queued": True}
 
@@ -336,7 +404,13 @@ def _format_short_wallet(addr: str | None) -> str:
 async def blog_posts(language: str = "en", page: int = 1, limit: int = 12, tag: str = ""):
     """Public blog post listing. Called by Vercel landing page."""
     offset = (page - 1) * limit
-    tag_where = f"and '{tag}' = any(tags)" if tag else ""
+
+    # Build parameterized query (CR-C7 — no f-string SQL interpolation).
+    params: dict = {"lang": language, "lim": limit, "off": offset}
+    tag_filter = ""
+    if tag:
+        tag_filter = "and :tag = any(tags)"
+        params["tag"] = tag
 
     async with SessionLocal() as session:
         posts_result = await session.execute(
@@ -344,20 +418,27 @@ async def blog_posts(language: str = "en", page: int = 1, limit: int = 12, tag: 
                 f"""select slug, title, excerpt, author, read_time, tags,
                            published_at, language, group_slug
                     from blog_posts
-                    where status = 'published' and language = '{language}'
-                    {tag_where}
+                    where status = 'published' and language = :lang
+                    {tag_filter}
                     order by published_at desc
-                    limit {limit} offset {offset}"""
-            )
+                    limit :lim offset :off"""
+            ),
+            params,
         )
         posts = [dict(r._mapping) for r in posts_result]
 
+        count_params = {"lang": language}
+        count_tag_filter = ""
+        if tag:
+            count_tag_filter = "and :tag = any(tags)"
+            count_params["tag"] = tag
         count_result = await session.execute(
             text(
                 f"""select count(*) as count from blog_posts
-                    where status = 'published' and language = '{language}'
-                    {tag_where}"""
-            )
+                    where status = 'published' and language = :lang
+                    {count_tag_filter}"""
+            ),
+            count_params,
         )
         total = count_result.scalar() or 0
 
@@ -425,11 +506,12 @@ async def blog_tags(language: str = "en"):
     async with SessionLocal() as session:
         result = await session.execute(
             text(
-                f"""select unnest(tags) as tag, count(*)::int as count
+                """select unnest(tags) as tag, count(*)::int as count
                     from blog_posts
-                    where status = 'published' and language = '{language}'
+                    where status = 'published' and language = :lang
                     group by tag order by count desc, tag"""
-            )
+            ),
+            {"lang": language},
         )
         tags = [dict(r._mapping) for r in result]
     return {"tags": tags}
@@ -455,34 +537,15 @@ async def blog_post_create(payload: BlogPostIn, x_admin_key: str = Header(defaul
 
     if not settings.blog_llm_api_key:
         return {"error": "not configured"}
-    if x_admin_key != settings.blog_llm_api_key:
+    if not hmac.compare_digest(x_admin_key, settings.blog_llm_api_key):
         return {"error": "unauthorized"}
 
     now_utc = datetime.now(timezone.utc)
     post_id = str(uuid.uuid4())
 
+    # Table + index are created at startup via lifespan (CR-C6).
+    # No DDL in the request path.
     async with SessionLocal() as session:
-        await session.execute(
-            text(
-                """create table if not exists blog_posts (
-                    id text primary key, slug text not null, title text not null,
-                    excerpt text not null, content text not null, author text not null,
-                    read_time text not null, cover_image text, tags text[] default '{}',
-                    published_at timestamptz not null, created_at timestamptz not null default now(),
-                    updated_at timestamptz not null default now(),
-                    language text not null default 'en', group_slug text,
-                    status text not null default 'published'
-                )"""
-            )
-        )
-        try:
-            await session.execute(
-                text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
-            )
-        except Exception:
-            pass
-        await session.commit()
-
         await session.execute(
             text(
                 """insert into blog_posts (id, slug, title, excerpt, content, author, read_time, tags, published_at, created_at, updated_at, language, group_slug, status)
@@ -519,7 +582,7 @@ async def blog_post_delete(slug: str, language: str = "en", x_admin_key: str = H
     """Admin endpoint: delete a blog post. Requires BLOG_LLM_API_KEY."""
     if not settings.blog_llm_api_key:
         return {"error": "not configured"}
-    if x_admin_key != settings.blog_llm_api_key:
+    if not hmac.compare_digest(x_admin_key, settings.blog_llm_api_key):
         return {"error": "unauthorized"}
 
     async with SessionLocal() as session:
@@ -550,34 +613,48 @@ async def home_stats():
         stmt = select(func.count()).select_from(Alert)
         total = (await session.execute(stmt)).scalar() or 0
 
-        # ── Score tier breakdown: count alerts per whale_score range ──
-        #     Win rate & ROI from whale_trade_history (resolved signals only)
+        # ── Score tier breakdown: single query with FILTER instead of 4 separate
+        #     full scans joining alerts + whale_trades + whale_trade_history (PF-H1).
+        tier_result = await session.execute(
+            text("""SELECT
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :elite_lo AND :elite_hi)::int AS elite_cnt,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :elite_lo AND :elite_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS elite_resolved,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :elite_lo AND :elite_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS elite_wins,
+                AVG(CASE WHEN a.whale_score BETWEEN :elite_lo AND :elite_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0 THEN wth.pnl::float / wth.trade_usd::float END) AS elite_avg_roi,
+
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :high_lo AND :high_hi)::int AS high_cnt,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :high_lo AND :high_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS high_resolved,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :high_lo AND :high_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS high_wins,
+                AVG(CASE WHEN a.whale_score BETWEEN :high_lo AND :high_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0 THEN wth.pnl::float / wth.trade_usd::float END) AS high_avg_roi,
+
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :med_lo AND :med_hi)::int AS med_cnt,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :med_lo AND :med_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS med_resolved,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :med_lo AND :med_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS med_wins,
+                AVG(CASE WHEN a.whale_score BETWEEN :med_lo AND :med_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0 THEN wth.pnl::float / wth.trade_usd::float END) AS med_avg_roi,
+
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :base_lo AND :base_hi)::int AS base_cnt,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :base_lo AND :base_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS base_resolved,
+                COUNT(*) FILTER (WHERE a.whale_score BETWEEN :base_lo AND :base_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS base_wins,
+                AVG(CASE WHEN a.whale_score BETWEEN :base_lo AND :base_hi AND wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0 THEN wth.pnl::float / wth.trade_usd::float END) AS base_avg_roi
+            FROM alerts a
+            JOIN whale_trades wt ON wt.id = a.whale_trade_id
+            LEFT JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id"""),
+            {
+                "elite_lo": 90, "elite_hi": 100,
+                "high_lo": 80, "high_hi": 89,
+                "med_lo": 70, "med_hi": 79,
+                "base_lo": 0, "base_hi": 69,
+            }
+        )
+        row = tier_result.first()
         tiers = []
-        for min_s, max_s, label in [
-            (90, 100, "Elite conviction"),
-            (80, 89, "High conviction"),
-            (70, 79, "Medium conviction"),
-            (0, 69, "Baseline"),
-        ]:
-            r2 = await session.execute(
-                text(f"""SELECT
-                    COUNT(*)::int AS cnt,
-                    COUNT(*) FILTER (WHERE wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01)::int AS resolved,
-                    COUNT(*) FILTER (WHERE wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.pnl::float > 0)::int AS wins,
-                    AVG(CASE WHEN wth.pnl IS NOT NULL AND ABS(wth.pnl::float) >= 0.01 AND wth.trade_usd::float > 0
-                        THEN wth.pnl::float / wth.trade_usd::float END) AS avg_roi
-                FROM alerts a
-                JOIN whale_trades wt ON wt.id = a.whale_trade_id
-                LEFT JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id
-                WHERE a.whale_score >= {min_s} AND a.whale_score <= {max_s}""")
-            )
-            r = r2.first()
-            cnt = int(r.cnt) if r and r.cnt else 0
-            resolved = int(r.resolved) if r and r.resolved else 0
-            wins = int(r.wins) if r and r.wins else 0
-            avg_roi = float(r.avg_roi) if r and r.avg_roi is not None else None
+        for prefix, label in [("elite", "Elite conviction"), ("high", "High conviction"), ("med", "Medium conviction"), ("base", "Baseline")]:
+            cnt = int(getattr(row, f"{prefix}_cnt", 0) or 0)
+            resolved = int(getattr(row, f"{prefix}_resolved", 0) or 0)
+            wins = int(getattr(row, f"{prefix}_wins", 0) or 0)
+            avg_roi = float(getattr(row, f"{prefix}_avg_roi", 0)) if getattr(row, f"{prefix}_avg_roi", None) is not None else None
             tiers.append({
-                "tier": f"{min_s}–{max_s}",
+                "tier": prefix,
                 "labelName": label,
                 "count": cnt,
                 "resolvedCount": resolved,
@@ -626,8 +703,20 @@ async def home_stats():
 @app.get("/stats/pricing")
 async def pricing_stats():
     """Stats for the pricing page value anchor."""
+    import json
     from shared.models import Alert, WhaleProfile
     from sqlalchemy import func, select
+
+    CACHE_KEY = "stats:pricing"
+    CACHE_TTL = 300  # 5 minutes (PF-M5)
+
+    redis = await _get_redis()
+    try:
+        cached = await redis.get(CACHE_KEY)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        pass  # Redis miss or error — fall through to DB
 
     async with SessionLocal() as session:
         # Signal count
@@ -637,20 +726,27 @@ async def pricing_stats():
         avg_size_stmt = select(func.avg(WhaleProfile.total_volume / func.nullif(WhaleProfile.total_trades, 0)))
         avg_size = (await session.execute(avg_size_stmt)).scalar()
 
-    return {
+    result = {
         "total": total,
         "avgSize": float(avg_size) if avg_size else None,
     }
 
+    try:
+        await redis.set(CACHE_KEY, json.dumps(result), ex=CACHE_TTL)
+    except Exception:
+        logger.debug("pricing_stats_cache_write_failed", exc_info=True)
+
+    return result
+
 
 @app.get("/history")
-async def history_signals(limit: int = 500):
+async def history_signals(limit: int = Query(500, ge=1, le=1000)):
     """Public history page data with PnL from whale_trade_history + Gamma enrichment."""
     from sqlalchemy import text
     async with SessionLocal() as session:
         result = await session.execute(
             text(
-                f"""SELECT a.id, a.created_at, a.whale_score::int AS whale_score,
+                """SELECT a.id, a.created_at, a.whale_score::int AS whale_score,
                           tr.price::float AS price, tr.side, tr.outcome,
                           tr.amount::float AS amount,
                           COALESCE(NULLIF(TRIM(tr.wallet), ''), a.wallet_address) AS wallet,
@@ -673,8 +769,9 @@ async def history_signals(limit: int = 500):
                    LEFT JOIN markets m ON m.id = a.market_id
                    LEFT JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id
                    ORDER BY a.created_at DESC
-                   LIMIT {int(limit)}"""
-            )
+                   LIMIT :limit"""
+            ),
+            {"limit": limit},
         )
         rows = result.all()
 
@@ -801,12 +898,11 @@ async def market_whale_trades(slug: str, hours: int = 24, minSize: int = 0):
 
     lookback_hours = max(1, min(hours, 168))  # clamp 1–168
     min_size = max(0, min(minSize, 1_000_000))  # clamp 0–1M
-    safe_slug = slug.replace("'", "''")  # escape single quotes
-    pattern = f"%{safe_slug}%"
+    pattern = f"%{slug}%"  # wildcards for ILIKE (safe: only used as bound parameter)
     async with SessionLocal() as session:
         result = await session.execute(
             text(
-                f"""SELECT
+                """SELECT
                       wt.wallet_address,
                       wt.created_at,
                       COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market,
@@ -816,14 +912,15 @@ async def market_whale_trades(slug: str, hours: int = 24, minSize: int = 0):
                     FROM whale_trades wt
                     INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
                     WHERE (
-                      wt.market_id ILIKE '{pattern}'
-                      OR tr.market_title ILIKE '{pattern}'
+                      wt.market_id ILIKE :pattern
+                      OR tr.market_title ILIKE :pattern
                     )
-                    AND (tr.amount::numeric * tr.price::numeric) >= {min_size}
-                    AND wt.created_at >= NOW() - INTERVAL '{lookback_hours} hours'
+                    AND (tr.amount::numeric * tr.price::numeric) >= :min_size
+                    AND wt.created_at >= NOW() - INTERVAL '1 hour' * :lookback_hours
                     ORDER BY wt.created_at DESC NULLS LAST
                     LIMIT 100"""
-            )
+            ),
+            {"pattern": pattern, "min_size": min_size, "lookback_hours": lookback_hours},
         )
         rows = result.all()
 

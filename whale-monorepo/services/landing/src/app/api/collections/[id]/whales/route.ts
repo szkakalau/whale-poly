@@ -55,29 +55,33 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ detail: 'wallet_required' }, { status: 400 });
   }
 
-  // Check whale limit per collection
-  const currentCount = await prisma.collectionWhale.count({
-    where: { collectionId: col.id },
-  });
-
-  const MAX_WHALES_PER_COLLECTION = 10; // Simple limit
-  if (currentCount >= MAX_WHALES_PER_COLLECTION) {
-    return NextResponse.json({ detail: 'collection_limit_reached' }, { status: 403 });
-  }
-
-  const created = await prisma.collectionWhale.upsert({
-    where: {
-      collection_wallet_unique: {
+  // Atomic count-check + upsert to prevent TOCTOU limit bypass.
+  const MAX_WHALES_PER_COLLECTION = 10;
+  const created = await prisma.$transaction(async (tx) => {
+    const currentCount = await tx.collectionWhale.count({
+      where: { collectionId: col.id },
+    });
+    if (currentCount >= MAX_WHALES_PER_COLLECTION) {
+      return null;
+    }
+    return tx.collectionWhale.upsert({
+      where: {
+        collection_wallet_unique: {
+          collectionId: col.id,
+          wallet: normalized,
+        },
+      },
+      update: {},
+      create: {
         collectionId: col.id,
         wallet: normalized,
       },
-    },
-    update: {},
-    create: {
-      collectionId: col.id,
-      wallet: normalized,
-    },
+    });
   });
+
+  if (created === null) {
+    return NextResponse.json({ detail: 'collection_limit_reached' }, { status: 403 });
+  }
 
   return NextResponse.json({
     wallet: created.wallet,

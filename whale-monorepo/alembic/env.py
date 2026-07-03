@@ -1,35 +1,22 @@
 import asyncio
-import os
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from dotenv import load_dotenv
 
+from shared.config import settings
 from shared.models import Base
 
-load_dotenv()
+# settings already calls load_dotenv() at module level
 
 config = context.config
 target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-  url = os.getenv("DATABASE_URL")
-  if not url:
-    raise RuntimeError("DATABASE_URL is required")
-  if url.startswith("postgres://"):
-    url = "postgresql+asyncpg://" + url[len("postgres://") :]
-  if url.startswith("postgresql://"):
-    url = "postgresql+asyncpg://" + url[len("postgresql://") :]
-  if "+asyncpg" in url and "sslmode=" in url:
-    url = url.replace("sslmode=require", "ssl=require")
-    url = url.replace("sslmode=verify-full", "ssl=verify-full")
-    url = url.replace("sslmode=verify-ca", "ssl=verify-ca")
-  if url.startswith("sqlite:///"):
-    url = "sqlite+aiosqlite:///" + url[len("sqlite:///") :]
-  return url
+  """Return the normalized database URL from shared settings."""
+  return settings.database_url
 
 
 def run_migrations_offline() -> None:

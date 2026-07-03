@@ -23,9 +23,20 @@ _HAS_WHALE_PROFILES_TABLE: bool | None = None
 _HAS_WHALE_TRADE_HISTORY_TABLE: bool | None = None
 _HAS_WHALE_STATS_TABLE: bool | None = None
 
+# Timestamp of the last schema check — used to periodically re-validate
+# DDL flags after migrations (PF-L4).
+_SCHEMA_FLAGS_CHECKED_AT: float = 0.0
+_SCHEMA_FLAGS_TTL_SECONDS = 300  # re-check every 5 minutes
+
 
 async def _ensure_schema_flags(session: AsyncSession) -> tuple[bool, bool, bool, bool, bool]:
   global _HAS_WHALE_POSITIONS_TABLE, _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN, _HAS_WHALE_PROFILES_TABLE, _HAS_WHALE_TRADE_HISTORY_TABLE, _HAS_WHALE_STATS_TABLE
+  global _SCHEMA_FLAGS_CHECKED_AT
+
+  import time
+  now = time.monotonic()
+  if _HAS_WHALE_POSITIONS_TABLE is not None and (now - _SCHEMA_FLAGS_CHECKED_AT) < _SCHEMA_FLAGS_TTL_SECONDS:
+    return _HAS_WHALE_POSITIONS_TABLE, _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN, _HAS_WHALE_PROFILES_TABLE, _HAS_WHALE_TRADE_HISTORY_TABLE, _HAS_WHALE_STATS_TABLE
 
   if _HAS_WHALE_POSITIONS_TABLE is None:
     def check_tables(conn):
@@ -36,8 +47,8 @@ async def _ensure_schema_flags(session: AsyncSession) -> tuple[bool, bool, bool,
       has_hist = "whale_trade_history" in tables
       has_stats = "whale_stats" in tables
       
-      print(f"DEBUG: Schema Check - tables={tables}")
-      print(f"DEBUG: Schema Check - has_hist={has_hist}, has_stats={has_stats}")
+      logger.debug("Schema Check - tables=%s", tables)
+      logger.debug("Schema Check - has_hist=%s has_stats=%s", has_hist, has_stats)
       
       has_action = False
       if "whale_trades" in tables:
@@ -61,6 +72,7 @@ async def _ensure_schema_flags(session: AsyncSession) -> tuple[bool, bool, bool,
       _HAS_WHALE_TRADE_HISTORY_TABLE = False
       _HAS_WHALE_STATS_TABLE = False
 
+  _SCHEMA_FLAGS_CHECKED_AT = time.monotonic()
   return _HAS_WHALE_POSITIONS_TABLE, _HAS_WHALE_TRADES_ACTION_TYPE_COLUMN, _HAS_WHALE_PROFILES_TABLE, _HAS_WHALE_TRADE_HISTORY_TABLE, _HAS_WHALE_STATS_TABLE
 
 
@@ -110,11 +122,13 @@ async def _load_recent_trades(redis: Redis, wallet: str, market_id: str) -> list
     try:
       data = json.loads(raw)
     except Exception:
+      logger.debug("_load_recent_trades json parse failed")
       continue
     ts_raw = data.get("timestamp")
     try:
       ts = datetime.fromisoformat(ts_raw)
     except Exception:
+      logger.debug("_load_recent_trades timestamp parse failed raw=%s", ts_raw)
       continue
     if ts.tzinfo is None:
       ts = ts.replace(tzinfo=timezone.utc)
@@ -249,7 +263,7 @@ def detect_behavior(micro_trades: list[TradeRaw], macro_trades: list[TradeRaw], 
   return (None, 0, 0.0, 0.0, None)
 
 
-async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -> bool:
+async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -> tuple[bool, dict | None]:
   trade = (await session.execute(select(TradeRaw).where(TradeRaw.trade_id == trade_id))).scalars().first()
   if not trade:
     logger.warning(f"trade_not_found trade_id={trade_id}")
@@ -269,24 +283,28 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   trade_usd = _usd(trade)
   score_key = f"trade_score:{trade_id}"
   cached_trade_score = await redis.get(score_key)
+  cache_wallet_score = False
   if cached_trade_score is not None:
     try:
       score = int(float(cached_trade_score))
     except Exception:
+      logger.debug("trade_score parse failed wallet=%s cached=%s", wallet, cached_trade_score)
       score = await _get_whale_score(session, wallet)
+      cache_wallet_score = True
   else:
     cached_wallet_score = await redis.get(f"whale_score:{wallet}")
     if cached_wallet_score is not None:
       try:
         score = int(float(cached_wallet_score))
       except Exception:
+        logger.debug("wallet_score parse failed wallet=%s cached=%s", wallet, cached_wallet_score)
         score = await _get_whale_score(session, wallet)
+        cache_wallet_score = True
     else:
       score = await _get_whale_score(session, wallet)
-      await redis.set(f"whale_score:{wallet}", str(score), ex=settings.whale_score_cache_seconds)
-    await redis.set(score_key, str(score), ex=settings.trade_score_cache_seconds)
+      cache_wallet_score = True
   if "SniperWhale009" in wallet:
-      print(f"DEBUG: Wallet {wallet} score={score} trade_usd={trade_usd}")
+      logger.debug("Wallet %s score=%s trade_usd=%s", wallet, score, trade_usd)
 
   await session.execute(
     insert(WhaleScore)
@@ -338,8 +356,8 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   low_signal = (not high_signal) and (score >= low_score and trade_usd >= low_usd)
   qualifies = high_signal or low_signal
   if "SniperWhale009" in wallet:
-      print(f"DEBUG: Wallet {wallet} qualifies={qualifies} (score={score}, trade_usd={trade_usd})")
-      print(f"DEBUG: has_trade_history={has_trade_history}")
+      logger.debug("Wallet %s qualifies=%s (score=%s, trade_usd=%s)", wallet, qualifies, score, trade_usd)
+      logger.debug("has_trade_history=%s", has_trade_history)
 
   if not qualifies:
     return False
@@ -402,9 +420,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
         .on_conflict_do_nothing(index_elements=[WhaleTradeHistory.trade_id])
       )
     except Exception as e:
-      print(f"DEBUG: Error inserting WhaleTradeHistory: {e}")
-      import traceback
-      traceback.print_exc()
+      logger.exception("insert_whale_trade_history_failed")
       pass
 
   wt_id = _id(trade_id)
@@ -453,29 +469,39 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
           )
         )
       except Exception:
-        pass
-    await redis.rpush(
-      settings.whale_trade_created_queue,
-      json.dumps(
-        {
-          "whale_trade_id": wt_id,
-          "trade_id": trade_id,
-          "market_id": trade.market_id,
-          "wallet_address": wallet,
-          "whale_score": score,
-          "action_type": action_type,
-          "behavior": behavior,
-          "outcome": trade.outcome,
-          "side": event_side,
-          "amount": event_amount,
-          "price": event_price,
-          "trade_usd": event_trade_usd,
-          "signal_level": signal_level,
-          "created_at": now.isoformat(),
-        }
-      ),
-    )
-  return created
+        logger.exception("whale_profile_upsert_failed wallet=%s trade_id=%s pnl=%s", wallet, trade_id, realized_pnl)
+  # Write Redis score caches AFTER DB operations succeed.
+  # Writing before commit risks stale cache entries if the transaction
+  # is rolled back — subsequent lookups would trust a score for a trade
+  # that was never persisted.
+  if cache_wallet_score:
+      await redis.set(f"whale_score:{wallet}", str(score), ex=settings.whale_score_cache_seconds)
+  if cached_trade_score is None:
+      await redis.set(score_key, str(score), ex=settings.trade_score_cache_seconds)
+
+  # Build event payload but do NOT push to Redis here (CR-C3).
+  # The caller must commit the DB transaction first, then push.
+  # Pushing before commit creates orphan queue messages if the
+  # transaction rolls back.
+  event = None
+  if created:
+    event = {
+      "whale_trade_id": wt_id,
+      "trade_id": trade_id,
+      "market_id": trade.market_id,
+      "wallet_address": wallet,
+      "whale_score": score,
+      "action_type": action_type,
+      "behavior": behavior,
+      "outcome": trade.outcome,
+      "side": event_side,
+      "amount": event_amount,
+      "price": event_price,
+      "trade_usd": event_trade_usd,
+      "signal_level": signal_level,
+      "created_at": now.isoformat(),
+    }
+  return created, event
 
 
 @dataclass(frozen=True)
@@ -510,6 +536,7 @@ def _safe_float(x: object, default: float = 0.0) -> float:
     if math.isfinite(v):
       return v
   except Exception:
+    logger.debug("_safe_float parse failed x=%s", x)
     pass
   return float(default)
 
@@ -518,6 +545,7 @@ def _safe_int(x: object, default: int = 0) -> int:
   try:
     return int(x)  # type: ignore[arg-type]
   except Exception:
+    logger.debug("_safe_int parse failed x=%s", x)
     return int(default)
 
 
@@ -684,7 +712,7 @@ def _combine_window_metrics(m7: _WindowMetrics | None, m30: _WindowMetrics | Non
 
 
 async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade_cap: int) -> dict[str, _WindowMetrics]:
-  raw_limit = int(os.getenv("WHALE_STATS_RAW_TRADE_CAP", "0"))
+  raw_limit = int(os.getenv("WHALE_STATS_RAW_TRADE_CAP", "100000"))
   tr_query = (
     select(TradeRaw.trade_id, TradeRaw.market_id, TradeRaw.price, TradeRaw.amount, TradeRaw.timestamp)
     .where(TradeRaw.timestamp >= since)
@@ -717,7 +745,7 @@ async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade
         p = 0.5
       trade_percentiles[tid] = p
 
-  history_limit = int(os.getenv("WHALE_STATS_HISTORY_CAP", "0"))
+  history_limit = int(os.getenv("WHALE_STATS_HISTORY_CAP", "100000"))
   wth_query = (
     select(WhaleTradeHistory)
     .where(WhaleTradeHistory.timestamp >= since)
@@ -837,12 +865,19 @@ async def _fetch_window_metrics(session: AsyncSession, *, since: datetime, trade
 
 
 async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -> int:
+  """Recompute whale stats for all wallets with recent trading activity.
+
+  Memory safety (CR-I8): set WHALE_STATS_MAX_WALLETS to cap the number of
+  wallets processed per run.  Also tune WHALE_STATS_RAW_TRADE_CAP and
+  WHALE_STATS_HISTORY_CAP to bound the raw trade data loaded into memory.
+  """
   now = datetime.now(timezone.utc)
   _, _, _, has_trade_history, has_stats = await _ensure_schema_flags(session)
   if not has_trade_history or not has_stats:
     return 0
 
   trade_cap = int(os.getenv("WHALE_STATS_TRADE_CAP", str(trade_cap)))
+  max_wallets = int(os.getenv("WHALE_STATS_MAX_WALLETS", "0"))  # 0 = unlimited
   days7 = max(1, int(os.getenv("WHALE_STATS_DAYS_7", "7")))
   days30 = max(1, int(os.getenv("WHALE_STATS_DAYS_30", "30")))
   days90 = max(1, int(os.getenv("WHALE_STATS_DAYS_90", "90")))
@@ -858,6 +893,17 @@ async def recompute_whale_stats(session: AsyncSession, *, trade_cap: int = 30) -
   wallets = set(m7.keys()) | set(m30.keys()) | set(m90.keys())
   if not wallets:
     return 0
+
+  # Cap the number of wallets processed to control memory (CR-I8).
+  if max_wallets > 0 and len(wallets) > max_wallets:
+    # Sort by recency/liquidity: prioritize wallets with trades in the
+    # shortest window, then by trade count.
+    total_set = set(m7.keys()) | set(m30.keys()) | set(m90.keys())
+    wallets = set(sorted(wallets, key=lambda a: (
+      -(m7[a].trades if a in m7 else 0),
+      -(m30[a].trades if a in m30 else 0),
+    ))[:max_wallets])
+    logger.info("recompute_whale_stats wallets_capped=%d/%d", len(wallets), len(total_set))
 
   age_rows = (
     await session.execute(

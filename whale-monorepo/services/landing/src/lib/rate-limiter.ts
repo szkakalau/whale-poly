@@ -19,6 +19,11 @@ type Window = {
 
 const store = new Map<string, Window>();
 
+// Maximum number of tracked keys — prevents unbounded Map growth under
+// sustained traffic from many unique IPs (PF-M9). When the limit is reached,
+// the oldest entry is evicted (simple LRU approximation via cleanup).
+const MAX_STORE_SIZE = 10_000;
+
 const MINUTE_MS = 60_000;
 const HOUR_MS = 3_600_000;
 const MINUTE_LIMIT = 10;
@@ -51,6 +56,12 @@ function _checkLimit(key: string, minLimit: number, hourLimit: number): RateLimi
   let w = store.get(key);
 
   if (!w || now - w.minuteStart > MINUTE_MS) {
+    // Bound the Map size to prevent memory exhaustion under DDoS (PF-M9).
+    if (!w && store.size >= MAX_STORE_SIZE) {
+      // Evict the oldest key (first iterator entry — good enough for a rough LRU).
+      const first = store.keys().next().value;
+      if (first) store.delete(first);
+    }
     store.set(key, {
       minuteStart: now,
       minuteCount: 1,

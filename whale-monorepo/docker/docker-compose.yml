@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_DB: whale
       POSTGRES_USER: whale
@@ -14,9 +15,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
 
   redis:
     image: redis:7
+    restart: unless-stopped
     ports:
       - "6382:6379"
     healthcheck:
@@ -24,23 +31,41 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   landing:
     build:
       context: ../services/landing
       dockerfile: Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     depends_on:
       payment-api:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   trade-ingest-api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -52,12 +77,24 @@ services:
         condition: service_healthy
     ports:
       - "8010:8010"
-    command: ["uvicorn", "services.trade_ingest.api:app", "--host", "0.0.0.0", "--port", "8010"]
+    command: ["uvicorn", "services.trade_ingest.api:app", "--host", "0.0.0.0", "--port", "8010", "--workers", "${UVICORN_WORKERS:-4}"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   trade-ingest-worker:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -68,11 +105,23 @@ services:
       redis:
         condition: service_healthy
     command: ["celery", "-A", "services.trade_ingest.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "trade_ingest"]
+    healthcheck:
+      test: ["CMD", "celery", "-A", "services.trade_ingest.worker:celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   whale-engine-api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -84,12 +133,24 @@ services:
         condition: service_healthy
     ports:
       - "8011:8011"
-    command: ["uvicorn", "services.whale_engine.api:app", "--host", "0.0.0.0", "--port", "8011"]
+    command: ["uvicorn", "services.whale_engine.api:app", "--host", "0.0.0.0", "--port", "8011", "--workers", "${UVICORN_WORKERS:-4}"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   whale-engine-worker:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -100,11 +161,23 @@ services:
       redis:
         condition: service_healthy
     command: ["celery", "-A", "services.whale_engine.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "whale_engine"]
+    healthcheck:
+      test: ["CMD", "celery", "-A", "services.whale_engine.worker:celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   alert-engine-api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -116,12 +189,24 @@ services:
         condition: service_healthy
     ports:
       - "8012:8012"
-    command: ["uvicorn", "services.alert_engine.api:app", "--host", "0.0.0.0", "--port", "8012"]
+    command: ["uvicorn", "services.alert_engine.api:app", "--host", "0.0.0.0", "--port", "8012", "--workers", "${UVICORN_WORKERS:-4}"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8012/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   alert-engine-worker:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -132,11 +217,23 @@ services:
       redis:
         condition: service_healthy
     command: ["celery", "-A", "services.alert_engine.worker:celery_app", "worker", "-B", "-l", "INFO", "-Q", "alert_engine"]
+    healthcheck:
+      test: ["CMD", "celery", "-A", "services.alert_engine.worker:celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   telegram-bot:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -148,12 +245,24 @@ services:
         condition: service_healthy
     ports:
       - "8013:8013"
-    command: ["uvicorn", "services.telegram_bot.api:app", "--host", "0.0.0.0", "--port", "8013"]
+    command: ["uvicorn", "services.telegram_bot.api:app", "--host", "0.0.0.0", "--port", "8013", "--workers", "${UVICORN_WORKERS:-4}"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8013/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   payment-api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
     environment:
@@ -165,7 +274,18 @@ services:
         condition: service_healthy
     ports:
       - "8014:8014"
-    command: ["uvicorn", "services.payment.api:app", "--host", "0.0.0.0", "--port", "8014"]
+    command: ["uvicorn", "services.payment.api:app", "--host", "0.0.0.0", "--port", "8014", "--workers", "${UVICORN_WORKERS:-4}"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8014/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
 volumes:
   postgres_data:

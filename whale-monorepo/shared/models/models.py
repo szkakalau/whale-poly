@@ -183,7 +183,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(String(64), primary_key=True)
     email = Column(String(256), nullable=False, unique=True, index=True)
-    telegram_id = Column(String(64), nullable=True, index=True)
+    telegram_id = Column(String(64), nullable=True, unique=True, index=True)
     plan = Column(String(16), nullable=False, server_default="free", index=True)
     plan_expire_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -293,6 +293,7 @@ class MarketVwSnapshot(Base):
 
 class BlogPost(Base):
     __tablename__ = "blog_posts"
+    __table_args__ = (UniqueConstraint("slug", "language", name="uq_blog_post_slug_lang"),)
     id = Column(String(64), primary_key=True)
     slug = Column(String(256), nullable=False)
     title = Column(String(512), nullable=False)

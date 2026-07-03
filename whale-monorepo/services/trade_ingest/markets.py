@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import logging
 import os
 from typing import Any
 
@@ -7,6 +8,8 @@ import httpx
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger("trade_ingest.markets")
 
 from shared.config import settings
 from shared.models import Market, TokenCondition
@@ -27,6 +30,7 @@ async def _has_token_conditions_table(session: AsyncSession) -> bool:
     try:
         _HAS_TOKEN_CONDITIONS_TABLE = bool((await session.execute(text("select to_regclass('public.token_conditions')"))).scalar_one_or_none())
     except Exception:
+        logger.debug("to_regclass check failed, assuming token_conditions exists")
         _HAS_TOKEN_CONDITIONS_TABLE = True
     return _HAS_TOKEN_CONDITIONS_TABLE
 
@@ -56,6 +60,7 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
             try:
                 await session.commit()
             except Exception:
+                logger.debug("commit failed when updating cached question title_hint=%s", title_hint)
                 pass
         return cached.question
 
@@ -83,7 +88,7 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                             await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
                             return question
         except Exception as e:
-            print(f"Tokens API error for {token_id}: {e}")
+            logger.warning("Tokens API error for %s: %s", token_id, e)
 
         # 3. Try Markets API with clobTokenIds (Layer 3 -> Layer 1)
         try:
@@ -100,7 +105,8 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                             if isinstance(market_tokens, str):
                                 try:
                                     market_tokens = json.loads(market_tokens)
-                                except:
+                                except Exception:
+                                    logger.debug("clobTokenIds json.loads failed for market")
                                     pass
                             
                             if isinstance(market_tokens, list) and token_id in [str(t).lower() for t in market_tokens]:
@@ -111,7 +117,7 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                                     await _save_token_condition(session, token_id, cid or "unknown", str(mid), question)
                                     return question
         except Exception as e:
-            print(f"Markets API (clobTokenIds) error for {token_id}: {e}")
+            logger.warning("Markets API (clobTokenIds) error for %s: %s", token_id, e)
 
         # 4. Try Markets API with conditionIds (Layer 2 -> Layer 1)
         try:
@@ -124,13 +130,13 @@ async def resolve_token_id(session: AsyncSession, token_id: str, title_hint: str
                         cid = market_data.get("conditionId")
                         if cid and cid.lower() == token_id:
                             question = market_data.get("question")
-                            print(f"DEBUG: Resolved via Markets API (conditionIds): {question}")
+                            logger.info("Resolved via Markets API (conditionIds): %s", question)
                             mid = market_data.get("id")
                             if question and mid:
                                 await _save_token_condition(session, token_id, cid, str(mid), question)
                                 return question
         except Exception as e:
-            print(f"Markets API (conditionIds) error for {token_id}: {e}")
+            logger.warning("Markets API (conditionIds) error for %s: %s", token_id, e)
 
         # 5. Try Markets API by slug/id (Layer 1 -> Layer 1)
         try:
@@ -160,9 +166,9 @@ async def _save_token_condition(session: AsyncSession, token_id: str, condition_
         await session.execute(
             insert(TokenCondition)
             .values(
-                token_id=token_id, 
-                condition_id=condition_id, 
-                market_id=market_id, 
+                token_id=token_id,
+                condition_id=condition_id,
+                market_id=market_id,
                 question=question
             )
             .on_conflict_do_update(
@@ -174,7 +180,9 @@ async def _save_token_condition(session: AsyncSession, token_id: str, condition_
                 }
             )
         )
-        await session.commit()
+        # Do NOT commit here — the caller owns the transaction.
+        # Committing inside a nested function would persist partial state
+        # that the outer transaction cannot roll back.
     except Exception as e:
         if _is_missing_token_conditions_error(e):
             global _HAS_TOKEN_CONDITIONS_TABLE
@@ -280,13 +288,21 @@ def _extract_market_records(data: Any) -> list[dict[str, Any]]:
 
 
 async def _upsert_market(session: AsyncSession, title: str, status: str, ids: set[str]) -> None:
-  for raw_id in ids:
-    key = normalize_key(str(raw_id))
-    await session.execute(
-      insert(Market)
-      .values(id=key, title=str(title), status=status, created_at=datetime.now(timezone.utc))
-      .on_conflict_do_update(index_elements=[Market.id], set_={"title": str(title), "status": status})
-    )
+  """Batch-upsert multiple IDs for the same market title in a single INSERT (PF-M2)."""
+  from sqlalchemy.dialects.postgresql import insert as pg_insert
+  now = datetime.now(timezone.utc)
+  values = [
+    {"id": normalize_key(str(raw_id)), "title": str(title), "status": status, "created_at": now}
+    for raw_id in ids
+  ]
+  if not values:
+    return
+  stmt = pg_insert(Market).values(values)
+  stmt = stmt.on_conflict_do_update(
+    index_elements=[Market.id],
+    set_={"title": stmt.excluded.title, "status": stmt.excluded.status},
+  )
+  await session.execute(stmt)
 
 
 async def _fetch_market_by_id(client: httpx.AsyncClient, url: str, target_id: str) -> list[dict[str, Any]]:
@@ -411,7 +427,7 @@ async def _resolve_by_condition(session: AsyncSession, target_id: str) -> str | 
 
     target = normalize_key(str(target_id))
     batch_size = 50
-    max_scan = 1000
+    max_scan = 200  # 4 pages (was 1000 — reduced for PF-H5)
     sep = "&" if "?" in url else "?"
 
     proxies = settings.https_proxy or None

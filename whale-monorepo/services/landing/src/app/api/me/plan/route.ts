@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaidLiveSignalsUser } from '@/lib/live-signals-access';
+import { effectivePlan } from '@/lib/plans';
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -9,7 +10,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    plan: user.plan,
+    plan: effectivePlan(user),
     planExpireAt: user.planExpireAt?.toISOString() || null,
     isPaid: isPaidLiveSignalsUser(user),
   });

@@ -69,13 +69,19 @@ async function fetchGammaMarketByParam(param: string, value: string): Promise<Ga
   if (!id) return null;
 
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000); // 10s timeout
+
     const url = new URL('https://gamma-api.polymarket.com/markets');
     url.searchParams.append(param, id);
     url.searchParams.set('limit', '1');
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
       next: { revalidate: 3600 },
     });
+    clearTimeout(timer);
+
     if (!res.ok) return null;
 
     const data = (await res.json()) as unknown;

@@ -24,7 +24,7 @@ from services.telegram_bot.delivery_cooldown import (
 )
 from services.telegram_bot.elite_filters import elite_delivery_allowed
 from services.telegram_bot.templates import format_alert, format_digest_lines
-from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
+from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, try_increment_daily_alert_count
 from services.telegram_bot.recipients import (
   AlertRecipient,
   dedupe_recipients,
@@ -282,17 +282,11 @@ def _redact_netloc(url: str) -> str:
     return ""
 
 
-def _require_admin(x_admin_token: str | None) -> None:
-  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
-    raise HTTPException(status_code=404, detail="not_found")
+from shared.auth import require_admin as _require_admin
 
 
 def _hash_admin(value: str) -> str:
   return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
-
-
-def _is_production() -> bool:
-  return os.getenv("NODE_ENV", "").lower() == "production"
 
 
 def _is_health_market(payload: dict) -> bool:
@@ -695,22 +689,34 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       plan_name = plan_name.upper()
       limits = PLAN_LIMITS_MAP.get(plan_name, PLAN_LIMITS_MAP["FREE"])
 
-      if not await check_daily_alert_limit(redis, tid, limits["max_alerts_per_day"]):
+      # Atomically increment the daily counter FIRST — this is the real
+      # gatekeeper (CR-C4).  The old pattern checked a pure-read limit at the
+      # top and incremented after delivery; two concurrent requests could both
+      # pass the read check, deliver two alerts, and then the late increment
+      # would roll back — the alert was sent but not counted.
+      if not await try_increment_daily_alert_count(redis, tid, limits["max_alerts_per_day"]):
         return
 
       # Admin is exempt from rate limits
       if not is_admin:
         if not await allow_send(redis, tid, settings.alert_fanout_rate_limit_per_minute):
+          # Roll back the daily count — we're not sending after all.
+          today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+          await redis.decr(f"alert_limit:{tid}:{today}")
           return
       # Plan-based score filter: Pro ≥70, Elite ≥80 (see alert_engine_config.yaml)
       min_score = limits.get("min_whale_score", 0)
       if score_value < min_score:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        await redis.decr(f"alert_limit:{tid}:{today}")
         return
 
       if plan_name == "ELITE" and settings.elite_delivery_filters_enabled:
         try:
           async with SessionLocal() as session:
             if not await elite_delivery_allowed(session, tid, wallet_value, payload, plan_name, matched_group):
+              today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+              await redis.decr(f"alert_limit:{tid}:{today}")
               return
         except Exception:
           logger.exception("elite_filter_failed telegram_id=%s", tid)
@@ -725,6 +731,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         format_digest_lines,
       )
       if cd.action == CooldownAction.QUEUED:
+        # Cooldown queued the message for later delivery — keep the count.
         return
       if cd.action == CooldownAction.FLUSH_ONLY and cd.flush_combined_text:
         try:
@@ -737,7 +744,8 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               parse_mode="HTML",
               disable_web_page_preview=True,
             )
-          await increment_daily_alert_count(redis, tid)
+          # Count was already incremented at the top — no need to call
+          # try_increment_daily_alert_count again.
           await record_after_digest_flush(redis, tid, matched_group, cd.flushed_raws or [])
         except Exception:
           logger.exception(
@@ -783,19 +791,28 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             try:
               await asyncio.sleep(delay_seconds)
               body = _message_body()
+              # Add send timeout to prevent hanging tasks (CR-I2).
               if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-                await _send_via_bot(settings.telegram_health_bot_token, tid, body)
-              else:
-                await application.bot.send_message(
-                  chat_id=int(tid),
-                  text=body,
-                  parse_mode="HTML",
-                  disable_web_page_preview=True,
+                await asyncio.wait_for(
+                  _send_via_bot(settings.telegram_health_bot_token, tid, body),
+                  timeout=30,
                 )
-              await increment_daily_alert_count(redis, tid)
+              else:
+                await asyncio.wait_for(
+                  application.bot.send_message(
+                    chat_id=int(tid),
+                    text=body,
+                    parse_mode="HTML",
+                    disable_web_page_preview=True,
+                  ),
+                  timeout=30,
+                )
+              # Daily count already incremented at the top of _send_one.
               await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
               if plan_name == "ELITE" and market_id and wallet_value:
                 await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
+            except asyncio.TimeoutError:
+              logger.error("telegram_send_timeout telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
             except Exception:
               logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
 
@@ -814,7 +831,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             parse_mode="HTML",
             disable_web_page_preview=True,
           )
-        await increment_daily_alert_count(redis, tid)
+        # Daily count already incremented at the top of _send_one.
         await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
         if plan_name == "ELITE" and market_id and wallet_value:
           await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
@@ -850,18 +867,27 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           break
         raws.append(nxt)
       for raw_item in raws:
-        await _process_raw(raw_item)
+        try:
+          await _process_raw(raw_item)
+        except Exception:
+          logger.exception("alert_consumer_single_failed — item skipped, continuing batch")
     except Exception:
       logger.exception("alert_consumer_error — reconnecting in 5s")
       await asyncio.sleep(5)
       continue
 
 
+# Module-level set to track pending delayed-send tasks across the lifespan.
+# Must be module-level (not local to lifespan()) because _send_one references
+# it and _send_one is lexically inside consume_alerts_forever, outside lifespan().
+_pending_sends: set[asyncio.Task] = set()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
   stop = asyncio.Event()
-  global _REDIS_OK
-  _pending_sends: set[asyncio.Task] = set()
+  global _REDIS_OK, _pending_sends
+  _pending_sends = set()
   redis = None
   try:
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
@@ -916,6 +942,9 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="telegram-bot", lifespan=lifespan)
 
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
+
 
 @app.get("/health")
 async def health():
@@ -926,8 +955,7 @@ async def health():
 
 @app.get("/debug/build")
 async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
-  if _is_production():
-    _require_admin(x_admin_token)
+  _require_admin(x_admin_token)
   keys = [
     "RENDER_GIT_COMMIT",
     "RENDER_SERVICE_ID",
@@ -937,15 +965,11 @@ async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-To
   ]
   env = {k: os.getenv(k) for k in keys if os.getenv(k)}
   admin_present = bool(getattr(settings, "admin_token", "") or "")
-  admin_hash_prefix = (
-    hashlib.sha1((settings.admin_token or "").encode("utf-8")).hexdigest()[:8] if admin_present else None
-  )
   return {
     "service": "telegram-bot",
     "env": env,
     "admin_debug": {
       "admin_token_present": admin_present,
-      "admin_token_hash_prefix": admin_hash_prefix,
     },
   }
 

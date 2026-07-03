@@ -22,6 +22,7 @@ const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   turbopack: {
     root: __dirname,
   },

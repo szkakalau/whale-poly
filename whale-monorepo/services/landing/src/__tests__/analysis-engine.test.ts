@@ -1,76 +1,35 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
+import {
+  sizeScore,
+  timeDecayScore,
+  walletWeight,
+  classifyConfidence,
+  classifyDirection,
+} from '@/lib/analysis-engine';
+import type { LiveSignal } from '@/lib/live-signals';
 import { resolveMarketSlug, slugToSearchQuery } from '@/lib/nl-matcher';
 
 /**
  * Unit tests for AnalysisEngine scoring logic.
  *
- * These tests validate the pure functions that drive the conviction scoring —
- * no DB or external API dependencies.
+ * Imports pure functions directly from the source module — no code duplication.
+ * TC-H6: previously duplicated these 6 functions; now tests run against the
+ * same code that ships to production.
  */
 
-// Import internal helpers by replicating logic (since they're not exported)
-// In practice these would be extracted to a separate pure-functions module.
+// ── Test helpers ──────────────────────────────────────
 
-const MIN_TRADE_USD = 5_000;
-const MIN_TRADES_FOR_SIGNAL = 3;
-const DIRECTION_RATIO_THRESHOLD = 0.2;
-
-// Duplicated from analysis-engine.ts for test isolation.
-// In production, extract these to a shared pure-functions module.
-function sizeScore(amountUsd: number): number {
-  if (amountUsd >= 100_000) return 100;
-  if (amountUsd >= 50_000) return 80;
-  if (amountUsd >= 20_000) return 60;
-  if (amountUsd >= MIN_TRADE_USD) return 30;
-  return 0;
-}
-
-function timeDecayScore(tradeTimestamp: string, now: Date): number {
-  const tradeTs = new Date(tradeTimestamp).getTime();
-  const elapsedSec = (now.getTime() - tradeTs) / 1000;
-  const maxSec = 24 * 3600; // 24h lookback
-  return Math.max(0, 100 * (1 - elapsedSec / maxSec));
-}
-
-function walletWeight(
-  sizeUsd: number,
-  tradeTimestamp: string,
-  now: Date,
-  whaleScore?: number,
-): number {
-  const sz = sizeScore(sizeUsd);
-  const td = timeDecayScore(tradeTimestamp, now);
-  let conviction = 50;
-  if (whaleScore != null && Number.isFinite(whaleScore)) {
-    conviction = Math.min(100, Math.max(0, (whaleScore / 100) * 100));
-  }
-  return sz * 0.4 + td * 0.3 + conviction * 0.3;
-}
-
-function classifyConfidence(score: number): 'low' | 'medium' | 'high' {
-  if (score > 70) return 'high';
-  if (score > 40) return 'medium';
-  return 'low';
-}
-
-function classifyDirection(
-  yesVolume: number,
-  noVolume: number,
-  tradeCount: number,
-): 'bullish' | 'bearish' | 'neutral' | 'mixed' {
-  if (tradeCount < MIN_TRADES_FOR_SIGNAL) return 'neutral';
-  const total = yesVolume + noVolume;
-  if (total === 0) return 'neutral';
-
-  // Conflicting signals check first
-  if (yesVolume > total * DIRECTION_RATIO_THRESHOLD && noVolume > total * DIRECTION_RATIO_THRESHOLD) {
-    return 'mixed';
-  }
-
-  const ratio = (yesVolume - noVolume) / total;
-  if (ratio > DIRECTION_RATIO_THRESHOLD) return 'bullish';
-  if (ratio < -DIRECTION_RATIO_THRESHOLD) return 'bearish';
-  return 'neutral';
+function makeSignal(overrides: Partial<LiveSignal> = {}): LiveSignal {
+  return {
+    id: 'sig-test-1',
+    occurredAt: '2026-05-29T12:00:00Z',
+    walletMasked: '0xabc...123',
+    market: 'test-market',
+    side: 'BUY',
+    sizeUsd: 50_000,
+    whaleScore: 70,
+    ...overrides,
+  };
 }
 
 // ── Tests ─────────────────────────────────────────────
@@ -122,14 +81,17 @@ describe('walletWeight', () => {
   const now = new Date('2026-05-29T12:00:00Z');
 
   it('should compute weight from size + time + conviction', () => {
-    const w = walletWeight(50_000, '2026-05-29T12:00:00Z', now, 70);
-    // size: 80 * 0.4 = 32, time: 100 * 0.3 = 30, conviction: 70 * 0.3 = 21 → 83
+    const signal = makeSignal({ sizeUsd: 50_000, occurredAt: '2026-05-29T12:00:00Z', whaleScore: 70 });
+    // size: 80*0.4=32, time: 100*0.3=30, conviction: 70*0.3=21 → 83
+    const w = walletWeight(signal, now);
     expect(w).toBeCloseTo(83, -1);
   });
 
   it('should default conviction to 50 when whaleScore is missing', () => {
-    const w = walletWeight(50_000, '2026-05-29T12:00:00Z', now);
-    // size: 32, time: 30, conviction: 50 * 0.3 = 15 → 77
+    const signal = makeSignal({ sizeUsd: 50_000, occurredAt: '2026-05-29T12:00:00Z' });
+    delete signal.whaleScore;
+    // size: 32, time: 30, conviction: 50*0.3=15 → 77
+    const w = walletWeight(signal, now);
     expect(w).toBeCloseTo(77, -1);
   });
 });
@@ -172,7 +134,7 @@ describe('classifyDirection', () => {
   });
 
   it('should return mixed when both YES and NO have significant volume', () => {
-    // Both sides > 20% of total → mixed (even if ratio is moderate)
+    // Both > 20% of total → mixed
     expect(classifyDirection(55_000, 45_000, 5)).toBe('mixed');
   });
 

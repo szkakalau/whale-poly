@@ -43,19 +43,70 @@ export async function POST(req: Request) {
 
   if (!existing) {
     const limit = getLimitValue(user, 'max_follow_whales');
-    const count = await prisma.whaleFollow.count({
-      where: { userId: user.id },
+
+    // Atomic count-check + upsert to prevent TOCTOU limit bypass.
+    // $transaction runs in serializable-like isolation; if count exceeds
+    // limit inside the transaction, the upsert is skipped.
+    const follow = await prisma.$transaction(async (tx) => {
+      if (limit !== 'unlimited') {
+        const count = await tx.whaleFollow.count({
+          where: { userId: user.id },
+        });
+        if (count >= limit) {
+          return null; // signal limit reached
+        }
+      }
+      return tx.whaleFollow.upsert({
+        where: {
+          user_wallet_unique: {
+            userId: user.id,
+            wallet: data.wallet.toLowerCase(),
+          },
+        },
+        update: {
+          alertEntry: data.alert_entry,
+          alertExit: data.alert_exit,
+          alertAdd: data.alert_add,
+          minSize: data.min_size,
+          minScore: data.min_score,
+          enabled: true,
+        },
+        create: {
+          userId: user.id,
+          wallet: data.wallet.toLowerCase(),
+          alertEntry: data.alert_entry,
+          alertExit: data.alert_exit,
+          alertAdd: data.alert_add,
+          minSize: data.min_size,
+          minScore: data.min_score,
+          enabled: true,
+        },
+      });
     });
 
-    if (limit !== 'unlimited' && count >= limit) {
+    if (follow === null) {
       return NextResponse.json(
-        { 
+        {
           detail: 'follow_limit_reached',
-          message: `You have reached your follow limit (${limit}). Upgrade to unlock more.` 
+          message: `You have reached your follow limit (${limit}). Upgrade to unlock more.`,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
+
+    return NextResponse.json(
+      {
+        id: follow.id,
+        wallet: follow.wallet,
+        alert_entry: follow.alertEntry,
+        alert_exit: follow.alertExit,
+        alert_add: follow.alertAdd,
+        min_size: follow.minSize,
+        min_score: follow.minScore,
+        enabled: follow.enabled,
+      },
+      { status: 200 },
+    );
   }
 
   const follow = await prisma.whaleFollow.upsert({

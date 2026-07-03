@@ -22,6 +22,6 @@ export async function GET() {
     const data = await res.json();
     return Response.json(data);
   } catch (e: any) {
-    return Response.json({ error: e.message }, { status: 500 });
+    return Response.json({ error: 'blog_insert_vw_failed' }, { status: 500 });
   }
 }

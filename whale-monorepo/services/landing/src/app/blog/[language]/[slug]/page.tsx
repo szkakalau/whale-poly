@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { getPost, getRelatedPosts } from '@/lib/blog';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // ISR: revalidate every hour (PF-H7)
 
 type Props = {
   params: Promise<{ language: string; slug: string }>;
@@ -127,7 +127,7 @@ export default async function BlogPostPage({ params }: Props) {
       <header className="mb-10">
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-4">
-          {post.tags.map((t) => (
+          {(post.tags || []).map((t) => (
             <Link
               key={t}
               href={`/blog/${language}?tag=${encodeURIComponent(t)}`}
@@ -174,11 +174,22 @@ export default async function BlogPostPage({ params }: Props) {
             '@type': 'Article',
             headline: post.title,
             description: post.excerpt,
+            url: `https://www.sightwhale.com/blog/${post.language}/${post.slug}`,
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `https://www.sightwhale.com/blog/${post.language}/${post.slug}`,
+            },
+            image: 'https://www.sightwhale.com/opengraph-image',
             datePublished: post.published_at,
             dateModified: post.updated_at,
-            author: { '@type': 'Organization', name: post.author },
+            author: { '@type': 'Person', name: post.author },
+            publisher: {
+              '@type': 'Organization',
+              name: 'SightWhale',
+              url: 'https://www.sightwhale.com',
+            },
             inLanguage: post.language,
-            about: post.tags.map((t) => ({ '@type': 'Thing', name: t })),
+            about: (post.tags || []).map((t) => ({ '@type': 'Thing', name: t })),
           }),
         }}
       />

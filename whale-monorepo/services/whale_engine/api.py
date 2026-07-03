@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+import time
+import logging
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Query
 from sqlalchemy import case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,8 +13,15 @@ from shared.models import Market, MarketVwMetrics, MarketVwSnapshot, TradeRaw, W
 
 
 configure_logging(settings.log_level)
+logger = logging.getLogger("whale_engine.api")
 
 app = FastAPI(title="whale-engine")
+
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
+
+# Per-wallet rate limiting: track last request time, enforce 5-second cooldown
+_whale_profile_last_request: dict[str, float] = {}
 
 
 def _normalize_wallet(value: str) -> str:
@@ -178,6 +187,27 @@ async def diag_score_system(session: AsyncSession = Depends(get_session)):
 @app.get("/whales/{wallet}")
 async def whale_profile(wallet: str, session: AsyncSession = Depends(get_session)):
   addr = _normalize_wallet(wallet)
+
+  # Rate limit: reject if same wallet queried within 5 seconds
+  now_ts = time.time()
+  last = _whale_profile_last_request.get(addr)
+  if last is not None and (now_ts - last) < 5:
+    logger.warning("rate_limit_hit", extra={"wallet": addr, "elapsed_s": round(now_ts - last, 3)})
+    return {
+      "wallet": wallet,
+      "display_name": wallet,
+      "whale_score": 0,
+      "whale_score_breakdown": None,
+      "total_volume": 0.0,
+      "total_trades": 0,
+      "win_rate": 0.0,
+      "realized_pnl": 0.0,
+      "top_markets": [],
+      "recent_trades": [],
+      "detail": "rate_limited",
+    }
+  _whale_profile_last_request[addr] = now_ts
+
   if not addr:
     return {
       "wallet": wallet,
@@ -453,7 +483,7 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
 @app.get("/vw/metrics")
 async def vw_metrics(
     sort_by: str = "volume",
-    limit: int = 50,
+    limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
 ):
     """Fetch VW metrics for the volume-analysis page."""
@@ -466,7 +496,7 @@ async def vw_metrics(
 
     rows = (
         await session.execute(
-            text(f"""
+            text("""
                 SELECT
                     vw.market_id,
                     m.title AS market_title,
@@ -486,9 +516,10 @@ async def vw_metrics(
                 FROM market_vw_metrics vw
                 JOIN markets m ON vw.market_id = m.id
                 WHERE vw.status = 'active'
-                ORDER BY {order_clause}
-                LIMIT {limit}
-            """)
+                ORDER BY """ + order_clause + """
+                LIMIT :limit
+            """),
+            {"limit": limit},
         )
     ).fetchall()
 
@@ -616,73 +647,5 @@ async def vw_cross(
     }
 
 
-# —— Blog post insertion (internal) ——
-
-from pydantic import BaseModel
-
-
-class BlogPostIn(BaseModel):
-    slug: str
-    title: str
-    excerpt: str = ""
-    content: str
-    author: str = "SightWhale"
-    read_time: str = "8 min"
-    tags: list[str] = []
-    language: str = "en"
-    group_slug: str | None = None
-    status: str = "published"
-
-
-@app.post("/blog/insert")
-async def blog_insert(payload: BlogPostIn, session: AsyncSession = Depends(get_session)):
-    import uuid
-    from datetime import datetime, timezone
-
-    post_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc)
-
-    # Ensure table exists
-    await session.execute(text(
-        """CREATE TABLE IF NOT EXISTS blog_posts (
-            id text PRIMARY KEY,
-            slug text NOT NULL,
-            title text NOT NULL,
-            excerpt text NOT NULL,
-            content text NOT NULL,
-            author text NOT NULL,
-            read_time text NOT NULL,
-            cover_image text,
-            tags text[] DEFAULT '{}',
-            published_at timestamptz NOT NULL,
-            created_at timestamptz NOT NULL DEFAULT now(),
-            updated_at timestamptz NOT NULL DEFAULT now(),
-            language text NOT NULL DEFAULT 'en',
-            group_slug text,
-            status text NOT NULL DEFAULT 'published'
-        )"""
-    ))
-    await session.execute(text(
-        "CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_language_idx ON blog_posts (slug, language)"
-    ))
-    await session.commit()
-
-    await session.execute(text(
-        """INSERT INTO blog_posts (id, slug, title, excerpt, content, author, read_time, tags, published_at, created_at, updated_at, language, group_slug, status)
-        VALUES (:id, :slug, :title, :excerpt, :content, :author, :read_time, :tags, :published_at, :created_at, :updated_at, :language, :group_slug, :status)
-        ON CONFLICT (slug, language) DO UPDATE SET
-            title=excluded.title, excerpt=excluded.excerpt, content=excluded.content,
-            author=excluded.author, read_time=excluded.read_time, tags=excluded.tags,
-            updated_at=excluded.updated_at"""
-    ), {
-        "id": post_id, "slug": payload.slug, "title": payload.title,
-        "excerpt": payload.excerpt, "content": payload.content,
-        "author": payload.author, "read_time": payload.read_time,
-        "tags": payload.tags, "published_at": now, "created_at": now,
-        "updated_at": now, "language": payload.language,
-        "group_slug": payload.group_slug, "status": payload.status,
-    })
-    await session.commit()
-
-    return {"ok": True, "slug": payload.slug}
+# Blog post CRUD lives in trade_ingest (CR-I7 — remove duplicate).
 

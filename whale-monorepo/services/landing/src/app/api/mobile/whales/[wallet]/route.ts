@@ -17,8 +17,7 @@ export async function GET(_: Request, context: { params: Promise<{ wallet: strin
       cache: 'no-store',
     });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ detail: 'whale_engine_unreachable', error: message }, { status: 502 });
+    return NextResponse.json({ detail: 'whale_engine_unreachable' }, { status: 502 });
   }
 
   const body = await upstream.json().catch(() => ({}));

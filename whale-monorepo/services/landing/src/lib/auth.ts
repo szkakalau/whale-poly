@@ -1,4 +1,5 @@
 import { headers, cookies } from 'next/headers';
+import { Plan } from '@prisma/client';
 import { prisma } from './prisma';
 import { verifyMiniAppSessionCookie } from './telegramMiniApp';
 import { verifyMobileAccessToken } from './mobileAuth';
@@ -8,7 +9,7 @@ export type AuthUser = {
   id: string;
   email: string;
   telegramId: string | null;
-  plan: 'FREE' | 'PRO' | 'ELITE';
+  plan: Plan;
   planExpireAt: Date | null;
 };
 

@@ -54,36 +54,56 @@ export async function POST(_: Request, { params }: Params) {
 
   if (!existing) {
     const limit = getLimitValue(user, 'max_smart_collections');
-    if (limit !== 'unlimited') {
-      const count = await prisma.smartCollectionSubscription.count({
-        where: { userId: user.id },
-      });
 
-      if (count >= limit) {
-        return NextResponse.json(
-          {
-            detail: 'subscription_limit_reached',
-            message: `You have reached your Smart Collection subscription limit (${limit}). Upgrade to unlock more.`,
-          },
-          { status: 403 },
-        );
+    // Atomic count-check + upsert to prevent TOCTOU limit bypass.
+    const result = await prisma.$transaction(async (tx) => {
+      if (limit !== 'unlimited') {
+        const count = await tx.smartCollectionSubscription.count({
+          where: { userId: user.id },
+        });
+        if (count >= limit) {
+          return null;
+        }
       }
-    }
-  }
+      return tx.smartCollectionSubscription.upsert({
+        where: {
+          user_smart_collection_unique: {
+            userId: user.id,
+            smartCollectionId: sc.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          smartCollectionId: sc.id,
+        },
+      });
+    });
 
-  await prisma.smartCollectionSubscription.upsert({
-    where: {
-      user_smart_collection_unique: {
+    if (result === null) {
+      return NextResponse.json(
+        {
+          detail: 'subscription_limit_reached',
+          message: `You have reached your Smart Collection subscription limit (${limit}). Upgrade to unlock more.`,
+        },
+        { status: 403 },
+      );
+    }
+  } else {
+    await prisma.smartCollectionSubscription.upsert({
+      where: {
+        user_smart_collection_unique: {
+          userId: user.id,
+          smartCollectionId: sc.id,
+        },
+      },
+      update: {},
+      create: {
         userId: user.id,
         smartCollectionId: sc.id,
       },
-    },
-    update: {},
-    create: {
-      userId: user.id,
-      smartCollectionId: sc.id,
-    },
-  });
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

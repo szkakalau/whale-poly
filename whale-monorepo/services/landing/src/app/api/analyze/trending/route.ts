@@ -62,22 +62,30 @@ async function fetchTrendingUncached(): Promise<TrendingEntry[]> {
     return true;
   }).slice(0, TOP_N);
 
-  // Score each market
+  // Score each market IN PARALLEL instead of sequentially (PF-C3).
+  // With 10 markets each ~800ms, serial = 8s, parallel = ~800ms — 10x faster.
+  const settled = await Promise.allSettled(
+    markets.map(async (m): Promise<TrendingEntry | null> => {
+      try {
+        const analysis = await analyzeMarket(m.slug);
+        return {
+          slug: m.slug,
+          title: m.title,
+          volume24h: m.volume,
+          direction: analysis.direction,
+          confidenceScore: analysis.confidenceScore,
+          confidenceLevel: analysis.confidenceLevel,
+          whaleTradeCount: analysis.whaleTradeCount,
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
   const results: TrendingEntry[] = [];
-  for (const m of markets) {
-    try {
-      const analysis = await analyzeMarket(m.slug);
-      results.push({
-        slug: m.slug,
-        title: m.title,
-        volume24h: m.volume,
-        direction: analysis.direction,
-        confidenceScore: analysis.confidenceScore,
-        confidenceLevel: analysis.confidenceLevel,
-        whaleTradeCount: analysis.whaleTradeCount,
-      });
-    } catch {
-      // Skip this market if analysis fails
+  for (const r of settled) {
+    if (r.status === 'fulfilled' && r.value !== null) {
+      results.push(r.value);
     }
   }
 

@@ -111,6 +111,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'google_play_verify_failed', error: msg }, { status: 502 });
     }
   } else {
+    // Google Play 服务账号未配置 → 信任客户端提供的 expiryTimeMs。
+    // 此路径仅应在开发环境使用。生产环境在上方已被拦截（503）。
+    console.warn('google_play_sync: trusting client-provided expiryTimeMs (no server verification configured)');
     planExpireAt = new Date(expiryTimeMs);
     if (Number.isNaN(planExpireAt.getTime())) {
       return NextResponse.json({ detail: 'invalid_expiryTimeMs' }, { status: 400 });

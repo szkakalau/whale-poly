@@ -76,46 +76,53 @@ export default function LiveSignalsFeed({
   const [toast, setToast] = useState<{ href: string; label: string } | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
 
+  // Hydrate from SSR — one-shot on mount
   useEffect(() => {
     const next = homePreview ? initialSignals.slice(0, 3) : initialSignals;
     setSignals(next);
     next.forEach((s) => seenIdsRef.current.add(s.id));
-  }, [initialSignals, homePreview]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/me/plan')
-      .then((r) => r.json())
-      .then((data: { isPaid?: boolean }) => {
-        if (cancelled) return;
-        setIsPaid(Boolean(data?.isPaid));
-        setPlanLoaded(true);
-      })
-      .catch(() => {
-        if (!cancelled) setPlanLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Plan check + initial paid-user fetch
   useEffect(() => {
-    if (initialSignals.length > 0) return;
     let cancelled = false;
-    fetch('/api/live-signals')
-      .then((r) => r.json())
-      .then((data: { signals?: LiveSignal[] }) => {
-        if (cancelled || !Array.isArray(data.signals) || data.signals.length === 0) return;
-        const list = homePreview ? data.signals.slice(0, 3) : data.signals;
-        setSignals(list);
-        list.forEach((s) => seenIdsRef.current.add(s.id));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [initialSignals.length, homePreview]);
 
+    async function init() {
+      let paid = false;
+      try {
+        const r = await fetch('/api/me/plan');
+        const data = (await r.json()) as { isPaid?: boolean };
+        paid = Boolean(data?.isPaid);
+      } catch {
+        // continue with paid=false
+      }
+      if (cancelled) return;
+      setIsPaid(paid);
+      setPlanLoaded(true);
+
+      // Paid users: immediately fetch fresh data (supersedes SSR delayed data)
+      if (paid) {
+        try {
+          const r = await fetch('/api/live-signals', { cache: 'no-store' });
+          const data = (await r.json()) as { signals?: LiveSignal[] };
+          if (!cancelled && Array.isArray(data.signals)) {
+            const list = homePreview ? data.signals.slice(0, 3) : data.signals;
+            setSignals(list);
+            list.forEach((s) => seenIdsRef.current.add(s.id));
+          }
+        } catch {
+          /* non-critical */
+        }
+      }
+    }
+
+    init();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Polling — paid users only
   useEffect(() => {
     if (homePreview || !planLoaded || !isPaid) return;
 

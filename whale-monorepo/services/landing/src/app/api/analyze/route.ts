@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { analyzeMarket, getEmptyMessage, getLimitedDataMessage, getStalenessMessage, getMixedMessage } from '@/lib/analysis-engine';
-import { checkRateLimit } from '@/lib/rate-limiter';
+import { checkRateLimitByIp, checkRateLimit } from '@/lib/rate-limiter';
 import { resolveMarketSlug, type MarketMatch } from '@/lib/nl-matcher';
 import { logAnalyzeQuery } from '@/lib/analyze-analytics';
 
@@ -93,9 +94,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Rate limit
-  const userId = body?.userId || 'anonymous';
-  const rateCheck = checkRateLimit(userId);
+  // Rate limit — use client IP for unauthenticated endpoint (body.userId is untrusted)
+  const hdrs = await headers();
+  // 优先使用 Vercel/Render 边缘层注入的 x-real-ip（不可被客户端伪造）
+  const clientIp = hdrs.get('x-real-ip') || hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+  const rateCheck = checkRateLimitByIp(clientIp);
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', message: rateCheck.message, retryAfterSec: rateCheck.retryAfterSec } satisfies AnalyzeResponse,
@@ -134,7 +137,7 @@ export async function POST(req: Request) {
       marketSlug: resolved.slug || undefined,
       durationMs: Date.now() - analyzeStart,
       source: body?.userId?.startsWith('tg_') ? 'telegram' : 'web',
-      userId,
+      userId: clientIp,
       error: analyzeError,
     });
     return NextResponse.json(
@@ -154,7 +157,7 @@ export async function POST(req: Request) {
     confidenceScore: analysis.confidenceScore,
     durationMs,
     source: body?.userId?.startsWith('tg_') ? 'telegram' : 'web',
-    userId,
+    userId: clientIp,
   });
 
   // No data case
@@ -192,6 +195,18 @@ export async function GET(req: Request) {
     return NextResponse.json(
       { error: 'missing_q', message: '?q=<market slug or URL>' } satisfies AnalyzeResponse,
       { status: 400 },
+    );
+  }
+
+  // Rate limit
+  const hdrs = await headers();
+  // 优先使用 Vercel/Render 边缘层注入的 x-real-ip（不可被客户端伪造）
+  const clientIp = hdrs.get('x-real-ip') || hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+  const rateCheck = checkRateLimitByIp(clientIp);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', message: rateCheck.message, retryAfterSec: rateCheck.retryAfterSec } satisfies AnalyzeResponse,
+      { status: 429 },
     );
   }
 

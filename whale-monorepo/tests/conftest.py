@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.sql.selectable import Select
+from sqlalchemy.sql.dml import Insert
 from sqlalchemy.sql.elements import BindParameter
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,6 +117,22 @@ class _FakeResult:
 
 
 class FakeAsyncSession:
+  """In-memory SQL session for integration-style tests.
+
+  SUPPORTS:
+    - Select(TokenCondition).where(TokenCondition.token_id == ...)  → lookup via _where_criteria
+    - Insert(TokenCondition).values(...).on_conflict_do_update(...) → stored in _token_conditions
+    - Insert(Market).values(...) / Insert(TradeRaw).values(...)    → stored in _markets / _trades
+    - raw SQL via _handle_raw_sql: active-markets JOIN query,
+      market_vw_metrics/snapshots INSERT/SELECT/DELETE/COUNT,
+      price-from-trades_raw SELECT, outcome-amount-price-from-trades_raw SELECT,
+      to_regclass table-existence check.
+
+  DOES NOT SUPPORT: JOINs (except active-markets), Subquery, ORDER BY, LIMIT,
+    OFFSET, GROUP BY, HAVING, raw parameterized text() queries beyond the
+    patterns listed above. Use AsyncMock + patch for untested SQL patterns.
+  """
+
   def __init__(self):
     self._token_conditions: dict[str, TokenCondition] = {}
     self._markets: dict[str, Market] = {}
@@ -135,7 +152,17 @@ class FakeAsyncSession:
     return None
 
   async def execute(self, statement, parameters=None):
-    """Handle SQLAlchemy execute() — supports Select, TextClause, and raw SQL strings."""
+    """Handle SQLAlchemy execute() — supports Insert, Select, TextClause, and raw SQL strings."""
+    # ---- Insert: compile to extract inline values --------------------------
+    if isinstance(statement, Insert):
+      try:
+        compiled = statement.compile()
+        params = dict(compiled.params) if compiled.params else {}
+      except Exception:
+        params = {}
+      sql = str(statement)
+      return self._handle_raw_sql(sql, parameters if parameters is not None else params)
+
     # ---- TextClause or raw string --------------------------------------------
     if not isinstance(statement, Select):
       params = parameters if parameters is not None else {}
@@ -155,7 +182,7 @@ class FakeAsyncSession:
         token_id = right.value
     if token_id is not None:
       row = self._token_conditions.get(str(token_id).lower())
-      return _FakeResult([row] if row is not None else [])
+      return _FakeResult([_FakeRow((row,))] if row is not None else [])
 
     return _FakeResult([])
 
@@ -247,6 +274,21 @@ class FakeAsyncSession:
       min_vol = Decimal(str(params.get("min_vol", 0)))
       rows = [_FakeRow((mid, vol)) for mid, vol in vol_24h_map.items() if vol >= min_vol]
       return _FakeResult(rows)
+
+    # ---- to_regclass table existence check ----------------------------------
+    if "TO_REGCLASS" in sql_upper:
+      return _FakeResult(scalar_val="token_conditions")
+
+    # ---- INSERT INTO token_conditions (upsert) -------------------------------
+    if sql_upper.startswith("INSERT INTO TOKEN_CONDITIONS"):
+      tid = str(params.get("token_id", "")).lower()
+      self._token_conditions[tid] = TokenCondition(
+        token_id=params.get("token_id", ""),
+        condition_id=params.get("condition_id", ""),
+        market_id=params.get("market_id", ""),
+        question=params.get("question", ""),
+      )
+      return _FakeResult(rowcount=1)
 
     # ---- Fallback ------------------------------------------------------------
     return _FakeResult([])

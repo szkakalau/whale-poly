@@ -8,6 +8,7 @@ from celery import Celery
 from redis.asyncio import Redis
 
 from services.alert_engine.engine import process_whale_trade_event
+from shared.async_utils import get_or_create_event_loop, get_redis, run_async
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.logging import configure_logging
@@ -32,38 +33,43 @@ celery_app.conf.beat_schedule = {
 }
 
 
-def _run(coro):
-  try:
-    loop = asyncio.get_event_loop()
-  except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-  if loop.is_closed():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-  return loop.run_until_complete(coro)
-
-
 async def _consume_once() -> int:
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  try:
-    item = await redis.blpop(settings.whale_trade_created_queue, timeout=1)
-    if not item:
-      return 0
-    _, raw = item
-    event = json.loads(raw)
-    async with SessionLocal() as session:
-      created = await process_whale_trade_event(session, redis, event)
-      await session.commit()
-    return 1 if created else 0
-  finally:
-    await redis.aclose()
+  """Batch-consume whale trade events from Redis (PF-H6).
+  BLPOP first item, then LPOP up to alert_consume_batch_size more,
+  and process all in a single DB transaction."""
+  redis = await get_redis()
+  item = await redis.blpop(settings.whale_trade_created_queue, timeout=1)
+  if not item:
+    return 0
+  _, raw = item
+  raws = [raw]
+
+  # Drain remaining items from the queue (up to batch size).
+  batch_size = int(os.getenv("ALERT_CONSUME_BATCH_SIZE", str(settings.alert_consume_batch_size)))
+  for _ in range(batch_size - 1):
+    nxt = await redis.lpop(settings.whale_trade_created_queue)
+    if not nxt:
+      break
+    raws.append(nxt)
+
+  created_count = 0
+  async with SessionLocal() as session:
+    for payload in raws:
+      try:
+        event = json.loads(payload)
+        created = await process_whale_trade_event(session, redis, event)
+        if created:
+          created_count += 1
+      except Exception:
+        logger.exception("alert_consume_failed")
+    await session.commit()
+  return created_count
 
 
 @celery_app.task(name="services.alert_engine.consume_whale_trade_created", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)
 def consume_whale_trade_created() -> int:
   try:
-    return _run(_consume_once())
+    return run_async(_consume_once())
   except Exception:
     logger.exception("consume_failed")
     return 0

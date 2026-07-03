@@ -89,7 +89,42 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.sightwhale.com"),
   alternates: {
     canonical: "/",
+    types: {
+      'application/rss+xml': '/blog/feed.xml',
+    },
   },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://www.sightwhale.com/#org',
+      name: 'SightWhale',
+      url: 'https://www.sightwhale.com',
+      logo: 'https://www.sightwhale.com/opengraph-image',
+      description:
+        'Polymarket whale intelligence platform — real-time alerts for high-conviction trades from the top 1% most profitable wallets.',
+      sameAs: ['https://twitter.com/SightWhale'],
+    },
+    {
+      '@type': 'WebSite',
+      name: 'SightWhale',
+      url: 'https://www.sightwhale.com',
+      description:
+        'Follow smart money on Polymarket. Real-time Telegram alerts for whale trades on Elections, Sports, and Crypto.',
+      publisher: { '@id': 'https://www.sightwhale.com/#org' },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://www.sightwhale.com/analyze?q={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
 };
 
 export default async function RootLayout({
@@ -97,8 +132,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getCurrentUser();
-  const headersList = await headers();
+  const [user, headersList] = await Promise.all([getCurrentUser(), headers()]);
   const lang = headersList.get('x-html-lang') || 'en';
   return (
     <html
@@ -106,6 +140,11 @@ export default async function RootLayout({
       className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className={`${inter.className} antialiased`}>
+        {/* JSON-LD structured data — Organization + WebSite */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <Header user={user} />
         <main className="min-h-screen pt-14 sm:pt-16">{children}</main>
         <Footer />

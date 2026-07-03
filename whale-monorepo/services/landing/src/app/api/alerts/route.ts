@@ -59,7 +59,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const token = req.headers.get('x-alert-token') || '';
-  if (!process.env.ALERTS_INGEST_TOKEN || token !== process.env.ALERTS_INGEST_TOKEN) {
+  const expected = process.env.ALERTS_INGEST_TOKEN || '';
+  if (!expected || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected))) {
     return NextResponse.json({ detail: 'not_found' }, { status: 404 });
   }
   let payload: {
@@ -137,61 +138,66 @@ export async function POST(req: Request) {
   const planByUserId = new Map(dedupUsers.map((u) => [u.id, u.plan]));
 
   let inserted = 0;
-  for (const row of whaleUserRows) {
-    const windowStart = useDynamicCooldown
-      ? new Date(
-          occurredAt.getTime() -
-            cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
-              1000,
-        )
-      : whaleCooldownSince;
-    const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-      SELECT id
-      FROM alert_events
-      WHERE user_id = ${row.userId}
-        AND source_type = 'whale'
-        AND source_id = ${wallet}
-        AND detail = ${detail}
-        AND occurred_at >= ${windowStart}
-      LIMIT 1
-    `);
-    if (recent.length > 0) {
-      continue;
+
+  // Wrap both loops in a single transaction so partial failure (e.g., the 5th
+  // insert crashing) doesn't leave earlier inserts committed with no rollback.
+  await prisma.$transaction(async (tx) => {
+    for (const row of whaleUserRows) {
+      const windowStart = useDynamicCooldown
+        ? new Date(
+            occurredAt.getTime() -
+              cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
+                1000,
+          )
+        : whaleCooldownSince;
+      const recent = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT id
+        FROM alert_events
+        WHERE user_id = ${row.userId}
+          AND source_type = 'whale'
+          AND source_id = ${wallet}
+          AND detail = ${detail}
+          AND occurred_at >= ${windowStart}
+        LIMIT 1
+      `);
+      if (recent.length > 0) {
+        continue;
+      }
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
+        VALUES (${crypto.randomUUID()}, ${row.userId}, 'whale', ${wallet}, ${title}, ${detail}, ${outcomeValue}, ${occurredAt})
+      `);
+      inserted += 1;
     }
-    await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
-      VALUES (${crypto.randomUUID()}, ${row.userId}, 'whale', ${wallet}, ${title}, ${detail}, ${outcomeValue}, ${occurredAt})
-    `);
-    inserted += 1;
-  }
-  const collectionTitle = payload.market_title || payload.market_question || 'Smart Collection Alert';
-  for (const row of collectionRows) {
-    const detailText = `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`;
-    const windowStart = useDynamicCooldown
-      ? new Date(
-          occurredAt.getTime() -
-            cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
-              1000,
-        )
-      : collectionCooldownSince;
-    const recent = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-      SELECT id
-      FROM alert_events
-      WHERE user_id = ${row.userId}
-        AND source_type = 'collection'
-        AND source_id = ${row.smartCollectionId}
-        AND detail = ${detailText}
-        AND occurred_at >= ${windowStart}
-      LIMIT 1
-    `);
-    if (recent.length > 0) {
-      continue;
+    const collectionTitle = payload.market_title || payload.market_question || 'Smart Collection Alert';
+    for (const row of collectionRows) {
+      const detailText = `Wallet ${wallet.slice(0, 6)}…${wallet.slice(-4)} triggered collection`;
+      const windowStart = useDynamicCooldown
+        ? new Date(
+            occurredAt.getTime() -
+              cooldownSecondsForPlan(effectiveScore, toBillingPlan(planByUserId.get(row.userId) ?? Plan.FREE)) *
+                1000,
+          )
+        : collectionCooldownSince;
+      const recent = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT id
+        FROM alert_events
+        WHERE user_id = ${row.userId}
+          AND source_type = 'collection'
+          AND source_id = ${row.smartCollectionId}
+          AND detail = ${detailText}
+          AND occurred_at >= ${windowStart}
+        LIMIT 1
+      `);
+      if (recent.length > 0) {
+        continue;
+      }
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
+        VALUES (${crypto.randomUUID()}, ${row.userId}, 'collection', ${row.smartCollectionId}, ${`Collection Alert · ${collectionTitle}`}, ${detailText}, ${outcomeValue}, ${occurredAt})
+      `);
+      inserted += 1;
     }
-    await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO alert_events (id, user_id, source_type, source_id, title, detail, outcome, occurred_at)
-      VALUES (${crypto.randomUUID()}, ${row.userId}, 'collection', ${row.smartCollectionId}, ${`Collection Alert · ${collectionTitle}`}, ${detailText}, ${outcomeValue}, ${occurredAt})
-    `);
-    inserted += 1;
-  }
+  });
   return NextResponse.json({ ok: true, inserted });
 }

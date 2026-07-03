@@ -1,42 +1,13 @@
 // services/landing/src/lib/vw-signals.ts
+// Server-side Prisma queries for VW metrics.
+// Types and client-safe fetch wrappers live in vw-client.ts.
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import type { VwMetricsRow, VwSnapshotPoint, CrossSignal } from '@/lib/vw-client';
 
-// —— Types ——
-
-export interface VwMetricsRow {
-  marketId: string;
-  marketTitle: string;
-  totalVolumeUsd: number;
-  yesVolumeUsd: number;
-  noVolumeUsd: number;
-  yesVwPrice: number | null;
-  noVwPrice: number | null;
-  yesMarketPrice: number | null;
-  vwDivergence: number | null;
-  uai: number | null;
-  vwVelocity5m: number | null;
-  signalDirection: 'bullish' | 'bearish' | 'neutral' | null;
-  signalStrength: number | null;
-  status: string;
-  computedAt: Date | null;
-}
-
-export interface VwSnapshotPoint {
-  snapshotAt: Date;
-  vwDivergence: number | null;
-  yesMarketPrice: number | null;
-}
-
-export interface CrossSignal {
-  marketId: string;
-  marketTitle: string;
-  vwDirection: string | null;
-  vwDivergence: number | null;
-  whaleDirection: 'bullish' | 'bearish' | 'neutral';
-  confidenceLevel: 'high' | 'medium' | 'low';
-}
+// Re-export types for convenience (single import for server components)
+export type { VwMetricsRow, VwSnapshotPoint, CrossSignal };
 
 // —— Queries ——
 
@@ -144,59 +115,6 @@ export async function getCrossSignals(
       whaleDirection: row.whaleDirection || 'neutral',
       confidenceLevel: confidence,
     };
-  } catch {
-    return null;
-  }
-}
-
-// —— Client-side fetch wrappers (call API route instead of Prisma directly) ——
-
-/** Fetch VW metrics list via the /api/vw API route. Safe for client components. */
-export async function getVwMetricsApi(
-  sortBy: 'volume' | 'divergence' | 'strength' = 'volume',
-  limit = 50
-): Promise<VwMetricsRow[]> {
-  const res = await fetch(
-    `/api/vw?action=metrics&sortBy=${sortBy}&limit=${limit}`
-  );
-  if (res.status === 403) {
-    const error: any = new Error('Forbidden');
-    error.status = 403;
-    throw error;
-  }
-  if (!res.ok) return [];
-  const json = await res.json();
-  return json.data || [];
-}
-
-/** Fetch VW snapshots via the /api/vw API route. Safe for client components. */
-export async function getVwSnapshotsApi(
-  marketId: string,
-  hours = 24
-): Promise<VwSnapshotPoint[]> {
-  try {
-    const res = await fetch(
-      `/api/vw?action=snapshots&marketId=${encodeURIComponent(marketId)}&hours=${hours}`
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
-  } catch {
-    return [];
-  }
-}
-
-/** Fetch cross signal via the /api/vw API route. Safe for client components. */
-export async function getCrossSignalsApi(
-  marketId: string
-): Promise<CrossSignal | null> {
-  try {
-    const res = await fetch(
-      `/api/vw?action=cross&marketId=${encodeURIComponent(marketId)}`
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data || null;
   } catch {
     return null;
   }

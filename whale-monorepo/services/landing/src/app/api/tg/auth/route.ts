@@ -8,8 +8,16 @@ function getBotToken(): string {
   return process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
 }
 
+/**
+ * Session signing secret — single env var, no fallback chain.
+ * Must match the secret used by auth.ts for verification.
+ */
 function getSessionSecret(): string {
-  return process.env.TELEGRAM_MINIAPP_SECRET || getBotToken();
+  const secret = process.env.TELEGRAM_MINIAPP_SECRET || '';
+  if (!secret && process.env.NODE_ENV === 'production') {
+    console.error('FATAL: TELEGRAM_MINIAPP_SECRET is not set — sessions are insecure');
+  }
+  return secret;
 }
 
 export async function POST(req: Request) {
@@ -34,7 +42,7 @@ export async function POST(req: Request) {
 
   let auth;
   try {
-    auth = await verifyTelegramInitData(initData, botToken, 86400);
+    auth = await verifyTelegramInitData(initData, botToken, 300);
   } catch (e) {
     const code = e instanceof Error ? e.message : 'invalid_initData';
     return NextResponse.json({ detail: code }, { status: 401 });

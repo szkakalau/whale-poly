@@ -22,7 +22,7 @@ from services.telegram_bot.delivery_cooldown import (
 )
 from services.telegram_bot.elite_filters import elite_delivery_allowed
 from services.telegram_bot.templates import format_alert, format_digest_lines
-from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, increment_daily_alert_count
+from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit, try_increment_daily_alert_count
 from services.telegram_bot.recipients import AlertRecipient, dedupe_recipients, group_recipients_by_telegram
 from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
@@ -42,6 +42,9 @@ from shared.models import (
 
 configure_logging(settings.log_level)
 logger = logging.getLogger("telegram_bot.api")
+
+# Track pending delayed-send tasks so they can be awaited on shutdown.
+_pending_sends: set[asyncio.Task] = set()
 
 _HAS_USERS_TABLE: bool | None = None
 _HAS_WHALE_FOLLOWS_TABLE: bool | None = None
@@ -101,9 +104,7 @@ def _redact_netloc(url: str) -> str:
     return ""
 
 
-def _require_admin(x_admin_token: str | None) -> None:
-  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
-    raise HTTPException(status_code=404, detail="not_found")
+from shared.auth import require_admin as _require_admin
 
 
 def _hash_admin(value: str) -> str:
@@ -256,7 +257,7 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             parse_mode="HTML",
             disable_web_page_preview=True,
           )
-          await increment_daily_alert_count(redis, tid)
+          await try_increment_daily_alert_count(redis, tid, limits["max_alerts_per_day"])
           await record_after_digest_flush(redis, tid, matched_group, cd.flushed_raws or [])
         except Exception:
           logger.exception(
@@ -296,14 +297,16 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               parse_mode="HTML",
               disable_web_page_preview=True,
             )
-            await increment_daily_alert_count(redis, tid)
+            await try_increment_daily_alert_count(redis, tid, limits["max_alerts_per_day"])
             await record_push_for_group(redis, tid, matched_group, compute_effective_score(p_json))
             if plan_name == "ELITE" and market_id and wallet_value:
               await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
           except Exception:
             logger.exception("delayed_telegram_send_failed telegram_id=%s", tid)
         
-        asyncio.create_task(_delayed_send())
+        task = asyncio.create_task(_delayed_send())
+        _pending_sends.add(task)
+        task.add_done_callback(_pending_sends.discard)
         return True
 
       # 4. Immediate Send for PRO/ELITE
@@ -551,10 +554,19 @@ async def lifespan(_: FastAPI):
     for t in tasks:
       t.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
+    # Cancel and await any pending delayed sends (prevents alert loss on shutdown)
+    for t in list(_pending_sends):
+      t.cancel()
+    if _pending_sends:
+      await asyncio.gather(*_pending_sends, return_exceptions=True)
+      logger.info("shutdown_cancelled_pending_sends count=%d", len(_pending_sends))
     await redis.aclose()
 
 
 app = FastAPI(title="telegram-bot", lifespan=lifespan)
+
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
 
 
 @app.get("/health")

@@ -87,6 +87,9 @@ class Settings:
     self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "")
     self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
     self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "")
+    # Health check URLs — override via env vars for your deployment target.
+    # Defaults use Render public URLs; set to Docker internal hostnames for
+    # local dev (e.g. http://trade-ingest-api:8010).  (CR-A3)
     self.health_trade_ingest_api_url = os.getenv("HEALTH_TRADE_INGEST_API_URL", "https://trade-ingest-api.onrender.com")
     self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "https://whale-engine-api.onrender.com")
     self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
@@ -273,6 +276,18 @@ def get_alert_config() -> dict[str, Any]:
   _ALERT_CONFIG_CACHE = data
   _ALERT_CONFIG_MTIME = mtime
   return data
+
+
+async def async_get_alert_config() -> dict[str, Any]:
+  """Async variant — runs YAML parsing in a thread executor to avoid
+  blocking the event loop on config reloads (PF-L3)."""
+  import asyncio
+  return await asyncio.get_event_loop().run_in_executor(None, get_alert_config)
+
+
+# Preload config at module import so the first request doesn't pay
+# the I/O + YAML parse cost (PF-L3).
+get_alert_config()
 
 
 settings = Settings()

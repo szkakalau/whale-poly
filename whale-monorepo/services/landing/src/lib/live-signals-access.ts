@@ -1,6 +1,7 @@
 import type { AuthUser } from '@/lib/auth';
 import type { LiveSignal } from '@/lib/live-signals';
 import { Plan } from '@prisma/client';
+import { effectivePlan } from '@/lib/plans';
 
 /** Today 00:00:00.000 UTC */
 export function getUtcTodayStart(now: Date = new Date()): number {
@@ -9,10 +10,8 @@ export function getUtcTodayStart(now: Date = new Date()): number {
 
 export function isPaidLiveSignalsUser(user: AuthUser | null): boolean {
   if (!user) return false;
-  const plan = user.plan as Plan;
-  if (plan !== Plan.PRO && plan !== Plan.ELITE) return false;
-  if (user.planExpireAt && new Date() > user.planExpireAt) return false;
-  return true;
+  const plan = effectivePlan(user);
+  return plan === Plan.PRO || plan === Plan.ELITE;
 }
 
 /**

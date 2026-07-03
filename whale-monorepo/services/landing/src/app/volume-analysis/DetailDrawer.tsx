@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { X, Loader2 } from 'lucide-react';
 import { getVwSnapshotsApi, getCrossSignalsApi, VwSnapshotPoint, CrossSignal, VwMetricsRow } from '@/lib/vw-client';
 import { useLocale } from '@/lib/vw-i18n';
-import DivergenceChart from './DivergenceChart';
+
+// Lazy-load recharts (~150KB gzipped) only when the drawer opens (PF-H9).
+const DivergenceChart = dynamic(() => import('./DivergenceChart'), { ssr: false });
 
 interface Props {
   market: VwMetricsRow;

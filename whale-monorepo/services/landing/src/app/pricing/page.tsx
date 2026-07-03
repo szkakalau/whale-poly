@@ -17,22 +17,22 @@ const loadCachedPricingStats = unstable_cache(
 );
 
 export const metadata = {
-  title: { absolute: 'Pricing — SightWhale.com' },
+  title: { absolute: 'SightWhale Pricing — Polymarket Whale Tracking Plans' },
   description:
-    'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+    'Polymarket whale tracking plans starting at $29/mo. Real-time Telegram alerts, verified win rates, full PnL history. Full refund in your first month.',
   openGraph: {
-    title: 'Pricing — SightWhale.com',
+    title: 'SightWhale Pricing — Polymarket Whale Tracking Plans',
     description:
-      'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+      'Polymarket whale tracking plans starting at $29/mo. Real-time Telegram alerts, verified win rates, full PnL history. Full refund in your first month.',
     type: 'website',
     url: 'https://www.sightwhale.com/pricing',
     images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pricing — SightWhale.com',
+    title: 'SightWhale Pricing — Polymarket Whale Tracking Plans',
     description:
-      'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Full refund in your first month if the product does not meet expectations.',
+      'Polymarket whale tracking plans starting at $29/mo. Real-time Telegram alerts, verified win rates, full PnL history. Full refund in your first month.',
     images: ['/opengraph-image'],
   },
   alternates: {
@@ -54,6 +54,56 @@ const FAQ = [
     a: 'No. Telegram is optional. Paid plans include the live signal list in the product; Telegram is an extra delivery channel.',
   },
 ];
+
+const pricingJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Product',
+      '@id': 'https://www.sightwhale.com/pricing#pro',
+      name: 'SightWhale Pro',
+      description:
+        'Real-time Polymarket whale trade alerts with verified win rates and full PnL history. Everything in Free plus live signals and Telegram delivery.',
+      image: 'https://www.sightwhale.com/opengraph-image',
+      brand: { '@type': 'Brand', name: 'SightWhale' },
+      category: 'Software',
+      offers: {
+        '@type': 'Offer',
+        price: 29,
+        priceCurrency: 'USD',
+        priceValidUntil: '2027-12-31',
+        availability: 'https://schema.org/InStock',
+        url: 'https://www.sightwhale.com/subscribe?plan=pro',
+      },
+    },
+    {
+      '@type': 'Product',
+      '@id': 'https://www.sightwhale.com/pricing#elite',
+      name: 'SightWhale Elite',
+      description:
+        'Everything in Pro plus Smart Collections, advanced wallet clustering, and priority delivery.',
+      image: 'https://www.sightwhale.com/opengraph-image',
+      brand: { '@type': 'Brand', name: 'SightWhale' },
+      category: 'Software',
+      offers: {
+        '@type': 'Offer',
+        price: 59,
+        priceCurrency: 'USD',
+        priceValidUntil: '2027-12-31',
+        availability: 'https://schema.org/InStock',
+        url: 'https://www.sightwhale.com/subscribe?plan=elite',
+      },
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(({ q, a }) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    },
+  ],
+};
 
 async function PricingValueAnchor() {
   try {
@@ -82,11 +132,16 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen text-foreground selection:bg-accent selection:text-white overflow-hidden">
-      <main className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-36 pb-16">
+      {/* JSON-LD structured data — Product + Offer + FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
+      />
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-36 pb-16">
         <header className="mb-12 max-w-2xl">
           <p className="eyebrow mb-4">Pricing</p>
           <h1 className="text-balance mb-4">
-            Pay only if it makes sense
+            SightWhale Pricing — Polymarket Whale Tracking Plans
           </h1>
           <p className="text-muted text-sm sm:text-base max-w-xl leading-relaxed">
             Verify performance on History first. Upgrade when you want today&apos;s real-time stream.
@@ -181,7 +236,7 @@ export default function PricingPage() {
             Start checkout
           </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

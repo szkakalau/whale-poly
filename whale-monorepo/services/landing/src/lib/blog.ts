@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 // ---------------------------------------------------------------------------
@@ -29,6 +30,8 @@ export type BlogPostCard = Pick<
   BlogPost,
   'slug' | 'title' | 'excerpt' | 'author' | 'read_time' | 'tags' | 'published_at' | 'language' | 'group_slug'
 >;
+
+export type TagWithCount = { tag: string; count: number };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,43 +71,8 @@ async function apiFetch(path: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Queries — post detail uses API; listing/tags use $queryRawUnsafe as fallback
+// Queries — parameterized via Prisma.sql (no string interpolation)
 // ---------------------------------------------------------------------------
-
-/**
- * Get paginated published posts for a given language.
- */
-export async function getPosts(
-  language: string,
-  page: number = 1,
-  limit: number = 12,
-  tag?: string,
-): Promise<{ posts: BlogPostCard[]; total: number }> {
-  const offset = (page - 1) * limit;
-  const tagWhere = tag ? `and '${tag.replace(/'/g, "''")}' = any(tags)` : '';
-
-  const [posts, countResult] = await Promise.all([
-    prisma.$queryRawUnsafe<any[]>(
-      `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-       from blog_posts
-       where status = 'published' and language = '${language.replace(/'/g, "''")}'
-       ${tagWhere}
-       order by published_at desc
-       limit ${limit} offset ${offset}`,
-    ),
-    prisma.$queryRawUnsafe<[{ count: bigint }]>(
-      `select count(*) as count
-       from blog_posts
-       where status = 'published' and language = '${language.replace(/'/g, "''")}'
-       ${tagWhere}`,
-    ),
-  ]);
-
-  return {
-    posts: posts.map(mapPostCard),
-    total: Number(countResult[0]?.count ?? 0),
-  };
-}
 
 /**
  * Get a single post by slug and language (via API — includes sibling).
@@ -119,22 +87,6 @@ export async function getPost(slug: string, language: string): Promise<BlogPost 
 }
 
 /**
- * Get the sibling article (kept for existing callers).
- */
-export async function getSiblingPost(
-  groupSlug: string | null,
-  language: string,
-): Promise<{ slug: string; language: string } | null> {
-  if (!groupSlug) return null;
-  const rows = await prisma.$queryRawUnsafe<{ slug: string; language: string }[]>(
-    `select slug, language from blog_posts
-     where group_slug = '${groupSlug.replace(/'/g, "''")}' and language != '${language.replace(/'/g, "''")}' and status = 'published'
-     limit 1`,
-  );
-  return rows[0] ?? null;
-}
-
-/**
  * Get related posts (same language, shares at least one tag).
  */
 export async function getRelatedPosts(
@@ -144,16 +96,15 @@ export async function getRelatedPosts(
   limit: number = 3,
 ): Promise<BlogPostCard[]> {
   if (!tags.length) return [];
-  const tagList = tags.map((t) => `'${t.replace(/'/g, "''")}'`).join(',');
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-     from blog_posts
-     where status = 'published'
-       and language = '${language.replace(/'/g, "''")}'
-       and slug != '${slug.replace(/'/g, "''")}'
-       and tags && array[${tagList}]::text[]
-     order by published_at desc
-     limit ${limit}`,
+  const rows = await prisma.$queryRaw<any[]>(
+    Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+    FROM blog_posts
+    WHERE status = 'published'
+      AND language = ${language}
+      AND slug != ${slug}
+      AND tags && array[${Prisma.join(tags)}]::text[]
+    ORDER BY published_at DESC
+    LIMIT ${limit}`,
   );
   return rows.map(mapPostCard);
 }
@@ -162,11 +113,11 @@ export async function getRelatedPosts(
  * Get all published slugs for sitemap / RSS generation.
  */
 export async function getAllPublishedSlugs(): Promise<{ slug: string; language: string; updated_at: string }[]> {
-  const rows = await prisma.$queryRawUnsafe<{ slug: string; language: string; updated_at: string }[]>(
-    `select slug, language, updated_at::text as updated_at
-     from blog_posts
-     where status = 'published'
-     order by published_at desc`,
+  const rows = await prisma.$queryRaw<{ slug: string; language: string; updated_at: string }[]>(
+    Prisma.sql`SELECT slug, language, updated_at::text AS updated_at
+    FROM blog_posts
+    WHERE status = 'published'
+    ORDER BY published_at DESC`,
   );
   return rows;
 }
@@ -175,29 +126,18 @@ export async function getAllPublishedSlugs(): Promise<{ slug: string; language: 
  * Get latest posts for RSS feed.
  */
 export async function getLatestPosts(limit: number = 20, language?: string): Promise<BlogPostCard[]> {
-  const langWhere = language ? `and language = '${language.replace(/'/g, "''")}'` : '';
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `select slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-     from blog_posts
-     where status = 'published' ${langWhere}
-     order by published_at desc
-     limit ${limit}`,
+  const rows = await prisma.$queryRaw<any[]>(
+    language
+      ? Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+        FROM blog_posts
+        WHERE status = 'published' AND language = ${language}
+        ORDER BY published_at DESC
+        LIMIT ${limit}`
+      : Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+        FROM blog_posts
+        WHERE status = 'published'
+        ORDER BY published_at DESC
+        LIMIT ${limit}`,
   );
   return rows.map(mapPostCard);
-}
-
-export type TagWithCount = { tag: string; count: number };
-
-/**
- * Get all tags with article counts for a language.
- */
-export async function getAllTags(language: string): Promise<TagWithCount[]> {
-  const rows = await prisma.$queryRawUnsafe<TagWithCount[]>(
-    `select unnest(tags) as tag, count(*)::int as count
-     from blog_posts
-     where status = 'published' and language = '${language.replace(/'/g, "''")}'
-     group by tag
-     order by count desc, tag`,
-  );
-  return rows;
 }

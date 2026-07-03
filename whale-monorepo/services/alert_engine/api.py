@@ -1,17 +1,18 @@
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
-from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from urllib.parse import urlparse
 
 from services.alert_engine.engine import _resolve_outcome_from_token
+from shared.async_utils import get_redis
 from shared.config import settings
 from shared.db import get_session
 from shared.logging import configure_logging
@@ -19,33 +20,28 @@ from shared.models import Alert, Market
 
 
 configure_logging(settings.log_level)
+logger = logging.getLogger("alert_engine.api")
 
 app = FastAPI(title="alert-engine")
 
+from shared.auth import require_admin as _require_admin
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
+
 
 def _redact_netloc(url: str) -> str:
-  try:
-    u = urlparse(url)
-    if not u.netloc:
-      return ""
-    if "@" in u.netloc:
-      return u.netloc.split("@", 1)[1]
-    return u.netloc
-  except Exception:
-    return ""
-
-
-def _require_admin(x_admin_token: str | None) -> None:
-  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
-    raise HTTPException(status_code=404, detail="not_found")
+    """返回隐藏了认证信息的 URL 字符串，仅保留协议和主机名。"""
+    try:
+        p = urlparse(url)
+        host = p.hostname or "***"
+        port = f":{p.port}" if p.port else ""
+        return f"{p.scheme}://***@{host}{port}"
+    except Exception:
+        return "***"
 
 
 def _hash_admin(value: str) -> str:
   return hashlib.sha1(f"admin:{value}".encode("utf-8")).hexdigest()[:10]
-
-
-def _is_production() -> bool:
-  return os.getenv("NODE_ENV", "").lower() == "production"
 
 
 @app.get("/health")
@@ -54,8 +50,7 @@ async def health():
 
 @app.get("/debug/build")
 async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
-  if _is_production():
-    _require_admin(x_admin_token)
+  _require_admin(x_admin_token)
   keys = [
     "RENDER_GIT_COMMIT",
     "RENDER_SERVICE_ID",
@@ -71,23 +66,18 @@ async def debug_resolve_outcome(
   token_id: str = Query(..., min_length=1),
   x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
 ):
-  if _is_production():
-    _require_admin(x_admin_token)
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  try:
-    resolved = await _resolve_outcome_from_token(redis, token_id)
-    cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
-    return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
-  finally:
-    await redis.aclose()
+  _require_admin(x_admin_token)
+  redis = await get_redis()
+  resolved = await _resolve_outcome_from_token(redis, token_id)
+  cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
+  return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
 
 @app.get("/debug/outcome")
 async def debug_outcome(
   token_id: str = Query(..., min_length=1),
   x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
 ):
-  if _is_production():
-    _require_admin(x_admin_token)
+  _require_admin(x_admin_token)
   tid = str(token_id).strip()
   proxy = settings.https_proxy or None
   result: dict = {"token_id": tid, "proxy_set": bool(proxy), "steps": []}
@@ -187,13 +177,18 @@ async def admin_diag_outcome(
   x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
 ):
   _require_admin(x_admin_token)
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  try:
-    resolved = await _resolve_outcome_from_token(redis, token_id)
-    cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
-    return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
-  finally:
-    await redis.aclose()
+  redis = await get_redis()
+  resolved = await _resolve_outcome_from_token(redis, token_id)
+  cached = await redis.get(f"token_outcome:{str(token_id).strip()}")
+  return {"token_id": token_id, "outcome": resolved, "cache_value": cached}
+
+
+def _shorten_wallet(addr: str) -> str:
+  """返回脱敏钱包地址: 前6 + ... + 后4 字符"""
+  addr = (addr or "").strip()
+  if len(addr) <= 12:
+    return addr
+  return f"{addr[:6]}...{addr[-4:]}"
 
 
 @app.get("/alerts")
@@ -204,7 +199,7 @@ async def list_alerts(limit: int = Query(100, ge=1, le=1000), session: AsyncSess
       "id": a.id,
       "whale_trade_id": a.whale_trade_id,
       "market_id": a.market_id,
-      "wallet_address": a.wallet_address,
+      "wallet_address": _shorten_wallet(a.wallet_address),
       "whale_score": a.whale_score,
       "alert_type": a.alert_type,
       "created_at": a.created_at,
@@ -216,13 +211,13 @@ async def list_alerts(limit: int = Query(100, ge=1, le=1000), session: AsyncSess
 @app.get("/alerts/recent")
 async def recent_alerts(minutes: int = Query(60, ge=1, le=1440), session: AsyncSession = Depends(get_session)):
   since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
-  rows = (await session.execute(select(Alert).where(Alert.created_at >= since).order_by(Alert.created_at.desc()))).scalars().all()
+  rows = (await session.execute(select(Alert).where(Alert.created_at >= since).order_by(Alert.created_at.desc()).limit(1000))).scalars().all()
   return [
     {
       "id": a.id,
       "whale_trade_id": a.whale_trade_id,
       "market_id": a.market_id,
-      "wallet_address": a.wallet_address,
+      "wallet_address": _shorten_wallet(a.wallet_address),
       "whale_score": a.whale_score,
       "alert_type": a.alert_type,
       "created_at": a.created_at,
@@ -233,38 +228,31 @@ async def recent_alerts(minutes: int = Query(60, ge=1, le=1440), session: AsyncS
 
 @app.get("/debug/queues")
 async def debug_queues(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
-  if _is_production():
-    _require_admin(x_admin_token)
+  _require_admin(x_admin_token)
   names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  try:
-    queues = []
-    for name in names:
-      size = await redis.llen(name)
-      last = await redis.lrange(name, -1, -1)
-      queues.append({"name": name, "len": size, "last": last[0] if last else None})
-    last_alert = await redis.get("alert_created:last")
-    return {"queues": queues, "last_alert": last_alert}
-  finally:
-    await redis.aclose()
+  redis = await get_redis()
+  queues = []
+  for name in names:
+    size = await redis.llen(name)
+    last = await redis.lrange(name, -1, -1)
+    queues.append({"name": name, "len": size, "last": last[0] if last else None})
+  last_alert = await redis.get("alert_created:last")
+  return {"queues": queues, "last_alert": last_alert}
 
 
 @app.get("/admin/diag/config")
 async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
   _require_admin(x_admin_token)
 
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
-  try:
-    await redis.ping()
-    names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
-    queues = []
-    for name in names:
-      size = await redis.llen(name)
-      last = await redis.lrange(name, -1, -1)
-      queues.append({"name": name, "len": int(size), "last_preview": (last[0] or "")[:200] if last else None})
-    last_alert = await redis.get("alert_created:last")
-  finally:
-    await redis.aclose()
+  redis = await get_redis()
+  await redis.ping()
+  names = [settings.trade_created_queue, settings.whale_trade_created_queue, settings.alert_created_queue]
+  queues = []
+  for name in names:
+    size = await redis.llen(name)
+    last = await redis.lrange(name, -1, -1)
+    queues.append({"name": name, "len": int(size), "last_preview": (last[0] or "")[:200] if last else None})
+  last_alert = await redis.get("alert_created:last")
 
   bot_token_present = bool(settings.telegram_bot_token)
   chat_id_present = bool(settings.telegram_alert_chat_id)
@@ -333,12 +321,24 @@ async def force_alert(
     "price": price,
     "created_at": now.isoformat(),
   }
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  redis = await get_redis()
+  pushed = False
   try:
     await redis.rpush(settings.alert_created_queue, json.dumps(payload))
     await redis.set("alert_created:last", json.dumps(payload), ex=86400)
-  finally:
-    await redis.aclose()
+    pushed = True
+    # 队列大小监控
+    try:
+      qlen = await redis.llen(settings.alert_created_queue)
+      if qlen > 100_000:
+        logger.warning("alert_queue_overflow qlen=%d", qlen)
+    except Exception:
+      pass
+  except Exception:
+    logger.exception("force_alert_redis_push_failed alert_id=%s", alert_id)
+
+  if not pushed:
+    return {"ok": False, "error": "redis_push_failed", "alert_id": alert_id, "whale_trade_id": whale_trade_id}
 
   direct = {"ok": False}
   if settings.telegram_bot_token and settings.telegram_alert_chat_id:

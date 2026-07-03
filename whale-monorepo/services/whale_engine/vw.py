@@ -253,17 +253,15 @@ async def compute_vw_metrics(session: AsyncSession, redis: Redis, config: dict) 
 
     for market_id, vol_24h in active_markets.items():
         try:
-            # 2a. 聚合过去 N 天交易
-            # NOTE: INTERVAL 不支持 SQL 参数绑定，显式校验为整数防止注入
-            days_int = int(window_days)
+            # 使用参数化查询避免 SQL 注入：:days * INTERVAL '1 day' 支持绑定参数
             trade_result = await session.execute(
-                text(f"""
+                text("""
                     SELECT outcome, amount, price
                     FROM trades_raw
                     WHERE market_id = :mid
-                      AND timestamp > NOW() - INTERVAL '{days_int} days'
+                      AND timestamp > NOW() - (:days * INTERVAL '1 day')
                 """),
-                {"mid": market_id},
+                {"mid": market_id, "days": int(window_days)},
             )
             trades = [(row[0], row[1], row[2]) for row in trade_result.fetchall()]
 
@@ -461,13 +459,13 @@ async def prune_vw_snapshots(session: AsyncSession, config: dict) -> int:
     # TODO: implement hourly/daily aggregation in future enhancement
     deleted = 0
 
-    # 删除超过保留期的原始快照
-    days_int = int(retention_days)
+    # 使用参数化查询删除超过保留期的原始快照
     result = await session.execute(
-        text(f"""
+        text("""
             DELETE FROM market_vw_snapshots
-            WHERE snapshot_at < NOW() - INTERVAL '{days_int} days'
-        """)
+            WHERE snapshot_at < NOW() - (:days * INTERVAL '1 day')
+        """),
+        {"days": int(retention_days)},
     )
     deleted += result.rowcount
 

@@ -36,30 +36,36 @@ export async function POST(req: Request) {
   }
 
   const limit = getLimitValue(user, 'max_collections');
-  if (limit !== 'unlimited') {
-    const count = await prisma.collection.count({
-      where: { userId: user.id },
-    });
 
-    if (count >= limit) {
-      return NextResponse.json(
-        { 
-          detail: 'collection_limit_reached',
-          message: `You have reached your collection limit (${limit}). Upgrade to unlock more.` 
-        },
-        { status: 403 }
-      );
+  // Atomic count-check + create to prevent TOCTOU limit bypass.
+  const created = await prisma.$transaction(async (tx) => {
+    if (limit !== 'unlimited') {
+      const count = await tx.collection.count({
+        where: { userId: user.id },
+      });
+      if (count >= limit) {
+        return null;
+      }
     }
-  }
-
-  const created = await prisma.collection.create({
-    data: {
-      userId: user.id,
-      name: data.name,
-      description: data.description ?? '',
-      enabled: data.enabled ?? true,
-    },
+    return tx.collection.create({
+      data: {
+        userId: user.id,
+        name: data.name,
+        description: data.description ?? '',
+        enabled: data.enabled ?? true,
+      },
+    });
   });
+
+  if (created === null) {
+    return NextResponse.json(
+      {
+        detail: 'collection_limit_reached',
+        message: `You have reached your collection limit (${limit}). Upgrade to unlock more.`,
+      },
+      { status: 403 },
+    );
+  }
 
   const payload: CollectionResponse = {
     id: created.id,

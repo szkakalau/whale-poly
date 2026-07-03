@@ -8,12 +8,10 @@ function safeNumber(value: unknown, fallback = 0): number {
 }
 
 export async function GET(request: Request) {
-  if (process.env.NODE_ENV === 'production') {
-    const adminToken = process.env.ADMIN_TOKEN || '';
-    const headerToken = request.headers.get('x-admin-token') || '';
-    if (!adminToken || headerToken !== adminToken) {
-      return NextResponse.json({ detail: 'not_found' }, { status: 404 });
-    }
+  const adminToken = process.env.ADMIN_TOKEN || '';
+  const headerToken = request.headers.get('x-admin-token') || '';
+  if (!adminToken || headerToken !== adminToken) {
+    return NextResponse.json({ detail: 'not_found' }, { status: 404 });
   }
 
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());

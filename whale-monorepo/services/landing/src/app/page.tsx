@@ -1,343 +1,47 @@
 import { Suspense } from 'react';
-import { unstable_cache } from 'next/cache';
-import { loadLiveSignals } from '@/lib/live-signals';
-import { getCurrentUser } from '@/lib/auth';
-import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
-import LiveSignalsFeedLazy from '@/components/LiveSignalsFeedLazy';
+import Link from 'next/link';
 import { HomeCtaLink } from '@/components/HomeCtaLink';
 import HomeStickyCta from '@/components/HomeStickyCta';
 import HeroAnalyzeInput from '@/components/HeroAnalyzeInput';
 import { PRICING_PRO_MONTHLY } from '@/lib/pricing-plans';
+import { PAIN_POINTS, HOW_IT_WORKS, MOATS, FAQ_ITEMS } from '@/lib/home-content';
 import {
-  ArrowRight,
-  BarChart3,
-  Bell,
-  Clock,
-  FileText,
-  Globe,
-  Search,
-  ShieldCheck,
-  TrendingUp,
-  Zap,
+  ScorePerformanceSection, StarWhaleSection,
+  StatsSection, HeroStat, HeroStatFallback, LivePreview,
+} from '@/components/HomeDataComponents';
+import {
+  ArrowRight, Search, Zap,
 } from 'lucide-react';
-import Link from 'next/link';
 
-function formatPct(v: number | null): string {
-  if (v == null || !Number.isFinite(v)) return '—';
-  const sign = v > 0 ? '+' : '';
-  return `${sign}${(v * 100).toFixed(1)}%`;
-}
+/* ── Page ── */
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
-
-const loadHomeStats = unstable_cache(
-  async () => {
-    const res = await fetch(`${API_BASE}/stats/home`);
-    if (!res.ok) throw new Error(`Stats API ${res.status}`);
-    return res.json() as Promise<{
-      historyTotal: number;
-      scoreTiers: { tier: string; labelName: string; count: number; resolvedCount: number; winRate: number | null; avgRoi: number | null }[];
-      starWhale: { walletMasked: string; totalPnl: number; roi: number; winRate: number; whaleScore: number; totalTrades: number } | null;
-    }>;
-  },
-  ['home-stats-v2'],
-  { revalidate: 120 },
-);
-
-function formatPnlCompact(v: number): string {
-  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(0)}`;
-}
-
-/* ── Data-fetching sub-components ── */
-
-async function ScorePerformanceSection() {
-  try {
-    const stats = await loadHomeStats();
-    const visible = stats.scoreTiers.filter((t) => t.count > 0);
-    if (visible.length === 0) return null;
-
-    return (
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
-        <p className="eyebrow mb-3">Proof in the numbers</p>
-        <h2 className="text-balance mb-3">Higher score = better results.</h2>
-        <p className="text-sm text-muted max-w-xl mb-8 leading-relaxed">
-          We grouped every audited signal by its Whale Score. The pattern is clear.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {visible.map((t, i) => {
-            const isTop = i === 0;
-            return (
-              <div key={t.tier} className={`rounded-lg border px-5 py-5 ${isTop ? 'border-accent/30 bg-accent/[0.04]' : 'border-border bg-surface'}`}>
-                <p className={`text-xs font-semibold tracking-wide uppercase mb-3 ${isTop ? 'text-accent' : 'text-muted'}`}>{t.labelName}</p>
-                <p className="text-2xl font-bold tabular-nums stat-number text-foreground mb-1">Score {t.tier}</p>
-                <div className="space-y-1 mt-3">
-                  <p className="text-sm text-muted"><span className="font-semibold text-accent stat-number">{t.avgRoi != null ? formatPct(t.avgRoi) : '—'}</span> avg ROI</p>
-                  <p className="text-sm text-muted"><span className="font-semibold text-foreground stat-number">{t.winRate != null ? `${(t.winRate * 100).toFixed(1)}%` : '—'}</span> win rate</p>
-                  <p className="text-xs text-subtle">{t.count} signal{t.count !== 1 ? 's' : ''}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    );
-  } catch { return null; }
-}
-
-async function StarWhaleSection() {
-  try {
-    const stats = await loadHomeStats();
-    const whale = stats.starWhale;
-    if (!whale) return null;
-
-    return (
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
-        <p className="eyebrow mb-3">Top whale</p>
-        <h2 className="text-balance mb-8">Meet the #1 performer.</h2>
-        <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-6 py-6 sm:px-8 sm:py-7">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="min-w-0">
-              <p className="text-xs text-subtle mb-1">Wallet</p>
-              <p className="text-base font-mono font-semibold text-foreground tabular-nums">{whale.walletMasked}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-xs text-muted">{whale.totalTrades} lifetime trades</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-6 sm:gap-8 shrink-0">
-              <div className="text-center sm:text-right"><p className="text-xs text-subtle mb-0.5">Historical ROI</p><p className="text-xl font-bold tabular-nums stat-number text-accent">{formatPct(whale.roi)}</p></div>
-              <div className="text-center sm:text-right"><p className="text-xs text-subtle mb-0.5">Total Profit</p><p className="text-xl font-bold tabular-nums stat-number text-accent">{formatPnlCompact(whale.totalPnl)}</p></div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  } catch { return null; }
-}
-
-/* ── Data-fetching sub-components ── */
-
-async function StatsBar() {
-  try {
-    const stats = await loadHomeStats();
-    const total = stats.historyTotal;
-    const allTiers = stats.scoreTiers;
-    // Weight by resolvedCount so only settled signals contribute to ROI / win rate
-    const totalResolved = allTiers.reduce((s, t) => s + (t.resolvedCount ?? 0), 0);
-    const avgRoi = totalResolved > 0
-      ? allTiers.reduce((s, t) => s + (t.avgRoi ?? 0) * (t.resolvedCount ?? 0), 0) / totalResolved
-      : null;
-    const totalWins = allTiers.reduce((s, t) => s + (t.winRate ?? 0) * (t.resolvedCount ?? 0), 0);
-    const winRate = totalResolved > 0 ? totalWins / totalResolved : null;
-    const wr = winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—';
-
-    return (
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted">
-        <span>
-          <span className="font-semibold tabular-nums text-foreground stat-number">{total}</span>{' '}
-          audited signals
-        </span>
-        <span className="text-border hidden sm:inline">·</span>
-        <span>
-          <span className="font-semibold tabular-nums text-muted stat-number">{totalResolved}</span>{' '}
-          resolved
-        </span>
-        <span className="text-border hidden sm:inline">·</span>
-        <span>
-          <span className="font-semibold tabular-nums text-accent stat-number">{formatPct(avgRoi)}</span>{' '}
-          cumulative ROI
-        </span>
-        <span className="text-border hidden sm:inline">·</span>
-        <span>
-          <span className="font-semibold text-accent">Publicly verified</span>
-        </span>
-        <span className="text-border hidden sm:inline">·</span>
-        <span>
-          <span className="font-semibold tabular-nums text-foreground stat-number">{wr}</span>{' '}
-          win rate
-        </span>
-      </div>
-    );
-  } catch {
-    return <StatsFallback />;
-  }
-}
-
-function StatsFallback() {
-  return <div className="h-6 w-80 rounded-md bg-surface-hover animate-pulse" aria-hidden />;
-}
-
-function StatsSection() {
-  return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
-      <div className="rounded-lg border border-border bg-surface px-6 py-5 sm:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="eyebrow mb-1">Live Track Record</p>
-            <Suspense fallback={<StatsFallback />}>
-              <StatsBar />
-            </Suspense>
-          </div>
-          <Link
-            href="/history"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover transition-colors shrink-0"
-          >
-            Browse full history
-            <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-async function LivePreview() {
-  const [liveSignals, user] = await Promise.all([loadLiveSignals(), getCurrentUser()]);
-  const signals = filterLiveSignalsForUser(liveSignals, user).slice(0, 3);
-  return <LiveSignalsFeedLazy signals={signals} homePreview />;
-}
-
-/* ── Static content blocks ── */
-
-const PAIN_POINTS = [
-  {
-    icon: Globe,
-    title: '500+ markets. You can\'t watch them all.',
-    description:
-      'Polymarket lists hundreds of active markets across politics, sports, crypto, and more. No single person can track every whale move across every market — but our engine does, 24/7.',
-  },
-  {
-    icon: Clock,
-    title: 'Whales move first. The crowd moves later.',
-    description:
-      'By the time you notice a big trade on Polymarket\'s UI, the odds have already shifted. Our real-time monitoring catches whale entries the moment they hit the chain.',
-  },
-  {
-    icon: FileText,
-    title: 'Most signal services hide their losers.',
-    description:
-      'Anyone can tweet winning screenshots. We publish every signal — wins, losses, and break-evens — on a public history page. If we can\'t prove it works, you shouldn\'t pay for it.',
-  },
-];
-
-const HOW_IT_WORKS = [
-  {
-    icon: Search,
-    title: 'Track',
-    description:
-      'We continuously monitor every trade from the top 1% most profitable Polymarket wallets. Real-time on-chain data, no delays, no sampling.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Score',
-    description:
-      'Our engine assigns each signal a conviction score based on trade size, wallet history, category expertise, and market context. Noise is filtered; signal survives.',
-  },
-  {
-    icon: Bell,
-    title: 'Deliver',
-    description:
-      'High-conviction signals reach your Telegram in ~30 seconds. Or query any market live on /analyze to see exactly what the whales are doing right now.',
-  },
-];
-
-const MOATS = [
-  {
-    icon: TrendingUp,
-    title: 'Auditable forever',
-    description:
-      'Every signal — every win, every loss, every break-even — stays on the public record. Browse the complete history anytime. No cherry-picking, no deleted rows, no excuses.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Money-back guarantee',
-    description:
-      'Not satisfied in your first month? Email us for a full refund. No forms, no arguing, no fine print. Our incentives are aligned with yours — we only win if you win.',
-  },
-  {
-    icon: Zap,
-    title: 'Push, don\'t pull',
-    description:
-      'Whale trades appear on your phone in ~30 seconds via Telegram. No dashboard to refresh, no app to install. Or use /analyze to actively query any market\'s whale activity live.',
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: 'How is this different from Polymarket\'s own analytics?',
-    a: 'Polymarket shows you what happened. SightWhale tells you who made it happen, how much they bet, and whether they\'ve been right before — then pushes it to your phone. Plus, every past signal is auditable on our History page.',
-  },
-  {
-    q: 'How do I know the signals are real?',
-    a: 'Every signal we\'ve ever published is on the History page — wins and losses. Compare any signal against the Polymarket blockchain. If you find a deleted or altered row, we\'ll give you a year free.',
-  },
-  {
-    q: 'What if the signals don\'t make me money?',
-    a: 'First month is covered by our money-back guarantee. Email castro.liu@me.com and we\'ll refund your subscription in full. We\'d rather earn your trust than keep $29.',
-  },
-  {
-    q: 'Do I need Telegram?',
-    a: 'No. Telegram is optional. Use /analyze to query any market live, or browse the History page anytime. Telegram is simply the fastest way to receive signals — nothing to install, no dashboard to refresh.',
-  },
-];
-
-/* ── Hero stat fetcher ── */
-
-async function HeroStat() {
-  try {
-    const stats = await loadHomeStats();
-    const tiers = stats.scoreTiers;
-    const totalSignals = tiers.reduce((s, t) => s + t.count, 0);
-    const totalWins = tiers.reduce((s, t) => s + (t.winRate ?? 0) * t.count, 0);
-    const winRate = totalSignals > 0 ? totalWins / totalSignals : null;
-    const wr = winRate != null && winRate > 0 ? `${(winRate * 100).toFixed(1)}%` : null;
-
-    if (!wr) {
-      return (
-        <span className="text-accent font-semibold italic">
-          a provable track record
-        </span>
-      );
-    }
-
-    return (
-      <span className="text-accent font-semibold not-italic">
-        {wr} of the time
-      </span>
-    );
-  } catch {
-    return (
-      <span className="text-accent font-semibold italic">
-        a provable track record
-      </span>
-    );
-  }
-}
-
-function HeroStatFallback() {
-  return (
-    <span className="text-accent font-semibold italic">
-      a provable track record
-    </span>
-  );
-}
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: a,
+    },
+  })),
+};
 
 export default function Home() {
   return (
     <div className="min-h-screen selection:bg-accent selection:text-white">
+      {/* JSON-LD structured data — FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
       {/* ═══════════════════════════════════════════
           SECTION 1 — HERO (typography-first)
           ═══════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-20">
-        {/* Eyebrow */}
-        <p className="eyebrow mb-6">
-          Polymarket whale intelligence
-        </p>
+        <p className="eyebrow mb-6">Polymarket whale intelligence</p>
 
-        {/* Headline */}
         <h1 className="text-balance mb-6">
           We track the top 1% of Polymarket whales.
           <br />
@@ -347,13 +51,11 @@ export default function Home() {
           </Suspense>.
         </h1>
 
-        {/* Subheadline */}
         <p className="text-base sm:text-lg text-muted max-w-xl leading-relaxed mb-8">
           Every signal — wins, losses, break-evens — published on a permanent public record.
           Because if we can&apos;t prove it works, you shouldn&apos;t pay for it.
         </p>
 
-        {/* CTA */}
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <HomeCtaLink
             href="/pricing"
@@ -391,15 +93,12 @@ export default function Home() {
         <ScorePerformanceSection />
       </Suspense>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 3 — THE PROBLEM
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 3 — THE PROBLEM */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <p className="eyebrow mb-3">Why you need this</p>
         <h2 className="text-balance mb-8">
           Polymarket moves fast. You&apos;re losing edge right now.
         </h2>
-
         <div className="grid gap-6 sm:grid-cols-3">
           {PAIN_POINTS.map(({ icon: Icon, title, description }) => (
             <div
@@ -416,15 +115,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 4 — HOW IT WORKS
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 4 — HOW IT WORKS */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <p className="eyebrow mb-3">How it works</p>
         <h2 className="text-balance mb-10">
           From whale trade to your phone in three steps.
         </h2>
-
         <div className="grid gap-8 sm:grid-cols-3">
           {HOW_IT_WORKS.map(({ icon: Icon, title, description }, i) => (
             <div key={title} className="relative">
@@ -443,7 +139,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Connector: the /analyze bridge */}
+        {/* /analyze bridge */}
         <div className="mt-10 rounded-lg border border-border bg-surface px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Search className="w-5 h-5 text-accent shrink-0" aria-hidden />
@@ -466,15 +162,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 5 — THE MOAT
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 5 — THE MOAT */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <p className="eyebrow mb-3">Why SightWhale</p>
         <h2 className="text-balance mb-8">
           Three things no other signal service offers.
         </h2>
-
         <div className="grid gap-6 sm:grid-cols-3">
           {MOATS.map(({ icon: Icon, title, description }) => (
             <div
@@ -493,9 +186,7 @@ export default function Home() {
         <StarWhaleSection />
       </Suspense>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 6 — LIVE PREVIEW
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 6 — LIVE PREVIEW */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
@@ -523,15 +214,12 @@ export default function Home() {
         </Suspense>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 7 — FAQ
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 7 — FAQ */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <p className="eyebrow mb-3">Common questions</p>
         <h2 className="text-balance mb-8">
           Let&apos;s clear up the obvious ones.
         </h2>
-
         <div className="grid gap-4 sm:grid-cols-2">
           {FAQ_ITEMS.map(({ q, a }) => (
             <div
@@ -545,9 +233,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          SECTION 8 — FINAL CTA
-          ═══════════════════════════════════════════ */}
+      {/* SECTION 8 — FINAL CTA */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-32 text-center">
         <h2 className="text-balance mb-4">
           Try your first month risk-free.

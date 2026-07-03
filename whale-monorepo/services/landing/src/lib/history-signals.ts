@@ -1,3 +1,14 @@
+/**
+ * ARCHITECTURE NOTE — Direct DB coupling:
+ * This module queries tables managed by the Python backend services
+ * (alerts, whale_trades, trades_raw, markets, whale_trade_history,
+ * token_conditions). Schema changes in those services can break
+ * this landing page at runtime with no compile-time warning.
+ *
+ * Mitigation: keep queries simple (projections only, no DML),
+ * run the landing E2E smoke test after any Python-side migration,
+ * and prefer the trade-ingest API for new read paths where feasible.
+ */
 import { prisma } from '@/lib/prisma';
 import { getUtcTodayStart } from '@/lib/live-signals-access';
 import { fetchGammaMarketByClobTokenId, fetchGammaMarketByConditionId } from '@/lib/polymarket-gamma';

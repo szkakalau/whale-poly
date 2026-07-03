@@ -148,36 +148,44 @@ export async function resolveMarketSlug(query: string): Promise<{
 
   // 2. Gamma API search with improved matching
   let candidates = await searchMarkets(query, 10);
-  
-  // 2.1 If no results, try removing punctuation and common words
+
+  // 2.3 Cross-lingual fallback: fire in PARALLEL with key-term search
+  // instead of sequentially (PF-M7). Saves one round-trip in the worst case.
+  const translated = translateQuery(query);
+  const needsTranslation = translated !== query;
+
+  // 2.1 If no results, try removing punctuation and common words (fast local op)
   if (candidates.length === 0) {
     const simplifiedQuery = query
       .replace(/[.,!?;:'"]/g, '')
       .replace(/\b(will|the|a|an|and|or|but|in|on|at|to|for|of|with|by)\b/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
-    
+
     if (simplifiedQuery && simplifiedQuery !== query) {
       candidates = await searchMarkets(simplifiedQuery, 10);
     }
   }
-  
-  // 2.2 If still no results, try searching with key terms only
+
+  // 2.2 If still no results, try key-terms and translation IN PARALLEL.
   if (candidates.length === 0) {
     const words = query.toLowerCase().split(/\s+/);
     const keyTerms = words.filter(word => word.length > 3 && !['will', 'the', 'and'].includes(word));
-    
-    if (keyTerms.length > 0) {
-      const keyQuery = keyTerms.slice(0, 5).join(' ');
-      candidates = await searchMarkets(keyQuery, 10);
-    }
-  }
+    const keyQuery = keyTerms.length > 0 ? keyTerms.slice(0, 5).join(' ') : null;
 
-  // 2.3 Cross-lingual fallback: if no results, try English translation
-  if (candidates.length === 0) {
-    const translated = translateQuery(query);
-    if (translated !== query) {
-      candidates = await searchMarkets(translated, 10);
+    // Fire key-term and translation searches in parallel — use the first success.
+    const parallelSearches: Promise<typeof candidates>[] = [];
+    if (keyQuery) parallelSearches.push(searchMarkets(keyQuery, 10));
+    if (needsTranslation) parallelSearches.push(searchMarkets(translated, 10));
+
+    if (parallelSearches.length > 0) {
+      const settled = await Promise.allSettled(parallelSearches);
+      for (const r of settled) {
+        if (r.status === 'fulfilled' && r.value.length > 0) {
+          candidates = r.value;
+          break;
+        }
+      }
     }
   }
 

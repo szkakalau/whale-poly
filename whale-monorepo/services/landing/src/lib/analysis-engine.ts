@@ -50,7 +50,7 @@ const LOOKBACK_HOURS = 24;
 
 // ── Helpers ────────────────────────────────────────────
 
-function sizeScore(amountUsd: number): number {
+export function sizeScore(amountUsd: number): number {
   if (amountUsd >= 100_000) return 100;
   if (amountUsd >= 50_000) return 80;
   if (amountUsd >= 20_000) return 60;
@@ -58,14 +58,14 @@ function sizeScore(amountUsd: number): number {
   return 0;
 }
 
-function timeDecayScore(tradeDate: string, now: Date): number {
+export function timeDecayScore(tradeDate: string, now: Date): number {
   const tradeTs = new Date(tradeDate).getTime();
   const elapsedSec = (now.getTime() - tradeTs) / 1000;
   const maxSec = LOOKBACK_HOURS * 3600;
   return Math.max(0, 100 * (1 - elapsedSec / maxSec));
 }
 
-function walletWeight(signal: LiveSignal, now: Date, _cumulativeSameOutcomeUsd?: number, _cumulativeTotalUsd?: number): number {
+export function walletWeight(signal: LiveSignal, now: Date, _cumulativeSameOutcomeUsd?: number, _cumulativeTotalUsd?: number): number {
   const sz = sizeScore(signal.sizeUsd);
   const td = timeDecayScore(signal.occurredAt, now);
   // convictionScore: use wallet's total engagement as proxy (simplified — whaleScore if available)
@@ -76,13 +76,13 @@ function walletWeight(signal: LiveSignal, now: Date, _cumulativeSameOutcomeUsd?:
   return sz * 0.4 + td * 0.3 + conviction * 0.3;
 }
 
-function classifyConfidence(score: number): ConfidenceLevel {
+export function classifyConfidence(score: number): ConfidenceLevel {
   if (score > CONFIDENCE_THRESHOLDS.medium) return 'high';
   if (score > CONFIDENCE_THRESHOLDS.low) return 'medium';
   return 'low';
 }
 
-function classifyDirection(yesVolume: number, noVolume: number, tradeCount: number): Direction {
+export function classifyDirection(yesVolume: number, noVolume: number, tradeCount: number): Direction {
   if (tradeCount < MIN_TRADES_FOR_SIGNAL) return 'neutral';
   const total = yesVolume + noVolume;
   if (total === 0) return 'neutral';

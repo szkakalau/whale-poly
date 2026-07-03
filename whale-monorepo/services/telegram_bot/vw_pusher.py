@@ -14,10 +14,8 @@ from services.telegram_bot.recipients import get_active_subscribers
 
 logger = logging.getLogger(__name__)
 
-# 服务级冷却：同市场 30 分钟内只推一次
-_COOLDOWN: dict[str, float] = {}
-_CLEANUP_EVERY = 100
-_alert_count = 0
+# Per-market cooldown TTL in seconds (30 min).
+_VW_COOLDOWN_SECONDS = 1800
 
 
 def _format_alert(payload: dict, market_title: str) -> str:
@@ -81,36 +79,36 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
                 payload = json.loads(raw)
                 market_id = payload["market_id"]
 
-                # 服务级冷却检查
-                now = datetime.now(timezone.utc).timestamp()
-                if market_id in _COOLDOWN and (now - _COOLDOWN[market_id]) < 1800:
+                # Per-market cooldown via Redis (shared across all worker instances).
+                # Replaces the old in-memory _COOLDOWN dict which was per-process
+                # and caused duplicate alerts across multiple instances.
+                cooldown_key = f"vw_cooldown:{market_id}"
+                if await redis.exists(cooldown_key):
                     continue
-                _COOLDOWN[market_id] = now
-
-                # 定期清理过期冷却条目，防止内存泄漏
-                global _alert_count
-                _alert_count += 1
-                if _alert_count % _CLEANUP_EVERY == 0:
-                    cutoff = now - 3600
-                    for mid in list(_COOLDOWN.keys()):
-                        if _COOLDOWN[mid] < cutoff:
-                            del _COOLDOWN[mid]
+                await redis.set(cooldown_key, "1", ex=_VW_COOLDOWN_SECONDS)
 
                 market_title = await _get_market_title(market_id)
                 message = _format_alert(payload, market_title)
 
-                # 推送给 Pro/Elite 用户
+                # 推送给 Pro/Elite 用户（并发，最多 30 同时发送 — PF-H3）
                 subscribers = await get_active_subscribers(paid_only=True)
-                sent = 0
-                for tg_id in subscribers:
-                    try:
-                        await bot.send_message(tg_id, message, disable_web_page_preview=True)
-                        sent += 1
-                    except TelegramError:
-                        pass
-                    await asyncio.sleep(0.05)
+                sem = asyncio.Semaphore(30)
 
-                logger.info(f"vw_alert_delivered market={market_id} recipients={sent}")
+                async def _send_one(tg_id: str) -> tuple[str, str | None]:
+                    async with sem:
+                        try:
+                            await bot.send_message(tg_id, message, disable_web_page_preview=True)
+                            return (tg_id, None)
+                        except TelegramError as e:
+                            err_msg = str(e)[:100]
+                            logger.debug("vw_pusher_send_failed tg_id=%s market=%s error=%s", tg_id, market_id, err_msg)
+                            return (tg_id, err_msg)
+
+                results = await asyncio.gather(*[_send_one(tid) for tid in subscribers])
+                sent = sum(1 for _, err in results if err is None)
+                errors = len(results) - sent
+
+                logger.info("vw_alert_delivered market=%s sent=%s errors=%s", market_id, sent, errors)
 
             except asyncio.CancelledError:
                 break

@@ -1,5 +1,9 @@
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+import {
+  encoder, decoder,
+  toArrayBuffer, base64ToBytes,
+  base64UrlEncode, base64UrlDecode,
+  hmacSha256,
+} from '@/lib/crypto';
 
 type MobileTokenPayload = {
   uid: string;
@@ -7,57 +11,16 @@ type MobileTokenPayload = {
   type: 'access';
 };
 
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  if (bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength) {
-    return bytes.buffer as ArrayBuffer;
-  }
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(bytes).toString('base64');
-  }
-  let binary = '';
-  bytes.forEach((b) => {
-    binary += String.fromCharCode(b);
-  });
-  return btoa(binary);
-}
-
-function base64ToBytes(value: string): Uint8Array {
-  if (typeof Buffer !== 'undefined') {
-    return new Uint8Array(Buffer.from(value, 'base64'));
-  }
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function base64UrlEncode(bytes: Uint8Array): string {
-  return bytesToBase64(bytes).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
-}
-
-function base64UrlDecode(value: string): Uint8Array {
-  const padded = value.replaceAll('-', '+').replaceAll('_', '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
-  return base64ToBytes(padded);
-}
-
-async function hmacSha256(keyBytes: Uint8Array, data: string): Promise<Uint8Array> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) {
-    throw new Error('crypto_unavailable');
-  }
-  const key = await subtle.importKey('raw', toArrayBuffer(keyBytes), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await subtle.sign('HMAC', key, toArrayBuffer(encoder.encode(data)));
-  return new Uint8Array(sig);
-}
-
+/**
+ * Session signing secret. Uses exactly one env var — no fallback chain.
+ * A fallback chain ending in '' means unconfigured deployments have forgeable tokens.
+ */
 function getMobileAuthSecret(): string {
-  return process.env.MOBILE_AUTH_SECRET || process.env.TELEGRAM_MINIAPP_SECRET || process.env.BOT_USER_HASH_SECRET || '';
+  const secret = process.env.MOBILE_AUTH_SECRET || '';
+  if (!secret && process.env.NODE_ENV === 'production') {
+    console.error('FATAL: MOBILE_AUTH_SECRET is not set — mobile sessions are insecure');
+  }
+  return secret;
 }
 
 export function parseBearerToken(value: string | null | undefined): string | null {

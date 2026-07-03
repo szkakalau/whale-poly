@@ -175,6 +175,7 @@ async def _can_alert_event(session: AsyncSession, redis: Redis, market_id: str, 
       .where(Alert.created_at >= window_start)
       .order_by(Alert.created_at.desc())
       .limit(1)
+      .with_for_update()
     )
   ).scalars().first()
   if not row:
@@ -365,13 +366,11 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
     "created_at": now.isoformat(),
   }
 
-  # Push to Redis queue BEFORE DB insert — if Redis is down we fail without
-  # creating an orphan alert row that would never be delivered.
-  payload_raw = json.dumps(payload)
-  await redis.rpush(settings.alert_created_queue, payload_raw)
-  await redis.set("alert_created:last", payload_raw, ex=86400)
-
-  # Now insert into DB (idempotent via on_conflict_do_nothing)
+  # Insert into DB first (idempotent via on_conflict_do_nothing).
+  # If DB insert fails (constraint violation, deadlock), no orphan message is
+  # pushed to Redis.  If Redis push fails after a successful insert, the alert
+  # row exists in the DB but is undelivered — this is recoverable via a sweeper
+  # that re-queues undelivered alerts.
   result = await session.execute(
     insert(Alert)
     .values(
@@ -387,6 +386,15 @@ async def process_whale_trade_event(session: AsyncSession, redis: Redis, event: 
   )
   created = result.rowcount == 1
   logger.info(f"DEBUG: alert created={created}")
+
+  # Push to Redis queue AFTER successful DB insert.
+  # Batch RPUSH + SET into a single pipeline to save one network round-trip (PF-L2).
+  payload_raw = json.dumps(payload)
+  async with redis.pipeline(transaction=True) as pipe:
+    pipe.rpush(settings.alert_created_queue, payload_raw)
+    pipe.set("alert_created:last", payload_raw, ex=86400)
+    await pipe.execute()
+
   if created:
     config = get_alert_config()
     cooldown = config.get("cooldown_settings", {})

@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { shouldExcludeMarketFromPublicFeeds } from '@/lib/market-display-filter';
 
@@ -84,13 +85,11 @@ async function fetchPolymarketVolumeLeaderWallets(limit: number): Promise<string
 
 async function getWalletAddressesFromProfiles(): Promise<string[]> {
   try {
-    const rows = await prisma.$queryRawUnsafe<{ wallet_address: string }[]>(
-      `
-      SELECT wallet_address
+    const rows = await prisma.$queryRaw<{ wallet_address: string }[]>(
+      Prisma.sql`SELECT wallet_address
       FROM whale_profiles
       ORDER BY total_volume DESC NULLS LAST
-      LIMIT 12
-      `,
+      LIMIT 12`,
     );
     return (rows || []).map((r) => String(r.wallet_address).trim()).filter(Boolean);
   } catch {
@@ -148,7 +147,7 @@ async function buildSignalsFromWallets(wallets: string[]): Promise<LiveSignal[]>
  */
 async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
   try {
-    const rows = await prisma.$queryRawUnsafe<
+    const rows = await prisma.$queryRaw<
       {
         wallet_address: string;
         created_at: Date;
@@ -158,8 +157,7 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
         whale_score: unknown;
       }[]
     >(
-      `
-      SELECT
+      Prisma.sql`SELECT
         wt.wallet_address,
         wt.created_at,
         COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
@@ -170,8 +168,7 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
       INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
       WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
       ORDER BY wt.created_at DESC NULLS LAST
-      LIMIT 120
-      `,
+      LIMIT 120`,
     );
 
     const out: LiveSignal[] = [];
@@ -204,7 +201,8 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
       });
     }
     return out;
-  } catch {
+  } catch (err) {
+    console.error('loadSignalsFromWhaleTradesJoin: query failed', err);
     return [];
   }
 }
@@ -234,7 +232,8 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
     signals = signals.filter((s) => s.sizeUsd >= MIN_SIGNAL_SIZE_USD);
 
     return signals.slice(0, 30);
-  } catch {
+  } catch (err) {
+    console.error('loadLiveSignals: all data sources exhausted', err);
     return [];
   }
 }
@@ -257,8 +256,13 @@ export async function loadSignalsForMarket(
   minSizeUsd = MIN_SIGNAL_SIZE_USD,
 ): Promise<LiveSignal[]> {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000); // 10s timeout
+
     const url = `${TRADE_INGEST_BASE}/market/${encodeURIComponent(marketSlug)}/trades?hours=${lookbackHours}&minSize=${minSizeUsd}`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { next: { revalidate: 60 }, signal: controller.signal });
+    clearTimeout(timer);
+
     if (!res.ok) return [];
     const data = (await res.json()) as { signals?: LiveSignal[] };
     if (!Array.isArray(data.signals)) return [];
@@ -268,7 +272,8 @@ export async function loadSignalsForMarket(
       if (shouldExcludeMarketFromPublicFeeds(s.market)) return false;
       return true;
     });
-  } catch {
+  } catch (err) {
+    console.error('loadSignalsForMarket: fetch failed', err);
     return [];
   }
 }

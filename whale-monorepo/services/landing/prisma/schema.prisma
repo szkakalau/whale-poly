@@ -8,9 +8,9 @@ generator client {
 }
 
 enum Plan {
-  FREE
-  PRO
-  ELITE
+  FREE  @map("free")
+  PRO   @map("pro")
+  ELITE @map("elite")
 }
 
 model User {
@@ -133,16 +133,19 @@ model SmartCollectionSubscription {
 model Subscription {
   id                   String   @id @default(cuid())
   userId               String   @map("user_id")
+  telegramId           String?  @map("telegram_id")
   plan                 Plan
   price                Float
   status               String
   startedAt            DateTime @default(now()) @map("started_at")
   expiresAt            DateTime @map("expires_at")
+  currentPeriodEnd     DateTime? @map("current_period_end")
   stripeCustomerId     String?  @map("stripe_customer_id")
   stripeSubscriptionId String?  @unique @map("stripe_subscription_id")
 
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([telegramId])
   @@map("subscriptions")
 }
 
@@ -165,7 +168,7 @@ model AlertEvent {
 
 model WhaleWaitlistLead {
   id        String   @id @default(cuid())
-  email     String
+  email     String   @unique
   telegram  String?
   segment   String?  @default("")
   notes     String?  @default("")
@@ -229,5 +232,6 @@ model MarketVwSnapshot {
 
   @@index([marketId])
   @@index([snapshotAt])
+  @@unique([marketId, snapshotAt])
   @@map("market_vw_snapshots")
 }

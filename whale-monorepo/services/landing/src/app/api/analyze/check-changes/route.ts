@@ -29,7 +29,14 @@ type ChangeRecord = {
   changeType: 'direction_flip' | 'confidence_jump' | 'confidence_drop';
 };
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Cron endpoint — require admin token (called by Vercel Cron Jobs or internal scheduler)
+  const adminToken = process.env.ADMIN_TOKEN || '';
+  const headerToken = req.headers.get('x-admin-token') || '';
+  if (!adminToken || headerToken !== adminToken) {
+    return NextResponse.json({ detail: 'not_found' }, { status: 404 });
+  }
+
   // Get all enabled subscriptions
   const subs = await prisma.marketSubscription.findMany({
     where: { enabled: true },

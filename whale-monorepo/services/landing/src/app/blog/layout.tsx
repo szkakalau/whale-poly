@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
-// All /blog routes are fully dynamic. Render PostgreSQL rejects
-// connections from Vercel build servers so ISR pre-rendering fails.
-export const dynamic = 'force-dynamic';
+// ISR revalidates at runtime (not build time), so Render PostgreSQL
+// connection constraint does not apply. Every hour stale cache is refreshed.
+export const revalidate = 3600; // PF-H7
 
 export const metadata: Metadata = {
   title: {

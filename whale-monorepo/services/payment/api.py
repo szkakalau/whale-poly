@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import json
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -11,7 +12,7 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.payment.stripe_service import construct_event, create_checkout_session, retrieve_subscription
+from services.payment.stripe_service import cancel_subscription, construct_event, create_checkout_session, retrieve_subscription
 from shared.config import settings
 from shared.db import SessionLocal, get_session
 from shared.logging import configure_logging
@@ -50,11 +51,19 @@ def _period_end(plan_name: str) -> datetime:
 
 
 async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan, user_id: str | None) -> str:
-  ac = (await session.execute(select(ActivationCode).where(ActivationCode.code == code))).scalars().first()
-  if not ac or ac.used:
+  # 原子化 UPDATE：在单次操作中检查 used=False 并标记 used=True，
+  # 消除 SELECT-then-UPDATE 的 TOCTOU 竞态条件。
+  result = await session.execute(
+    update(ActivationCode)
+    .where(ActivationCode.code == code, ActivationCode.used == False)
+    .values(used=True)
+    .returning(ActivationCode.telegram_id)
+  )
+  row = result.scalars().first()
+  if not row:
     raise HTTPException(status_code=404, detail="activation code not found")
 
-  telegram_id = ac.telegram_id
+  telegram_id = row
   now = datetime.now(timezone.utc)
   current_period_end = _period_end(plan.name)
 
@@ -94,7 +103,6 @@ async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan
         plan_expire_at=current_period_end
       )
     )
-  await session.execute(update(ActivationCode).where(ActivationCode.code == code).values(used=True))
   await session.commit()
 
   return settings.landing_success_url or "/"
@@ -148,10 +156,9 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="payment", lifespan=lifespan)
 
-
-def _require_admin(x_admin_token: str | None) -> None:
-  if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
-    raise HTTPException(status_code=404, detail="not_found")
+from shared.auth import require_admin as _require_admin
+from shared.error_handlers import register_exception_handlers
+register_exception_handlers(app)
 
 
 @app.get("/")
@@ -316,8 +323,7 @@ async def subscription_list(
 
 @app.get("/current-plan")
 async def current_plan(telegram_id: str, x_admin_token: str | None = Header(default=None), session: AsyncSession = Depends(get_session)):
-  if not _is_admin(x_admin_token):
-    raise HTTPException(status_code=401, detail="unauthorized")
+  _require_admin(x_admin_token)
   now = datetime.now(timezone.utc)
   sub = (
     await session.execute(
@@ -353,7 +359,7 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
     url = await _activate_subscription(session, code=code, plan=plan, user_id=payload.user_id)
     return {"checkout_url": url, "mode": "mock"}
 
-  url = create_checkout_session(
+  url = await create_checkout_session(
     stripe_price_id=plan.stripe_price_id,
     activation_code=code,
     plan=plan.name,
@@ -365,12 +371,23 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
 @app.post("/webhook")
 async def webhook(request: Request, stripe_signature: str | None = Header(None, alias="Stripe-Signature")):
   if settings.payment_mode == "mock":
+    logger.warning("webhook_mock_mode_active — Stripe signature verification bypassed. NEVER use in production.")
+    # Mock 模式下仍验证请求体为合法 JSON 事件格式，防止完全无验证
+    try:
+      body = await request.body()
+      if body:
+        event = json.loads(body)
+        event_type = str(event.get("type") or "")
+        if not event_type.startswith(("checkout.", "customer.subscription.", "invoice.")):
+          raise HTTPException(status_code=400, detail="invalid event type")
+    except (json.JSONDecodeError, KeyError):
+      raise HTTPException(status_code=400, detail="invalid payload")
     return {"ok": True, "mode": "mock"}
   if not stripe_signature:
     raise HTTPException(status_code=400, detail="missing signature")
   payload = await request.body()
   try:
-    event = construct_event(payload, stripe_signature)
+    event = await construct_event(payload, stripe_signature)
   except Exception:
     logger.exception("signature_verification_failed")
     raise HTTPException(status_code=400, detail="invalid signature")
@@ -416,7 +433,7 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
           stripe_customer_id = str(obj.get("customer") or "")
           stripe_subscription_id = str(obj.get("subscription") or "")
           if stripe_customer_id and stripe_subscription_id:
-            sub = retrieve_subscription(stripe_subscription_id)
+            sub = await retrieve_subscription(stripe_subscription_id)
             cpe = int(sub.get("current_period_end") or 0)
             current_period_end = datetime.fromtimestamp(cpe, tz=timezone.utc) if cpe else datetime.now(timezone.utc)
             
@@ -466,12 +483,97 @@ async def webhook(request: Request, stripe_signature: str | None = Header(None, 
         if sub:
           # Update subscription status
           await session.execute(update(Subscription).where(Subscription.stripe_subscription_id == sid).values(status="canceled"))
-          # Revert user to FREE plan
-          await session.execute(
-            update(User)
-            .where(User.telegram_id == sub.telegram_id)
-            .values(plan="FREE", plan_expire_at=None)
-          )
+          # Only downgrade user to FREE if they have NO remaining active subscriptions.
+          # A user may have multiple subscriptions (e.g., different Stripe products).
+          remaining_active = (await session.execute(
+            select(Subscription.id)
+            .where(Subscription.telegram_id == sub.telegram_id)
+            .where(Subscription.status.in_(["active", "trialing"]))
+            .where(Subscription.current_period_end > datetime.now(timezone.utc))
+            .where(Subscription.stripe_subscription_id != sid)
+            .limit(1)
+          )).scalars().first()
+          if not remaining_active:
+            await session.execute(
+              update(User)
+              .where(User.telegram_id == sub.telegram_id)
+              .values(plan="FREE", plan_expire_at=None)
+            )
 
     await session.commit()
   return {"ok": True}
+
+
+class CancelIn(BaseModel):
+  user_id: str | None = None
+  telegram_id: str | None = None
+
+
+@app.post("/subscriptions/cancel")
+async def cancel_subscription_endpoint(
+  payload: CancelIn,
+  x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+  session: AsyncSession = Depends(get_session),
+):
+  """Cancel an active subscription — updates Stripe (production) and downgrades user to FREE."""
+  _require_admin(x_admin_token)
+  user_id = (payload.user_id or "").strip() or None
+  telegram_id = (payload.telegram_id or "").strip() or None
+
+  if not user_id and not telegram_id:
+    raise HTTPException(status_code=400, detail="user_id or telegram_id required")
+
+  now = datetime.now(timezone.utc)
+
+  # Find active subscription
+  sub_query = select(Subscription).where(
+    Subscription.status.in_(["active", "trialing"]),
+    Subscription.current_period_end > now,
+  )
+  if user_id:
+    # Look up user to get their telegram_id
+    user = (await session.execute(select(User).where(User.id == user_id))).scalars().first()
+    if user and user.telegram_id:
+      sub_query = sub_query.where(Subscription.telegram_id == user.telegram_id)
+    else:
+      # Fall back to subscription with matching user_id via activation code lookup
+      raise HTTPException(status_code=404, detail="no active subscription found")
+  elif telegram_id:
+    sub_query = sub_query.where(Subscription.telegram_id == telegram_id)
+
+  sub = (await session.execute(sub_query.order_by(Subscription.current_period_end.desc()).limit(1))).scalars().first()
+
+  if not sub:
+    raise HTTPException(status_code=404, detail="no active subscription found")
+
+  # Cancel in Stripe (production) or skip (mock)
+  stripe_canceled = False
+  if settings.payment_mode != "mock" and settings.stripe_secret_key and sub.stripe_subscription_id and not sub.stripe_subscription_id.startswith("mock_"):
+    try:
+      await cancel_subscription(sub.stripe_subscription_id)
+      stripe_canceled = True
+      logger.info("stripe_subscription_canceled sub_id=%s stripe_sub_id=%s", sub.id, sub.stripe_subscription_id)
+    except Exception:
+      logger.exception("stripe_cancel_failed sub_id=%s", sub.id)
+      raise HTTPException(status_code=502, detail="stripe_cancel_failed")
+
+  # Mark subscription as canceled
+  sub.status = "canceled"
+  await session.flush()
+
+  # Downgrade user to FREE
+  tg_id = sub.telegram_id
+  if tg_id:
+    await session.execute(
+      update(User)
+      .where(User.telegram_id == tg_id)
+      .values(plan="FREE", plan_expire_at=None)
+    )
+
+  await session.commit()
+
+  return {
+    "ok": True,
+    "stripe_canceled": stripe_canceled,
+    "plan": "FREE",
+  }

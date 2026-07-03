@@ -5,7 +5,14 @@ import { verifyMiniAppSessionCookie } from './src/lib/telegramMiniApp';
 const SESSION_COOKIE = 'tg_session';
 
 function getSessionSecret(): string {
-  return process.env.TELEGRAM_MINIAPP_SECRET || process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
+  // 仅使用专用的 TELEGRAM_MINIAPP_SECRET。
+  // 回退到 BOT_TOKEN 是危险的 — Bot Token 在 Telegram 登录流程中暴露给客户端，
+  // 攻击者获取后可伪造任意用户会话。
+  const secret = process.env.TELEGRAM_MINIAPP_SECRET || '';
+  if (!secret && (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production')) {
+    console.error('FATAL: TELEGRAM_MINIAPP_SECRET is not set — sessions are insecure');
+  }
+  return secret;
 }
 
 export async function middleware(req: NextRequest) {

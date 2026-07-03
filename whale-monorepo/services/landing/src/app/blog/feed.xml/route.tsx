@@ -1,6 +1,6 @@
 import { getLatestPosts, type BlogPostCard } from '@/lib/blog';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // RSS feed cached for 1h (PF-H7)
 
 export async function GET() {
   const siteUrl = 'https://www.sightwhale.com';

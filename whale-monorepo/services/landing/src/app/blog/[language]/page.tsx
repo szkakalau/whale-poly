@@ -4,7 +4,7 @@ import { unstable_cache } from 'next/cache';
 import TagFilter from './TagFilter';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // ISR at runtime, no build-time DB access needed (PF-H7)
 
 const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
@@ -36,9 +36,10 @@ type Props = {
   searchParams: Promise<{ page?: string; tag?: string }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { language } = await params;
-  const langLabel = language === 'zh' ? '博客' : 'Blog';
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
   return {
     title:
       language === 'zh'
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ? '深度解析 Polymarket 预测市场、鲸鱼交易策略与数据洞察。每日更新。'
           : 'Deep dives into Polymarket prediction markets, whale trading strategies, and data insights. Updated daily.',
       type: 'website',
-      url: `https://www.sightwhale.com/blog/${language}`,
+      url: `https://www.sightwhale.com/blog/${language}${page > 1 ? `?page=${page}` : ''}`,
       siteName: 'SightWhale.com',
       images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
     },
@@ -75,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: ['/opengraph-image'],
     },
     alternates: {
-      canonical: `/blog/${language}`,
+      canonical: page > 1 ? `/blog/${language}?page=${page}` : `/blog/${language}`,
       languages: {
         en: '/blog/en',
         zh: '/blog/zh',
@@ -127,8 +128,69 @@ export default async function BlogListPage({ params, searchParams }: Props) {
           noPosts: 'No articles yet. Check back soon.',
         };
 
+  const listJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    numberOfItems: posts.length,
+    itemListElement: posts.map((post, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Article',
+        url: `https://www.sightwhale.com/blog/${post.language}/${post.slug}`,
+        name: post.title,
+        headline: post.title,
+        description: post.excerpt,
+        datePublished: post.published_at,
+        dateModified: post.updated_at || post.published_at,
+        image: 'https://www.sightwhale.com/opengraph-image',
+        author: {
+          '@type': 'Person',
+          name: post.author || 'SightWhale Team',
+          url: 'https://www.sightwhale.com',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'SightWhale',
+          url: 'https://www.sightwhale.com',
+        },
+      },
+    })),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.sightwhale.com/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: language === 'zh' ? '博客' : 'Blog',
+        item: `https://www.sightwhale.com/blog/${language}`,
+      },
+    ],
+  };
+
   return (
     <div className="py-12 sm:py-20">
+      {/* JSON-LD structured data — BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {/* JSON-LD structured data — ItemList (only when posts exist) */}
+      {posts.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(listJsonLd) }}
+        />
+      )}
       {/* Hero */}
       <div className="mb-12 sm:mb-16">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-3">
