@@ -267,7 +267,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
   trade = (await session.execute(select(TradeRaw).where(TradeRaw.trade_id == trade_id))).scalars().first()
   if not trade:
     logger.warning(f"trade_not_found trade_id={trade_id}")
-    return False
+    return (False, None)
 
   has_positions, has_action_type_col, has_profiles, has_trade_history, _ = await _ensure_schema_flags(session)
 
@@ -360,7 +360,7 @@ async def process_trade_id(session: AsyncSession, redis: Redis, trade_id: str) -
       logger.debug("has_trade_history=%s", has_trade_history)
 
   if not qualifies:
-    return False
+    return (False, None)
 
   event_side = behavior_side or str(trade.side)
   event_amount = agg_amount if score_hint else float(trade.amount)
