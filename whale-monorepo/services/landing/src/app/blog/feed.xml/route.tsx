@@ -1,17 +1,37 @@
-import { getLatestPosts, type BlogPostCard } from '@/lib/blog';
-
 export const dynamic = 'force-dynamic'; // DB query at runtime, CDN cache via Cache-Control header
+
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+
+async function fetchPosts(language: string, limit: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/blog/posts?language=${language}&limit=${limit}`,
+      { signal: controller.signal },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.posts || []) as {
+      slug: string; title: string; excerpt: string; tags: string[];
+      published_at: string; language: string;
+    }[];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 export async function GET() {
   const siteUrl = 'https://www.sightwhale.com';
 
-  // Separate feeds by language
   const [enPosts, zhPosts] = await Promise.all([
-    getLatestPosts(15, 'en'),
-    getLatestPosts(5, 'zh'),
+    fetchPosts('en', 15),
+    fetchPosts('zh', 5),
   ]);
 
-  const buildItem = (post: BlogPostCard) => `  <item>
+  const buildItem = (post: { slug: string; title: string; excerpt: string; tags: string[]; published_at: string; language: string }) =>
+    `  <item>
     <title><![CDATA[${post.title}]]></title>
     <link>${siteUrl}/blog/${post.language}/${post.slug}</link>
     <description><![CDATA[${post.excerpt}]]></description>

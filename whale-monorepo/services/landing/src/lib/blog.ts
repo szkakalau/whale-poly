@@ -71,7 +71,7 @@ async function apiFetch(path: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Queries — parameterized via Prisma.sql (no string interpolation)
+// Queries — use HTTP API for Postgres-backed data (Prisma raw SQL unreliable from Vercel)
 // ---------------------------------------------------------------------------
 
 /**
@@ -96,48 +96,70 @@ export async function getRelatedPosts(
   limit: number = 3,
 ): Promise<BlogPostCard[]> {
   if (!tags.length) return [];
-  const rows = await prisma.$queryRaw<any[]>(
-    Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-    FROM blog_posts
-    WHERE status = 'published'
-      AND language = ${language}
-      AND slug != ${slug}
-      AND tags && array[${Prisma.join(tags)}]::text[]
-    ORDER BY published_at DESC
-    LIMIT ${limit}`,
-  );
-  return rows.map(mapPostCard);
+  try {
+    const rows = await prisma.$queryRaw<any[]>(
+      Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
+      FROM blog_posts
+      WHERE status = 'published'
+        AND language = ${language}
+        AND slug != ${slug}
+        AND tags && array[${Prisma.join(tags)}]::text[]
+      ORDER BY published_at DESC
+      LIMIT ${limit}`,
+    );
+    return rows.map(mapPostCard);
+  } catch {
+    return []; // Prisma may be unreachable from Vercel — non-critical
+  }
 }
 
 /**
- * Get all published slugs for sitemap / RSS generation.
+ * Get all published slugs for sitemap generation.
+ * Uses the trade-ingest HTTP API (Prisma raw SQL is unreliable from Vercel).
  */
 export async function getAllPublishedSlugs(): Promise<{ slug: string; language: string; updated_at: string }[]> {
-  const rows = await prisma.$queryRaw<{ slug: string; language: string; updated_at: string }[]>(
-    Prisma.sql`SELECT slug, language, updated_at::text AS updated_at
-    FROM blog_posts
-    WHERE status = 'published'
-    ORDER BY published_at DESC`,
-  );
-  return rows;
+  const results: { slug: string; language: string; updated_at: string }[] = [];
+  for (const lang of ['en', 'zh']) {
+    try {
+      const data = await apiFetch(`/blog/posts?language=${lang}&limit=500`);
+      for (const post of data.posts || []) {
+        results.push({
+          slug: post.slug,
+          language: post.language,
+          updated_at: post.published_at, // API returns published_at; used as sitemap lastModified
+        });
+      }
+    } catch (err) {
+      console.error(`[blog] Failed to fetch slugs for language=${lang}:`, err);
+    }
+  }
+  return results;
 }
 
 /**
  * Get latest posts for RSS feed.
+ * Uses the trade-ingest HTTP API (Prisma raw SQL is unreliable from Vercel).
  */
 export async function getLatestPosts(limit: number = 20, language?: string): Promise<BlogPostCard[]> {
-  const rows = await prisma.$queryRaw<any[]>(
-    language
-      ? Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-        FROM blog_posts
-        WHERE status = 'published' AND language = ${language}
-        ORDER BY published_at DESC
-        LIMIT ${limit}`
-      : Prisma.sql`SELECT slug, title, excerpt, author, read_time, tags, published_at, language, group_slug
-        FROM blog_posts
-        WHERE status = 'published'
-        ORDER BY published_at DESC
-        LIMIT ${limit}`,
-  );
-  return rows.map(mapPostCard);
+  if (language) {
+    try {
+      const data = await apiFetch(`/blog/posts?language=${encodeURIComponent(language)}&limit=${limit}`);
+      return (data.posts || []).map(mapPostCard);
+    } catch {
+      return [];
+    }
+  }
+  // Both languages
+  try {
+    const [enData, zhData] = await Promise.all([
+      apiFetch(`/blog/posts?language=en&limit=${limit}`),
+      apiFetch(`/blog/posts?language=zh&limit=${Math.ceil(limit / 3)}`),
+    ]);
+    return [...(enData.posts || []), ...(zhData.posts || [])]
+      .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+      .slice(0, limit)
+      .map(mapPostCard);
+  } catch {
+    return [];
+  }
 }

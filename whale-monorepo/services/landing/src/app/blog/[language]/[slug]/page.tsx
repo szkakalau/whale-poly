@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getPost, getRelatedPosts } from '@/lib/blog';
+import { getPost, getRelatedPosts, getAllPublishedSlugs } from '@/lib/blog';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600; // ISR: revalidate every hour (PF-H7)
@@ -10,6 +10,25 @@ export const revalidate = 3600; // ISR: revalidate every hour (PF-H7)
 type Props = {
   params: Promise<{ language: string; slug: string }>;
 };
+
+// ---------------------------------------------------------------------------
+// Static params — pre-render recent posts at build time for fast crawler access
+// ---------------------------------------------------------------------------
+
+export async function generateStaticParams() {
+  try {
+    const posts = await getAllPublishedSlugs();
+    // Pre-render the 20 most recent posts (by published_at DESC) at build time.
+    // If >20 posts exist, the rest are rendered on-demand via ISR.
+    return posts.slice(0, 20).map((post) => ({
+      language: post.language,
+      slug: post.slug,
+    }));
+  } catch {
+    // DB unreachable at build time — all pages will be ISR'd on first request
+    return [];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Metadata
