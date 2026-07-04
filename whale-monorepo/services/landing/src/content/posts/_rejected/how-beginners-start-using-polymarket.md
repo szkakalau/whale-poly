@@ -1,4 +1,4 @@
----
+﻿---
 title: "How Can Beginners Start Using Polymarket?"
 metaTitle: "Polymarket for Beginners: Start Here"
 metaDescription: "Polymarket beginners: fund small, read resolution rules first, log trades. Steps, starter strategies, Whale homework, Smart Money tools, mistakes, FAQ."
@@ -18,7 +18,7 @@ Use **Whale** and **Smart Money** signals as **research prompts** on **SightWhal
 
 👉 **Want real-time Whale signals?** With **SightWhale**, you get **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -35,8 +35,8 @@ If you want a realistic “first week” plan:
 - **Day 7**: refine your filters (Smart Money threshold + alert intensity).
 
 Related guides:
-- [What does a Whale mean on Polymarket?](/blog/what-does-whale-mean-on-polymarket)
-- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
+- [What does a Whale mean on Polymarket?](/blog/en/what-does-whale-mean-on-polymarket)
+- [How to filter the most valuable trading signals on Polymarket](/blog/en/how-to-filter-most-valuable-trading-signals-polymarket)
 
 ## Live Whale Data (Powered by SightWhale)
 

@@ -1,4 +1,4 @@
----
+﻿---
 title: "How to Filter the Most Valuable Trading Signals in Polymarket?"
 metaTitle: "Filter Valuable Polymarket Signals: Smart Money, Whale & Quality Checks"
 metaDescription: "Data-driven framework to filter valuable Polymarket trading signals—liquidity, rules, Smart Money, Whale context, alert calibration, SightWhale stack, risks, FAQ."
@@ -23,7 +23,7 @@ On **SightWhale**, we provide:
 
 👉 **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -67,8 +67,8 @@ If you want a simple workflow you can run in under 2 minutes per alert:
 5. **Only then**: decide entry zone + invalidation.
 
 Related guides:
-- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
-- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
+- [Whale score meaning: filter, not oracle](/blog/en/whale-score-meaning-filter-not-oracle-polymarket)
+- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/en/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 ---
 
 ## 3. How to filter signals effectively

@@ -1,4 +1,4 @@
----
+﻿---
 title: "What Whale Score Actually Is (and Why Treating It Like an Oracle Will Burn You)"
 date: "2026-03-20"
 lastModified: "2026-03-26"
@@ -27,7 +27,7 @@ Internal links:
 - Methodology (limits and interpretation): [/methodology](/methodology)  
 - Plans that unlock deeper delivery and tooling: [/subscribe](/subscribe)  
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -41,8 +41,8 @@ Use Whale Score as triage, then force yourself through two additional checks:
 If either fails, the correct action is often “watch, don’t trade.”
 
 Related guides:
-- [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
-- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
+- [Monitor large trades on Polymarket in real time](/blog/en/monitor-large-trades-polymarket-real-time-tools)
+- [How to filter the most valuable trading signals on Polymarket](/blog/en/how-to-filter-most-valuable-trading-signals-polymarket)
 
 ## 1. Scores Exist Because Attention Is Scarce
 

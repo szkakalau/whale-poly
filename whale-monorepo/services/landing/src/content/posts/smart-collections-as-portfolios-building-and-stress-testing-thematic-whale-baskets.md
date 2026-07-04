@@ -1,4 +1,4 @@
----
+﻿---
 title: "Smart Collections as Portfolios: Building and Stress-Testing Thematic Whale Baskets"
 date: "2026-03-11"
 excerpt: "A Smart Collection isn’t just a list—it’s a portfolio. This post shows how to build thematic whale baskets with portfolio discipline (constraints, diversification, turnover), then stress-test them under three regimes: correlation spikes, liquidity collapses, and event shocks. Includes reproducible checks using public wallet/market data and a practical checklist."
@@ -77,7 +77,7 @@ Set caps:
 Wallet clustering matters: 20 wallets can be one operator.
 
 If you haven’t read that, start here:
-- [/blog/wallet-clustering-101-when-50-wallets-are-one-trader](/blog/wallet-clustering-101-when-50-wallets-are-one-trader)
+- [/blog/wallet-clustering-101-when-50-wallets-are-one-trader](/blog/en/wallet-clustering-101-when-50-wallets-are-one-trader)
 
 ---
 
@@ -159,7 +159,7 @@ Test:
 - compute a tradability score and simulate slippage haircut
 
 Start here:
-- [/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd](/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd)
+- [/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd](/blog/en/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd)
 
 ### Stress Test 3 — Resolution shock (“the contract settles weird”)
 
@@ -171,7 +171,7 @@ Test:
 - demand higher edge or smaller size in those markets
 
 Start here:
-- [/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines](/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines)
+- [/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines](/blog/en/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines)
 
 ---
 

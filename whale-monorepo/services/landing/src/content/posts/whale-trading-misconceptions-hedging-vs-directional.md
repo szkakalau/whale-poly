@@ -1,4 +1,4 @@
----
+﻿---
 title: "Copying Whales ≠ Doing Homework: How to Spot Hedging, Cashouts, and Roll-overs"
 date: "2026-03-07"
 excerpt: "The dangerous misconception of blindly following large orders. Learn to distinguish between directional bets, risk management, and position adjustments to avoid becoming exit liquidity."
@@ -199,8 +199,8 @@ This shift from imitation to interpretation separates consistent profitability f
 - Correlation studies between order flow and market outcomes
 
 **Related Research**:
-- [Identifying Smart Money on Polymarket](/blog/identifying-smart-money-on-polymarket)
-- [The Signal Half-Life: Timing Whale Signals](/blog/signal-half-life-whale-trading-validity)  
-- [Risk Management for Prediction Markets](/blog/risk-management-strategies-for-prediction-markets)
+- [Identifying Smart Money on Polymarket](/blog/en/identifying-smart-money-on-polymarket)
+- [The Signal Half-Life: Timing Whale Signals](/blog/en/signal-half-life-whale-trading-validity)  
+- [Risk Management for Prediction Markets](/blog/en/risk-management-strategies-for-prediction-markets)
 
 *For context-rich whale signals that distinguish between conviction and caution, explore our [advanced alert systems](/products) with intent analysis scoring.*

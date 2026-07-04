@@ -1,4 +1,4 @@
----
+﻿---
 title: "How Do Whales Make Decisions on Polymarket?"
 metaTitle: "How Whales Decide on Polymarket"
 metaDescription: "Polymarket Whale decisions: rules, liquidity, catalysts, staged entries. Data sources, timing, Smart Money context, tools, mistakes—no insider claims."
@@ -18,7 +18,7 @@ Their edge is often **workflow + information quality**, not a secret oracle; **S
 
 👉 **Want real-time Whale signals?** With **SightWhale**, you get **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -36,8 +36,8 @@ This is a practical way to avoid copying a Whale for the wrong reason:
    - If not, treat the Whale event as a research prompt, not a trigger.
 
 Related guides:
-- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
-- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
+- [Whale score meaning: filter, not oracle](/blog/en/whale-score-meaning-filter-not-oracle-polymarket)
+- [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/en/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 
 ## Live Whale Data (Powered by SightWhale)
 

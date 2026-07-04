@@ -73,6 +73,18 @@ export function middleware(request: NextRequest) {
   }
 
   // Page routes — security headers
+
+  // Redirect /blog/:slug (missing language prefix) → /blog/en/:slug
+  // Fixes 404s from 74 hardcoded internal links in content markdown + old Google-indexed URLs
+  if (pathname.startsWith('/blog/') && !pathname.startsWith('/blog/feed.xml')) {
+    const segments = pathname.split('/').filter(Boolean); // ['blog', 'slug'] or ['blog', 'lang', 'rest']
+    if (segments.length === 2 && segments[1] !== 'en' && segments[1] !== 'zh') {
+      const url = request.nextUrl.clone();
+      url.pathname = `/blog/en/${segments[1]}`;
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   const lang = pathname.startsWith('/blog/zh') ? 'zh' : 'en';
   const response = NextResponse.next();
   response.headers.set('x-html-lang', lang);

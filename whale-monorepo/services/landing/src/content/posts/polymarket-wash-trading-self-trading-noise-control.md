@@ -1,4 +1,4 @@
----
+﻿---
 title: "Noise Control on Polymarket: Practical Rules to Spot Wash Trading & Bait Prints"
 date: "2026-03-09"
 excerpt: "Alerts are only as good as the tape. Learn practical rules to spot wash trading, self-trading, and bait prints on Polymarket, with a checklist you can verify."
@@ -218,8 +218,8 @@ Then run a simple sequence:
 
 If you want a workflow built around those steps, start with:
 
-- [How to Read Whale Signals](/blog/how-to-read-whale-signals)
-- [CLOB Microstructure: Real Buying vs. Fake Walls](/blog/clob-microstructure-real-buying-vs-fake-walls)
+- [How to Read Whale Signals](/blog/en/how-to-read-whale-signals)
+- [CLOB Microstructure: Real Buying vs. Fake Walls](/blog/en/clob-microstructure-real-buying-vs-fake-walls)
 - [Subscribe](/subscribe) (tools that turn raw flow into context)
 
 ---

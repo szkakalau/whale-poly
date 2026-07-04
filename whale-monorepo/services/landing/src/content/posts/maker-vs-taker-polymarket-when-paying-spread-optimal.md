@@ -1,4 +1,4 @@
----
+﻿---
 title: "Maker vs Taker on Polymarket: When Paying the Spread Is Actually Optimal"
 date: "2026-03-10"
 excerpt: "“Always use limit orders” is bad advice on a fast CLOB. Sometimes crossing the spread is cheaper than waiting. This post builds an execution-cost model that combines spread, depth, fee curves, fill probability, and opportunity cost—then shows how to validate it with Polymarket’s public APIs."
@@ -26,7 +26,7 @@ This post explains when, using a model you can reproduce from public data:
 - opportunity cost (missed moves)
 
 Internal links:
-- CLOB microstructure primer: [/blog/clob-microstructure-real-buying-vs-fake-walls](/blog/clob-microstructure-real-buying-vs-fake-walls)
+- CLOB microstructure primer: [/blog/clob-microstructure-real-buying-vs-fake-walls](/blog/en/clob-microstructure-real-buying-vs-fake-walls)
 - Backtesting: [/backtesting](/backtesting)
 
 ---
@@ -148,7 +148,7 @@ At minimum, you can estimate:
 That’s enough to compare policies.
 
 If you want a template, the slippage/VWAP method is laid out here:
-- [/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies](/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies)
+- [/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies](/blog/en/execution-alpha-polymarket-slippage-spread-mid-price-lies)
 
 ---
 
@@ -196,7 +196,7 @@ They:
 
 We surface those behaviors so you can trade like an executor, not a spectator.
 
-- Learn the mechanics: [/blog/clob-microstructure-real-buying-vs-fake-walls](/blog/clob-microstructure-real-buying-vs-fake-walls)
+- Learn the mechanics: [/blog/clob-microstructure-real-buying-vs-fake-walls](/blog/en/clob-microstructure-real-buying-vs-fake-walls)
 - Validate policies: [/backtesting](/backtesting)
 
 ---

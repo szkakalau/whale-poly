@@ -1,4 +1,4 @@
----
+﻿---
 title: "From Chain Event to Your Screen: Modeling the Latency Stack Behind Polymarket Whale Alerts"
 metaTitle: "Polymarket Whale Alerts: Chain-to-Screen Latency"
 metaDescription: "Indexing and push delivery delay Polymarket whale alerts versus half-life decay. Use a checklist: liquidity, reaction time, and when to skip. Research only."
@@ -21,9 +21,9 @@ They interact. People routinely confuse them. That confusion costs money.
 
 Internal links:
 
-- Acting on alerts (process, not hype): [/blog/acting-on-whale-alerts-checklist-polymarket](/blog/acting-on-whale-alerts-checklist-polymarket)  
-- Why alert systems throttle: [/blog/alert-frequency-vs-precision-why-throttled-delivery-exists](/blog/alert-frequency-vs-precision-why-throttled-delivery-exists)  
-- Execution and spread reality: [/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies](/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies)  
+- Acting on alerts (process, not hype): [/blog/acting-on-whale-alerts-checklist-polymarket](/blog/en/acting-on-whale-alerts-checklist-polymarket)  
+- Why alert systems throttle: [/blog/alert-frequency-vs-precision-why-throttled-delivery-exists](/blog/en/alert-frequency-vs-precision-why-throttled-delivery-exists)  
+- Execution and spread reality: [/blog/execution-alpha-polymarket-slippage-spread-mid-price-lies](/blog/en/execution-alpha-polymarket-slippage-spread-mid-price-lies)  
 - Explore flows and scoring: [/smart-money](/smart-money)  
 
 ---

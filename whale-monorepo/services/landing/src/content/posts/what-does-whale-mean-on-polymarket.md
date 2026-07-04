@@ -1,4 +1,4 @@
----
+﻿---
 title: "What Does a Whale Mean on Polymarket?"
 metaTitle: "What a Whale Means on Polymarket"
 metaDescription: "Polymarket Whales are large flow versus that market liquidity—not one dollar rule. Types, price impact, Smart Money context, and mistakes when copying trades."
@@ -18,7 +18,7 @@ On **Polymarket**, a **Whale** usually means a wallet (or cluster) placing **lar
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts** (research tooling, not financial advice): **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
-**Start here:** [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+**Start here:** [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -39,8 +39,8 @@ Use this to avoid the two common mistakes: assuming a universal dollar threshold
 - **Credibility**: does Smart Money history suggest this wallet/entity is worth attention?
 
 Related guides:
-- [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
-- [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
+- [Monitor large trades on Polymarket in real time](/blog/en/monitor-large-trades-polymarket-real-time-tools)
+- [Whale score meaning: filter, not oracle](/blog/en/whale-score-meaning-filter-not-oracle-polymarket)
 
 ## 1. What is a whale on Polymarket (simple explanation)
 

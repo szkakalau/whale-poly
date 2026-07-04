@@ -1,4 +1,4 @@
----
+﻿---
 title: "Reading Polymarket as a Portfolio: Cross‑Market Hedging & Arbitrage Baskets"
 date: "2026-03-09"
 excerpt: "Stop treating Polymarket like single bets. Build hedge baskets, map correlated markets, and verify cross‑market mispricings using public order book data."
@@ -243,6 +243,6 @@ If you want to trade baskets, you want tooling that supports baskets:
 
 **Related Research**
 
-- [The Signal Half-Life: Timing Whale Signals](/blog/signal-half-life-whale-trading-validity)
-- [CLOB Microstructure: Real Buying vs. Fake Walls](/blog/clob-microstructure-real-buying-vs-fake-walls)
-- [Leveraging Whale Signals for Better Odds](/blog/leveraging-whale-signals-for-better-odds)
+- [The Signal Half-Life: Timing Whale Signals](/blog/en/signal-half-life-whale-trading-validity)
+- [CLOB Microstructure: Real Buying vs. Fake Walls](/blog/en/clob-microstructure-real-buying-vs-fake-walls)
+- [Leveraging Whale Signals for Better Odds](/blog/en/leveraging-whale-signals-for-better-odds)

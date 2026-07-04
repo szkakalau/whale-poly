@@ -1,4 +1,4 @@
----
+﻿---
 title: "Nested and Linked Outcomes: When Whale Alerts Quietly Double-Count the Same Thesis"
 metaTitle: "Polymarket: Nested Markets, One Underlying Bet"
 metaDescription: "Nested Polymarket contracts can make many whale alerts one thesis. Group by driver, cap exposure per driver, and avoid accidental double-counting. Not advice."
@@ -22,13 +22,13 @@ It complements (but does not repeat) our writing on cross-market lead/lag and po
 
 Internal links:
 
-- Cross-market price discovery: [/blog/cross-market-price-discovery-lead-lag-which-market-leads-which-follows](/blog/cross-market-price-discovery-lead-lag-which-market-leads-which-follows)  
-- Smart Collections as portfolios: [/blog/smart-collections-as-portfolios-building-and-stress-testing-thematic-whale-baskets](/blog/smart-collections-as-portfolios-building-and-stress-testing-thematic-whale-baskets)  
-- Resolution wording risk: [/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines](/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines)  
-- Hedging vs directional misconceptions: [/blog/whale-trading-misconceptions-hedging-vs-directional](/blog/whale-trading-misconceptions-hedging-vs-directional)  
+- Cross-market price discovery: [/blog/cross-market-price-discovery-lead-lag-which-market-leads-which-follows](/blog/en/cross-market-price-discovery-lead-lag-which-market-leads-which-follows)  
+- Smart Collections as portfolios: [/blog/smart-collections-as-portfolios-building-and-stress-testing-thematic-whale-baskets](/blog/en/smart-collections-as-portfolios-building-and-stress-testing-thematic-whale-baskets)  
+- Resolution wording risk: [/blog/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines](/blog/en/resolution-risk-wording-arbitrage-hidden-edge-hidden-landmines)  
+- Hedging vs directional misconceptions: [/blog/whale-trading-misconceptions-hedging-vs-directional](/blog/en/whale-trading-misconceptions-hedging-vs-directional)  
 - Follow tools: [/follow](/follow)  
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 

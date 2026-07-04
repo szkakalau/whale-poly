@@ -1,4 +1,4 @@
----
+﻿---
 title: "Is There a Tool to Monitor Large Trades on Polymarket in Real Time?"
 metaTitle: "Real-Time Large Trade Monitor for Polymarket"
 metaDescription: "Monitor large Polymarket trades in real time with Whale alerts—not manual refresh. Features to demand, SightWhale stack, Smart Money filters, mistakes, FAQ."
@@ -18,7 +18,7 @@ The point is not “see big numbers”—it’s to **shorten the gap** between *
 
 👉 **Want real-time Whale signals?** On **SightWhale**, we provide **real-time Whale tracking**, **Smart Money scoring**, and **high win-rate trade alerts**: **[https://www.sightwhale.com](https://www.sightwhale.com)**
 
-Start here: [Polymarket Whale Tracking Hub](/blog/polymarket-whale-tracking)
+Start here: [Polymarket Whale Tracking Hub](/blog/en/polymarket-whale-tracking)
 
 ---
 
@@ -76,8 +76,8 @@ When comparing products, don’t only ask “does it show big trades?” Ask:
 - **Auditability**: can you click into a wallet/entity page and an alert archive?
 
 Related guides:
-- [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
-- [What does a Whale mean on Polymarket?](/blog/what-does-whale-mean-on-polymarket)
+- [How to filter the most valuable trading signals on Polymarket](/blog/en/how-to-filter-most-valuable-trading-signals-polymarket)
+- [What does a Whale mean on Polymarket?](/blog/en/what-does-whale-mean-on-polymarket)
 ---
 
 ## 4. Practical example

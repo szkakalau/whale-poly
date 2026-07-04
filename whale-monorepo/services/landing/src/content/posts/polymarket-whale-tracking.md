@@ -1,4 +1,4 @@
----
+﻿---
 title: "Polymarket Whale Tracking: Hub (Tools, Signals, Smart Money)"
 metaTitle: "Polymarket Whale Tracking Hub: Whale Signals + Smart Money | SightWhale"
 metaDescription: "A practical hub for Polymarket whale tracking: definitions, real-time tools, signal filters, Smart Money context, common pitfalls, and recommended guides."
@@ -106,25 +106,25 @@ This hub links the guides that teach each step.
 Start here (in order):
 
 1. **Definition and context**
-   - [What does a Whale mean on Polymarket?](/blog/what-does-whale-mean-on-polymarket)
+   - [What does a Whale mean on Polymarket?](/blog/en/what-does-whale-mean-on-polymarket)
 
 2. **Real-time monitoring**
-   - [Monitor large trades on Polymarket in real time](/blog/monitor-large-trades-polymarket-real-time-tools)
+   - [Monitor large trades on Polymarket in real time](/blog/en/monitor-large-trades-polymarket-real-time-tools)
 
 3. **Signal filtering**
-   - [How to filter the most valuable trading signals on Polymarket](/blog/how-to-filter-most-valuable-trading-signals-polymarket)
-   - [Whale score meaning: filter, not oracle](/blog/whale-score-meaning-filter-not-oracle-polymarket)
+   - [How to filter the most valuable trading signals on Polymarket](/blog/en/how-to-filter-most-valuable-trading-signals-polymarket)
+   - [Whale score meaning: filter, not oracle](/blog/en/whale-score-meaning-filter-not-oracle-polymarket)
 
 4. **Behavior and pitfalls**
-   - [How do Whales make decisions on Polymarket?](/blog/how-do-whales-make-decisions-on-polymarket)
-   - [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
+   - [How do Whales make decisions on Polymarket?](/blog/en/how-do-whales-make-decisions-on-polymarket)
+   - [Nested linked outcomes: why Whale alerts can double-count the same thesis](/blog/en/nested-linked-outcomes-whale-alerts-double-count-same-thesis)
 
 5. **Beginner path**
-   - [How beginners start using Polymarket](/blog/how-beginners-start-using-polymarket)
+   - [How beginners start using Polymarket](/blog/en/how-beginners-start-using-polymarket)
 
 6. **Broader mental models**
-   - [Can you make money consistently in prediction markets?](/blog/can-you-make-money-consistently-prediction-markets)
-   - [Polymarket vs traditional trading markets: key differences](/blog/polymarket-vs-traditional-trading-markets-differences)
+   - [Can you make money consistently in prediction markets?](/blog/en/can-you-make-money-consistently-prediction-markets)
+   - [Polymarket vs traditional trading markets: key differences](/blog/en/polymarket-vs-traditional-trading-markets-differences)
 
 ---
 

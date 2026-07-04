@@ -1,4 +1,4 @@
----
+﻿---
 title: "CLOB Microstructure: How to Spot Real Buying Pressure vs. Fake Liquidity Walls"
 date: "2026-03-06"
 excerpt: "Learn to read order book dynamics like a market maker. This guide reveals how to distinguish genuine capital flows from manipulative spoofing using depth, spread, imbalance, and cancellation patterns."
@@ -202,8 +202,8 @@ By combining traditional technical analysis with modern microstructure tools and
 - Real-time market surveillance across multiple prediction markets
 
 **Related Research**:
-- [Identifying Smart Money on Polymarket](/blog/identifying-smart-money-on-polymarket)
-- [Volume vs. Conviction: What Really Moves Markets](/blog/analyzing-volume-vs-conviction) 
-- [Whale Behavior Patterns Across Market Cycles](/blog/whale-behavior-patterns)
+- [Identifying Smart Money on Polymarket](/blog/en/identifying-smart-money-on-polymarket)
+- [Volume vs. Conviction: What Really Moves Markets](/blog/en/analyzing-volume-vs-conviction) 
+- [Whale Behavior Patterns Across Market Cycles](/blog/en/whale-behavior-patterns)
 
 *For real-time alerts on genuine whale activity and sophisticated order flow analysis, explore our [Whale Intelligence platform](/whale-intelligence).*

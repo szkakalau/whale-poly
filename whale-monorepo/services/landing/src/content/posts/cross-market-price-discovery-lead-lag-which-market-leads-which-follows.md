@@ -1,4 +1,4 @@
----
+﻿---
 title: "Cross-Market Price Discovery: Which Market Leads, Which Follows, and Why"
 date: "2026-03-11"
 excerpt: "In correlated Polymarket markets, not all prices are equal. Some markets lead price discovery; others follow with a delay. This post lays out a practical lead–lag workflow (cross-correlation plus a simplified causality check) you can reproduce using public price endpoints—then shows how to turn “leader flow” into actionable trades."
@@ -54,7 +54,7 @@ The follower is often the market with:
 - a more retail-heavy flow
 
 If you want to go deeper on regime shifts, read:
-- [/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd](/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd)
+- [/blog/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd](/blog/en/liquidity-regimes-detecting-when-market-turns-tradable-before-crowd)
 
 ---
 
