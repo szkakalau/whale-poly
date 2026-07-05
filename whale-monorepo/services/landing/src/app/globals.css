@@ -1,8 +1,16 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* SightWhale — The Ledger: editorial light theme */
+/*
+ * ═══════════════════════════════════════════════════════════════════
+ * SIGHTWHALE DESIGN TOKENS
+ * All visual primitives in one place. Components reference these;
+ * never hardcode colors, shadows, or spacing values in components.
+ * ═══════════════════════════════════════════════════════════════════
+ */
+
 :root {
+  /* ── Palette ── */
   --bg: #FAFAF9;
   --text-primary: #171717;
   --text-secondary: #525252;
@@ -12,12 +20,28 @@
   --surface: #FFFFFF;
   --surface-hover: #F5F5F2;
 
+  /* ── Accent (green) ── */
   --accent: #0D5C3F;
   --accent-hover: #0A4630;
   --accent-active: #073526;
   --accent-subtle: #0D5C3F0D;
+
+  /* ── Shadows — layered, no-border card elevation ── */
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 14px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-card-accent:
+    0 1px 3px rgba(13, 92, 63, 0.08),
+    0 4px 14px rgba(13, 92, 63, 0.08),
+    0 0 0 1px rgba(13, 92, 63, 0.12);
 }
 
+/* Tailwind v4 theme bridge — exposes tokens as Tailwind utility classes */
 @theme inline {
   --color-background: var(--bg);
   --color-surface: var(--surface);
@@ -220,21 +244,6 @@ a:hover {
 /* ═══════════════════════════════════════════
    CARD — layered shadow, no border
    ═══════════════════════════════════════════ */
-
-:root {
-  --shadow-card:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(0, 0, 0, 0.03);
-  --shadow-card-hover:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 4px 14px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-card-accent:
-    0 1px 3px rgba(13, 92, 63, 0.08),
-    0 4px 14px rgba(13, 92, 63, 0.08),
-    0 0 0 1px rgba(13, 92, 63, 0.12);
-}
 
 .card-shadow {
   box-shadow: var(--shadow-card);
