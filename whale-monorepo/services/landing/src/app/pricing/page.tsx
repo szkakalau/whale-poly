@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Shield, Sparkles } from 'lucide-react';
 
 const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
@@ -154,7 +154,7 @@ export default function PricingPage() {
 
         <div className="mb-10 rounded-lg bg-accent/[0.06] card-shadow px-6 py-5">
           <div className="flex items-start gap-3">
-            <span className="text-lg shrink-0">🛡️</span>
+            <Shield className="w-5 h-5 text-accent shrink-0" aria-hidden />
             <div>
               <p className="text-sm font-semibold text-foreground mb-1">Money-back guarantee — first month, full refund</p>
               <p className="text-sm text-muted leading-relaxed">

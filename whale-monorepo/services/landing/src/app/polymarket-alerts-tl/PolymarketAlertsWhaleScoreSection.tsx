@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 
 type PolymarketAlertsWhaleScoreSectionProps = {
   compact?: boolean;
@@ -60,9 +61,7 @@ export function PolymarketAlertsWhaleScoreSection({
         <div className="order-2 rounded-2xl border border-white/10 bg-black/30 p-5 md:p-6">
           <div className="space-y-5 text-gray-200">
             <div className="flex gap-3">
-              <span className="mt-0.5 font-mono text-lime-400" aria-hidden>
-                ✅
-              </span>
+              <Check className="mt-0.5 w-4 h-4 text-lime-400 shrink-0" aria-hidden />
               <div>
                 <p className="font-display text-base font-bold text-white">What Is Whale Score?</p>
                 <p className="mt-1 text-sm leading-relaxed text-gray-300">
@@ -74,9 +73,7 @@ export function PolymarketAlertsWhaleScoreSection({
             </div>
 
             <div className="flex gap-3">
-              <span className="mt-0.5 font-mono text-lime-400" aria-hidden>
-                ✅
-              </span>
+              <Check className="mt-0.5 w-4 h-4 text-lime-400 shrink-0" aria-hidden />
               <div>
                 <p className="font-display text-base font-bold text-white">How It Gives You An Unfair Edge</p>
                 <p className="mt-1 text-sm leading-relaxed text-gray-300">
@@ -88,9 +85,7 @@ export function PolymarketAlertsWhaleScoreSection({
             </div>
 
             <div className="flex gap-3">
-              <span className="mt-0.5 font-mono text-lime-400" aria-hidden>
-                ✅
-              </span>
+              <Check className="mt-0.5 w-4 h-4 text-lime-400 shrink-0" aria-hidden />
               <div>
                 <p className="font-display text-base font-bold text-white">What The Score Means For Your Trades</p>
                 <ul className="mt-2 space-y-1.5 text-sm text-gray-300">
