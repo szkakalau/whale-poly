@@ -103,7 +103,7 @@ export default function Home() {
           {PAIN_POINTS.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
-              className="rounded-lg border border-border bg-surface px-6 py-6 hover:border-accent/30 transition-colors"
+              className="rounded-lg bg-surface card-shadow card-shadow-accent transition-shadow px-6 py-6"
             >
               <Icon className="w-5 h-5 text-accent mb-4" aria-hidden />
               <h3 className="font-display text-base font-semibold text-foreground mb-2 leading-snug">
@@ -140,7 +140,7 @@ export default function Home() {
         </div>
 
         {/* /analyze bridge */}
-        <div className="mt-10 rounded-lg border border-border bg-surface px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mt-10 rounded-lg bg-surface card-shadow px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Search className="w-5 h-5 text-accent shrink-0" aria-hidden />
             <p className="text-sm text-muted leading-relaxed">
@@ -172,7 +172,7 @@ export default function Home() {
           {MOATS.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
-              className="rounded-lg border border-border bg-surface px-6 py-6"
+              className="rounded-lg bg-surface card-shadow px-6 py-6"
             >
               <Icon className="w-5 h-5 text-accent mb-4" aria-hidden />
               <h3 className="font-display text-base font-semibold text-foreground mb-2">{title}</h3>
@@ -207,7 +207,7 @@ export default function Home() {
         </div>
         <Suspense
           fallback={
-            <div className="h-48 rounded-lg border border-border bg-surface animate-pulse" aria-hidden />
+            <div className="h-48 rounded-lg bg-surface card-shadow animate-pulse" aria-hidden />
           }
         >
           <LivePreview />
@@ -224,7 +224,7 @@ export default function Home() {
           {FAQ_ITEMS.map(({ q, a }) => (
             <div
               key={q}
-              className="rounded-lg border border-border bg-surface px-6 py-5"
+              className="rounded-lg bg-surface card-shadow px-6 py-5"
             >
               <h3 className="text-sm font-semibold text-foreground mb-2">{q}</h3>
               <p className="text-sm text-muted leading-relaxed">{a}</p>

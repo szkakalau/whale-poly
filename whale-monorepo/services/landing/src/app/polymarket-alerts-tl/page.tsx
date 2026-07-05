@@ -66,7 +66,7 @@ function PrimaryButton({
 function PostCard({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-lg border border-[#343536] bg-[#1a1a1b] p-5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] ${className}`}
+      className={`rounded-lg bg-[#1a1a1b] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.2),0_2px_8px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.04)] ${className}`}
     >
       {children}
     </div>

@@ -96,7 +96,7 @@ export async function StatsBar() {
 export function StatsSection() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
-      <div className="rounded-lg border border-border bg-surface px-6 py-5 sm:px-8">
+      <div className="rounded-lg bg-surface card-shadow px-6 py-5 sm:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="eyebrow mb-1">Live Track Record</p>
@@ -136,7 +136,7 @@ export async function ScorePerformanceSection() {
           {visible.map((t, i) => {
             const isTop = i === 0;
             return (
-              <div key={t.tier} className={`rounded-lg border px-5 py-5 ${isTop ? 'border-accent/30 bg-accent/[0.04]' : 'border-border bg-surface'}`}>
+              <div key={t.tier} className={`rounded-lg px-5 py-5 card-shadow ${isTop ? 'bg-accent/[0.04] shadow-[0_1px_3px_rgba(13,92,63,0.08),_0_4px_14px_rgba(13,92,63,0.08),_0_0_0_1px_rgba(13,92,63,0.12)]' : 'bg-surface'}`}>
                 <p className={`text-xs font-semibold tracking-wide uppercase mb-3 ${isTop ? 'text-accent' : 'text-muted'}`}>{t.labelName}</p>
                 <p className="text-2xl font-bold tabular-nums stat-number text-foreground mb-1">Score {t.tier}</p>
                 <div className="space-y-1 mt-3">
@@ -165,7 +165,7 @@ export async function StarWhaleSection() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
         <p className="eyebrow mb-3">Top whale</p>
         <h2 className="text-balance mb-8">Meet the #1 performer.</h2>
-        <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-6 py-6 sm:px-8 sm:py-7">
+        <div className="rounded-lg bg-accent/[0.03] card-shadow px-6 py-6 sm:px-8 sm:py-7">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="min-w-0">
               <p className="text-xs text-subtle mb-1">Wallet</p>

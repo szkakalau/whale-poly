@@ -152,7 +152,7 @@ export default function PricingPage() {
           <PricingValueAnchor />
         </Suspense>
 
-        <div className="mb-10 rounded-lg border border-accent/30 bg-accent/[0.06] px-6 py-5">
+        <div className="mb-10 rounded-lg bg-accent/[0.06] card-shadow px-6 py-5">
           <div className="flex items-start gap-3">
             <span className="text-lg shrink-0">🛡️</span>
             <div>

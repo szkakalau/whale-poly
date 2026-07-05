@@ -105,7 +105,7 @@ export default async function HistoryPage() {
             Historical signal performance
           </h1>
 
-          <div className="rounded-xl border border-border bg-surface px-6 py-5 sm:px-8">
+          <div className="rounded-xl bg-surface card-shadow px-6 py-5 sm:px-8">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted mb-3">
               <span>
                 <span className="font-semibold tabular-nums text-foreground stat-number">{rows.length}</span>{' '}

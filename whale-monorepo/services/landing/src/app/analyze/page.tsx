@@ -189,7 +189,7 @@ export default function AnalyzePage() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-32">
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Market Feed */}
-            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
+            <div className="rounded-lg bg-surface card-shadow p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <BarChart3 className="w-5 h-5 text-accent" aria-hidden="true" />
                 <p className="text-sm font-semibold text-foreground">Market Feed</p>
@@ -229,7 +229,7 @@ export default function AnalyzePage() {
             </div>
 
             {/* How to use */}
-            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
+            <div className="rounded-lg bg-surface card-shadow p-5 sm:p-6">
               <p className="text-sm font-semibold text-foreground mb-4">How to use</p>
               <div className="space-y-4 text-sm text-muted leading-relaxed">
                 <div className="flex gap-3">
@@ -264,9 +264,9 @@ export default function AnalyzePage() {
               {/* Loading */}
               {loading && (
                 <div className="space-y-4 animate-pulse" aria-busy="true">
-                  <div className="h-28 rounded-lg border border-border bg-surface" />
-                  <div className="h-16 rounded-lg border border-border bg-surface" />
-                  <div className="h-48 rounded-lg border border-border bg-surface" />
+                  <div className="h-28 rounded-lg bg-surface card-shadow" />
+                  <div className="h-16 rounded-lg bg-surface card-shadow" />
+                  <div className="h-48 rounded-lg bg-surface card-shadow" />
                 </div>
               )}
 
@@ -344,7 +344,7 @@ export default function AnalyzePage() {
                   })()}
 
                   {/* METRICS */}
-                  <div className="grid grid-cols-4 rounded-lg border border-border bg-surface overflow-hidden">
+                  <div className="grid grid-cols-4 rounded-lg bg-surface card-shadow overflow-hidden">
                     {[
                       { label: 'Yes Volume', value: `$${(result.yesVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-emerald-700' },
                       { label: 'No Volume', value: `$${(result.noVolumeUsd / 1000).toFixed(0)}k`, cls: 'text-red-600' },
@@ -370,7 +370,7 @@ export default function AnalyzePage() {
 
                   {/* WALLET BLOTTER */}
                   {result.topWallets.length > 0 && (
-                    <div className="rounded-lg border border-border bg-surface overflow-hidden">
+                    <div className="rounded-lg bg-surface card-shadow overflow-hidden">
                       <div className="px-5 py-4 border-b border-border">
                         <p className="text-sm font-semibold text-foreground">Wallet Activity</p>
                         <p className="text-xs text-subtle mt-0.5">Recent whale trades on this market</p>
@@ -466,7 +466,7 @@ export default function AnalyzePage() {
 
               {/* Empty result */}
               {result && result.whaleTradeCount === 0 && !error && (
-                <div className="rounded-lg border border-border bg-surface p-6 sm:p-8" role="region" aria-label="No whale activity">
+                <div className="rounded-lg bg-surface card-shadow p-6 sm:p-8" role="region" aria-label="No whale activity">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center shrink-0">
                       <Search className="w-4 h-4 text-subtle" aria-hidden="true" />

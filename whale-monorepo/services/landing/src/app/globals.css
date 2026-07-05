@@ -218,19 +218,46 @@ a:hover {
 }
 
 /* ═══════════════════════════════════════════
-   CARD — flat, no shadow, hairline border
+   CARD — layered shadow, no border
    ═══════════════════════════════════════════ */
+
+:root {
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 14px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-card-accent:
+    0 1px 3px rgba(13, 92, 63, 0.08),
+    0 4px 14px rgba(13, 92, 63, 0.08),
+    0 0 0 1px rgba(13, 92, 63, 0.12);
+}
+
+.card-shadow {
+  box-shadow: var(--shadow-card);
+}
+
+.card-shadow-hover:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card-shadow-accent:hover {
+  box-shadow: var(--shadow-card-accent);
+}
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
   border-radius: 0.5rem;
   padding: 1.5rem;
-  transition: border-color 0.2s ease;
+  transition: box-shadow 0.25s ease;
 }
 
 .card:hover {
-  border-color: #C8C8C0;
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* ═══════════════════════════════════════════
@@ -239,14 +266,14 @@ a:hover {
 
 .signal-card {
   background: var(--surface);
-  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
   border-radius: 0.5rem;
   padding: 1.25rem 1.5rem;
-  transition: border-color 0.2s ease;
+  transition: box-shadow 0.25s ease;
 }
 
 .signal-card:hover {
-  border-color: var(--accent);
+  box-shadow: var(--shadow-card-accent);
 }
 
 /* ═══════════════════════════════════════════
