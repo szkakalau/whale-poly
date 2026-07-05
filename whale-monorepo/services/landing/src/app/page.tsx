@@ -39,7 +39,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           SECTION 1 — HERO (typography-first)
           ═══════════════════════════════════════════ */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-20">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-20 hero-glow">
         <p className="eyebrow mb-6">Polymarket whale intelligence</p>
 
         <h1 className="text-balance mb-6">

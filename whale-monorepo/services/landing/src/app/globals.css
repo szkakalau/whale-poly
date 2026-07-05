@@ -277,6 +277,28 @@ a:hover {
 }
 
 /* ═══════════════════════════════════════════
+   HERO GLOW — radial gradient behind hero text
+   ═══════════════════════════════════════════ */
+
+.hero-glow {
+  position: relative;
+}
+
+.hero-glow::before {
+  content: '';
+  position: absolute;
+  top: -15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 100vw);
+  height: 80%;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(13, 92, 63, 0.09) 0%, rgba(13, 92, 63, 0.04) 35%, transparent 65%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══════════════════════════════════════════
    ANIMATIONS — subtle, not flashy
    ═══════════════════════════════════════════ */
 
