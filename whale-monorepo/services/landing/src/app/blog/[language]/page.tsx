@@ -224,7 +224,7 @@ export default async function BlogListPage({ params, searchParams }: Props) {
             <Link
               key={post.slug}
               href={`/blog/${post.language}/${post.slug}`}
-              className="group block bg-surface border border-border rounded-2xl p-5 hover:border-accent/30 transition-all duration-200"
+              className="group block bg-surface card-shadow rounded-2xl p-5 hover:border-accent/30 transition-all duration-200"
             >
               {/* Tags */}
               <div className="flex flex-wrap gap-1.5 mb-3">
