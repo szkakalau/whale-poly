@@ -1,0 +1,37 @@
+# ── Builder stage ──────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates gcc libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --no-warn-script-location -r requirements.txt
+
+# ── Runner stage ──────────────────────────────────────────────────────────────
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local /usr/local
+
+COPY . .
+
+RUN addgroup --system app && adduser --system --ingroup app app \
+  && chown -R app:app /app
+USER app
+
+# ── Unified entrypoint ─────────────────────────────────────────────────────────
+CMD ["bash", "/app/docker/entrypoint-unified.sh"]
