@@ -61,6 +61,38 @@ services:
           cpus: '1'
           memory: 512M
 
+  # ── Unified service (replaces all api + worker services below) ──
+  # Use this for cost-optimized single-process deployment.
+  # No Redis needed — uses in-memory queues.
+  sightwhale:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - ALERT_CONFIG_PATH=/app/alert_engine_config.yaml
+      - REDIS_URL=
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "services.unified.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ── Legacy individual services (for debugging / local dev with Redis) ──
   trade-ingest-api:
     build:
       context: ..

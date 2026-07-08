@@ -1000,7 +1000,8 @@ async def test_alert(
 async def admin_diag_config(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
   _require_admin(x_admin_token)
 
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  from shared.async_utils import get_redis as _get_shared_redis
+  redis = await _get_shared_redis()
   try:
     await redis.ping()
     q_len = await redis.llen(settings.alert_created_queue)

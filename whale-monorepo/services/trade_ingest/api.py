@@ -14,16 +14,14 @@ from shared.logging import configure_logging
 configure_logging(settings.log_level)
 logger = logging.getLogger("trade_ingest.api")
 
-# Module-level Redis connection pool — reused across requests instead of
-# creating a new connection per POST /ingest/trade call (CR-C1).
-_redis: Redis | None = None
+# Redis connection — delegated to shared.async_utils.get_redis() which
+# returns InMemoryRedis when REDIS_URL is empty (unified mode).
+from shared.async_utils import get_redis as _get_shared_redis
 
 
 async def _get_redis() -> Redis:
-    global _redis
-    if _redis is None:
-        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    return _redis
+    """Return the shared Redis connection (real or in-memory)."""
+    return await _get_shared_redis()
 
 
 async def _ensure_blog_posts_table(session) -> None:
@@ -52,17 +50,20 @@ async def _ensure_blog_posts_table(session) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: connect Redis + ensure blog_posts table (CR-C1, CR-C6)."""
-    global _redis
-    _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    """Startup: ensure blog_posts table + connect Redis (CR-C1, CR-C6).
+
+    In unified mode, this lifespan does NOT run (FastAPI mounted apps
+    don't execute their lifespans). The unified app handles initialization.
+    """
+    from shared.async_utils import get_redis as _get_shared_redis
+    redis = await _get_shared_redis()
     async with SessionLocal() as session:
         await _ensure_blog_posts_table(session)
     try:
         yield
     finally:
-        if _redis is not None:
-            await _redis.aclose()
-            _redis = None
+        # Only close if it's a real Redis (memory store has no-op aclose)
+        await redis.aclose()
 
 
 app = FastAPI(title="trade-ingest", lifespan=lifespan)

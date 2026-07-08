@@ -16,7 +16,7 @@ load_dotenv()
 class Settings:
   def __init__(self) -> None:
     self.database_url = self._normalize_db_url(self._get("DATABASE_URL"))
-    self.redis_url = self._get("REDIS_URL")
+    self.redis_url = os.getenv("REDIS_URL", "")  # Optional: empty → use in-memory store
     self.log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
     self.trade_created_queue = os.getenv("TRADE_CREATED_QUEUE", "trade_created")

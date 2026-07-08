@@ -65,7 +65,8 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
     VW 异动推送主循环。
     在 bot.py 的 application 启动后作为后台任务运行。
     """
-    redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    from shared.async_utils import get_redis as _get_shared_redis
+    redis = await _get_shared_redis()
     logger.info("vw_pusher_started")
 
     try:

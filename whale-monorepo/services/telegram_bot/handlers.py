@@ -303,7 +303,8 @@ async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def send_alert_to_subscribers(payload: dict) -> int:
-  redis = Redis.from_url(settings.redis_url, decode_responses=True)
+  from shared.async_utils import get_redis as _get_shared_redis
+  redis = await _get_shared_redis()
   try:
     now = datetime.now(timezone.utc)
     async with SessionLocal() as session:

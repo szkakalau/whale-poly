@@ -39,10 +39,19 @@ async def get_redis() -> Redis:
 
     Reused across Celery task invocations / API requests instead of creating
     a new TCP connection each time (PF-H2).
+
+    When REDIS_URL is empty, returns an InMemoryRedis instance for single-process
+    operation without an external Redis dependency.
     """
     global _redis
     if _redis is None:
-        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+        if settings.redis_url:
+            _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+        else:
+            from services.unified.memory_store import InMemoryRedis
+            import logging
+            logging.getLogger("shared.async_utils").info("redis_url_empty — using InMemoryRedis")
+            _redis = InMemoryRedis(decode_responses=True)  # type: ignore[assignment]
     return _redis
 
 

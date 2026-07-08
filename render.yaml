@@ -1,86 +1,49 @@
+# SightWhale — unified single-service deployment on Render
+# Cost: $7 (web service) + $10.50 (postgres starter) = $17.50/month
+# Down from: $127.37/month (8 services + Redis + Pro plan)
+
 databases:
   - name: whale-postgres
-    plan: basic-1gb
+    plan: starter          # Downgraded from basic-1gb — saves $13/month
     databaseName: whale
     user: whale
     ipAllowList: []
 
 services:
-  - type: keyvalue
-    name: whale-redis
-    plan: starter
-    ipAllowList: []
-
   - type: web
-    name: trade-ingest-api
+    name: sightwhale
     runtime: docker
     rootDir: whale-monorepo
     dockerfilePath: docker/Dockerfile
     healthCheckPath: /health
-    dockerCommand: bash /app/docker/entrypoint-trade-ingest.sh
+    plan: starter
+    dockerCommand: bash /app/docker/entrypoint-unified.sh
     envVars:
+      # ── Database ──────────────────────────────────────────
       - key: DATABASE_URL
         fromDatabase:
           name: whale-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: TRADE_CREATED_QUEUE
-        value: trade_created
-      - key: POLYMARKET_DATA_API_TRADES_URL
-        value: https://data-api.polymarket.com/trades
-      - key: POLYMARKET_DATA_API_TRADES_URL_FALLBACK
-        value: https://backup-api.polymarket.com/trades
-      - key: POLYMARKET_DATA_API_MARKETS_URL
-        value: https://gamma-api.polymarket.com/markets
-      - key: HTTPS_PROXY
-        sync: false
-      - key: BLOG_LLM_API_KEY
-        sync: false
 
-  - type: worker
-    name: trade-ingest-worker
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.trade_ingest.worker:celery_app worker -B -l INFO -Q trade_ingest --concurrency=1 --prefetch-multiplier=1 --max-tasks-per-child=200
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
+      # ── Queue names (used internally by InMemoryRedis) ────
       - key: TRADE_CREATED_QUEUE
         value: trade_created
+      - key: WHALE_TRADE_CREATED_QUEUE
+        value: whale_trade_created
+      - key: ALERT_CREATED_QUEUE
+        value: alert_created
+      - key: TRADE_INGEST_INCOMING_QUEUE
+        value: trade_ingest_incoming
+
+      # ── Polymarket APIs ───────────────────────────────────
       - key: POLYMARKET_DATA_API_TRADES_URL
         value: https://data-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_TRADES_URL_FALLBACK
         value: https://backup-api.polymarket.com/trades
       - key: POLYMARKET_DATA_API_MARKETS_URL
         value: https://gamma-api.polymarket.com/markets
-      - key: HTTPS_PROXY
-        sync: false
-      - key: TELEGRAM_HEALTH_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_HEALTH_CHAT_ID
-        sync: false
-      - key: TELEGRAM_HEALTH_USERNAME
-        sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_ALERT_CHAT_ID
-        sync: false
-      - key: HEALTH_PAYMENT_API_URL
-        value: https://payment-api.onrender.com
-      - key: HEALTH_TELEGRAM_BOT_API_URL
-        value: https://telegram-bot.onrender.com
+
+      # ── Trade Ingest ──────────────────────────────────────
       - key: MARKET_INGEST_SECONDS
         value: "600"
       - key: TRADE_INGEST_SECONDS
@@ -89,53 +52,12 @@ services:
         value: "300"
       - key: MARKET_INGEST_BATCH
         value: "25"
+      - key: TRADE_INGEST_BATCH_SIZE
+        value: "200"
+      - key: TRADE_INGEST_BATCH_SECONDS
+        value: "3"
 
-  - type: web
-    name: whale-engine-api
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    healthCheckPath: /health
-    dockerCommand: uvicorn services.whale_engine.api:app --host 0.0.0.0 --port $PORT --workers 1
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: TRADE_CREATED_QUEUE
-        value: trade_created
-      - key: WHALE_TRADE_CREATED_QUEUE
-        value: whale_trade_created
-      - key: WHALE_SINGLE_TRADE_USD_THRESHOLD
-        value: "5000"
-      - key: WHALE_BUILD_USD_THRESHOLD
-        value: "5000"
-
-  - type: worker
-    name: whale-engine-worker
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.whale_engine.worker:celery_app worker -B -l INFO -Q whale_engine --concurrency=1 --prefetch-multiplier=1 --max-tasks-per-child=200
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: TRADE_CREATED_QUEUE
-        value: trade_created
-      - key: WHALE_TRADE_CREATED_QUEUE
-        value: whale_trade_created
+      # ── Whale Engine ──────────────────────────────────────
       - key: WHALE_SINGLE_TRADE_USD_THRESHOLD
         value: "5000"
       - key: WHALE_BUILD_USD_THRESHOLD
@@ -159,80 +81,13 @@ services:
       - key: WHALE_STATS_HISTORY_CAP
         value: "10000"
 
-  - type: web
-    name: alert-engine-api
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    healthCheckPath: /health
-    dockerCommand: uvicorn services.alert_engine.api:app --host 0.0.0.0 --port $PORT --workers 1
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: WHALE_TRADE_CREATED_QUEUE
-        value: whale_trade_created
-      - key: ALERT_CREATED_QUEUE
-        value: alert_created
+      # ── Alert Engine ──────────────────────────────────────
       - key: ALERT_MIN_TRADE_USD
         value: "5000"
-      - key: POLYMARKET_DATA_API_MARKETS_URL
-        value: https://gamma-api.polymarket.com/markets
-      - key: HTTPS_PROXY
-        sync: false
+      - key: ALERT_CONSUME_BATCH_SIZE
+        value: "10"
 
-  - type: worker
-    name: alert-engine-worker
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    dockerCommand: celery -A services.alert_engine.worker:celery_app worker -B -l INFO -Q alert_engine --concurrency=1 --prefetch-multiplier=1 --max-tasks-per-child=200
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: WHALE_TRADE_CREATED_QUEUE
-        value: whale_trade_created
-      - key: ALERT_CREATED_QUEUE
-        value: alert_created
-      - key: ALERT_MIN_TRADE_USD
-        value: "5000"
-      - key: POLYMARKET_DATA_API_MARKETS_URL
-        value: https://gamma-api.polymarket.com/markets
-      - key: HTTPS_PROXY
-        sync: false
-
-  - type: web
-    name: telegram-bot
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    healthCheckPath: /health
-    dockerCommand: uvicorn services.telegram_bot.api:app --host 0.0.0.0 --port $PORT --workers 1
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
-      - key: ALERT_CREATED_QUEUE
-        value: alert_created
+      # ── Telegram ──────────────────────────────────────────
       - key: ALERT_FANOUT_RATE_LIMIT_PER_MINUTE
         value: "50"
       - key: TELEGRAM_BOT_TOKEN
@@ -242,23 +97,15 @@ services:
       - key: TELEGRAM_ALERT_CHAT_ID
         sync: false
 
-  - type: web
-    name: payment-api
-    runtime: docker
-    rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
-    healthCheckPath: /healthz
-    dockerCommand: uvicorn services.payment.api:app --host 0.0.0.0 --port $PORT --workers 1
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: whale-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: whale-redis
-          type: keyvalue
-          property: connectionString
+      # ── Health Check ──────────────────────────────────────
+      - key: TELEGRAM_HEALTH_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_HEALTH_CHAT_ID
+        sync: false
+      - key: TELEGRAM_HEALTH_USERNAME
+        sync: false
+
+      # ── Payment / Stripe ──────────────────────────────────
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
@@ -271,3 +118,11 @@ services:
         value: stripe
       - key: DEFAULT_CURRENCY
         value: usd
+
+      # ── Blog / LLM ────────────────────────────────────────
+      - key: BLOG_LLM_API_KEY
+        sync: false
+
+      # ── Proxy ─────────────────────────────────────────────
+      - key: HTTPS_PROXY
+        sync: false

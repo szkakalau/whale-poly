@@ -1,9 +1,16 @@
-.PHONY: up down migrate logs
+.PHONY: up down migrate logs unified unified-down
 
 up:
 	cd docker && docker compose up --build
 
 down:
+	cd docker && docker compose down -v
+
+# ── Unified single-process mode (no Redis, no Celery) ─────
+unified:
+	cd docker && docker compose up --build sightwhale postgres
+
+unified-down:
 	cd docker && docker compose down -v
 
 migrate:
