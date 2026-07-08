@@ -129,24 +129,28 @@ app = FastAPI(title="sightwhale", lifespan=lifespan)
 from shared.error_handlers import register_exception_handlers
 register_exception_handlers(app)
 
-# ── Mount sub-API routers ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# IMPORTANT: Starlette matches routes in REGISTRATION ORDER.
+# The most-specific routes come FIRST, catch-all mount "/" comes LAST.
+# Otherwise mount("/") swallows every request before other routes see it.
+# ═══════════════════════════════════════════════════════════════
 
-from services.trade_ingest.api import app as trade_app
-from services.whale_engine.api import app as whale_app
-from services.alert_engine.api import app as alert_app
-from services.payment.api import app as payment_app
+# ── Phase 1: Explicit routes on the parent app ────────────
 
-# Mount each sub-app on its original prefix for backward compatibility.
-# The landing page calls these exact prefixes via Vercel.
-app.mount("/", trade_app)         # /health, /ingest/trade, /blog/*, /stats/*, /history, /market/*
-app.mount("/whale", whale_app)    # /whale/health, /whale/*  (note: whale app uses root routes)
-app.mount("/alert", alert_app)    # /alert/health, /alert/*
-app.mount("/payment", payment_app) # /payment/healthz, /payment/*
+@app.get("/health")
+async def root_health():
+    """Primary health check. Must be registered before mount("/")."""
+    worker_count = len([t for t in asyncio.all_tasks()
+                        if hasattr(t, 'get_name') and not t.get_name().startswith('Task-')])
+    return {
+        "status": "ok",
+        "service": "sightwhale-unified",
+        "mode": "inmemory",
+        "background_tasks": worker_count,
+    }
 
 
-# ── Telegram Bot routes ────────────────────────────────────
-# Telegram routes need special handling because the Telegram API
-# has its own lifespan. We mount its routes directly.
+# ── Phase 2: Telegram Bot routes (must precede mounts) ─────
 
 from services.telegram_bot.api import (
     admin_diag_config,
@@ -232,15 +236,21 @@ async def telegram_admin_diag_config(x_admin_token: str | None = Header(None, al
     }
 
 
-# ── Health endpoint ────────────────────────────────────────
+# ── Phase 3: Specific-prefix mounts ────────────────────────
+# Must come before the wildcard "/" mount.
 
-@app.get("/health")
-async def root_health():
-    worker_count = len([t for t in asyncio.all_tasks()
-                        if hasattr(t, 'get_name') and not t.get_name().startswith('Task-')])
-    return {
-        "status": "ok",
-        "service": "sightwhale-unified",
-        "mode": "inmemory",
-        "background_tasks": worker_count,
-    }
+from services.whale_engine.api import app as whale_app
+from services.alert_engine.api import app as alert_app
+from services.payment.api import app as payment_app
+
+app.mount("/whale", whale_app)    # /whale/health, /whale/whales/*, /whale/vw/*
+app.mount("/alert", alert_app)    # /alert/health, /alert/alerts/*
+app.mount("/payment", payment_app) # /payment/healthz, /payment/checkout, /payment/webhook
+
+
+# ── Phase 4: Catch-all mount for trade_ingest routes ───────
+# LAST — catches everything not matched above.
+# Trade routes: /blog/*, /ingest/trade, /stats/*, /history, /market/*
+
+from services.trade_ingest.api import app as trade_app
+app.mount("/", trade_app)
