@@ -193,37 +193,46 @@ export async function resolveMarketSlug(query: string): Promise<{
     return { slug: null, candidates: [], matched: 'none' };
   }
 
-  // 3. Improved selection: consider both volume and title relevance
+  // 3. Improved selection: consider both volume and title relevance.
+  // Require a minimum relevance score — low scores mean the Gamma API returned
+  // popular but irrelevant markets (e.g. "bitcoin" → "Will Ronaldo Cry?").
+  const MIN_RELEVANCE_SCORE = 15;
+
   const queryLower = query.toLowerCase();
-  let bestMatch = candidates[0];
+  let bestMatch: MarketMatch | null = null;
   let bestScore = 0;
-  
+
   for (const candidate of candidates) {
     const titleLower = candidate.title.toLowerCase();
-    let score = 0;
-    
-    // Calculate relevance score
+    let relevance = 0;
+
+    // Calculate relevance score (0–60, without volume boost)
     if (titleLower === queryLower) {
-      score = 100; // Exact match
+      relevance = 60; // Exact match
     } else if (titleLower.includes(queryLower) || queryLower.includes(titleLower)) {
-      score = 70; // Contains or is contained
+      relevance = 45; // Contains or is contained
     } else {
       // Calculate keyword overlap
       const queryWords = new Set(queryLower.split(/\s+/).filter(w => w.length > 2));
       const titleWords = new Set(titleLower.split(/\s+/).filter(w => w.length > 2));
       const overlap = [...queryWords].filter(word => titleWords.has(word)).length;
       const total = Math.max(queryWords.size, titleWords.size);
-      score = (overlap / total) * 60;
+      relevance = (overlap / total) * 40;
     }
-    
-    // Add volume weight (up to 20 points)
+
+    // Add volume weight (up to 20 points) — only amplifies relevant matches
     const volumeWeight = Math.min((candidate.volume24h || 0) / 10000, 1) * 20;
-    score += volumeWeight;
-    
+    const score = relevance + volumeWeight;
+
     if (score > bestScore) {
       bestScore = score;
       bestMatch = candidate;
     }
+  }
+
+  // If no candidate passes the relevance threshold, don't force a bad match
+  if (!bestMatch || bestScore < MIN_RELEVANCE_SCORE) {
+    return { slug: null, candidates, matched: 'none' };
   }
 
   return {
