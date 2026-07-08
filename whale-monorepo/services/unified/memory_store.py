@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 In-memory drop-in replacement for redis.asyncio.Redis.
 
