@@ -193,10 +193,9 @@ export async function resolveMarketSlug(query: string): Promise<{
     return { slug: null, candidates: [], matched: 'none' };
   }
 
-  // 3. Improved selection: consider both volume and title relevance.
-  // Require a minimum relevance score — low scores mean the Gamma API returned
-  // popular but irrelevant markets (e.g. "bitcoin" → "Will Ronaldo Cry?").
-  const MIN_RELEVANCE_SCORE = 15;
+  // 3. Improved selection: require actual text relevance.
+  // Volume alone does NOT make a market relevant — zero keyword overlap
+  // means the Gamma API returned a popular but unrelated market.
 
   const queryLower = query.toLowerCase();
   let bestMatch: MarketMatch | null = null;
@@ -220,7 +219,10 @@ export async function resolveMarketSlug(query: string): Promise<{
       relevance = (overlap / total) * 40;
     }
 
-    // Add volume weight (up to 20 points) — only amplifies relevant matches
+    // Zero relevance = completely unrelated market. Skip it.
+    if (relevance === 0) continue;
+
+    // Add volume weight (up to 20 points) — tiebreaker between relevant matches
     const volumeWeight = Math.min((candidate.volume24h || 0) / 10000, 1) * 20;
     const score = relevance + volumeWeight;
 
@@ -230,8 +232,8 @@ export async function resolveMarketSlug(query: string): Promise<{
     }
   }
 
-  // If no candidate passes the relevance threshold, don't force a bad match
-  if (!bestMatch || bestScore < MIN_RELEVANCE_SCORE) {
+  // If no candidate had any keyword overlap, don't force a bad match
+  if (!bestMatch) {
     return { slug: null, candidates, matched: 'none' };
   }
 
