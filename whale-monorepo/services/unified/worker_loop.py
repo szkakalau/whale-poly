@@ -244,9 +244,9 @@ async def consume_incoming_trades_loop() -> None:
                 inserted_set = set(str(t) for t in inserted)
                 for p in payloads:
                     if p["trade_id"] in inserted_set:
-                        # Cache simplified version
+                        cache_key = f"recent_trades:{p['wallet']}:{p['market_id']}"
                         await redis.rpush(
-                            f"recent_trades:{p['wallet']}:{p['market_id']}",
+                            cache_key,
                             json.dumps({
                                 "timestamp": p["timestamp"].isoformat(),
                                 "side": p["side"],
@@ -254,6 +254,8 @@ async def consume_incoming_trades_loop() -> None:
                                 "price": p["price"],
                             }),
                         )
+                        await redis.ltrim(cache_key, -settings.recent_trades_cache_max, -1)
+                        await redis.expire(cache_key, settings.recent_trades_cache_seconds)
 
             logger.info(
                 "consume_incoming_trades_done received=%s inserted=%s",
