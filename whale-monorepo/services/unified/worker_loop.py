@@ -258,7 +258,7 @@ async def consume_incoming_trades_loop() -> None:
                     await session.execute(
                         insert(Market)
                         .values(id=mid, title=title)
-                        .on_conflict_do_update(index_elements=[Market.id], set_={"title": title})
+                        .on_conflict_do_nothing(index_elements=[Market.id])
                     )
 
                 stmt = (
@@ -466,6 +466,7 @@ async def whale_consume_trade_created_loop() -> None:
             # BLPOP with 1s timeout
             item = await redis.blpop(settings.trade_created_queue, timeout=1)
             if not item:
+                _beat("whale_consume")  # idle heartbeat
                 continue
 
             _, raw = item
@@ -589,6 +590,7 @@ async def alert_consume_whale_trade_loop() -> None:
         try:
             item = await redis.blpop(settings.whale_trade_created_queue, timeout=1)
             if not item:
+                _beat("alert_consume")  # idle heartbeat
                 continue
 
             _, raw = item

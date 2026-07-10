@@ -268,10 +268,7 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
     market_stmt = pg_insert(Market).values(
       [{"id": mid, "title": t} for mid, t in market_rows.items()]
     )
-    market_stmt = market_stmt.on_conflict_do_update(
-      index_elements=[Market.id],
-      set_={"title": market_stmt.excluded.title},
-    )
+    market_stmt = market_stmt.on_conflict_do_nothing(index_elements=[Market.id])
     await session.execute(market_stmt)
 
   stmt = (
