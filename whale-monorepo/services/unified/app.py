@@ -140,13 +140,58 @@ register_exception_handlers(app)
 @app.get("/health")
 async def root_health():
     """Primary health check. Must be registered before mount("/")."""
+    import time
+    from datetime import datetime, timezone
+
     worker_count = len([t for t in asyncio.all_tasks()
                         if hasattr(t, 'get_name') and not t.get_name().startswith('Task-')])
+
+    # ── Pipeline health: check if alerts were created recently ──
+    pipeline_status = "unknown"
+    last_alert_age_min = None
+    try:
+        from shared.db import SessionLocal
+        from shared.models import Alert
+        from sqlalchemy import select, func
+        async with SessionLocal() as session:
+            latest = (await session.execute(
+                select(func.max(Alert.created_at))
+            )).scalar()
+        if latest:
+            age_min = (datetime.now(timezone.utc) - latest).total_seconds() / 60
+            last_alert_age_min = round(age_min, 1)
+            if age_min <= 30:
+                pipeline_status = "ok"
+            elif age_min <= 120:
+                pipeline_status = "slow"
+            else:
+                pipeline_status = "stale"
+        else:
+            pipeline_status = "no_alerts"
+            last_alert_age_min = None
+    except Exception:
+        pipeline_status = "error"
+
+    # ── Worker heartbeats ─────────────────────────────────────
+    from services.unified.worker_loop import get_worker_status
+    worker_beats = get_worker_status()
+
+    # Flag stale workers (>5 min without heartbeat = potentially stuck)
+    now_mono = time.monotonic()
+    stale_workers = [
+        name for name, info in worker_beats.items()
+        if info["last_beat_sec"] > 300
+    ]
+
     return {
         "status": "ok",
         "service": "sightwhale-unified",
         "mode": "inmemory",
         "background_tasks": worker_count,
+        "pipeline": pipeline_status,
+        "last_alert_age_min": last_alert_age_min,
+        "stale_workers": stale_workers,
+        "worker_beats": worker_beats,
     }
 
 

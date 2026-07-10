@@ -25,6 +25,35 @@ from shared.logging import configure_logging
 
 logger = logging.getLogger("unified.worker_loop")
 
+# ── Worker heartbeat tracking ─────────────────────────────────
+# Each worker updates its heartbeat timestamp after completing
+# one iteration. The health endpoint reads these to detect stuck loops.
+
+_worker_heartbeats: dict[str, float] = {}
+_worker_last_error: dict[str, str] = {}
+
+
+def _beat(name: str) -> None:
+    """Record a heartbeat for a worker loop."""
+    _worker_heartbeats[name] = time.monotonic()
+
+
+def _err(name: str, msg: str) -> None:
+    """Record the last error for a worker loop."""
+    _worker_last_error[name] = msg
+
+
+def get_worker_status() -> dict:
+    """Return heartbeat age and last error for each worker loop (for health checks)."""
+    now = time.monotonic()
+    status = {}
+    for name, ts in _worker_heartbeats.items():
+        status[name] = {
+            "last_beat_sec": round(now - ts, 1),
+            "last_error": _worker_last_error.get(name),
+        }
+    return status
+
 
 # ═══════════════════════════════════════════════════════════════
 # Trade Ingest Workers
@@ -51,8 +80,10 @@ async def ingest_markets_loop() -> None:
                 await session.commit()
             if n > 0:
                 logger.info("ingest_markets_done count=%s", n)
-        except Exception:
+            _beat("ingest_markets")
+        except Exception as e:
             logger.exception("ingest_markets_failed")
+            _err("ingest_markets", str(e))
         await asyncio.sleep(interval)
 
 
@@ -91,8 +122,10 @@ async def ingest_trades_loop() -> None:
 
             if trade_ids:
                 logger.info("ingest_trades_done count=%s", len(trade_ids))
-        except Exception:
+            _beat("ingest_trades")
+        except Exception as e:
             logger.exception("ingest_trades_failed")
+            _err("ingest_trades", str(e))
         await asyncio.sleep(interval)
 
 
@@ -145,6 +178,7 @@ async def consume_incoming_trades_loop() -> None:
 
             if not raws:
                 await asyncio.sleep(batch_seconds)
+                _beat("consume_incoming")  # idle heartbeat
                 continue
 
             payloads: list[dict] = []
@@ -262,8 +296,10 @@ async def consume_incoming_trades_loop() -> None:
                 len(payloads),
                 len(inserted),
             )
-        except Exception:
+            _beat("consume_incoming")
+        except Exception as e:
             logger.exception("consume_incoming_trades_failed")
+            _err("consume_incoming", str(e))
             await asyncio.sleep(batch_seconds)
 
 
@@ -466,8 +502,10 @@ async def whale_consume_trade_created_loop() -> None:
 
             if raws:
                 logger.info("whale_consume_done received=%s created=%s", len(raws), created_count)
-        except Exception:
+            _beat("whale_consume")
+        except Exception as e:
             logger.exception("whale_consume_failed")
+            _err("whale_consume", str(e))
             await asyncio.sleep(1)
 
 
@@ -575,8 +613,10 @@ async def alert_consume_whale_trade_loop() -> None:
 
             if created_count > 0:
                 logger.info("alert_consume_done received=%s created=%s", len(raws), created_count)
-        except Exception:
+            _beat("alert_consume")
+        except Exception as e:
             logger.exception("alert_consume_failed")
+            _err("alert_consume", str(e))
             await asyncio.sleep(1)
 
 
