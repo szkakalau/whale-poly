@@ -196,6 +196,23 @@ class InMemoryRedis:
 
     # ── Key-Value operations ────────────────────────────────
 
+    async def exists(self, key: str) -> bool:
+        """Check if key exists in any store (list, kv, or set). Respects TTL."""
+        # Lists
+        lst = self._lists.get(key)
+        if lst:
+            return True
+        # Key-Value with TTL
+        entry = self._kv.get(key)
+        if entry is not None:
+            _, expiry = entry
+            if expiry == 0 or time.time() <= expiry:
+                return True
+        # Sets
+        if key in self._sets:
+            return True
+        return False
+
     async def get(self, key: str) -> str | None:
         entry = self._kv.get(key)
         if entry is None:
