@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from sqlalchemy import desc, func, select, text
 
 from shared.config import settings
@@ -45,8 +45,8 @@ TOPIC_TYPES = [
 _topic_usage: dict[str, datetime] = {}
 
 
-def _llm_client() -> OpenAI:
-    return OpenAI(
+def _llm_client() -> AsyncOpenAI:
+    return AsyncOpenAI(
         api_key=settings.blog_llm_api_key,
         base_url=settings.blog_llm_base_url,
     )
@@ -376,7 +376,7 @@ async def generate_article(context: dict, language: str) -> tuple[dict | None, s
     import random
     for attempt in range(1, 4):
         try:
-            response = client.chat.completions.create(
+            response = await client.chat.completions.create(
                 model=settings.blog_llm_model,
                 messages=messages,
                 temperature=0.8,
