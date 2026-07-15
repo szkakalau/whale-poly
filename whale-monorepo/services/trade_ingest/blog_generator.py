@@ -32,9 +32,17 @@ TOPIC_TYPES = [
     "methodology",          # 方法论/框架
     "data_insights",        # 数据洞察报告
     "tools_tips",           # 工具/技巧
+    "trader_profile",       # 鲸鱼深度画像
+    "weekly_recap",         # 本周大事回顾
+    "market_prediction",    # 事件预测分析
+    "newbie_guide",         # 新人入门教程
+    "contrarian_view",      # 反共识分析
+    "data_viz_story",       # 数据可视化解读
 ]
 
-_topic_history: list[str] = []  # track last 3 topics to avoid repeats
+# Track recent topics with timestamps for weighted random selection.
+# Format: {topic: datetime_of_use}
+_topic_usage: dict[str, datetime] = {}
 
 
 def _llm_client() -> OpenAI:
@@ -154,19 +162,55 @@ async def fetch_context(lookback_hours: int = 24) -> dict[str, Any]:
 
 
 def pick_topic() -> str:
-    """Pick an article type, ensuring no repeat within the last 3 days."""
-    global _topic_history
-    available = [t for t in TOPIC_TYPES if t not in _topic_history[-3:]]
-    if not available:
-        available = TOPIC_TYPES
-    # Simple deterministic pick based on date to avoid randomness
-    today = datetime.now(timezone.utc).strftime("%Y%m%d")
-    idx = int(today) % len(available)
-    topic = available[idx]
-    _topic_history.append(topic)
-    if len(_topic_history) > 10:
-        _topic_history = _topic_history[-10:]
-    return topic
+    """Pick an article type using weighted random selection.
+
+    Rules:
+    - Topics used in the last 3 days are strictly excluded.
+    - Topics used in the last 7 days have their weight reduced by 70%.
+    - Otherwise, each topic has equal base weight.
+    """
+    import random
+
+    global _topic_usage
+    now = datetime.now(timezone.utc)
+
+    # Strict exclusion: last 3 days
+    cutoff_strict = now - timedelta(days=3)
+    recent3 = {t for t, ts in _topic_usage.items() if ts > cutoff_strict}
+
+    # Penalty window: 7 days (weight × 0.3)
+    cutoff_penalty = now - timedelta(days=7)
+
+    weights: dict[str, float] = {}
+    for t in TOPIC_TYPES:
+        if t in recent3:
+            continue  # excluded
+        last_used = _topic_usage.get(t)
+        if last_used and last_used > cutoff_penalty:
+            weights[t] = 0.3  # penalty
+        else:
+            weights[t] = 1.0  # full weight
+
+    # Fallback: if all excluded, allow everything
+    if not weights:
+        weights = {t: 1.0 for t in TOPIC_TYPES}
+
+    # Weighted random pick
+    topics = list(weights.keys())
+    probs = [weights[t] for t in topics]
+    total = sum(probs)
+    probs = [p / total for p in probs]
+
+    chosen = random.choices(topics, weights=probs, k=1)[0]
+
+    # Record usage
+    _topic_usage[chosen] = now
+    # Prune old entries (keep last 14 days max)
+    cutoff_keep = now - timedelta(days=14)
+    _topic_usage = {t: ts for t, ts in _topic_usage.items() if ts > cutoff_keep}
+
+    logger.info("picked_topic=%s weights=%s excluded=%s", chosen, {t: round(w, 1) for t, w in zip(topics, probs, strict=False)}, sorted(recent3))
+    return chosen
 
 
 # ---------------------------------------------------------------------------
@@ -177,13 +221,18 @@ SYSTEM_PROMPT = """You are a senior financial writer and SEO expert for SightWha
 
 1. **Deep, authoritative, data-rich** — use the real on-chain data provided. Cite specific numbers, wallet behaviors, and market movements. Never be vague.
 2. **Conversational but expert** — write like a knowledgeable friend explaining something fascinating. Use contractions. Ask rhetorical questions. Vary sentence length.
-3. **SEO-optimized naturally** — the title and H2s should contain keywords people search for. The excerpt must be a compelling meta-description under 160 chars.
+3. **SEO-optimized naturally** — the title and H2s should contain keywords people search for. The excerpt must be a compelling meta-description under 160 chars. The primary keyword must appear in the title, first H2, and 3-5 times in the body.
 4. **Anti-AI voice** — avoid: "leverage", "utilize", "optimize", "in the current landscape", "it's important to note", "data-driven", "algorithm". Use concrete language instead.
+5. **GEO (Generative Engine Optimization)** — structure your article so AI search engines quote it:
+   - Include a FAQ section (## Frequently Asked Questions) with 2-3 Q&A pairs using real data.
+   - End with a ## Key Entities section listing markets, wallets, and concepts mentioned.
+   - Include at least one markdown table with real data (e.g. top trades, whale comparison).
+   - Use clear definitions for key terms so AI models can extract canonical definitions.
 
 Output a JSON object with these exact keys:
-- "title": SEO title (50-70 chars)
-- "excerpt": meta description (120-160 chars)
-- "content": full article in markdown (1500-2500 words). Use ## for H2, ### for H3. Include at least 3 concrete data points.
+- "title": SEO title (50-70 chars, primary keyword in first 30 chars)
+- "excerpt": meta description (120-160 chars, compelling click-through)
+- "content": full article in markdown (1500-2500 words). Use ## for H2, ### for H3. Must include at least 3 concrete data points, one data table, one FAQ section, and one Key Entities section.
 - "tags": array of 3-5 lowercase kebab-case tags relevant to the content
 - "read_time": estimated read time like "8 min"
 
@@ -201,6 +250,12 @@ def build_user_prompt(context: dict, topic: str, language: str) -> str:
         "methodology": "Methodology / Framework — present a conceptual framework for thinking about prediction markets",
         "data_insights": "Data Insights Report — numbers-driven analysis of SightWhale tracking data",
         "tools_tips": "Tools & Tips — practical tips for using Polymarket or SightWhale more effectively",
+        "trader_profile": "Trader Profile — deep portrait of a specific whale wallet, their strategy patterns and PnL history",
+        "weekly_recap": "Weekly Recap — roundup of the week's most important Polymarket events and whale moves",
+        "market_prediction": "Market Prediction — analyze a specific event market and predict the likely outcome with reasoning",
+        "newbie_guide": "Beginner Guide — explain a Polymarket concept or strategy in simple terms for newcomers",
+        "contrarian_view": "Contrarian View — challenge the market consensus on a popular Polymarket event with counter-evidence",
+        "data_viz_story": "Data Story — tell a narrative driven by numbers, with comparisons and trend analysis",
     }
     topic_desc = topic_labels.get(topic, topic)
 
@@ -225,6 +280,20 @@ Top Performing Whales:
 - Write in {lang_name}
 - Must contain at least one actionable insight for Polymarket traders
 - Use markdown formatting (## for H2, ### for H3, **bold** for emphasis)
+
+**GEO structure (REQUIRED — AI search engines will crawl this):**
+- Include a ## Frequently Asked Questions section with 2-3 Q&A pairs.
+  Each Q should be a real question a trader would type into Google.
+  Each A should be 2-4 sentences with concrete data.
+- End the article with a ## Key Entities section that lists:
+  - Markets mentioned (with current odds if available)
+  - Whale wallets mentioned (with masked addresses)
+  - Key concepts defined (one-sentence definitions)
+- Include at least one markdown data table (e.g., top trades comparison, whale stats).
+
+**SEO keyword rule:**
+- Identify the primary keyword for this article (the phrase you expect people to search).
+- Use it in the title, the first H2 heading, and 3-5 times in the body naturally.
 
 Output ONLY the JSON object, no preamble."""
 
@@ -265,6 +334,21 @@ def validate_article(article: dict, language: str) -> tuple[bool, str]:
         if phrase in content_lower:
             return False, f"banned phrase detected: '{phrase}'"
 
+    # GEO quality checks (soft: logged but not blocking)
+    geo_issues = []
+    if not re.search(r'\|[^\n]+\|[^\n]+\|', content):
+        geo_issues.append("no_markdown_table")
+    if not re.search(r'(?i)#+\s*frequently\s*asked\s*questions', content):
+        geo_issues.append("no_faq_section")
+    if not re.search(r'(?i)#+\s*key\s*entities', content):
+        geo_issues.append("no_key_entities_section")
+    if geo_issues:
+        logger.warning("geo_quality_issues=%s", geo_issues)
+        # Don't block — retry with stricter prompt may fix it
+        if "no_markdown_table" in geo_issues:
+            # Table is the easiest to fix, so require it on retry
+            return False, f"geo_missing={' '.join(geo_issues)}"
+
     # Required fields
     for field in ("title", "excerpt", "content", "tags"):
         if not article.get(field):
@@ -278,8 +362,8 @@ def validate_article(article: dict, language: str) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def generate_article(context: dict, language: str) -> dict | None:
-    """Generate a single article via DeepSeek. Returns parsed JSON or None on failure."""
+async def generate_article(context: dict, language: str) -> tuple[dict | None, str]:
+    """Generate a single article via DeepSeek. Returns (parsed_json, topic) or (None, topic) on failure."""
     topic = pick_topic()
     logger.info("generating %s article, topic=%s", language, topic)
 
@@ -310,7 +394,7 @@ async def generate_article(context: dict, language: str) -> dict | None:
             passed, reason = validate_article(article, language)
             if passed:
                 logger.info("%s article generated: %d words, topic=%s", language, len(article["content"].split()), topic)
-                return article
+                return article, topic
 
             logger.warning("validation failed (attempt %d): %s", attempt, reason)
             # Retry with stricter prompt
@@ -322,10 +406,10 @@ async def generate_article(context: dict, language: str) -> dict | None:
         except Exception:
             logger.exception("LLM call failed (attempt %d)", attempt)
             if attempt >= 3:
-                return None
+                return None, topic
             await asyncio.sleep(2 ** attempt + random.random())
 
-    return None
+    return None, topic
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +420,7 @@ async def generate_article(context: dict, language: str) -> dict | None:
 async def generate_daily_article() -> dict:
     """Main entry point. Generates EN + ZH articles and inserts into blog_posts.
 
-    Returns a status dict suitable for the Celery task result.
+    Returns a status dict suitable for the worker result.
     """
     if not settings.blog_daily_enabled:
         return {"status": "disabled"}
@@ -344,8 +428,8 @@ async def generate_daily_article() -> dict:
     context = await fetch_context()
 
     # Generate both languages
-    en_article = await generate_article(context, "en")
-    zh_article = await generate_article(context, "zh")
+    en_article, en_topic = await generate_article(context, "en")
+    zh_article, zh_topic = await generate_article(context, "zh")
 
     if not en_article and not zh_article:
         return {"status": "failed", "reason": "both languages failed generation"}
@@ -358,11 +442,25 @@ async def generate_daily_article() -> dict:
         await _ensure_blog_posts_table(session)
 
         if en_article:
-            await _insert_blog_post(session, en_article, "en", group_slug, now_utc)
+            en_meta = {
+                "topic": en_topic,
+                "word_count": len(en_article.get("content", "").split()),
+                "data_points": len(en_article.get("content", "").count("$")),
+                "language": "en",
+                "generated_at": now_utc.isoformat(),
+            }
+            await _insert_blog_post(session, en_article, "en", group_slug, now_utc, meta=en_meta)
             inserted.append("en")
 
         if zh_article:
-            await _insert_blog_post(session, zh_article, "zh", group_slug, now_utc)
+            zh_meta = {
+                "topic": zh_topic,
+                "word_count": len(zh_article.get("content", "").replace(" ", "")) // 2,
+                "data_points": len(zh_article.get("content", "").count("$")),
+                "language": "zh",
+                "generated_at": now_utc.isoformat(),
+            }
+            await _insert_blog_post(session, zh_article, "zh", group_slug, now_utc, meta=zh_meta)
             inserted.append("zh")
 
         await session.commit()
@@ -371,6 +469,8 @@ async def generate_daily_article() -> dict:
         "status": "published",
         "group_slug": group_slug,
         "languages": inserted,
+        "en_topic": en_topic,
+        "zh_topic": zh_topic,
         "en_title": en_article.get("title") if en_article else None,
         "zh_title": zh_article.get("title") if zh_article else None,
     }
@@ -456,24 +556,29 @@ async def _ensure_blog_posts_table(session) -> None:
 
 
 async def _insert_blog_post(
-    session, article: dict, language: str, group_slug: str, now_utc: datetime
+    session, article: dict, language: str, group_slug: str, now_utc: datetime,
+    meta: dict | None = None,
 ) -> None:
-    """Insert a single article row."""
+    """Insert a single article row, with optional generation metadata."""
     post_id = str(uuid.uuid4())
     lang_slug = f"{article.get('title', 'post').lower().strip()[:60]}-{language}"
     lang_slug = "".join(c if c.isalnum() or c in " -" else "" for c in lang_slug)
     lang_slug = "-".join(lang_slug.split())[:80]
+
+    generation_prompt = json.dumps(meta) if meta else None
 
     await session.execute(
         text(
             """
             insert into blog_posts (
                 id, slug, title, excerpt, content, author, read_time, tags,
-                published_at, created_at, updated_at, language, group_slug, status
+                published_at, created_at, updated_at, language, group_slug, status,
+                generation_prompt
             )
             values (
                 :id, :slug, :title, :excerpt, :content, :author, :read_time, :tags,
-                :published_at, :created_at, :updated_at, :language, :group_slug, :status
+                :published_at, :created_at, :updated_at, :language, :group_slug, :status,
+                :generation_prompt
             )
             on conflict (slug, language) do update set
                 title = excluded.title,
@@ -482,7 +587,8 @@ async def _insert_blog_post(
                 author = excluded.author,
                 read_time = excluded.read_time,
                 tags = excluded.tags,
-                updated_at = excluded.updated_at
+                updated_at = excluded.updated_at,
+                generation_prompt = excluded.generation_prompt
             """
         ),
         {
@@ -500,6 +606,7 @@ async def _insert_blog_post(
             "language": language,
             "group_slug": group_slug,
             "status": "published",
+            "generation_prompt": generation_prompt,
         },
     )
-    logger.info("inserted blog post: slug=%s language=%s group=%s", lang_slug, language, group_slug)
+    logger.info("inserted blog post: slug=%s language=%s group=%s meta=%s", lang_slug, language, group_slug, meta)
