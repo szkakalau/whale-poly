@@ -7,6 +7,7 @@ import { extractHeadings, extractFaqItems, slugify } from '@/lib/markdown-utils'
 import TableOfContents from '@/components/blog/TableOfContents';
 import BackToTop from '@/components/blog/BackToTop';
 import ReadingProgress from '@/components/blog/ReadingProgress';
+import { safeJsonLd } from '@/components/BreadcrumbListScript';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -171,6 +172,11 @@ export default async function BlogPostPage({ params }: Props) {
     ),
     a: ({ href, children, ...props }: { href?: string; children?: ReactNode }) => {
       if (!href) return <a {...props}>{children}</a>;
+      // Block dangerous URL protocols that could execute JavaScript
+      const sanitized = href.trim().toLowerCase();
+      if (sanitized.startsWith('javascript:') || sanitized.startsWith('data:text/html')) {
+        return <span className="text-accent underline underline-offset-2" {...props}>{children}</span>;
+      }
       const isInternal = href.startsWith('/') || href.includes('sightwhale.com');
       const className = 'text-accent hover:text-accent-hover underline underline-offset-2 transition-colors';
       if (isInternal) {
@@ -192,7 +198,7 @@ export default async function BlogPostPage({ params }: Props) {
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={typeof src === 'string' ? src : undefined}
-        alt={alt || ''}
+        alt={alt || post.title}
         loading="lazy"
         sizes="(max-width: 768px) 100vw, 720px"
         className="rounded-lg"
@@ -281,7 +287,7 @@ export default async function BlogPostPage({ params }: Props) {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLd({
                 '@context': 'https://schema.org',
                 '@type': 'Article',
                 headline: post.title,
@@ -309,7 +315,7 @@ export default async function BlogPostPage({ params }: Props) {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLd({
                 '@context': 'https://schema.org',
                 '@type': 'BreadcrumbList',
                 itemListElement: [

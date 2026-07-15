@@ -35,6 +35,7 @@ export const viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
@@ -93,6 +94,10 @@ export const metadata: Metadata = {
       'application/rss+xml': '/blog/feed.xml',
     },
   },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 const jsonLd = {
@@ -107,6 +112,7 @@ const jsonLd = {
       description:
         'Polymarket whale intelligence platform — real-time alerts for high-conviction trades from the top 1% most profitable wallets.',
       sameAs: ['https://twitter.com/SightWhale'],
+      foundingDate: '2025',
     },
     {
       '@type': 'WebSite',

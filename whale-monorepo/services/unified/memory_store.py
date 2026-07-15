@@ -82,7 +82,11 @@ class InMemoryRedis:
 
     @classmethod
     def from_url(cls, url: str = "", *args, **kwargs) -> "InMemoryRedis":
-        """Match redis.asyncio.Redis.from_url() signature."""
+        """Match redis.asyncio.Redis.from_url() signature.
+
+        The ``url`` parameter is accepted for API compatibility but ignored —
+        InMemoryRedis uses no external connection.
+        """
         return cls(*args, **kwargs)
 
     # ── Connection ──────────────────────────────────────────
@@ -97,6 +101,25 @@ class InMemoryRedis:
     async def close(self):
         """No-op."""
         pass
+
+    # ── TTL helpers ─────────────────────────────────────────
+
+    def _is_list_expired(self, key: str) -> bool:
+        """Check whether a list key has an active TTL set via expire()."""
+        ttl_key = f"__expire_list__{key}"
+        entry = self._kv.get(ttl_key)
+        if entry is None:
+            return False  # no TTL set → not expired
+        _, expiry = entry
+        return expiry > 0 and time.time() > expiry
+
+    def _get_list(self, key: str) -> list[str] | None:
+        """Get list if it exists and hasn't expired. Returns None if expired."""
+        if self._is_list_expired(key):
+            self._lists.pop(key, None)
+            self._kv.pop(f"__expire_list__{key}", None)
+            return None
+        return self._lists.get(key)
 
     # ── List operations ─────────────────────────────────────
 
@@ -123,7 +146,7 @@ class InMemoryRedis:
         deadline = time.monotonic() + timeout if timeout > 0 else float("inf")
 
         while True:
-            lst = self._lists.get(key, [])
+            lst = self._get_list(key) or []
             if lst:
                 value = lst.pop(0)
                 if not lst:
@@ -153,7 +176,7 @@ class InMemoryRedis:
                     return None
 
     async def lpop(self, key: str) -> str | None:
-        lst = self._lists.get(key, [])
+        lst = self._get_list(key)
         if lst:
             value = lst.pop(0)
             if not lst:
@@ -162,16 +185,19 @@ class InMemoryRedis:
         return None
 
     async def llen(self, key: str) -> int:
-        return len(self._lists.get(key, []))
+        lst = self._get_list(key)
+        return len(lst) if lst else 0
 
     async def lrange(self, key: str, start: int, end: int) -> list[str]:
-        lst = self._lists.get(key, [])
+        lst = self._get_list(key)
+        if not lst:
+            return []
         if end == -1:
             return lst[start:]
         return lst[start : end + 1]
 
     async def ltrim(self, key: str, start: int, stop: int) -> bool:
-        lst = self._lists.get(key, [])
+        lst = self._get_list(key)
         if not lst:
             return True
         # stop=-1 means keep to end
@@ -184,7 +210,7 @@ class InMemoryRedis:
         """Atomic move from source to dest. Supports LEFT→RIGHT only (codebase usage)."""
         if wherefrom.upper() != "LEFT":
             raise NotImplementedError("lmove only supports LEFT source")
-        lst_src = self._lists.get(source, [])
+        lst_src = self._get_list(source)
         if not lst_src:
             return None
         value = lst_src.pop(0)
@@ -198,8 +224,8 @@ class InMemoryRedis:
 
     async def exists(self, key: str) -> bool:
         """Check if key exists in any store (list, kv, or set). Respects TTL."""
-        # Lists
-        lst = self._lists.get(key)
+        # Lists (with TTL check)
+        lst = self._get_list(key)
         if lst:
             return True
         # Key-Value with TTL
@@ -247,6 +273,9 @@ class InMemoryRedis:
             if key in self._lists:
                 del self._lists[key]
                 count += 1
+                # Clean up list TTL if one was set
+                ttl_key = f"__expire_list__{key}"
+                self._kv.pop(ttl_key, None)
             if key in self._kv:
                 del self._kv[key]
                 count += 1

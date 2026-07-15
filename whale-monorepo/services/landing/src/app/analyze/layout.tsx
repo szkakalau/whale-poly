@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 export const metadata: Metadata = {
   title: 'Free Polymarket Analysis Tool',
@@ -25,5 +26,19 @@ export const metadata: Metadata = {
 };
 
 export default function AnalyzeLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      {/* SSR-rendered SEO content for crawlers (client component renders interactively for users) */}
+      <section className="sr-only">
+        <h2>Polymarket Whale Intelligence Analysis Tool</h2>
+        <p>
+          Search any Polymarket market by keyword or URL. See smart money flow,
+          whale trade direction, odds trends, and wallet-level activity — all in one view.
+          Free to use, no signup required.
+        </p>
+      </section>
+      {children}
+      <BreadcrumbListScript items={[{ name: 'Analyze', url: '/analyze' }]} />
+    </>
+  );
 }

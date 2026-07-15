@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Viewport } from 'next';
+import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 export const viewport: Viewport = {
   themeColor: '#ffffff',
@@ -30,5 +31,10 @@ export const metadata = {
 };
 
 export default function PolymarketAlertsTlLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      {children}
+      <BreadcrumbListScript items={[{ name: 'Polymarket Whale Alerts', url: '/polymarket-alerts-tl' }]} />
+    </>
+  );
 }

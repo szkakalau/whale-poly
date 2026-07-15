@@ -71,7 +71,7 @@ export default function Header({ user }: { user: AuthUser | null }) {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-7">
+        <nav className="hidden md:flex items-center gap-7" aria-label="Main navigation">
           {navLinks.map(({ href, label }) => (
             <Link key={href} href={href} className="text-[13px] font-medium text-muted hover:text-foreground transition-colors">
               {label}
@@ -122,7 +122,7 @@ export default function Header({ user }: { user: AuthUser | null }) {
         }`}
         aria-hidden={!mobileOpen}
       >
-        <nav className="flex flex-col p-4 gap-1">
+        <nav className="flex flex-col p-4 gap-1" aria-label="Mobile navigation">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}

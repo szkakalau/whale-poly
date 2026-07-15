@@ -79,7 +79,8 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    command: ["uvicorn", "services.unified.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    # Uses entrypoint-unified.sh which runs `alembic upgrade head` before uvicorn
+    command: ["bash", "/app/docker/entrypoint-unified.sh"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s

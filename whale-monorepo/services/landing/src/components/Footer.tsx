@@ -22,9 +22,9 @@ export default function Footer() {
 
         <div className="mt-10 pt-8 border-t border-border-muted flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="text-subtle text-xs">
-            © {new Date().getFullYear()} SightWhale. All rights reserved.
+            © <time dateTime={new Date().getFullYear().toString()}>{new Date().getFullYear()}</time> SightWhale. All rights reserved.
           </div>
-          <div className="flex flex-wrap gap-x-8 gap-y-3">
+          <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-8 gap-y-3">
             <Link href="/" className="text-subtle hover:text-muted text-xs transition-colors">
               Home
             </Link>
@@ -46,7 +46,7 @@ export default function Footer() {
             <Link href="/privacy" className="text-subtle hover:text-muted text-xs transition-colors">
               Privacy
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>

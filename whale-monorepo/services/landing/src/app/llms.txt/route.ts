@@ -53,7 +53,7 @@ export async function GET() {
     '- Public marketing pages may be indexed, crawled, and summarized.',
     '- API routes, auth surfaces, and private user data are not for indexing.',
     '- Content is informational only and not investment advice.',
-    `- Last updated: ${posts.length > 0 ? posts[0].published_at?.split('T')[0] || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}`,
+    `- Last updated: ${new Date().toISOString().split('T')[0]}`,
   ].join('\n');
 
   return new Response(`${content}\n`, {

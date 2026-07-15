@@ -34,4 +34,8 @@ RUN addgroup --system app && adduser --system --ingroup app app \
 USER app
 
 # ── Unified entrypoint ─────────────────────────────────────────────────────────
+RUN addgroup --system app && adduser --system --ingroup app app \
+  && chown -R app:app /app
+USER app
+
 CMD ["bash", "/app/docker/entrypoint-unified.sh"]

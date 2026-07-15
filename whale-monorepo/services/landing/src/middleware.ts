@@ -43,7 +43,8 @@ function validateCsrf(request: NextRequest): Response | null {
 
   const pathname = request.nextUrl.pathname;
   for (const skip of CSRF_SKIP_PATHS) {
-    if (pathname.startsWith(skip)) return null;
+    // Exact match or prefix with trailing slash only (not substring)
+    if (pathname === skip || pathname.startsWith(skip + '/')) return null;
   }
 
   // SameSite=Lax cookies are NOT sent on cross-origin POST via fetch/form.

@@ -87,14 +87,15 @@ class Settings:
     self.telegram_health_bot_token = os.getenv("TELEGRAM_HEALTH_BOT_TOKEN", "")
     self.telegram_health_chat_id = os.getenv("TELEGRAM_HEALTH_CHAT_ID", "")
     self.telegram_health_username = os.getenv("TELEGRAM_HEALTH_USERNAME", "")
-    # Health check URLs — override via env vars for your deployment target.
-    # Defaults use Render public URLs; set to Docker internal hostnames for
-    # local dev (e.g. http://trade-ingest-api:8010).  (CR-A3)
-    self.health_trade_ingest_api_url = os.getenv("HEALTH_TRADE_INGEST_API_URL", "https://trade-ingest-api.onrender.com")
-    self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "https://whale-engine-api.onrender.com")
-    self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "https://alert-engine-api.onrender.com")
-    self.health_payment_api_url = os.getenv("HEALTH_PAYMENT_API_URL", "https://payment-api.onrender.com")
-    self.health_telegram_bot_api_url = os.getenv("HEALTH_TELEGRAM_BOT_API_URL", "https://telegram-bot.onrender.com")
+    # Health check URLs — only used in legacy multi-service mode.
+    # In unified mode (default), health checks are in-process; these are ignored.
+    # Override via env vars for legacy deployments.
+    # (CR-A3, CR-A1: deprecated defaults preserved for backward compatibility)
+    self.health_trade_ingest_api_url = os.getenv("HEALTH_TRADE_INGEST_API_URL", "")
+    self.health_whale_engine_api_url = os.getenv("HEALTH_WHALE_ENGINE_API_URL", "")
+    self.health_alert_engine_api_url = os.getenv("HEALTH_ALERT_ENGINE_API_URL", "")
+    self.health_payment_api_url = os.getenv("HEALTH_PAYMENT_API_URL", "")
+    self.health_telegram_bot_api_url = os.getenv("HEALTH_TELEGRAM_BOT_API_URL", "")
 
     # Blog / LLM
     self.blog_llm_api_key = os.getenv("BLOG_LLM_API_KEY", "")

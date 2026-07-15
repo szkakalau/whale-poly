@@ -25,12 +25,17 @@ from shared.logging import configure_logging
 
 logger = logging.getLogger("unified.worker_loop")
 
+# ── Warm-up delays (seconds before first run of periodic tasks) ──
+_INITIAL_DELAY_SMART_COLLECTIONS = 60       # let system warm up before rebuilding collections
+_INITIAL_DELAY_LEADERBOARD = 120            # let markets ingest before leaderboard fetch
+_INITIAL_DELAY_HEALTH_CHECK = 300           # let all services stabilize before health ping
+
 # ── Worker heartbeat tracking ─────────────────────────────────
 # Each worker updates its heartbeat timestamp after completing
 # one iteration. The health endpoint reads these to detect stuck loops.
 
 _worker_heartbeats: dict[str, float] = {}
-_worker_last_error: dict[str, str] = {}
+_worker_has_error: dict[str, bool] = {}
 
 
 def _beat(name: str) -> None:
@@ -38,19 +43,23 @@ def _beat(name: str) -> None:
     _worker_heartbeats[name] = time.monotonic()
 
 
-def _err(name: str, msg: str) -> None:
-    """Record the last error for a worker loop."""
-    _worker_last_error[name] = msg
+def _err(name: str) -> None:
+    """Record that a worker loop encountered an error."""
+    _worker_has_error[name] = True
 
 
 def get_worker_status() -> dict:
-    """Return heartbeat age and last error for each worker loop (for health checks)."""
+    """Return heartbeat age and error flag for each worker loop (for health checks).
+
+    Does NOT expose error messages — only boolean error flag to avoid
+    leaking internal state via unauthenticated health endpoint.
+    """
     now = time.monotonic()
     status = {}
     for name, ts in _worker_heartbeats.items():
         status[name] = {
             "last_beat_sec": round(now - ts, 1),
-            "last_error": _worker_last_error.get(name),
+            "has_error": _worker_has_error.get(name, False),
         }
     return status
 
@@ -83,7 +92,7 @@ async def ingest_markets_loop() -> None:
             _beat("ingest_markets")
         except Exception as e:
             logger.exception("ingest_markets_failed")
-            _err("ingest_markets", str(e))
+            _err("ingest_markets")
         await asyncio.sleep(interval)
 
 
@@ -125,7 +134,7 @@ async def ingest_trades_loop() -> None:
             _beat("ingest_trades")
         except Exception as e:
             logger.exception("ingest_trades_failed")
-            _err("ingest_trades", str(e))
+            _err("ingest_trades")
         await asyncio.sleep(interval)
 
 
@@ -184,10 +193,12 @@ async def consume_incoming_trades_loop() -> None:
             payloads: list[dict] = []
             market_titles: dict[str, str] = {}
 
+            parse_failures = 0
             for raw in raws:
                 try:
                     p = json.loads(raw)
                 except Exception:
+                    parse_failures += 1
                     continue
                 trade_id = str(p.get("trade_id") or "")
                 market_id = str(p.get("market_id") or "")
@@ -251,6 +262,8 @@ async def consume_incoming_trades_loop() -> None:
                     market_titles[market_id] = title
 
             if not payloads:
+                if parse_failures:
+                    logger.warning("consume_incoming_parse_failures count=%d", parse_failures)
                 continue
 
             async with SessionLocal() as session:
@@ -292,14 +305,15 @@ async def consume_incoming_trades_loop() -> None:
                         await redis.expire(cache_key, settings.recent_trades_cache_seconds)
 
             logger.info(
-                "consume_incoming_trades_done received=%s inserted=%s",
+                "consume_incoming_trades_done received=%s inserted=%s parse_failures=%s",
                 len(payloads),
                 len(inserted),
+                parse_failures,
             )
             _beat("consume_incoming")
         except Exception as e:
             logger.exception("consume_incoming_trades_failed")
-            _err("consume_incoming", str(e))
+            _err("consume_incoming")
             await asyncio.sleep(batch_seconds)
 
 
@@ -311,7 +325,7 @@ async def rebuild_smart_collections_loop() -> None:
     logger.info("rebuild_smart_collections_loop_started interval=%ss", interval)
 
     # Initial delay to let the system warm up
-    await asyncio.sleep(60)
+    await asyncio.sleep(_INITIAL_DELAY_SMART_COLLECTIONS)
 
     while True:
         try:
@@ -331,7 +345,7 @@ async def ingest_smart_money_leaderboard_loop() -> None:
     interval = float(os.getenv("INGEST_LEADERBOARD_SECONDS", "43200"))
     logger.info("ingest_leaderboard_loop_started interval=%ss", interval)
 
-    await asyncio.sleep(120)  # Initial delay
+    await asyncio.sleep(_INITIAL_DELAY_LEADERBOARD)  # Initial delay
 
     while True:
         try:
@@ -351,7 +365,7 @@ async def health_check_loop() -> None:
     interval = float(os.getenv("HEALTH_CHECK_SECONDS", "3600"))
     logger.info("health_check_loop_started interval=%ss", interval)
 
-    await asyncio.sleep(300)  # Initial delay
+    await asyncio.sleep(_INITIAL_DELAY_HEALTH_CHECK)  # Initial delay
 
     while True:
         try:
@@ -397,7 +411,8 @@ async def _send_health_telegram(trade_id: str, started_at: datetime, status: str
         async with httpx.AsyncClient() as client:
             await client.post(url, json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True}, timeout=10)
     except Exception:
-        logger.exception("health_telegram_failed")
+        # Deliberately NOT logging the URL — it contains the Telegram bot token
+        logger.exception("health_telegram_failed chat_id=%s", chat_id[-4:] if len(chat_id) > 4 else "???")
 
 
 async def daily_spotlight_loop() -> None:
@@ -506,7 +521,7 @@ async def whale_consume_trade_created_loop() -> None:
             _beat("whale_consume")
         except Exception as e:
             logger.exception("whale_consume_failed")
-            _err("whale_consume", str(e))
+            _err("whale_consume")
             await asyncio.sleep(1)
 
 
@@ -618,7 +633,7 @@ async def alert_consume_whale_trade_loop() -> None:
             _beat("alert_consume")
         except Exception as e:
             logger.exception("alert_consume_failed")
-            _err("alert_consume", str(e))
+            _err("alert_consume")
             await asyncio.sleep(1)
 
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { unstable_cache } from 'next/cache';
+import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 export const revalidate = 60; // Revalidate trade history every minute (PF-M16)
 
@@ -99,6 +100,7 @@ export default async function HistoryPage() {
   return (
     <div className="min-h-screen text-foreground selection:bg-accent selection:text-white pb-28">
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-36 pb-12">
+        <BreadcrumbListScript items={[{ name: 'History', url: '/history' }]} />
         {/* ── Hero + summary stats (above the fold) ── */}
         <header className="mb-8">
           <h1 className="text-balance mb-6">

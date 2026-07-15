@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 import { Check, Shield, Sparkles } from 'lucide-react';
+import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
 
@@ -137,6 +138,7 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
       />
+      <BreadcrumbListScript items={[{ name: 'Pricing', url: '/pricing' }]} />
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-36 pb-16">
         <header className="mb-12 max-w-2xl">
           <p className="eyebrow mb-4">Pricing</p>

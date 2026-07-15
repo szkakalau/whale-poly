@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 export const metadata: Metadata = {
   title: { absolute: 'Privacy — SightWhale.com' },
@@ -27,6 +28,7 @@ export default function PrivacyPage() {
 
   return (
     <div className="min-h-screen selection:bg-accent selection:text-white">
+      <BreadcrumbListScript items={[{ name: 'Privacy', url: '/privacy' }]} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-24 sm:pb-32">
         {/* ── Hero ── */}
         <p className="eyebrow mb-4">Privacy</p>

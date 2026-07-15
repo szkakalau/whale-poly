@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/history',
     '/pricing',
     '/polymarket-alerts-tl',
+    '/volume-analysis',
     '/terms',
     '/privacy',
     '/blog/en',

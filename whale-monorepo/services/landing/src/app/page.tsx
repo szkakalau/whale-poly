@@ -94,9 +94,9 @@ export default function Home() {
       </Suspense>
 
       {/* SECTION 3 — THE PROBLEM */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="problem-heading">
         <p className="eyebrow mb-3">Why you need this</p>
-        <h2 className="text-balance mb-8">
+        <h2 id="problem-heading" className="text-balance mb-8">
           Polymarket moves fast. You&apos;re losing edge right now.
         </h2>
         <div className="grid gap-6 sm:grid-cols-3">
@@ -116,9 +116,9 @@ export default function Home() {
       </section>
 
       {/* SECTION 4 — HOW IT WORKS */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="how-heading">
         <p className="eyebrow mb-3">How it works</p>
-        <h2 className="text-balance mb-10">
+        <h2 id="how-heading" className="text-balance mb-10">
           From whale trade to your phone in three steps.
         </h2>
         <div className="grid gap-8 sm:grid-cols-3">
@@ -163,9 +163,9 @@ export default function Home() {
       </section>
 
       {/* SECTION 5 — THE MOAT */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="moat-heading">
         <p className="eyebrow mb-3">Why SightWhale</p>
-        <h2 className="text-balance mb-8">
+        <h2 id="moat-heading" className="text-balance mb-8">
           Three things no other signal service offers.
         </h2>
         <div className="grid gap-6 sm:grid-cols-3">
@@ -187,11 +187,11 @@ export default function Home() {
       </Suspense>
 
       {/* SECTION 6 — LIVE PREVIEW */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="live-heading">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
             <p className="eyebrow mb-2">Live preview</p>
-            <h2 className="text-balance">See it in action</h2>
+            <h2 id="live-heading" className="text-balance">See it in action</h2>
             <p className="text-sm text-muted mt-1.5 max-w-md">
               Three recent signals from the live feed, delayed by ~1 hour. Subscribers get
               real-time delivery to Telegram in ~30 seconds.
@@ -215,9 +215,9 @@ export default function Home() {
       </section>
 
       {/* SECTION 7 — FAQ */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="faq-heading">
         <p className="eyebrow mb-3">Common questions</p>
-        <h2 className="text-balance mb-8">
+        <h2 id="faq-heading" className="text-balance mb-8">
           Let&apos;s clear up the obvious ones.
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -234,8 +234,8 @@ export default function Home() {
       </section>
 
       {/* SECTION 8 — FINAL CTA */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-32 text-center">
-        <h2 className="text-balance mb-4">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-32 text-center" aria-labelledby="cta-heading">
+        <h2 id="cta-heading" className="text-balance mb-4">
           Try your first month risk-free.
         </h2>
         <p className="text-sm sm:text-base text-muted max-w-lg mx-auto mb-8 leading-relaxed">

@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     title: 'SightWhale Blog — Polymarket Strategies & Whale Insights',
     description:
       'In-depth articles on Polymarket trading strategies, whale tracking, and prediction market theory.',
+    images: ['/opengraph-image'],
   },
   robots: { index: true, follow: true },
   metadataBase: new URL('https://www.sightwhale.com'),
