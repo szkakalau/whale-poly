@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 
 export const dynamic = 'force-dynamic'; // never cache — blog posts change frequently
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 async function fetchSlugs(language: string) {
   const controller = new AbortController();

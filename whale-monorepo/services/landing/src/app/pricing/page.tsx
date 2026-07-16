@@ -5,7 +5,7 @@ import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 import { Check, Shield, Sparkles } from 'lucide-react';
 import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 const loadCachedPricingStats = unstable_cache(
   async () => {

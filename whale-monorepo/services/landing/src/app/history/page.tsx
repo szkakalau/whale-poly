@@ -5,7 +5,7 @@ import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
 
 export const revalidate = 60; // Revalidate trade history every minute (PF-M16)
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 const loadHistory = unstable_cache(
   async () => {

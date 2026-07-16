@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 
 export const revalidate = 3600; // ISR at runtime, no build-time DB access needed (PF-H7)
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 const getCachedBlogData = unstable_cache(
   async (language: string, page: number, tag?: string) => {

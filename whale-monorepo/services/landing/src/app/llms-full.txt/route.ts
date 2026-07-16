@@ -1,5 +1,5 @@
 const BASE_URL = 'https://www.sightwhale.com';
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 async function fetchRecentPosts(limit: number = 30): Promise<{
   title: string;

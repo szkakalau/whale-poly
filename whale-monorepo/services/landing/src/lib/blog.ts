@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // Types
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 export type BlogPost = {
   id: string;

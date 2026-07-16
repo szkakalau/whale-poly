@@ -12,7 +12,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { filterLiveSignalsForUser } from '@/lib/live-signals-access';
 import LiveSignalsFeedLazy from '@/components/LiveSignalsFeedLazy';
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 const loadHomeStats = unstable_cache(
   async () => {

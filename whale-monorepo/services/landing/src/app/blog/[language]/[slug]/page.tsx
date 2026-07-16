@@ -7,6 +7,7 @@ import { extractHeadings, extractFaqItems, slugify } from '@/lib/markdown-utils'
 import TableOfContents from '@/components/blog/TableOfContents';
 import BackToTop from '@/components/blog/BackToTop';
 import ReadingProgress from '@/components/blog/ReadingProgress';
+import ShareButtons from '@/components/blog/ShareButtons';
 import { safeJsonLd } from '@/components/BreadcrumbListScript';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -275,6 +276,11 @@ export default async function BlogPostPage({ params }: Props) {
                   </Link>
                 </>
               )}
+            </div>
+
+            {/* Share buttons */}
+            <div className="mt-4">
+              <ShareButtons title={post.title} slug={post.slug} language={post.language} />
             </div>
           </header>
 

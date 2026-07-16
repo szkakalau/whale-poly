@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'; // DB query at runtime, CDN cache via Cache-Control header
 
-const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://trade-ingest-api.onrender.com';
+const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
 async function fetchPosts(language: string, limit: number) {
   const controller = new AbortController();

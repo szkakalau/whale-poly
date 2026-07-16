@@ -9,6 +9,7 @@ import {
   ScorePerformanceSection, StarWhaleSection,
   StatsSection, HeroStat, HeroStatFallback, LivePreview,
 } from '@/components/HomeDataComponents';
+import LatestBlogPosts from '@/components/LatestBlogPosts';
 import {
   ArrowRight, Search, Zap,
 } from 'lucide-react';
@@ -213,6 +214,11 @@ export default function Home() {
           <LivePreview />
         </Suspense>
       </section>
+
+      {/* SECTION 6.5 — LATEST BLOG POSTS */}
+      <Suspense fallback={null}>
+        <LatestBlogPosts />
+      </Suspense>
 
       {/* SECTION 7 — FAQ */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="faq-heading">
