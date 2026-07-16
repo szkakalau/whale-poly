@@ -9,12 +9,10 @@ on:
 jobs:
   generate-blog:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -33,19 +31,4 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
-        # Add other required environment variables
-
-    - name: Commit and push if changes
-      run: |
-        cd whale-monorepo
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # Check if there are changes to commit
-        if git diff --quiet --exit-code; then
-          echo "No changes to commit"
-        else
-          git add services/landing/src/content/posts/
-          git commit -m "chore: auto-generated daily blog post [skip ci]"
-          git push origin main
-        fi
+        BLOG_LLM_API_KEY: ${{ secrets.BLOG_LLM_API_KEY }}

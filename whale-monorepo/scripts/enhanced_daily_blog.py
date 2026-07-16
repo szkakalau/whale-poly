@@ -332,7 +332,22 @@ class EnhancedBlogGenerator:
         words = len(content.split())
         minutes = max(3, (words // 200) + 1)  # 至少3分钟
         return f"{minutes} min"
-    
+
+    def generate_filename(self, title: str) -> str:
+        """Generate a URL-safe filename from a title."""
+        slug = title.lower().strip()
+        slug = "".join(c if c.isalnum() or c in " -" else "" for c in slug)
+        slug = "-".join(slug.split())[:80]
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        return f"{date_str}-{slug}.md"
+
+    def generate_slug(self, title: str) -> str:
+        """Generate a URL-safe slug from a title."""
+        slug = title.lower().strip()
+        slug = "".join(c if c.isalnum() or c in " -" else "" for c in slug)
+        slug = "-".join(slug.split())[:80]
+        return slug
+
     def generate_blog_post(self, market_data: Dict) -> BlogPost:
         """Generate complete blog post"""
         analysis = self.analyze_market_data(market_data)
@@ -352,9 +367,8 @@ class EnhancedBlogGenerator:
         tags = self.generate_tags(analysis)
         read_time = self.calculate_read_time(content)
         
-        # 生成filename
-        filename = self.generate_filename(title)
-        
+        slug = self.generate_slug(title)
+
         return BlogPost(
             title=title,
             excerpt=excerpt,
