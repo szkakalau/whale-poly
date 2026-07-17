@@ -46,6 +46,14 @@ export default function Footer() {
             <Link href="/privacy" className="text-subtle hover:text-muted text-xs transition-colors">
               Privacy
             </Link>
+            <a
+              href="https://www.aimfast.dev/"
+              target="_blank"
+              rel="noopener"
+              className="text-subtle hover:text-muted text-xs transition-colors"
+            >
+              Partners
+            </a>
           </nav>
         </div>
       </div>
