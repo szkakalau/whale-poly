@@ -82,6 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.excerpt,
       url: `https://www.sightwhale.com/blog/${post.language}/${post.slug}`,
       siteName: 'SightWhale.com',
+      locale: post.language === 'zh' ? 'zh_CN' : 'en_US',
       publishedTime: post.published_at,
       tags: post.tags,
       images: [{ url: '/opengraph-image', width: 1200, height: 630 }],

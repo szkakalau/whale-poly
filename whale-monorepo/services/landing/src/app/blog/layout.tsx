@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://www.sightwhale.com/blog',
     siteName: 'SightWhale.com',
-    locale: 'en_US',
+    // locale is set per-page in generateMetadata (en_US / zh_CN)
   },
   twitter: {
     card: 'summary_large_image',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   metadataBase: new URL('https://www.sightwhale.com'),
-  alternates: { canonical: '/blog/en' },
+  // canonical is set per-page — layout must not hardcode one
 };
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

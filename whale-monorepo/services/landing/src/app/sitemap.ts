@@ -4,7 +4,14 @@ export const dynamic = 'force-dynamic'; // never cache — blog posts change fre
 
 const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
-async function fetchSlugs(language: string) {
+type PostMeta = {
+  slug: string;
+  language: string;
+  published_at: string;
+  group_slug: string | null;
+};
+
+async function fetchSlugs(language: string): Promise<PostMeta[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000); // 10 s timeout
 
@@ -14,7 +21,7 @@ async function fetchSlugs(language: string) {
     });
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.posts || []) as { slug: string; language: string; published_at: string }[];
+    return (data.posts || []) as PostMeta[];
   } finally {
     clearTimeout(timeout);
   }
@@ -45,21 +52,56 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // Dynamic blog post routes — fetch directly (no Prisma, no blog.ts imports)
-  let blogRoutes: MetadataRoute.Sitemap = [];
-  for (const lang of ['en', 'zh']) {
-    try {
-      const posts = await fetchSlugs(lang);
-      for (const post of posts) {
-        blogRoutes.push({
-          url: `${baseUrl}/blog/${post.language}/${post.slug}`,
-          lastModified: new Date(post.published_at),
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        });
-      }
-    } catch (err) {
-      console.error(`[sitemap] Failed to fetch slugs for language=${lang}:`, err);
-    }
+  const blogRoutes: MetadataRoute.Sitemap = [];
+
+  // Fetch both languages in parallel
+  const [enPosts, zhPosts] = await Promise.all([
+    fetchSlugs('en').catch((err) => {
+      console.error('[sitemap] Failed to fetch slugs for language=en:', err);
+      return [] as PostMeta[];
+    }),
+    fetchSlugs('zh').catch((err) => {
+      console.error('[sitemap] Failed to fetch slugs for language=zh:', err);
+      return [] as PostMeta[];
+    }),
+  ]);
+
+  // Build group_slug → language → slug map for hreflang alternates
+  const groupMap = new Map<string, { en?: string; zh?: string }>();
+  for (const post of [...enPosts, ...zhPosts]) {
+    const key = post.group_slug || post.slug; // fallback to slug if no group_slug
+    if (!groupMap.has(key)) groupMap.set(key, {});
+    groupMap.get(key)![post.language as 'en' | 'zh'] = post.slug;
+  }
+
+  // EN posts — higher priority (primary language)
+  for (const post of enPosts) {
+    const key = post.group_slug || post.slug;
+    const group = groupMap.get(key);
+    blogRoutes.push({
+      url: `${baseUrl}/blog/en/${post.slug}`,
+      lastModified: new Date(post.published_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+      ...(group?.zh
+        ? { alternates: { languages: { zh: `${baseUrl}/blog/zh/${group.zh}` } } }
+        : {}),
+    });
+  }
+
+  // ZH posts — standard priority
+  for (const post of zhPosts) {
+    const key = post.group_slug || post.slug;
+    const group = groupMap.get(key);
+    blogRoutes.push({
+      url: `${baseUrl}/blog/zh/${post.slug}`,
+      lastModified: new Date(post.published_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      ...(group?.en
+        ? { alternates: { languages: { en: `${baseUrl}/blog/en/${group.en}` } } }
+        : {}),
+    });
   }
 
   return [...staticRoutes, ...blogRoutes];

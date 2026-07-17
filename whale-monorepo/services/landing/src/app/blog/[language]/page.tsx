@@ -61,6 +61,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       type: 'website',
       url: `https://www.sightwhale.com/blog/${language}${page > 1 ? `?page=${page}` : ''}`,
       siteName: 'SightWhale.com',
+      locale: language === 'zh' ? 'zh_CN' : 'en_US',
       images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
     },
     twitter: {
@@ -80,6 +81,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       languages: {
         en: '/blog/en',
         zh: '/blog/zh',
+        'x-default': '/blog/en',
       },
     },
   };
