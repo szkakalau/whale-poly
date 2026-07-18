@@ -516,6 +516,7 @@ async def vw_metrics(
                 FROM market_vw_metrics vw
                 JOIN markets m ON vw.market_id = m.id
                 WHERE vw.status = 'active'
+                  AND (m.status IS NULL OR m.status != 'closed')
                 ORDER BY """ + order_clause + """
                 LIMIT :limit
             """),
