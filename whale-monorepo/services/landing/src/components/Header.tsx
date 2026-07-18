@@ -75,7 +75,7 @@ export default function Header({ user }: { user: AuthUser | null }) {
             <Link key={href} href={href} className="relative text-[13px] font-medium text-muted hover:text-foreground transition-colors">
               {label}
               {badge && (
-                <span className="absolute -top-2 -right-5 text-[9px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent text-white animate-pulse">
+                <span className="absolute -top-2 -right-5 text-[9px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent animate-pulse" style={{ color: '#fff' }}>
                   {badge}
                 </span>
               )}
@@ -136,7 +136,7 @@ export default function Header({ user }: { user: AuthUser | null }) {
             >
               {label}
               {badge && (
-                <span className="text-[10px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent text-white">
+                <span className="text-[10px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent" style={{ color: '#fff' }}>
                   {badge}
                 </span>
               )}
