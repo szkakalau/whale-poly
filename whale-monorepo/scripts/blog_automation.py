@@ -73,8 +73,12 @@ class BlogAutomation:
     def _set_last_run_time(self, run_time: datetime) -> None:
         self.last_run_file.write_text(run_time.isoformat())
 
-    def should_generate_post(self) -> bool:
-        """Decide whether to generate a post right now."""
+    def should_generate_post(self, force: bool = False) -> bool:
+        """Decide whether to generate a post right now.
+
+        Args:
+            force: If True, skip time-of-day and cooldown checks.
+        """
         if not self.config.get("enabled", True):
             logger.info("Blog automation is disabled in config")
             return False
@@ -82,22 +86,23 @@ class BlogAutomation:
         now = datetime.now()
         last_run = self._get_last_run_time()
 
-        if last_run:
-            if last_run.date() >= now.date():
-                logger.info("Already generated a post today")
-                return False
+        if not force:
+            if last_run:
+                if last_run.date() >= now.date():
+                    logger.info("Already generated a post today")
+                    return False
 
-            schedule = self.config.get("schedule", "daily")
-            if schedule == "daily" and now - last_run < timedelta(hours=20):
-                logger.info("Less than 20h since last post, skipping")
-                return False
+                schedule = self.config.get("schedule", "daily")
+                if schedule == "daily" and now - last_run < timedelta(hours=20):
+                    logger.info("Less than 20h since last post, skipping")
+                    return False
 
-        publish_time = self.config.get("publish_time", "09:00")
-        if now.strftime("%H:%M") < publish_time:
-            logger.info(
-                "Too early (current=%s, scheduled=%s)", now.strftime("%H:%M"), publish_time
-            )
-            return False
+            publish_time = self.config.get("publish_time", "09:00")
+            if now.strftime("%H:%M") < publish_time:
+                logger.info(
+                    "Too early (current=%s, scheduled=%s)", now.strftime("%H:%M"), publish_time
+                )
+                return False
 
         return True
 
@@ -105,17 +110,15 @@ class BlogAutomation:
     # Core
     # ------------------------------------------------------------------
 
-    async def run(self) -> bool:
+    async def run(self, force: bool = False) -> bool:
         """Run the complete automation workflow.
 
-        Calls the LLM-powered blog_generator which:
-        1. Fetches real on-chain whale trade data from Postgres
-        2. Generates EN + ZH articles via DeepSeek
-        3. Inserts both into the blog_posts table
+        Args:
+            force: If True, bypass time-of-day and cooldown checks.
         """
         logger.info("=== Starting blog automation ===")
 
-        if not self.should_generate_post():
+        if not self.should_generate_post(force=force):
             logger.info("Skipping — schedule check failed")
             return True  # not an error, just nothing to do
 
@@ -159,6 +162,7 @@ async def main() -> int:
 
     parser = argparse.ArgumentParser(description="Blog Automation System")
     parser.add_argument("--run", action="store_true", help="Run automation now")
+    parser.add_argument("--force", action="store_true", help="Bypass time-of-day and cooldown checks")
     parser.add_argument("--report", action="store_true", help="Show last-run info")
     args = parser.parse_args()
 
@@ -176,7 +180,7 @@ async def main() -> int:
     if args.run:
         print("🚀 Blog Automation — LLM + On-Chain Pipeline")
         print("=" * 44)
-        ok = await automation.run()
+        ok = await automation.run(force=args.force)
         print("\n✅ Success!" if ok else "\n❌ Failed!")
         return 0 if ok else 1
 

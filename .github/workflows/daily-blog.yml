@@ -5,6 +5,11 @@ on:
     # Run every day at 9:00 AM UTC (5:00 PM Beijing Time)
     - cron: '0 9 * * *'
   workflow_dispatch:  # Allow manual triggering
+    inputs:
+      force:
+        description: 'Force generate (bypass time check)'
+        type: boolean
+        default: true
 
 jobs:
   generate-blog:
@@ -27,7 +32,7 @@ jobs:
     - name: Generate daily blog post
       run: |
         cd whale-monorepo
-        python scripts/blog_automation.py --run
+        python scripts/blog_automation.py --run ${{ inputs.force && '--force' || '' }}
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
