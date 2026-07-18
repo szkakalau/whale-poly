@@ -445,7 +445,7 @@ async def generate_daily_article() -> dict:
             en_meta = {
                 "topic": en_topic,
                 "word_count": len(en_article.get("content", "").split()),
-                "data_points": len(en_article.get("content", "").count("$")),
+                "data_points": en_article.get("content", "").count("$"),
                 "language": "en",
                 "generated_at": now_utc.isoformat(),
             }
@@ -456,7 +456,7 @@ async def generate_daily_article() -> dict:
             zh_meta = {
                 "topic": zh_topic,
                 "word_count": len(zh_article.get("content", "").replace(" ", "")) // 2,
-                "data_points": len(zh_article.get("content", "").count("$")),
+                "data_points": zh_article.get("content", "").count("$"),
                 "language": "zh",
                 "generated_at": now_utc.isoformat(),
             }
