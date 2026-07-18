@@ -24,15 +24,19 @@ export default function DivergenceChart({ snapshots }: Props) {
   }));
 
   if (data.length === 0) {
-    return <div className="h-48 flex items-center justify-center text-gray-400 text-sm">{t('chart.noData')}</div>;
+    return (
+      <div className="h-48 flex items-center justify-center text-muted text-sm">
+        {t('chart.noData')}
+      </div>
+    );
   }
 
   return (
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" className="stroke-border-muted" />
+          <XAxis dataKey="time" tick={{ fontSize: 11 }} className="text-subtle" />
           <YAxis
             domain={[0, 1]}
             tick={{ fontSize: 11 }}
@@ -48,7 +52,7 @@ export default function DivergenceChart({ snapshots }: Props) {
           />
           <ReferenceLine
             y={data[0]?.priceYes}
-            stroke="#9CA3AF"
+            stroke="#94A3B8"
             strokeDasharray="5 5"
             label={t('chart.reference')}
           />
@@ -63,19 +67,19 @@ export default function DivergenceChart({ snapshots }: Props) {
           <Line
             type="monotone"
             dataKey="priceYes"
-            stroke="#9CA3AF"
+            stroke="#94A3B8"
             strokeWidth={1.5}
             dot={false}
             name="priceYes"
           />
         </LineChart>
       </ResponsiveContainer>
-      <div className="flex justify-center gap-6 mt-2 text-xs text-gray-500">
+      <div className="flex justify-center gap-6 mt-2 text-xs text-muted">
         <span className="flex items-center gap-1">
-          <span className="w-3 h-0.5 bg-emerald-500 inline-block" /> {t('chart.legendVw')}
+          <span className="w-3 h-0.5 bg-accent inline-block" /> {t('chart.legendVw')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-0.5 bg-gray-400 inline-block" /> {t('chart.legendPrice')}
+          <span className="w-3 h-0.5 bg-slate-400 inline-block" /> {t('chart.legendPrice')}
         </span>
       </div>
     </div>

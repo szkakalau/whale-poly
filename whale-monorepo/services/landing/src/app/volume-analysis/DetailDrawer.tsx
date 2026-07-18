@@ -33,85 +33,110 @@ export default function DetailDrawer({ market, onClose }: Props) {
     load();
   }, [market.marketId]);
 
-  const vwLabel = cross?.vwDirection === 'bullish'
-    ? `🟢 ${t('signal.bullish')}`
-    : cross?.vwDirection === 'bearish'
-    ? `🔴 ${t('signal.bearish')}`
-    : t('signal.neutral');
+  const vwDirectionColor =
+    cross?.vwDirection === 'bullish' ? 'text-accent' : cross?.vwDirection === 'bearish' ? 'text-red-500' : 'text-muted';
 
-  const whaleLabel = cross?.whaleDirection === 'bullish'
-    ? `🟢 ${t('drawer.long')}`
-    : cross?.whaleDirection === 'bearish'
-    ? `🔴 ${t('drawer.short')}`
-    : t('signal.neutral');
-
-  const confidenceLabel =
-    cross?.confidenceLevel === 'high' ? t('drawer.confidenceHigh')
-    : cross?.confidenceLevel === 'low' ? t('drawer.confidenceLow')
-    : t('drawer.confidenceMedium');
+  const whaleDirectionColor =
+    cross?.whaleDirection === 'bullish' ? 'text-accent' : cross?.whaleDirection === 'bearish' ? 'text-red-500' : 'text-muted';
 
   const confidenceColor =
-    cross?.confidenceLevel === 'high' ? 'text-emerald-600'
-    : cross?.confidenceLevel === 'low' ? 'text-red-600'
-    : 'text-amber-600';
+    cross?.confidenceLevel === 'high'
+      ? 'text-accent'
+      : cross?.confidenceLevel === 'low'
+        ? 'text-red-500'
+        : 'text-amber-500';
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl z-50
-                    flex flex-col transition-transform duration-200 ease-out">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <h2 className="font-semibold text-sm text-gray-900 line-clamp-1 flex-1 mr-3">
-          {market.marketTitle}
-        </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors duration-200 ease-out">
-          <X size={20} />
-        </button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-200 ease-out"
+        onClick={onClose}
+        aria-hidden
+      />
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="animate-spin text-gray-400" size={24} />
-          </div>
-        ) : (
-          <>
-            {/* 走势图 */}
-            <section>
-              <h3 className="text-xs font-medium text-gray-500 mb-3">{t('drawer.title')}</h3>
-              <DivergenceChart snapshots={snapshots} />
-            </section>
+      {/* Drawer */}
+      <div
+        className="fixed inset-y-0 right-0 w-full max-w-lg bg-background border-l border-border
+                    shadow-2xl z-50 flex flex-col transition-transform duration-200 ease-out"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="font-semibold text-sm text-foreground line-clamp-1 flex-1 mr-3">
+            {market.marketTitle}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-muted hover:text-foreground transition-colors duration-200 ease-out"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-            {/* 交叉信号 */}
-            {cross && (
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="animate-spin text-muted" size={24} />
+            </div>
+          ) : (
+            <>
+              {/* Divergence chart */}
               <section>
-                <h3 className="text-xs font-medium text-gray-500 mb-3">{t('drawer.crossSignal')}</h3>
-                <div className="rounded-lg bg-gray-50 p-4 text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('drawer.vwSignal')}</span>
-                    <span className={cross.vwDirection === 'bullish' ? 'text-emerald-600' : 'text-red-600'}>
-                      {vwLabel}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('drawer.whaleSignal')}</span>
-                    <span className={cross.whaleDirection === 'bullish' ? 'text-emerald-600' : 'text-red-600'}>
-                      {whaleLabel}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-medium">
-                    <span className="text-gray-500">{t('drawer.crossVerdict')}</span>
-                    <span>
-                      {t('drawer.confidence')}：
-                      <span className={confidenceColor}>
-                        {confidenceLabel}
-                      </span>
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-xs font-medium text-muted uppercase tracking-wider mb-3">
+                  {t('drawer.title')}
+                </h3>
+                <DivergenceChart snapshots={snapshots} />
               </section>
-            )}
-          </>
-        )}
+
+              {/* Cross signal */}
+              {cross && (
+                <section>
+                  <h3 className="text-xs font-medium text-muted uppercase tracking-wider mb-3">
+                    {t('drawer.crossSignal')}
+                  </h3>
+                  <div className="rounded-lg bg-surface card-shadow p-4 text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted">{t('drawer.vwSignal')}</span>
+                      <span className={vwDirectionColor}>
+                        {cross.vwDirection === 'bullish'
+                          ? `🟢 ${t('signal.bullish')}`
+                          : cross.vwDirection === 'bearish'
+                            ? `🔴 ${t('signal.bearish')}`
+                            : t('signal.neutral')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted">{t('drawer.whaleSignal')}</span>
+                      <span className={whaleDirectionColor}>
+                        {cross.whaleDirection === 'bullish'
+                          ? `🟢 ${t('drawer.long')}`
+                          : cross.whaleDirection === 'bearish'
+                            ? `🔴 ${t('drawer.short')}`
+                            : t('signal.neutral')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-medium pt-2 border-t border-border-muted">
+                      <span className="text-muted">{t('drawer.crossVerdict')}</span>
+                      <span>
+                        {t('drawer.confidence')}：
+                        <span className={confidenceColor}>
+                          {cross.confidenceLevel === 'high'
+                            ? t('drawer.confidenceHigh')
+                            : cross.confidenceLevel === 'low'
+                              ? t('drawer.confidenceLow')
+                              : t('drawer.confidenceMedium')}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -13,6 +13,7 @@ const DASHBOARD_URL = getDashboardUrl();
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/analyze', label: 'Analyze' },
+  { href: '/volume-analysis', label: 'VW' },
   { href: '/history', label: 'History' },
   { href: '/blog', label: 'Blog' },
   { href: '/pricing', label: 'Pricing' },
