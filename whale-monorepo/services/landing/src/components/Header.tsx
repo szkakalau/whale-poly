@@ -12,7 +12,7 @@ const DASHBOARD_URL = getDashboardUrl();
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/volume-analysis', label: 'VW' },
+  { href: '/volume-analysis', label: 'VW', badge: 'FREE' },
   { href: '/history', label: 'History' },
   { href: '/blog', label: 'Blog' },
   { href: '/pricing', label: 'Pricing' },
@@ -71,9 +71,14 @@ export default function Header({ user }: { user: AuthUser | null }) {
         </Link>
 
         <nav className="hidden md:flex items-center gap-7" aria-label="Main navigation">
-          {navLinks.map(({ href, label }) => (
-            <Link key={href} href={href} className="text-[13px] font-medium text-muted hover:text-foreground transition-colors">
+          {navLinks.map(({ href, label, badge }) => (
+            <Link key={href} href={href} className="relative text-[13px] font-medium text-muted hover:text-foreground transition-colors">
               {label}
+              {badge && (
+                <span className="absolute -top-2 -right-5 text-[9px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent text-white animate-pulse">
+                  {badge}
+                </span>
+              )}
             </Link>
           ))}
           {accountLink}
@@ -122,14 +127,19 @@ export default function Header({ user }: { user: AuthUser | null }) {
         aria-hidden={!mobileOpen}
       >
         <nav className="flex flex-col p-4 gap-1" aria-label="Mobile navigation">
-          {navLinks.map(({ href, label }) => (
+          {navLinks.map(({ href, label, badge }) => (
             <Link
               key={href}
               href={href}
               onClick={() => setMobileOpen(false)}
-              className="py-3.5 px-4 rounded-xl text-[15px] font-medium text-muted hover:text-foreground hover:bg-surface-hover active:bg-surface transition-colors min-h-[48px] flex items-center"
+              className="py-3.5 px-4 rounded-xl text-[15px] font-medium text-muted hover:text-foreground hover:bg-surface-hover active:bg-surface transition-colors min-h-[48px] flex items-center gap-2"
             >
               {label}
+              {badge && (
+                <span className="text-[10px] font-bold leading-none px-1.5 py-0.5 rounded bg-accent text-white">
+                  {badge}
+                </span>
+              )}
             </Link>
           ))}
           {user ? (
