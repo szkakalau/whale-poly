@@ -516,8 +516,11 @@ async def vw_metrics(
                 FROM market_vw_metrics vw
                 JOIN markets m ON vw.market_id = m.id
                 WHERE vw.status = 'active'
-                  AND (m.status IS NULL OR m.status != 'closed')
-                  AND vw.computed_at > NOW() - INTERVAL '48 hours'
+                  AND EXISTS (
+                    SELECT 1 FROM trades_raw t2
+                    WHERE t2.market_id = vw.market_id
+                      AND t2.timestamp > NOW() - INTERVAL '24 hours'
+                  )
                 ORDER BY """ + order_clause + """
                 LIMIT :limit
             """),
