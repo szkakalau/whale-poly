@@ -145,8 +145,17 @@ async function buildSignalsFromWallets(wallets: string[]): Promise<LiveSignal[]>
  * Same Postgres as the ingest pipeline — works when public whale-engine HTTP has no rows
  * for leaderboard wallets (not ingested there) or API is slow/unreachable.
  */
-async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
+/**
+ * Fetch the most recent whale trades from the DB, optionally within a time window.
+ * When maxAgeHours is set, only trades within that window are returned.
+ * Falls back to unlimited lookback if the window yields fewer than minRows.
+ */
+async function loadSignalsFromWhaleTradesJoin(
+  maxAgeHours?: number,
+  minRows = 5,
+): Promise<LiveSignal[]> {
   try {
+    const hasWindow = maxAgeHours != null && maxAgeHours > 0;
     const rows = await prisma.$queryRaw<
       {
         wallet_address: string;
@@ -157,48 +166,66 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
         whale_score: unknown;
       }[]
     >(
-      Prisma.sql`SELECT
-        wt.wallet_address,
-        wt.created_at,
-        COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
-        tr.side,
-        (tr.amount::numeric * tr.price::numeric) AS trade_usd,
-        wt.whale_score
-      FROM whale_trades wt
-      INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
-      WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
-      ORDER BY wt.created_at DESC NULLS LAST
-      LIMIT 120`,
+      hasWindow
+        ? Prisma.sql`SELECT
+            wt.wallet_address,
+            wt.created_at,
+            COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
+            tr.side,
+            (tr.amount::numeric * tr.price::numeric) AS trade_usd,
+            wt.whale_score
+          FROM whale_trades wt
+          INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+          WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
+            AND wt.created_at >= NOW() - (${maxAgeHours} || ' hours')::INTERVAL
+          ORDER BY wt.created_at DESC NULLS LAST
+          LIMIT 120`
+        : Prisma.sql`SELECT
+            wt.wallet_address,
+            wt.created_at,
+            COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
+            tr.side,
+            (tr.amount::numeric * tr.price::numeric) AS trade_usd,
+            wt.whale_score
+          FROM whale_trades wt
+          INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+          WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
+          ORDER BY wt.created_at DESC NULLS LAST
+          LIMIT 120`,
     );
 
-    const out: LiveSignal[] = [];
-    for (const row of rows) {
-      const sizeUsd = safeNumber(row.trade_usd, 0);
-      const sideRaw = safeString(row.side, '').toUpperCase();
-      const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
-      const market = safeString(row.market_title, '').trim() || 'Polymarket market';
-      const wallet = safeString(row.wallet_address, '').trim();
-      const occurredAt =
-        row.created_at instanceof Date ? row.created_at.toISOString() : safeString(row.created_at, '');
-      if (
-        !occurredAt ||
-        !wallet ||
-        !Number.isFinite(sizeUsd) ||
-        sizeUsd <= 0 ||
-        shouldExcludeMarketFromPublicFeeds(market)
-      )
-        continue;
-      const ws = safeNumber(row.whale_score, NaN);
-      out.push({
-        id: `wt-${wallet}-${occurredAt}`,
-        occurredAt,
-        walletMasked: shortenWallet(wallet),
-        market,
-        side,
-        sizeUsd,
-        whaleScore: Number.isFinite(ws) ? ws : undefined,
-        href: `/whales/${encodeURIComponent(wallet)}`,
-      });
+    const out = rowsToSignals(rows);
+    // If the time-windowed query returned too few signals, fall back to
+    // unlimited lookback so the feed isn't empty just because the pipeline
+    // is slow or whale activity is low.
+    if (hasWindow && out.length < minRows) {
+      const fallbackRows = await prisma.$queryRaw<
+        {
+          wallet_address: string;
+          created_at: Date;
+          market_title: string | null;
+          side: string | null;
+          trade_usd: unknown;
+          whale_score: unknown;
+        }[]
+      >(
+        Prisma.sql`SELECT
+          wt.wallet_address,
+          wt.created_at,
+          COALESCE(NULLIF(TRIM(tr.market_title), ''), wt.market_id) AS market_title,
+          tr.side,
+          (tr.amount::numeric * tr.price::numeric) AS trade_usd,
+          wt.whale_score
+        FROM whale_trades wt
+        INNER JOIN trades_raw tr ON tr.trade_id = wt.trade_id
+        WHERE (tr.amount::numeric * tr.price::numeric) >= ${MIN_SIGNAL_SIZE_USD}
+        ORDER BY wt.created_at DESC NULLS LAST
+        LIMIT 120`,
+      );
+      console.warn(
+        `loadSignalsFromWhaleTradesJoin: ${maxAgeHours}h window only returned ${out.length} signals, fell back to unlimited (${fallbackRows.length} rows)`,
+      );
+      return rowsToSignals(fallbackRows);
     }
     return out;
   } catch (err) {
@@ -207,10 +234,53 @@ async function loadSignalsFromWhaleTradesJoin(): Promise<LiveSignal[]> {
   }
 }
 
+function rowsToSignals(
+  rows: {
+    wallet_address: string;
+    created_at: Date;
+    market_title: string | null;
+    side: string | null;
+    trade_usd: unknown;
+    whale_score: unknown;
+  }[],
+): LiveSignal[] {
+  const out: LiveSignal[] = [];
+  for (const row of rows) {
+    const sizeUsd = safeNumber(row.trade_usd, 0);
+    const sideRaw = safeString(row.side, '').toUpperCase();
+    const side = sideRaw === 'BUY' ? 'BUY' : sideRaw === 'SELL' ? 'SELL' : 'UNKNOWN';
+    const market = safeString(row.market_title, '').trim() || 'Polymarket market';
+    const wallet = safeString(row.wallet_address, '').trim();
+    const occurredAt =
+      row.created_at instanceof Date ? row.created_at.toISOString() : safeString(row.created_at, '');
+    if (
+      !occurredAt ||
+      !wallet ||
+      !Number.isFinite(sizeUsd) ||
+      sizeUsd <= 0 ||
+      shouldExcludeMarketFromPublicFeeds(market)
+    )
+      continue;
+    const ws = safeNumber(row.whale_score, NaN);
+    out.push({
+      id: `wt-${wallet}-${occurredAt}`,
+      occurredAt,
+      walletMasked: shortenWallet(wallet),
+      market,
+      side,
+      sizeUsd,
+      whaleScore: Number.isFinite(ws) ? ws : undefined,
+      href: `/whales/${encodeURIComponent(wallet)}`,
+    });
+  }
+  return out;
+}
+
 async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
   try {
-    // Primary: direct DB query for the most recent ingested whale trades (always freshest).
-    let signals = await loadSignalsFromWhaleTradesJoin();
+    // Primary: direct DB query with a 2-hour window — LIVE PREVIEW should surface
+    // recent signals. Falls back to unlimited lookback if the window is too sparse.
+    let signals = await loadSignalsFromWhaleTradesJoin(2, 5);
 
     // Fallback: whale-engine API by top wallets (works when DB isn't populated yet).
     if (signals.length === 0) {
@@ -239,7 +309,7 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
 }
 
 /** Bump key when loader logic changes (avoids long-lived empty cache). */
-export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v5'], {
+export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-signals-feed-v6'], {
   revalidate: 60,
 });
 
