@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const revalidate = 3600; // ISR: revalidate every hour (PF-H7)
+export const dynamic = 'force-static'; // pre-render + ISR: static generation with background revalidation
 
 type Props = {
   params: Promise<{ language: string; slug: string }>;

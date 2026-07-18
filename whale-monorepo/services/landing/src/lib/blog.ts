@@ -65,9 +65,15 @@ function mapPostCard(row: any): BlogPostCard {
 }
 
 async function apiFetch(path: string) {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) throw new Error(`Blog API ${res.status} for ${path}`);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000); // 25s timeout (Render cold starts can be slow)
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Blog API ${res.status} for ${path}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // ---------------------------------------------------------------------------
