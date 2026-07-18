@@ -125,14 +125,14 @@ async def fetch_context(lookback_hours: int = 24) -> dict[str, Any]:
                 WhaleStats.wallet_address,
                 WhaleStats.win_rate,
                 WhaleStats.roi,
-                WhaleStats.realized_pnl,
+                WhaleProfile.realized_pnl,
                 WhaleProfile.total_trades,
                 WalletName.polymarket_username,
             )
             .join(WhaleProfile, WhaleStats.wallet_address == WhaleProfile.wallet_address)
             .outerjoin(WalletName, WhaleStats.wallet_address == WalletName.wallet_address)
             .where(WhaleProfile.total_trades > 5)
-            .order_by(desc(WhaleStats.realized_pnl))
+            .order_by(desc(WhaleProfile.realized_pnl))
             .limit(3)
         )
         top_whales = [
