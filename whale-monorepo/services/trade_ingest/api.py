@@ -597,6 +597,29 @@ async def blog_post_delete(slug: str, language: str = "en", x_admin_key: str = H
     if not deleted:
         return {"status": "not_found", "slug": slug, "language": language}
 
+
+@app.post("/blog/generate")
+async def blog_generate(x_admin_key: str = Header(default="")):
+    """Admin endpoint: trigger daily article generation via LLM + on-chain data.
+
+    This is the preferred way to trigger blog generation from CI —
+    it runs inside Render's network so database access works.
+    Requires BLOG_LLM_API_KEY.
+    """
+    if not settings.blog_llm_api_key:
+        return {"status": "disabled", "reason": "BLOG_LLM_API_KEY not configured"}
+    if not hmac.compare_digest(x_admin_key, settings.blog_llm_api_key):
+        return {"status": "unauthorized"}
+
+    from services.trade_ingest.blog_generator import generate_daily_article
+
+    try:
+        result = await generate_daily_article()
+        return result
+    except Exception:
+        logger.exception("blog_generate_endpoint failed")
+        return {"status": "failed", "reason": "internal error"}
+
     return {"status": "deleted", "slug": slug, "language": language}
 
 
