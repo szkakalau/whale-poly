@@ -40,9 +40,10 @@ export default function TagFilter({
         href={`/blog/${language}`}
         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
           !activeTag
-            ? 'bg-accent text-white'
+            ? 'bg-accent'
             : 'bg-surface border border-border text-muted hover:text-foreground hover:bg-surface-hover'
         }`}
+        style={!activeTag ? { color: '#fff' } : undefined}
       >
         {allLabel}
       </Link>
@@ -53,9 +54,10 @@ export default function TagFilter({
           href={`/blog/${language}?tag=${encodeURIComponent(tag)}`}
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             activeTag === tag
-              ? 'bg-accent text-white'
+              ? 'bg-accent'
               : 'bg-surface border border-border text-muted hover:text-foreground hover:bg-surface-hover'
           }`}
+          style={activeTag === tag ? { color: '#fff' } : undefined}
         >
           {tag}
           <span className="ml-1 opacity-50">{count}</span>

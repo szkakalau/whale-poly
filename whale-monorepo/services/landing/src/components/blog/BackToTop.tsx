@@ -32,7 +32,7 @@ export default function BackToTop() {
       className={`
         fixed bottom-6 right-6 z-50
         w-10 h-10 rounded-full
-        bg-accent text-white shadow-lg
+        bg-accent shadow-lg
         flex items-center justify-center
         transition-all duration-200 ease-out
         hover:bg-accent-hover
@@ -40,6 +40,7 @@ export default function BackToTop() {
         md:hidden
         ${visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'}
       `}
+      style={{ color: '#fff' }}
     >
       <ArrowUp className="w-4 h-4" aria-hidden />
     </button>
