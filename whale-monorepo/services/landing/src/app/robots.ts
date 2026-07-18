@@ -54,6 +54,16 @@ export default function robots(): MetadataRoute.Robots {
       crawlerRule('Meta-ExternalAgent'),
       // Cohere
       crawlerRule('cohere-ai'),
+      // Common Crawl (training datasets)
+      crawlerRule('CCBot'),
+      // Amazon Alexa / AWS AI
+      crawlerRule('Amazonbot'),
+      // ByteDance / TikTok AI
+      crawlerRule('Bytespider'),
+      // Mistral AI
+      crawlerRule('MistralBot'),
+      // Diffbot knowledge graph
+      crawlerRule('Diffbot'),
       // Default: same policy for everyone else
       {
         userAgent: '*',

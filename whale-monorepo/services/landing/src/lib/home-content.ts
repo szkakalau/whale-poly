@@ -13,13 +13,13 @@ export const PAIN_POINTS = [
     icon: Globe,
     title: '500+ markets. You can\'t watch them all.',
     description:
-      'Polymarket lists hundreds of active markets across politics, sports, crypto, and more. No single person can track every whale move across every market — but our engine does, 24/7.',
+      'Polymarket lists hundreds of active markets across politics, sports, crypto, and more. No single person can track every whale move across every prediction market — but our engine does, 24/7.',
   },
   {
     icon: Clock,
     title: 'Whales move first. The crowd moves later.',
     description:
-      'By the time you notice a big trade on Polymarket\'s UI, the odds have already shifted. Our real-time monitoring catches whale entries the moment they hit the chain.',
+      'By the time you notice a big trade on the platform\'s UI, the odds have already shifted. Our real-time monitoring catches whale entries the moment they hit the chain.',
   },
   {
     icon: FileText,

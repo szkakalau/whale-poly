@@ -28,11 +28,17 @@ export default function Footer() {
             <Link href="/" className="text-subtle hover:text-muted text-xs transition-colors">
               Home
             </Link>
+            <Link href="/about" className="text-subtle hover:text-muted text-xs transition-colors">
+              About
+            </Link>
             <Link href="/analyze" className="text-subtle hover:text-muted text-xs transition-colors">
               Analyze
             </Link>
             <Link href="/history" className="text-subtle hover:text-muted text-xs transition-colors">
               History
+            </Link>
+            <Link href="/methodology" className="text-subtle hover:text-muted text-xs transition-colors">
+              Methodology
             </Link>
             <Link href="/blog" className="text-subtle hover:text-muted text-xs transition-colors">
               Blog
@@ -47,12 +53,12 @@ export default function Footer() {
               Privacy
             </Link>
             <a
-              href="https://www.aimfast.dev/"
+              href="https://twitter.com/SightWhale"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="text-subtle hover:text-muted text-xs transition-colors"
             >
-              Partners
+              X/Twitter
             </a>
           </nav>
         </div>

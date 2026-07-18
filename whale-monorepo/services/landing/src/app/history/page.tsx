@@ -49,6 +49,9 @@ export const metadata = {
   alternates: {
     canonical: '/history',
   },
+  other: {
+    'date-modified': new Date().toISOString().split('T')[0],
+  },
 };
 
 function formatPct(v: number | null): string {

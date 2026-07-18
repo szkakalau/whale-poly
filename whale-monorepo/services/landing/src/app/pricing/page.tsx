@@ -76,6 +76,7 @@ const pricingJsonLd = {
         availability: 'https://schema.org/InStock',
         url: 'https://www.sightwhale.com/subscribe?plan=pro',
       },
+      dateModified: '2026-07-18',
     },
     {
       '@type': 'Product',
@@ -94,6 +95,7 @@ const pricingJsonLd = {
         availability: 'https://schema.org/InStock',
         url: 'https://www.sightwhale.com/subscribe?plan=elite',
       },
+      dateModified: '2026-07-18',
     },
     {
       '@type': 'FAQPage',
@@ -147,6 +149,7 @@ export default function PricingPage() {
           </h1>
           <p className="text-muted text-sm sm:text-base max-w-xl leading-relaxed">
             Verify performance on History first. Upgrade when you want today&apos;s real-time stream.
+            Prices effective as of July 2026.
           </p>
         </header>
 

@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { HomeCtaLink } from '@/components/HomeCtaLink';
 import HomeStickyCta from '@/components/HomeStickyCta';
 import HeroAnalyzeInput from '@/components/HeroAnalyzeInput';
@@ -14,11 +15,32 @@ import {
   ArrowRight, Search, Zap,
 } from 'lucide-react';
 
+/* ── Metadata ── */
+
+export const metadata: Metadata = {
+  title: { absolute: 'SightWhale — Polymarket Whale Intelligence & Real-Time Alerts' },
+  description:
+    'Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history, auditable signals.',
+  alternates: {
+    canonical: '/',
+    languages: {
+      en: '/',
+      'x-default': '/',
+    },
+  },
+};
+
 /* ── Page ── */
 
 const homeJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
+  dateModified: '2026-07-18',
+  author: {
+    '@type': 'Person',
+    name: 'SightWhale Team',
+    url: 'https://www.sightwhale.com/about',
+  },
   mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
     '@type': 'Question',
     name: q,
@@ -41,7 +63,7 @@ export default function Home() {
           SECTION 1 — HERO (typography-first)
           ═══════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-20 hero-glow">
-        <p className="eyebrow mb-6">Polymarket whale intelligence</p>
+        <p className="eyebrow mb-6">On-chain whale intelligence</p>
 
         <h1 className="text-balance mb-6">
           We track the top 1% of Polymarket whales.
@@ -56,6 +78,15 @@ export default function Home() {
           Every signal — wins, losses, break-evens — published on a permanent public record.
           Because if we can&apos;t prove it works, you shouldn&apos;t pay for it.
         </p>
+
+        <blockquote className="border-l-2 border-accent/30 pl-4 italic text-sm text-muted mb-8 max-w-lg">
+          &ldquo;Following raw large trades blindly loses money. Following scored, filtered signals
+          from top-quintile wallets with proper position sizing shows positive expected value.&rdquo;
+          <span className="block mt-1 text-xs text-subtle not-italic">
+            — Based on historical backtests. Read our{' '}
+            <Link href="/methodology" className="text-accent font-medium hover:text-accent-hover transition-colors underline decoration-accent/30 underline-offset-2">full methodology</Link>.
+          </span>
+        </blockquote>
 
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <HomeCtaLink
@@ -98,7 +129,7 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="problem-heading">
         <p className="eyebrow mb-3">Why you need this</p>
         <h2 id="problem-heading" className="text-balance mb-8">
-          Polymarket moves fast. You&apos;re losing edge right now.
+          Prediction markets move fast. You&apos;re losing edge right now.
         </h2>
         <div className="grid gap-6 sm:grid-cols-3">
           {PAIN_POINTS.map(({ icon: Icon, title, description }) => (
@@ -146,7 +177,7 @@ export default function Home() {
             <Search className="w-5 h-5 text-accent shrink-0" aria-hidden />
             <p className="text-sm text-muted leading-relaxed">
               <span className="font-semibold text-foreground">Prefer to hunt yourself?</span>{' '}
-              Paste any Polymarket link or keyword into{' '}
+              Paste any market link or keyword into{' '}
               <Link href="/analyze" className="text-accent font-semibold hover:text-accent-hover transition-colors">
                 /analyze
               </Link>{' '}
@@ -186,6 +217,46 @@ export default function Home() {
       <Suspense fallback={null}>
         <StarWhaleSection />
       </Suspense>
+
+      {/* SECTION 5.5 — SOCIAL PROOF + COMPARISON */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="compare-heading">
+        <p className="eyebrow mb-3">Why traders choose SightWhale</p>
+        <h2 id="compare-heading" className="text-balance mb-8">
+          How we compare
+        </h2>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm" aria-label="Feature comparison table">
+            <thead>
+              <tr className="border-b border-border bg-surface-hover">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-foreground">Feature</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-accent">SightWhale</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted">Raw Polymarket UI</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted">Generic Alert Bots</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-muted">
+              {[
+                ['Whale wallet identification', 'Top 1% by calibrated ROI', 'Manual address lookup only', 'Size-based only, no ROI'],
+                ['Wallet clustering', 'Deposit-address analysis', 'None', 'None'],
+                ['Signal scoring', '0-100 composite (win rate, size, context)', 'None', 'Basic threshold alerts'],
+                ['Public audit trail', 'Every signal — wins and losses', 'None', 'Cherry-picked screenshots'],
+                ['Delivery speed', '~30s via Telegram', 'Manual refresh', 'Varies, often minutes'],
+                ['Money-back guarantee', 'Full refund, first month', 'N/A', 'Rare or none'],
+              ].map(([feature, sw, raw, generic]) => (
+                <tr key={feature} className="hover:bg-surface-hover transition-colors">
+                  <td className="px-5 py-3 text-foreground font-medium text-xs">{feature}</td>
+                  <td className="px-4 py-3 text-center text-xs text-accent font-semibold">{sw}</td>
+                  <td className="px-4 py-3 text-center text-xs text-muted">{raw}</td>
+                  <td className="px-4 py-3 text-center text-xs text-muted">{generic}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 text-xs text-subtle text-center">
+          Comparison as of July 2026. Features may change — verify with each provider.
+        </p>
+      </section>
 
       {/* SECTION 6 — LIVE PREVIEW */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="live-heading">
@@ -259,6 +330,16 @@ export default function Home() {
       </section>
 
       <HomeStickyCta />
+
+      {/* Last updated — machine-readable freshness signal */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 text-center">
+        <p className="text-[11px] text-subtle">
+          Page updated: <time dateTime="2026-07-18">July 18, 2026</time> ·{' '}
+          <Link href="/methodology" className="text-accent hover:text-accent-hover transition-colors underline decoration-accent/20 underline-offset-2">Methodology</Link>
+          {' · '}
+          <Link href="/about" className="text-accent hover:text-accent-hover transition-colors underline decoration-accent/20 underline-offset-2">About</Link>
+        </p>
+      </div>
     </div>
   );
 }

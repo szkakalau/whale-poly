@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 /** Legacy marketing routes removed — send to home. */
 const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
-  { source: "/about", destination: "/" },
   { source: "/contact", destination: "/" },
   { source: "/backtesting", destination: "/" },
   { source: "/conviction", destination: "/" },
@@ -13,7 +12,6 @@ const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
   { source: "/collections", destination: "/" },
   { source: "/collections/:path*", destination: "/" },
   { source: "/whales/:path*", destination: "/" },
-  { source: "/methodology", destination: "/" },
   { source: "/editorial-policy", destination: "/" },
   { source: "/disclosures", destination: "/" },
   { source: "/security", destination: "/" },
@@ -28,6 +26,31 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingRoot: __dirname,
   trailingSlash: false,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       ...LEGACY_REDIRECTS.map(({ source, destination }) => ({

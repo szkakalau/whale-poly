@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     template: "%s · SightWhale.com",
   },
   description:
-    "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction bets on Elections, Sports, and Crypto.",
+    "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.",
   keywords: [
     "Polymarket",
     "Polymarket Whale Intelligence",
@@ -54,7 +54,6 @@ export const metadata: Metadata = {
     "Smart Money Tracking",
     "On-chain Analytics",
     "Election Betting Odds",
-    "Trump Odds",
     "Sports Betting Strategy",
     "Crypto Alpha",
     "Real-time Odds Tracking",
@@ -62,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SightWhale.com — Follow Smart Money on Polymarket",
     description:
-      "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts.",
+      "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.",
     type: "website",
     url: "https://www.sightwhale.com/",
     siteName: "SightWhale.com",
@@ -80,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SightWhale.com — Follow Smart Money on Polymarket",
     description:
-      "Stop guessing. Follow the top 1% of profitable whales on Polymarket. Real-time Telegram alerts.",
+      "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.",
     images: ["/opengraph-image"],
   },
   robots: {
@@ -109,18 +108,41 @@ const jsonLd = {
       name: 'SightWhale',
       url: 'https://www.sightwhale.com',
       logo: 'https://www.sightwhale.com/opengraph-image',
+      image: 'https://www.sightwhale.com/opengraph-image',
       description:
-        'Polymarket whale intelligence platform — real-time alerts for high-conviction trades from the top 1% most profitable wallets.',
-      sameAs: ['https://twitter.com/SightWhale'],
+        'Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.',
+      sameAs: [
+        'https://twitter.com/SightWhale',
+        'https://github.com/sightwhale',
+      ],
       foundingDate: '2025',
+      dateModified: new Date().toISOString().split('T')[0],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: 'castro.liu@me.com',
+        contactType: 'customer support',
+        availableLanguage: ['English', 'Chinese'],
+      },
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'US',
+      },
+      founder: {
+        '@type': 'Person',
+        name: 'Castro Liu',
+        url: 'https://www.sightwhale.com/about',
+      },
     },
     {
       '@type': 'WebSite',
+      '@id': 'https://www.sightwhale.com/#website',
       name: 'SightWhale',
       url: 'https://www.sightwhale.com',
       description:
-        'Follow smart money on Polymarket. Real-time Telegram alerts for whale trades on Elections, Sports, and Crypto.',
+        'Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.',
       publisher: { '@id': 'https://www.sightwhale.com/#org' },
+      dateModified: new Date().toISOString().split('T')[0],
+      inLanguage: ['en', 'zh'],
       potentialAction: {
         '@type': 'SearchAction',
         target: {
