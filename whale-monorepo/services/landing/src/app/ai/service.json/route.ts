@@ -28,8 +28,8 @@ export async function GET() {
         availability: 'Pro, Elite',
       },
       {
-        name: 'Market Analysis',
-        description: 'Live whale lookup for any Polymarket market via /analyze.',
+        name: 'Volume-Weighted Analysis',
+        description: 'Live whale volume divergence tracking vs market price across all active markets.',
         availability: 'All plans',
       },
       {

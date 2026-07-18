@@ -40,7 +40,7 @@ export async function GET() {
     `- ${BASE_URL}/about — About: team, principles, and contact`,
     `- ${BASE_URL}/pricing — Plans: Free / Pro ($29/mo) / Elite ($59/mo)`,
     `- ${BASE_URL}/history — Full audited signal history, publicly verifiable`,
-    `- ${BASE_URL}/analyze — Live whale lookup for any Polymarket market`,
+    `- ${BASE_URL}/volume-analysis — Whale volume divergence vs market price`,
     `- ${BASE_URL}/methodology — How we identify and score whale wallets`,
     `- ${BASE_URL}/subscribe — Secure Stripe checkout`,
     '',

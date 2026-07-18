@@ -246,10 +246,7 @@ export const loadLiveSignals = unstable_cache(loadLiveSignalsUncached, ['live-si
 const TRADE_INGEST_BASE =
   process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
-/**
- * Query whale trades for a specific market via the trade-ingest API.
- * Used by the /analyze decision engine.
- */
+/** Query whale trades for a specific market via the trade-ingest API. */
 export async function loadSignalsForMarket(
   marketSlug: string,
   lookbackHours = 24,

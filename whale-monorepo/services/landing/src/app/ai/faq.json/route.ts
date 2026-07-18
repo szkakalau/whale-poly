@@ -28,7 +28,7 @@ export async function GET() {
     {
       question: 'Do I need Telegram?',
       answer:
-        'No. Telegram is optional. Use /analyze to query any market live, or browse the History page. Telegram is simply the fastest delivery channel (~30s latency).',
+        'No. Telegram is optional. Use the Volume-Weighted Analysis page to monitor whale activity, or browse the History page. Telegram is simply the fastest delivery channel (~30s latency).',
     },
     {
       question: 'What is wallet clustering and why does it matter?',

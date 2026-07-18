@@ -147,7 +147,7 @@ const jsonLd = {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: 'https://www.sightwhale.com/analyze?q={search_term_string}',
+          urlTemplate: 'https://www.sightwhale.com/volume-analysis?q={search_term_string}',
         },
         'query-input': 'required name=search_term_string',
       },

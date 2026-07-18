@@ -3,7 +3,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { HomeCtaLink } from '@/components/HomeCtaLink';
 import HomeStickyCta from '@/components/HomeStickyCta';
-import HeroAnalyzeInput from '@/components/HeroAnalyzeInput';
 import { PRICING_PRO_MONTHLY } from '@/lib/pricing-plans';
 import { PAIN_POINTS, HOW_IT_WORKS, MOATS, FAQ_ITEMS } from '@/lib/home-content';
 import {
@@ -12,7 +11,7 @@ import {
 } from '@/components/HomeDataComponents';
 import LatestBlogPosts from '@/components/LatestBlogPosts';
 import {
-  ArrowRight, Search, Zap,
+  ArrowRight, TrendingUp, Zap,
 } from 'lucide-react';
 
 /* ── Metadata ── */
@@ -107,9 +106,6 @@ export default function Home() {
           </HomeCtaLink>
         </div>
 
-        <div className="max-w-xl mt-6">
-          <HeroAnalyzeInput />
-        </div>
 
         <p className="mt-4 text-xs text-subtle">
           From ${PRICING_PRO_MONTHLY}/mo · Pro plan · Cancel anytime
@@ -171,24 +167,24 @@ export default function Home() {
           ))}
         </div>
 
-        {/* /analyze bridge */}
+        {/* VW Analysis bridge */}
         <div className="mt-10 rounded-lg bg-surface card-shadow px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Search className="w-5 h-5 text-accent shrink-0" aria-hidden />
+            <TrendingUp className="w-5 h-5 text-accent shrink-0" aria-hidden />
             <p className="text-sm text-muted leading-relaxed">
               <span className="font-semibold text-foreground">Prefer to hunt yourself?</span>{' '}
-              Paste any market link or keyword into{' '}
-              <Link href="/analyze" className="text-accent font-semibold hover:text-accent-hover transition-colors">
-                /analyze
+              Check the{' '}
+              <Link href="/volume-analysis" className="text-accent font-semibold hover:text-accent-hover transition-colors">
+                Volume-Weighted Analysis
               </Link>{' '}
-              and see what the whales are doing on any market, live.
+              page to see where whale volume diverges from market price across all active markets.
             </p>
           </div>
           <Link
-            href="/analyze"
+            href="/volume-analysis"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover transition-colors shrink-0"
           >
-            Open /analyze
+            Open VW Analysis
             <ArrowRight className="w-3 h-3" />
           </Link>
         </div>

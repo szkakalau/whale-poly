@@ -31,9 +31,6 @@ export default function Footer() {
             <Link href="/about" className="text-subtle hover:text-muted text-xs transition-colors">
               About
             </Link>
-            <Link href="/analyze" className="text-subtle hover:text-muted text-xs transition-colors">
-              Analyze
-            </Link>
             <Link href="/history" className="text-subtle hover:text-muted text-xs transition-colors">
               History
             </Link>

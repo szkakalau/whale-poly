@@ -33,7 +33,7 @@ export async function GET() {
       { path: '/', title: 'Home', description: 'Live signals, track record, FAQ' },
       { path: '/pricing', title: 'Pricing', description: 'Free / Pro ($29/mo) / Elite ($59/mo)' },
       { path: '/history', title: 'Historical Signals', description: 'Full audited signal history, publicly verifiable' },
-      { path: '/analyze', title: 'Market Analysis', description: 'Live whale lookup for any Polymarket market' },
+      { path: '/volume-analysis', title: 'Volume-Weighted Analysis', description: 'Whale volume divergence vs market price across all active markets' },
       { path: '/about', title: 'About', description: 'Team, methodology, and trust signals' },
       { path: '/methodology', title: 'Methodology', description: 'How we identify and score whale wallets' },
       { path: '/blog/en', title: 'Blog (English)', description: 'Polymarket insights and whale trading strategies' },

@@ -46,7 +46,7 @@ export const HOW_IT_WORKS = [
     icon: Bell,
     title: 'Deliver',
     description:
-      'High-conviction signals reach your Telegram in ~30 seconds. Or query any market live on /analyze to see exactly what the whales are doing right now.',
+      'High-conviction signals reach your Telegram in ~30 seconds. Or check the Volume-Weighted Analysis page to see where whale volume diverges from market price — no sign-up required.',
   },
 ];
 
@@ -67,7 +67,7 @@ export const MOATS = [
     icon: Zap,
     title: 'Push, don\'t pull',
     description:
-      'Whale trades appear on your phone in ~30 seconds via Telegram. No dashboard to refresh, no app to install. Or use /analyze to actively query any market\'s whale activity live.',
+      'Whale trades appear on your phone in ~30 seconds via Telegram. No dashboard to refresh, no app to install. Or use the Volume-Weighted Analysis page to actively monitor whale volume divergence across all markets.',
   },
 ];
 
@@ -86,6 +86,6 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'Do I need Telegram?',
-    a: 'No. Telegram is optional. Use /analyze to query any market live, or browse the History page anytime. Telegram is simply the fastest way to receive signals — nothing to install, no dashboard to refresh.',
+    a: 'No. Telegram is optional. Use the Volume-Weighted Analysis page to monitor whale activity, or browse the History page anytime. Telegram is simply the fastest way to receive signals — nothing to install, no dashboard to refresh.',
   },
 ];
