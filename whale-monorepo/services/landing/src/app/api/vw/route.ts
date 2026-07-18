@@ -16,6 +16,28 @@ function cached(body: object, init?: ResponseInit) {
   });
 }
 
+/**
+ * Filter out markets that are likely resolved/inactive:
+ * - Not recomputed in 7 days (dead market — either settled or abandoned)
+ * - Price at extremes (≥ 0.995 or ≤ 0.005) indicating a resolved binary market
+ */
+function filterActiveOnly(data: unknown[]): unknown[] {
+  const now = Date.now();
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  return data.filter((row: any) => {
+    // Extreme price → resolved
+    const price = row.yesMarketPrice;
+    if (price != null && (price >= 0.995 || price <= 0.005)) return false;
+    // Stale data → no longer actively computed
+    const computedAt = row.computedAt;
+    if (computedAt) {
+      const age = now - new Date(computedAt).getTime();
+      if (age > SEVEN_DAYS_MS) return false;
+    }
+    return true;
+  });
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'metrics';
@@ -31,6 +53,10 @@ export async function GET(request: NextRequest) {
           `${WHALE_ENGINE}/vw/metrics?sort_by=${sortBy}&limit=${limit}`
         );
         const json = await res.json();
+        // Filter out resolved/stale markets at the edge
+        if (Array.isArray(json.data)) {
+          json.data = filterActiveOnly(json.data);
+        }
         return cached(json);
       }
 
