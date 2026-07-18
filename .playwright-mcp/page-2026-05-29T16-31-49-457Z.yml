@@ -1,0 +1,109 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "SightWhale" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: SightWhale
+      - navigation [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "Analyze" [ref=e12] [cursor=pointer]:
+          - /url: /analyze
+        - link "History" [ref=e13] [cursor=pointer]:
+          - /url: /history
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Log in" [ref=e15] [cursor=pointer]:
+          - /url: /subscribe
+        - link "Get real-time" [ref=e16] [cursor=pointer]:
+          - /url: /pricing
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - img [ref=e25]
+          - text: Money-back guarantee — not satisfied? Full refund first month.
+        - heading "Follow the smart money on Polymarket" [level=1] [ref=e28]:
+          - text: Follow the smart money
+          - text: on Polymarket
+        - paragraph [ref=e29]: Real-time whale trade signals delivered to Telegram. Full historical audit trail. Pay only if you trust the record.
+        - generic [ref=e30]:
+          - link "Get real-time signals" [ref=e31] [cursor=pointer]:
+            - /url: /pricing
+            - text: Get real-time signals
+            - img [ref=e32]
+          - link "View audited history" [ref=e38] [cursor=pointer]:
+            - /url: /history
+            - text: View audited history
+            - img [ref=e39]
+        - paragraph [ref=e41]: From $29/mo · Pro plan · Cancel anytime · Optional Telegram
+      - generic [ref=e44]:
+        - paragraph [ref=e46]: Live Track Record
+        - link "Browse full history" [ref=e48] [cursor=pointer]:
+          - /url: /history
+          - text: Browse full history
+          - img [ref=e49]
+      - generic [ref=e52]:
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - button:
+              - img
+            - generic [ref=e58]:
+              - generic [ref=e59]: S
+              - generic [ref=e60]:
+                - generic [ref=e61]: SightWhale
+                - generic [ref=e62]: "@sightwhale_bot"
+            - img [ref=e65]
+          - generic [ref=e70]:
+            - generic [ref=e71]: S
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic:
+                  - img "Example SightWhale alert message as received in Telegram"
+              - generic [ref=e75]: 14:32
+          - link "Open @sightwhale_bot" [ref=e77] [cursor=pointer]:
+            - /url: https://t.me/sightwhale_bot
+        - generic [ref=e78]:
+          - paragraph [ref=e79]: Real-time Delivery
+          - heading "Whale signals, delivered to your phone" [level=2] [ref=e80]
+          - paragraph [ref=e81]: When a top trader makes a high-conviction move, you know within seconds. Push alerts via Telegram — no app to install, no dashboard to refresh.
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - img [ref=e84]
+              - generic [ref=e86]: Real-time push — no polling, no delays
+            - generic [ref=e87]:
+              - img [ref=e88]
+              - generic [ref=e91]: Top 1% whales only — quality over quantity
+            - generic [ref=e92]:
+              - img [ref=e93]
+              - generic [ref=e96]: Full history auditable — we never delete losing rows
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - paragraph [ref=e100]: Live Preview
+          - heading "Recent whale signals" [level=2] [ref=e101]
+          - paragraph [ref=e102]: Today's full feed is paid-only. Upgrade for the complete list and Telegram delivery.
+        - link "Unlock full feed" [ref=e103] [cursor=pointer]:
+          - /url: /pricing
+      - generic [ref=e106]:
+        - heading "Ready to trade with the whales?" [level=2] [ref=e107]
+        - paragraph [ref=e108]: Start with Pro at $29/mo. First month money-back if it doesn't work for you.
+        - link "View pricing" [ref=e109] [cursor=pointer]:
+          - /url: /pricing
+        - paragraph [ref=e110]: Secure Stripe checkout · Cancel anytime
+  - contentinfo [ref=e111]:
+    - generic [ref=e112]:
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - img [ref=e115]
+          - generic [ref=e119]: SightWhale
+        - link "support@sightwhale.com" [ref=e120] [cursor=pointer]:
+          - /url: mailto:support@sightwhale.com
+      - generic [ref=e121]:
+        - generic [ref=e122]: © 2026 SightWhale. All rights reserved.
+        - generic [ref=e123]:
+          - link "Terms" [ref=e124] [cursor=pointer]:
+            - /url: /terms
+          - link "Privacy" [ref=e125] [cursor=pointer]:
+            - /url: /privacy
+  - alert [ref=e126]

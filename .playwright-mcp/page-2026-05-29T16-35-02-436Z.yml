@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "SightWhale" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: SightWhale
+      - navigation [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "Analyze" [ref=e12] [cursor=pointer]:
+          - /url: /analyze
+        - link "History" [ref=e13] [cursor=pointer]:
+          - /url: /history
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Log in" [ref=e15] [cursor=pointer]:
+          - /url: /subscribe
+        - link "Get real-time" [ref=e16] [cursor=pointer]:
+          - /url: /pricing
+  - main [ref=e17]:
+    - main [ref=e22]:
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: Terms
+        - heading "Terms of Service" [level=1] [ref=e25]
+        - paragraph [ref=e26]: "Effective date: 2026-03-03"
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - heading "Service description" [level=2] [ref=e29]
+          - paragraph [ref=e30]: SightWhale.com provides informational tools for tracking publicly observable prediction market activity and delivering alerts. We do not execute trades, custody assets, or provide brokerage services.
+        - generic [ref=e31]:
+          - heading "No investment advice" [level=2] [ref=e32]
+          - paragraph [ref=e33]: Content and alerts are provided for informational purposes only and do not constitute financial, legal, or investment advice. You are solely responsible for your decisions.
+        - generic [ref=e34]:
+          - heading "Subscriptions" [level=2] [ref=e35]
+          - paragraph [ref=e36]: Paid plans may renew automatically unless canceled. Plan features and limits may change over time as the product evolves. We may suspend or terminate accounts for abuse or violations of these terms.
+        - generic [ref=e37]:
+          - heading "Availability and accuracy" [level=2] [ref=e38]
+          - paragraph [ref=e39]: We aim to provide timely and accurate data, but we do not guarantee completeness, accuracy, or availability. Upstream data sources can be delayed or incomplete.
+        - generic [ref=e40]:
+          - heading "Contact" [level=2] [ref=e41]
+          - paragraph [ref=e42]:
+            - text: Questions about these terms? Email
+            - link "support@sightwhale.com" [ref=e43] [cursor=pointer]:
+              - /url: mailto:support@sightwhale.com
+            - text: .
+  - contentinfo [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - img [ref=e48]
+          - generic [ref=e52]: SightWhale
+        - link "support@sightwhale.com" [ref=e53] [cursor=pointer]:
+          - /url: mailto:support@sightwhale.com
+      - generic [ref=e54]:
+        - generic [ref=e55]: © 2026 SightWhale. All rights reserved.
+        - generic [ref=e56]:
+          - link "Terms" [ref=e57] [cursor=pointer]:
+            - /url: /terms
+          - link "Privacy" [ref=e58] [cursor=pointer]:
+            - /url: /privacy
+  - alert [ref=e59]

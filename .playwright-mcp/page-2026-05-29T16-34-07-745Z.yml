@@ -1,0 +1,114 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "SightWhale" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: SightWhale
+      - navigation [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "Analyze" [ref=e12] [cursor=pointer]:
+          - /url: /analyze
+        - link "History" [ref=e13] [cursor=pointer]:
+          - /url: /history
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Log in" [ref=e15] [cursor=pointer]:
+          - /url: /subscribe
+        - link "Get real-time" [ref=e16] [cursor=pointer]:
+          - /url: /pricing
+  - main [ref=e17]:
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - paragraph [ref=e22]: Pricing
+        - heading "Pay only if it makes sense" [level=1] [ref=e23]
+        - paragraph [ref=e24]: Verify performance on History first. Upgrade when you want today's real-time stream.
+      - paragraph [ref=e26]:
+        - text: "Money-back guarantee: not satisfied this month? Email"
+        - link "support@sightwhale.com" [ref=e27] [cursor=pointer]:
+          - /url: mailto:support@sightwhale.com
+        - text: for a full refund.
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - img [ref=e31]
+            - text: Most popular
+          - heading "Pro" [level=2] [ref=e34]
+          - paragraph [ref=e35]: Best for most traders
+          - generic [ref=e36]:
+            - generic [ref=e37]: $29
+            - generic [ref=e38]: /mo
+            - generic [ref=e39]: or $290/yr
+          - paragraph [ref=e40]: Real-time signals in the app plus optional Telegram.
+          - list [ref=e41]:
+            - listitem [ref=e42]:
+              - img [ref=e43]
+              - text: All real-time signals (in-app)
+            - listitem [ref=e45]:
+              - img [ref=e46]
+              - text: All 70+ Whale Score signals
+            - listitem [ref=e48]:
+              - img [ref=e49]
+              - text: Optional Telegram (~30s)
+            - listitem [ref=e51]:
+              - img [ref=e52]
+              - text: Higher follow & collection limits vs Free
+          - link "Continue to checkout" [ref=e54] [cursor=pointer]:
+            - /url: /subscribe?plan=pro
+        - generic [ref=e55]:
+          - heading "Elite" [level=2] [ref=e56]
+          - paragraph [ref=e57]: Priority for active traders
+          - generic [ref=e58]:
+            - generic [ref=e59]: $59
+            - generic [ref=e60]: /mo
+            - generic [ref=e61]: or $590/yr
+          - paragraph [ref=e62]: Stricter filtering and faster optional Telegram.
+          - list [ref=e63]:
+            - listitem [ref=e64]:
+              - img [ref=e65]
+              - text: Everything in Pro
+            - listitem [ref=e67]:
+              - img [ref=e68]
+              - text: 80+ high-conviction signals where applicable
+            - listitem [ref=e70]:
+              - img [ref=e71]
+              - text: Optional Telegram (~10s priority)
+            - listitem [ref=e73]:
+              - img [ref=e74]
+              - text: Largest follow & collection limits
+          - link "Continue to checkout" [ref=e76] [cursor=pointer]:
+            - /url: /subscribe?plan=elite
+      - generic [ref=e77]:
+        - heading "Common questions" [level=2] [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - heading "How does the refund work?" [level=3] [ref=e81]
+            - paragraph [ref=e82]: If SightWhale is not profitable for you in your first month, email support@sightwhale.com and we will refund your subscription in full. No forms, no arguing.
+          - generic [ref=e83]:
+            - heading "What do I get before paying?" [level=3] [ref=e84]
+            - paragraph [ref=e85]: You can review the full historical signal table through end of yesterday UTC on the History page. Today’s live feed unlocks after checkout.
+          - generic [ref=e86]:
+            - heading "Do I need Telegram?" [level=3] [ref=e87]
+            - paragraph [ref=e88]: No. Telegram is optional. Paid plans include the live signal list in the product; Telegram is an extra delivery channel.
+      - generic [ref=e89]:
+        - paragraph [ref=e90]: Ready for real-time signals?
+        - paragraph [ref=e91]: Checkout runs on a secure page. You can review plans again before paying.
+        - link "Start checkout" [ref=e92] [cursor=pointer]:
+          - /url: /subscribe?plan=pro
+  - contentinfo [ref=e93]:
+    - generic [ref=e94]:
+      - generic [ref=e95]:
+        - generic [ref=e96]:
+          - img [ref=e97]
+          - generic [ref=e101]: SightWhale
+        - link "support@sightwhale.com" [ref=e102] [cursor=pointer]:
+          - /url: mailto:support@sightwhale.com
+      - generic [ref=e103]:
+        - generic [ref=e104]: © 2026 SightWhale. All rights reserved.
+        - generic [ref=e105]:
+          - link "Terms" [ref=e106] [cursor=pointer]:
+            - /url: /terms
+          - link "Privacy" [ref=e107] [cursor=pointer]:
+            - /url: /privacy
+  - alert [ref=e108]

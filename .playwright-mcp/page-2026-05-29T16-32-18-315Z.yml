@@ -1,0 +1,60 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "SightWhale" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: SightWhale
+      - navigation [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "Analyze" [ref=e12] [cursor=pointer]:
+          - /url: /analyze
+        - link "History" [ref=e13] [cursor=pointer]:
+          - /url: /history
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Log in" [ref=e15] [cursor=pointer]:
+          - /url: /subscribe
+        - link "Get real-time" [ref=e16] [cursor=pointer]:
+          - /url: /pricing
+  - main [ref=e17]:
+    - main [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - img [ref=e22]
+            - paragraph [ref=e25]: Decision Engine
+          - heading "Polymarket Whale Analysis" [level=1] [ref=e26]
+          - paragraph [ref=e27]: 输入市场链接或关键词，获取鲸鱼交易方向判断、信心分、以及钱包级证据链。
+        - search "Market analysis search" [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - generic [ref=e31]: 市场链接或关键词
+              - img
+              - textbox "市场链接或关键词" [active] [ref=e32]:
+                - /placeholder: 输入市场链接或关键词… 例如 BTC 150k
+            - button "开始分析" [disabled] [ref=e33]:
+              - text: 分析
+              - img [ref=e34]
+        - region "开始分析" [ref=e38]:
+          - generic [ref=e39]:
+            - img [ref=e41]
+            - paragraph [ref=e44]: 输入市场开始分析
+            - paragraph [ref=e45]: 粘贴一个 Polymarket 链接，或输入市场关键词。系统将分析鲸鱼交易数据，给出方向判断 + 信心分 + 钱包级证据链。
+  - contentinfo [ref=e46]:
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - img [ref=e50]
+          - generic [ref=e54]: SightWhale
+        - link "support@sightwhale.com" [ref=e55] [cursor=pointer]:
+          - /url: mailto:support@sightwhale.com
+      - generic [ref=e56]:
+        - generic [ref=e57]: © 2026 SightWhale. All rights reserved.
+        - generic [ref=e58]:
+          - link "Terms" [ref=e59] [cursor=pointer]:
+            - /url: /terms
+          - link "Privacy" [ref=e60] [cursor=pointer]:
+            - /url: /privacy
+  - alert [ref=e61]

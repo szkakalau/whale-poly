@@ -616,11 +616,9 @@ async def blog_generate(x_admin_key: str = Header(default="")):
     try:
         result = await generate_daily_article()
         return result
-    except Exception:
+    except Exception as exc:
         logger.exception("blog_generate_endpoint failed")
-        return {"status": "failed", "reason": "internal error"}
-
-    return {"status": "deleted", "slug": slug, "language": language}
+        return {"status": "failed", "reason": f"internal error: {exc}"}
 
 
 @app.get("/stats/home")
