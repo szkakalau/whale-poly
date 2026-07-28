@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
   alternates: {
     canonical: '/subscribe',

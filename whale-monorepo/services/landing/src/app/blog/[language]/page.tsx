@@ -79,9 +79,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     alternates: {
       canonical: page > 1 ? `/blog/${language}?page=${page}` : `/blog/${language}`,
       languages: {
-        en: '/blog/en',
-        zh: '/blog/zh',
-        'x-default': '/blog/en',
+        en: page > 1 ? `/blog/en?page=${page}` : '/blog/en',
+        zh: page > 1 ? `/blog/zh?page=${page}` : '/blog/zh',
+        'x-default': page > 1 ? `/blog/en?page=${page}` : '/blog/en',
       },
     },
   };
