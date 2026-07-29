@@ -453,6 +453,15 @@ async def generate_daily_article_loop() -> None:
         if not settings.blog_daily_enabled:
             continue
 
+        # Skip if today is not a configured generation day
+        today_abbr = now_bj.strftime("%a").lower()[:3]  # "mon", "tue", etc.
+        if today_abbr not in settings.blog_generation_days:
+            logger.info(
+                "generate_daily_article_skipped day=%s not in generation_days=%s",
+                today_abbr, settings.blog_generation_days,
+            )
+            continue
+
         try:
             from services.trade_ingest.blog_generator import generate_daily_article
             result = await generate_daily_article()

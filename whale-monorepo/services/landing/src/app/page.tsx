@@ -9,6 +9,7 @@ import {
   ScorePerformanceSection, StarWhaleSection,
   StatsSection, HeroStat, HeroStatFallback, LivePreview,
 } from '@/components/HomeDataComponents';
+import { WhaleLogo } from '@/components/WhaleLogo';
 import LatestBlogPosts from '@/components/LatestBlogPosts';
 import {
   ArrowRight, TrendingUp, Zap,
@@ -63,6 +64,10 @@ export default function Home() {
           ═══════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-20 hero-glow">
         <p className="eyebrow mb-6">On-chain whale intelligence</p>
+
+        <div className="mb-8">
+          <WhaleLogo className="h-16 w-16 text-accent" aria-hidden="true" />
+        </div>
 
         <h1 className="text-balance mb-6">
           We track the top 1% of Polymarket whales.
@@ -147,7 +152,7 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 sm:mb-32" aria-labelledby="how-heading">
         <p className="eyebrow mb-3">How it works</p>
         <h2 id="how-heading" className="text-balance mb-10">
-          From whale trade to your phone in three steps.
+          From smart-money trade to your phone in three steps.
         </h2>
         <div className="grid gap-8 sm:grid-cols-3">
           {HOW_IT_WORKS.map(({ icon: Icon, title, description }, i) => (
@@ -177,7 +182,7 @@ export default function Home() {
               <Link href="/volume-analysis" className="text-accent font-semibold hover:text-accent-hover transition-colors">
                 Volume-Weighted Analysis
               </Link>{' '}
-              page to see where whale volume diverges from market price across all active markets.
+              page to see where smart-money volume diverges from market price across all active markets.
             </p>
           </div>
           <Link
@@ -232,7 +237,7 @@ export default function Home() {
             </thead>
             <tbody className="divide-y divide-border-muted">
               {[
-                ['Whale wallet identification', 'Top 1% by calibrated ROI', 'Manual address lookup only', 'Size-based only, no ROI'],
+                ['Smart-money wallet identification', 'Top 1% by calibrated ROI', 'Manual address lookup only', 'Size-based only, no ROI'],
                 ['Wallet clustering', 'Deposit-address analysis', 'None', 'None'],
                 ['Signal scoring', '0-100 composite (win rate, size, context)', 'None', 'Basic threshold alerts'],
                 ['Public audit trail', 'Every signal — wins and losses', 'None', 'Cherry-picked screenshots'],

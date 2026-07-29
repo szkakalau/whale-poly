@@ -438,10 +438,24 @@ async def generate_daily_article() -> dict:
     now_utc = datetime.now(timezone.utc)
     inserted: list[str] = []
 
+    # AI transparency disclosure appended to every generated article (SEO: E-E-A-T signal)
+    EN_DISCLAIMER = (
+        "\n\n---\n\n"
+        "*This article was AI-generated using real on-chain whale trade data from SightWhale's "
+        "tracking engine. All data points, wallet metrics, and market statistics are pulled directly "
+        "from the Polymarket blockchain. Articles are reviewed by the SightWhale team before publication.*"
+    )
+    ZH_DISCLAIMER = (
+        "\n\n---\n\n"
+        "*本文由 AI 基于 SightWhale 追踪引擎的真实链上鲸鱼交易数据生成。所有数据点、钱包指标和"
+        "市场统计数据均直接来自 Polymarket 区块链。文章在发布前由 SightWhale 团队审核。*"
+    )
+
     async with SessionLocal() as session:
         await _ensure_blog_posts_table(session)
 
         if en_article:
+            en_article["content"] = en_article.get("content", "") + EN_DISCLAIMER
             en_meta = {
                 "topic": en_topic,
                 "word_count": len(en_article.get("content", "").split()),
@@ -453,6 +467,7 @@ async def generate_daily_article() -> dict:
             inserted.append("en")
 
         if zh_article:
+            zh_article["content"] = zh_article.get("content", "") + ZH_DISCLAIMER
             zh_meta = {
                 "topic": zh_topic,
                 "word_count": len(zh_article.get("content", "").replace(" ", "")) // 2,
@@ -567,6 +582,10 @@ async def _insert_blog_post(
 
     generation_prompt = json.dumps(meta) if meta else None
 
+    # AI-generated articles are created as "draft" — they require human review
+    # before appearing on the live site. See /blog/post admin endpoint to publish.
+    status = "draft"
+
     await session.execute(
         text(
             """
@@ -597,7 +616,7 @@ async def _insert_blog_post(
             "title": article["title"],
             "excerpt": article["excerpt"],
             "content": article["content"],
-            "author": "SightWhale",
+            "author": "SightWhale AI",
             "read_time": article.get("read_time", "8 min"),
             "tags": article.get("tags", []),
             "published_at": now_utc,
@@ -605,7 +624,7 @@ async def _insert_blog_post(
             "updated_at": now_utc,
             "language": language,
             "group_slug": group_slug,
-            "status": "published",
+            "status": status,
             "generation_prompt": generation_prompt,
         },
     )

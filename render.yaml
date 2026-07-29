@@ -120,6 +120,8 @@ services:
         value: usd
 
       # ── Blog / LLM ────────────────────────────────────────
+      - key: BLOG_GENERATION_DAYS
+        value: mon,wed,fri
       - key: BLOG_LLM_API_KEY
         sync: false
 

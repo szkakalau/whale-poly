@@ -17,9 +17,9 @@ export const PAIN_POINTS = [
   },
   {
     icon: Clock,
-    title: 'Whales move first. The crowd moves later.',
+    title: 'Smart money moves first. The crowd moves later.',
     description:
-      'By the time you notice a big trade on the platform\'s UI, the odds have already shifted. Our real-time monitoring catches whale entries the moment they hit the chain.',
+      'By the time you notice a big trade on the platform\'s UI, the odds have already shifted. Our real-time monitoring catches large-player entries the moment they hit the chain.',
   },
   {
     icon: FileText,
@@ -46,7 +46,7 @@ export const HOW_IT_WORKS = [
     icon: Bell,
     title: 'Deliver',
     description:
-      'High-conviction signals reach your Telegram in ~30 seconds. Or check the Volume-Weighted Analysis page to see where whale volume diverges from market price — no sign-up required.',
+      'High-conviction signals reach your Telegram in ~30 seconds. Or check the Volume-Weighted Analysis page to see where smart-money volume diverges from market price — no sign-up required.',
   },
 ];
 
@@ -67,7 +67,7 @@ export const MOATS = [
     icon: Zap,
     title: 'Push, don\'t pull',
     description:
-      'Whale trades appear on your phone in ~30 seconds via Telegram. No dashboard to refresh, no app to install. Or use the Volume-Weighted Analysis page to actively monitor whale volume divergence across all markets.',
+      'High-conviction trades appear on your phone in ~30 seconds via Telegram. No dashboard to refresh, no app to install. Or use the Volume-Weighted Analysis page to actively monitor smart-money volume divergence across all markets.',
   },
 ];
 

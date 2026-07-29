@@ -45,6 +45,7 @@ export const metadata: Metadata = {
   },
   description:
     "Follow the top 1% of Polymarket whales. Real-time Telegram alerts for high-conviction prediction market trades. Verified win rates, full PnL history.",
+  authors: [{ name: 'SightWhale', url: 'https://www.sightwhale.com/about' }],
   keywords: [
     "Polymarket",
     "Polymarket Whale Intelligence",
@@ -114,6 +115,11 @@ const jsonLd = {
       sameAs: [
         'https://twitter.com/SightWhale',
         'https://github.com/sightwhale',
+        'https://t.me/sightwhale_bot',
+        // Add more as brand presence grows:
+        // 'https://www.linkedin.com/company/sightwhale',
+        // 'https://www.crunchbase.com/organization/sightwhale',
+        // 'https://www.producthunt.com/products/sightwhale',
       ],
       foundingDate: '2025',
       dateModified: new Date().toISOString().split('T')[0],

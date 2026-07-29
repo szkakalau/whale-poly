@@ -102,6 +102,13 @@ class Settings:
     self.blog_llm_base_url = os.getenv("BLOG_LLM_BASE_URL", "https://api.deepseek.com/v1")
     self.blog_llm_model = os.getenv("BLOG_LLM_MODEL", "deepseek-chat")
     self.blog_daily_enabled = os.getenv("BLOG_DAILY_ENABLED", "true").strip().lower() in _env_truthy
+    # BLOG_GENERATION_DAYS: comma-separated lowercase weekday abbreviations.
+    # Example: "mon,wed,fri" generates 3x/week. Default "mon,tue,wed,thu,fri,sat,sun" = daily.
+    self.blog_generation_days = [
+        d.strip().lower()[:3]
+        for d in os.getenv("BLOG_GENERATION_DAYS", "mon,tue,wed,thu,fri,sat,sun").split(",")
+        if d.strip()
+    ]
 
     # Plan Gating Limits
     self.plan_limits = {
