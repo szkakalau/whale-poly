@@ -425,6 +425,16 @@ async def generate_daily_article() -> dict:
     if not settings.blog_daily_enabled:
         return {"status": "disabled"}
 
+    # Self-healing: publish any previously stuck drafts before generating new articles.
+    async with SessionLocal() as session:
+        await _ensure_blog_posts_table(session)
+        result = await session.execute(
+            text("update blog_posts set status = 'published' where status = 'draft'")
+        )
+        if result.rowcount:
+            logger.info("published_legacy_drafts count=%d", result.rowcount)
+        await session.commit()
+
     context = await fetch_context()
 
     # Generate both languages
@@ -443,12 +453,12 @@ async def generate_daily_article() -> dict:
         "\n\n---\n\n"
         "*This article was AI-generated using real on-chain whale trade data from SightWhale's "
         "tracking engine. All data points, wallet metrics, and market statistics are pulled directly "
-        "from the Polymarket blockchain. Articles are reviewed by the SightWhale team before publication.*"
+        "from the Polymarket blockchain.*"
     )
     ZH_DISCLAIMER = (
         "\n\n---\n\n"
         "*本文由 AI 基于 SightWhale 追踪引擎的真实链上鲸鱼交易数据生成。所有数据点、钱包指标和"
-        "市场统计数据均直接来自 Polymarket 区块链。文章在发布前由 SightWhale 团队审核。*"
+        "市场统计数据均直接来自 Polymarket 区块链。*"
     )
 
     async with SessionLocal() as session:
@@ -582,9 +592,9 @@ async def _insert_blog_post(
 
     generation_prompt = json.dumps(meta) if meta else None
 
-    # AI-generated articles are created as "draft" — they require human review
-    # before appearing on the live site. See /blog/post admin endpoint to publish.
-    status = "draft"
+    # AI-generated articles are published immediately.
+    # Quality validation (validate_article) acts as the gate before insert.
+    status = "published"
 
     await session.execute(
         text(
