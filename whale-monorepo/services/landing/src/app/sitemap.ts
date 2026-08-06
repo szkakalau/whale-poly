@@ -29,26 +29,32 @@ async function fetchSlugs(language: string): Promise<PostMeta[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.sightwhale.com';
-  const now = new Date();
+
+  // Fixed dates for static pages — do NOT use `new Date()`.
+  // Google uses lastmod to decide which pages to re-crawl. If every page
+  // claims "updated now" every time, Google wastes crawl budget on unchanged
+  // static pages and never reaches newly published blog posts.
+  const SITE_LAUNCH = new Date('2025-07-01');    // static marketing pages
+  const BLOG_LAUNCH = new Date('2026-07-15');     // blog listing pages (updated when new posts publish)
 
   const staticRoutes = [
-    '',
-    '/about',
-    '/history',
-    '/methodology',
-    '/pricing',
-    '/polymarket-alerts-tl',
-    '/volume-analysis',
-    '/terms',
-    '/privacy',
-    '/blog/en',
-    '/blog/zh',
+    { route: '',              lastmod: SITE_LAUNCH, priority: 1.0, freq: 'weekly' as const },
+    { route: '/about',        lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
+    { route: '/history',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
+    { route: '/methodology',  lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
+    { route: '/pricing',      lastmod: SITE_LAUNCH, priority: 0.9, freq: 'weekly' as const },
+    { route: '/polymarket-alerts-tl', lastmod: SITE_LAUNCH, priority: 0.8, freq: 'monthly' as const },
+    { route: '/volume-analysis', lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
+    { route: '/terms',        lastmod: SITE_LAUNCH, priority: 0.3, freq: 'yearly' as const },
+    { route: '/privacy',      lastmod: SITE_LAUNCH, priority: 0.3, freq: 'yearly' as const },
+    { route: '/blog/en',      lastmod: BLOG_LAUNCH, priority: 0.9, freq: 'daily' as const },
+    { route: '/blog/zh',      lastmod: BLOG_LAUNCH, priority: 0.9, freq: 'daily' as const },
   ].map(
-    (route) => ({
+    ({ route, lastmod, priority, freq }) => ({
       url: `${baseUrl}${route}`,
-      lastModified: now,
-      changeFrequency: 'daily' as const,
-      priority: route === '' ? 1 : route.startsWith('/blog') ? 0.9 : 0.8,
+      lastModified: lastmod,
+      changeFrequency: freq,
+      priority,
     }),
   );
 

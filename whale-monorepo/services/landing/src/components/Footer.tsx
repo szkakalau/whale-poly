@@ -49,6 +49,9 @@ export default function Footer() {
             <Link href="/privacy" className="text-subtle hover:text-muted text-xs transition-colors">
               Privacy
             </Link>
+            <Link href="/site-map" className="text-subtle hover:text-muted text-xs transition-colors">
+              Site Map
+            </Link>
             <a
               href="https://twitter.com/SightWhale"
               target="_blank"
