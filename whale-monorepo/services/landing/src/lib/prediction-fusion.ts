@@ -40,6 +40,7 @@ export type FusionResult = {
   signalComponents: SignalComponent[];
   dominantSignal: SignalSource;   // which signal contributed the most
   agreementScore: number;         // 0-100 — how consistent the signals are
+  probability: number | null;     // P(YES) 0-1, null when model not trained yet
   timestamp: string;
 };
 
@@ -318,6 +319,7 @@ export function fuseSignals(
     signalComponents: components,
     dominantSignal: dominant?.source ?? 'flow_direction',
     agreementScore: Math.round(agreementScore * 100),
+    probability: null, // filled by caller (API route) after model training
     timestamp: now,
   };
 }

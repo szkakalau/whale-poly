@@ -1,22 +1,33 @@
 /**
- * GET /api/prediction?market=xxx
+ * GET /api/prediction?market=xxx[&tier=PRO]
  *
  * Returns a fused prediction for a single market by combining
  * whale quality, behavior, VW divergence, and flow direction signals.
  *
  * Plan gating:
  *   - Free: basic fusion (flow + behavior only, via fuseBasicSignals)
- *   - Pro/Elite: full fusion with whale quality + VW metrics
+ *   - Pro/Elite: full fusion with whale quality + VW metrics + logistic probability
+ *
+ * Probability model: logistic regression trained on backtest data,
+ * cached at module level with 60-minute TTL.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeMarket } from '@/lib/analysis-engine';
-import { fuseSignals, fuseBasicSignals } from '@/lib/prediction-fusion';
+import { fuseSignals, fuseBasicSignals, type FusionResult } from '@/lib/prediction-fusion';
 import { getCurrentUser } from '@/lib/auth';
-import { effectivePlan, canAccessFeature } from '@/lib/plans';
+import { effectivePlan } from '@/lib/plans';
 import { getVwMetrics } from '@/lib/vw-signals';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import {
+  trainModel,
+  predictProbability,
+  tierProbability,
+  type ProbabilityModel,
+  type TrainingRow,
+} from '@/lib/prediction-model';
+import { loadBacktestData } from '@/lib/backtesting/engine';
 
 const CACHE_HEADERS = {
   'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
@@ -27,6 +38,73 @@ function cached(body: object, init?: ResponseInit) {
     ...init,
     headers: { ...(init?.headers as Record<string, string> | undefined), ...CACHE_HEADERS },
   });
+}
+
+// ── Model cache ─────────────────────────────────────────
+
+let _cachedModel: ProbabilityModel | null = null;
+let _modelTrainedAt = 0; // epoch ms
+const MODEL_TTL_MS = 60 * 60 * 1000; // 60 minutes
+
+async function getModel(): Promise<ProbabilityModel | null> {
+  const now = Date.now();
+  if (_cachedModel && now - _modelTrainedAt < MODEL_TTL_MS) {
+    return _cachedModel;
+  }
+
+  try {
+    // Train on last 30 days of backtest data
+    const endDate = new Date().toISOString().slice(0, 10);
+    const startDate = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+
+    const rows = await loadBacktestData({
+      startDate,
+      endDate,
+      minWhaleScore: 0,
+      minTradeSize: 0,
+      planTier: 'elite',
+    });
+
+    const trainingRows: TrainingRow[] = rows.map(r => ({
+      whaleScore: Number(r.whale_score) || 0,
+      side: (r.trade_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
+      pnl: Number(r.pnl) || 0,
+    }));
+
+    if (trainingRows.length >= 20) {
+      _cachedModel = trainModel(trainingRows);
+    } else {
+      _cachedModel = null; // insufficient data — use tier fallback
+    }
+  } catch (err) {
+    console.error('getModel: training failed', err);
+    _cachedModel = null;
+  }
+
+  _modelTrainedAt = now;
+  return _cachedModel;
+}
+
+/** Attach calibrated probability to a fusion result. */
+function attachProbability(
+  prediction: FusionResult,
+  model: ProbabilityModel | null,
+  plan: string,
+): FusionResult {
+  if (model && (plan === 'PRO' || plan === 'ELITE')) {
+    prediction.probability = predictProbability(
+      prediction.compositeScore,
+      prediction.direction,
+      model,
+    );
+  } else {
+    // Free tier or model not ready: use tier lookup
+    prediction.probability = tierProbability(
+      prediction.compositeScore,
+      prediction.direction,
+    );
+  }
+  return prediction;
 }
 
 export async function GET(request: NextRequest) {
@@ -63,7 +141,6 @@ export async function GET(request: NextRequest) {
         getVwMetrics('divergence', 1).catch(() => []),
         (async () => {
           try {
-            // Get whale_stats for wallets active in this market
             const walletAddrs = analysis.topWallets.map(w => w.addressShort);
             if (walletAddrs.length === 0) return null;
 
@@ -107,14 +184,16 @@ export async function GET(request: NextRequest) {
           : null,
       );
 
-      return cached({
-        prediction,
-        tier: plan,
-      });
+      // Attach calibrated probability (logistic regression for Pro/Elite)
+      const model = await getModel();
+      attachProbability(prediction, model, plan);
+
+      return cached({ prediction, tier: plan });
     }
 
     // Free tier: basic fusion
     const prediction = fuseBasicSignals(marketSlug, analysis);
+    attachProbability(prediction, null, 'free');
     return cached({
       prediction,
       tier: 'free',

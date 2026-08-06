@@ -103,6 +103,24 @@ def _confidence_label(level: str) -> str:
     return {"high": "高", "medium": "中", "low": "低"}.get(level, level)
 
 
+def _tier_prob(score: int, direction: str) -> int:
+    """Rough probability estimate from score tier (mirrors TypeScript tierProbability)."""
+    if score >= 90:
+        base = 72
+    elif score >= 80:
+        base = 65
+    elif score >= 70:
+        base = 58
+    else:
+        base = 52
+
+    if direction == "bullish":
+        return base + 3
+    if direction == "bearish":
+        return base - 3
+    return base
+
+
 def format_prediction(payload: dict, telegram_id: str) -> str:
     """Format a FusionResult payload into a Telegram HTML message."""
     p = payload.get("prediction") or {}
@@ -117,6 +135,7 @@ def format_prediction(payload: dict, telegram_id: str) -> str:
     components = p.get("signalComponents") or []
     dominant = p.get("dominantSignal", "")
     tier = payload.get("tier", "free")
+    probability = p.get("probability")  # float 0-1 or null
 
     emoji = _direction_emoji(direction)
     dir_label = _direction_label(direction)
@@ -128,8 +147,16 @@ def format_prediction(payload: dict, telegram_id: str) -> str:
         f"🔮 <b>Signal Fusion</b>",
         "",
         f"{emoji} <b>{dir_label}</b> — 综合评分 <code>{score}</code>/100",
-        f"🎯 置信度: <b>{conf_label}</b> | 信号一致性: <code>{agreement}</code>%",
     ]
+
+    # Probability
+    if probability is not None:
+        prob_pct = round(float(probability) * 100)
+        lines.append(f"📐 P(YES) = <b>{prob_pct}%</b>")
+    elif tier == "FREE":
+        lines.append(f"📐 P(YES) ≈ <b>{_tier_prob(score, direction)}%</b> (预估)")
+
+    lines.append(f"🎯 置信度: <b>{conf_label}</b> | 信号一致性: <code>{agreement}</code>%")
 
     # Signal breakdown bars
     if components:
