@@ -1,14 +1,19 @@
 import { Plan } from '@prisma/client';
 import { AuthUser } from './auth';
 
-export type Feature = 
-  | 'whale_follow' 
-  | 'collection_creation' 
-  | 'smart_collection_access' 
-  | 'whale_score_full' 
-  | 'telegram_bot' 
-  | 'priority_updates' 
-  | 'early_access';
+export type Feature =
+  | 'whale_follow'
+  | 'collection_creation'
+  | 'smart_collection_access'
+  | 'whale_score_full'
+  | 'telegram_bot'
+  | 'priority_updates'
+  | 'early_access'
+  | 'fusion_prediction'         // composite prediction score
+  | 'signal_breakdown'          // per-component signal details
+  | 'backtest_access'           // full backtesting reports
+  | 'market_correlation'        // inter-market correlation
+  | 'position_sizing';          // Kelly position recommendations
 
 export interface PlanLimits {
   max_alerts_per_day: number | 'unlimited';
@@ -69,6 +74,17 @@ export function canAccessFeature(user: AuthUser, feature: Feature): boolean {
     case 'priority_updates':
       return plan === Plan.ELITE;
     case 'early_access':
+      return plan === Plan.ELITE;
+    // Prediction features
+    case 'fusion_prediction':
+      return plan === Plan.PRO || plan === Plan.ELITE;
+    case 'signal_breakdown':
+      return plan === Plan.PRO || plan === Plan.ELITE;
+    case 'backtest_access':
+      return plan === Plan.ELITE;
+    case 'market_correlation':
+      return plan === Plan.ELITE;
+    case 'position_sizing':
       return plan === Plan.ELITE;
     default:
       return false;

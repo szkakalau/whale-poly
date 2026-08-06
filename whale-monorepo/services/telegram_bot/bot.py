@@ -5,6 +5,7 @@ from telegram import BotCommand
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler
 
 from services.telegram_bot.handlers import analyze, generate_code_callback, promote, start, status
+from services.telegram_bot.predict import predict_command
 from shared.config import settings
 
 
@@ -14,6 +15,7 @@ _COMMANDS = [
   BotCommand("start", "开始 / 生成激活码"),
   BotCommand("status", "查看订阅状态"),
   BotCommand("analyze", "分析 Polymarket 市场鲸鱼动向"),
+  BotCommand("predict", "Signal Fusion 预测评分"),
 ]
 
 
@@ -23,6 +25,7 @@ async def build_application():
   application.add_handler(CommandHandler("status", status))
   application.add_handler(CommandHandler("promote", promote))
   application.add_handler(CommandHandler("analyze", analyze))
+  application.add_handler(CommandHandler("predict", predict_command))
   application.add_handler(CallbackQueryHandler(generate_code_callback, pattern="^generate_code$"))
   return application
 
@@ -40,17 +43,33 @@ async def run_polling(stop: asyncio.Event, application) -> None:
   from services.telegram_bot.daily_vw_digest import run_daily_digest
   digest_task = asyncio.create_task(run_daily_digest(stop, application.bot))
 
+  from services.telegram_bot.prediction_digest import run_prediction_digest
+  pred_task = asyncio.create_task(run_prediction_digest(stop, application.bot))
+
+  from services.telegram_bot.backtest_report import run_backtest_report
+  backtest_task = asyncio.create_task(run_backtest_report(stop, application.bot))
+
   try:
     await stop.wait()
   finally:
     vw_task.cancel()
     digest_task.cancel()
+    pred_task.cancel()
+    backtest_task.cancel()
     try:
       await vw_task
     except asyncio.CancelledError:
       pass
     try:
       await digest_task
+    except asyncio.CancelledError:
+      pass
+    try:
+      await pred_task
+    except asyncio.CancelledError:
+      pass
+    try:
+      await backtest_task
     except asyncio.CancelledError:
       pass
     await application.updater.stop()

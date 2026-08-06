@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 /** Legacy marketing routes removed — send to home. */
 const LEGACY_REDIRECTS: { source: string; destination?: string }[] = [
   { source: "/contact", destination: "/" },
-  { source: "/backtesting", destination: "/" },
   { source: "/conviction", destination: "/" },
   { source: "/smart-money", destination: "/" },
   { source: "/follow", destination: "/" },

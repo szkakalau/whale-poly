@@ -12,6 +12,7 @@ const DASHBOARD_URL = getDashboardUrl();
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/analyze', label: 'Analyze', badge: 'NEW' },
   { href: '/volume-analysis', label: 'VW', badge: 'FREE' },
   { href: '/history', label: 'History' },
   { href: '/blog', label: 'Blog' },
