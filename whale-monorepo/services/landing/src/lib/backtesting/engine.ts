@@ -18,6 +18,7 @@ import {
   type TierSummary,
 } from '@/lib/backtesting/metrics';
 import { summarizeHistoryRows, type HistorySignalRow } from '@/lib/history-signals';
+import { scoreToTier } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ export async function loadBacktestData(
           a.id,
           a.created_at AS published_at,
           COALESCE(NULLIF(TRIM(m.title), ''), a.market_id) AS market_title,
-          a.whale_score,
+          a.whale_score::float8 AS whale_score,
           wth.side AS trade_side,
           wth.price::float AS entry_price,
           wth.trade_usd::float AS trade_size_usd,
@@ -129,14 +130,6 @@ function isDirectionCorrect(row: BacktestRow): boolean {
   if (side === 'BUY') return pnl > 0;
   if (side === 'SELL') return pnl > 0;
   return false;
-}
-
-function scoreToTier(score: number | null): string {
-  if (score == null) return '<70';
-  if (score >= 90) return '90–100';
-  if (score >= 80) return '80–89';
-  if (score >= 70) return '70–79';
-  return '<70';
 }
 
 /**

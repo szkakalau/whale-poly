@@ -58,11 +58,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => null) as PositionSizingRequest | null;
 
-    if (!body || body.score == null) {
+    if (!body || body.score == null || !Number.isFinite(body.score) || body.score < 0 || body.score > 100) {
       return cached(
-        { error: 'score is required (0-100 composite prediction score)' },
+        { error: 'score must be between 0 and 100' },
         { status: 400 },
       );
+    }
+
+    if (body.winRate != null && (!Number.isFinite(body.winRate) || body.winRate < 0 || body.winRate > 1)) {
+      return cached({ error: 'winRate must be between 0 and 1' }, { status: 400 });
+    }
+
+    if (body.avgWinRoi != null && (!Number.isFinite(body.avgWinRoi) || body.avgWinRoi <= 0)) {
+      return cached({ error: 'avgWinRoi must be a positive number' }, { status: 400 });
+    }
+
+    if (body.avgLossRoi != null && (!Number.isFinite(body.avgLossRoi) || body.avgLossRoi <= 0)) {
+      return cached({ error: 'avgLossRoi must be a positive number' }, { status: 400 });
     }
 
     let result;

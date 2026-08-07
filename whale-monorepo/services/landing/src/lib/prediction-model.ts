@@ -5,25 +5,26 @@
  * composite score + direction into a calibrated P(correct) probability.
  *
  * Mathematical foundation:
- *   z = β₀ + β₁·(score/100) + β₂·isBullish + β₃·isBearish
+ *   z = β₀ + β₁·(score/100) + β₂·isBullish
  *   P(correct) = σ(z) = 1 / (1 + e^(-z))
  *
  * Trained via gradient descent on backtest data (whale_score + trade_side + pnl).
- * 3 parameters — robust with small sample sizes, no regularization needed.
+ * 2-parameter model — isBearish omitted (dummy variable trap, perfectly collinear with isBullish).
  *
  * Fallback: score-tier lookup table when < 20 training samples available.
  */
 
+import { scoreToTier } from '@/lib/utils';
 import type { Direction } from '@/lib/analysis-engine';
 
 // ── Types ──────────────────────────────────────────────
 
-/** Trained logistic regression coefficients. */
+/** Trained logistic regression coefficients (2-feature model). */
 export type ProbabilityModel = {
   intercept: number;         // β₀
   scoreCoef: number;         // β₁ (applied to score / 100)
   bullishCoef: number;       // β₂
-  bearishCoef: number;       // β₃
+  bearishCoef: number;       // always 0 — bearish implied by !isBullish (dummy variable trap fix)
   trainedAt: string;         // ISO timestamp
   sampleSize: number;        // number of training rows
   accuracy: number;          // training accuracy (0-1)
@@ -99,13 +100,13 @@ export function extractFeaturesAndLabels(
   const labels: number[] = [];
 
   for (const row of rows) {
-    if (row.whaleScore == null || !Number.isFinite(row.pnl)) continue;
+    if (row.whaleScore == null || !Number.isFinite(row.whaleScore) || !Number.isFinite(row.pnl)) continue;
 
-    // Feature vector: [score/100, isBullish, isBearish]
+    // Feature vector: [score/100, isBullish]
+    // isBearish is omitted — perfectly collinear with isBullish (dummy variable trap)
     features.push([
       row.whaleScore / 100,
       row.side === 'BUY' ? 1 : 0,
-      row.side === 'SELL' ? 1 : 0,
     ]);
 
     // Label: 1 if direction was correct
@@ -123,9 +124,8 @@ export function extractFeaturesAndLabels(
  *   learningRate = 0.1
  *   iterations   = 200
  *
- * Initial coefficients: β₀=0, β₁=1, β₂=0.2, β₃=-0.2
- * (reasonable prior: higher score → higher probability,
- *  bullish slightly favoring correctness, bearish slightly disfavoring)
+ * Initial coefficients: β₀=0, β₁=1, β₂=0.2
+ * (reasonable prior: higher score → higher probability, bullish slightly favoring correctness)
  */
 export function trainModel(rows: TrainingRow[]): ProbabilityModel {
   const { features, labels } = extractFeaturesAndLabels(rows);
@@ -135,11 +135,10 @@ export function trainModel(rows: TrainingRow[]): ProbabilityModel {
     return createFallbackModel();
   }
 
-  // Initial coefficients
+  // Initial coefficients (2-feature model: score + direction; bearish implied by absence of bullish)
   let b0 = 0;      // intercept
   let b1 = 1.0;    // score coefficient
   let b2 = 0.2;    // bullish coefficient
-  let b3 = -0.2;   // bearish coefficient
 
   const lr = 0.1;
   const iterations = 200;
@@ -148,14 +147,13 @@ export function trainModel(rows: TrainingRow[]): ProbabilityModel {
     let gradB0 = 0;
     let gradB1 = 0;
     let gradB2 = 0;
-    let gradB3 = 0;
 
     for (let i = 0; i < n; i++) {
-      const [xScore, xBullish, xBearish] = features[i];
+      const [xScore, xBullish] = features[i];
       const y = labels[i];
 
-      // z = β₀ + β₁·xScore + β₂·xBullish + β₃·xBearish
-      const z = b0 + b1 * xScore + b2 * xBullish + b3 * xBearish;
+      // z = β₀ + β₁·xScore + β₂·xBullish
+      const z = b0 + b1 * xScore + b2 * xBullish;
       const yHat = sigmoid(z);
 
       // Gradient of binary cross-entropy: (ŷ - y) · x_j
@@ -164,21 +162,19 @@ export function trainModel(rows: TrainingRow[]): ProbabilityModel {
       gradB0 += error;
       gradB1 += error * xScore;
       gradB2 += error * xBullish;
-      gradB3 += error * xBearish;
     }
 
     // Update (average gradient)
     b0 -= lr * (gradB0 / n);
     b1 -= lr * (gradB1 / n);
     b2 -= lr * (gradB2 / n);
-    b3 -= lr * (gradB3 / n);
   }
 
   // Compute training accuracy
   let correct = 0;
   for (let i = 0; i < n; i++) {
-    const [xScore, xBullish, xBearish] = features[i];
-    const z = b0 + b1 * xScore + b2 * xBullish + b3 * xBearish;
+    const [xScore, xBullish] = features[i];
+    const z = b0 + b1 * xScore + b2 * xBullish;
     const yHat = sigmoid(z);
     const predicted = yHat >= 0.5 ? 1 : 0;
     if (predicted === labels[i]) correct++;
@@ -188,7 +184,7 @@ export function trainModel(rows: TrainingRow[]): ProbabilityModel {
     intercept: round4(b0),
     scoreCoef: round4(b1),
     bullishCoef: round4(b2),
-    bearishCoef: round4(b3),
+    bearishCoef: 0, // implied by bullishCoef (dummy variable trap — isBearish = 1 - isBullish)
     trainedAt: new Date().toISOString(),
     sampleSize: n,
     accuracy: correct / n,
@@ -225,12 +221,7 @@ const TIER_WIN_RATES: Record<string, number> = {
  * Used as fallback when the logistic model has insufficient training data.
  */
 export function tierProbability(score: number, direction: Direction): number {
-  let tierKey: string;
-  if (score >= 90) tierKey = '90–100';
-  else if (score >= 80) tierKey = '80–89';
-  else if (score >= 70) tierKey = '70–79';
-  else tierKey = '<70';
-
+  const tierKey = scoreToTier(score);
   const baseProb = TIER_WIN_RATES[tierKey] ?? 0.5;
 
   // Small directional adjustment (±3%)

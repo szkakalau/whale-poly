@@ -13,6 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { analyzeMarket } from '@/lib/analysis-engine';
 import { fuseSignals, fuseBasicSignals, type FusionResult } from '@/lib/prediction-fusion';
 import { getCurrentUser } from '@/lib/auth';
@@ -44,45 +45,70 @@ function cached(body: object, init?: ResponseInit) {
 
 let _cachedModel: ProbabilityModel | null = null;
 let _modelTrainedAt = 0; // epoch ms
+let _trainingPromise: Promise<ProbabilityModel | null> | null = null; // dedup concurrent training
+let _cacheRetryAfter = 0; // epoch ms — independent retry backoff (fixes backoff when cachedModel is null)
 const MODEL_TTL_MS = 60 * 60 * 1000; // 60 minutes
+const MODEL_RETRY_MS = 5 * 60 * 1000;  // 5 minutes (when data too sparse or training fails)
 
 async function getModel(): Promise<ProbabilityModel | null> {
   const now = Date.now();
+
+  // Cache hit: model exists and is still fresh
   if (_cachedModel && now - _modelTrainedAt < MODEL_TTL_MS) {
     return _cachedModel;
   }
 
-  try {
-    // Train on last 30 days of backtest data
-    const endDate = new Date().toISOString().slice(0, 10);
-    const startDate = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
-
-    const rows = await loadBacktestData({
-      startDate,
-      endDate,
-      minWhaleScore: 0,
-      minTradeSize: 0,
-      planTier: 'elite',
-    });
-
-    const trainingRows: TrainingRow[] = rows.map(r => ({
-      whaleScore: Number(r.whale_score) || 0,
-      side: (r.trade_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-      pnl: Number(r.pnl) || 0,
-    }));
-
-    if (trainingRows.length >= 20) {
-      _cachedModel = trainModel(trainingRows);
-    } else {
-      _cachedModel = null; // insufficient data — use tier fallback
-    }
-  } catch (err) {
-    console.error('getModel: training failed', err);
-    _cachedModel = null;
+  // Retry backoff: no cached model and still within cooldown
+  if (!_cachedModel && now < _cacheRetryAfter) {
+    return null;
   }
 
-  _modelTrainedAt = now;
-  return _cachedModel;
+  // Deduplicate concurrent training attempts
+  if (_trainingPromise) return _trainingPromise;
+
+  _trainingPromise = (async (): Promise<ProbabilityModel | null> => {
+    try {
+      // Train on last 30 days of backtest data
+      const endDate = new Date().toISOString().slice(0, 10);
+      const startDate = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+
+      const rows = await loadBacktestData({
+        startDate,
+        endDate,
+        minWhaleScore: 0,
+        minTradeSize: 0,
+        planTier: 'elite',
+      });
+
+      const trainingRows: TrainingRow[] = rows.map(r => ({
+        whaleScore: Number(r.whale_score) || 0,
+        side: (r.trade_side?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
+        pnl: Number(r.pnl) || 0,
+      }));
+
+      if (trainingRows.length >= 20) {
+        const completedAt = Date.now();
+        _cachedModel = trainModel(trainingRows);
+        _modelTrainedAt = completedAt;
+      } else {
+        _cachedModel = null;
+        // Short retry window — data may arrive soon
+        _cacheRetryAfter = Date.now() + MODEL_RETRY_MS;
+      }
+    } catch (err) {
+      console.error('getModel: training failed', err);
+      // Keep old model if one exists; enforce retry cooldown to prevent storm
+      _cacheRetryAfter = Date.now() + MODEL_RETRY_MS;
+    }
+
+    return _cachedModel;
+  })();
+
+  try {
+    return await _trainingPromise;
+  } finally {
+    _trainingPromise = null;
+  }
 }
 
 /** Attach calibrated probability to a fusion result. */
@@ -115,14 +141,24 @@ export async function GET(request: NextRequest) {
     return cached({ error: 'market parameter is required' }, { status: 400 });
   }
 
+  // Validate slug format: alphanumeric tokens separated by dashes, max 120 chars
+  if (!/^[\w][\w-]{0,119}$/.test(marketSlug)) {
+    return cached({ error: 'invalid market slug format' }, { status: 400 });
+  }
+
   try {
     // Plan detection: cookie auth first, then fallback to ?tier= query param
     // (used by Telegram bot which calls this API server-to-server).
+    // Tier param is ONLY trusted when accompanied by a valid x-internal-secret header.
     const user = await getCurrentUser();
     const tierParam = searchParams.get('tier')?.toUpperCase() as 'FREE' | 'PRO' | 'ELITE' | undefined;
+    const gatewaySecret = process.env.INTERNAL_GATEWAY_SECRET;
+    // Reject bypass when secret is empty (prevents misconfiguration bypass)
+    const tierBypassOk = tierParam && gatewaySecret && gatewaySecret.length >= 16
+      && (await headers()).get('x-internal-secret') === gatewaySecret;
     const plan = user
       ? effectivePlan(user)
-      : (tierParam === 'PRO' || tierParam === 'ELITE' ? tierParam : 'free' as const);
+      : (tierBypassOk && (tierParam === 'PRO' || tierParam === 'ELITE') ? tierParam : 'free' as const);
     const isPaid = plan === 'PRO' || plan === 'ELITE';
 
     // Run the base analysis (works for all tiers)
@@ -141,19 +177,16 @@ export async function GET(request: NextRequest) {
         getVwMetrics('divergence', 1).catch(() => []),
         (async () => {
           try {
-            const walletAddrs = analysis.topWallets.map(w => w.addressShort);
-            if (walletAddrs.length === 0) return null;
-
             const rows = await prisma.$queryRaw<{ whale_score: number }[]>(
               Prisma.sql`
-                SELECT whale_score::int AS whale_score
+                SELECT whale_score::float8 AS whale_score
                 FROM whale_stats
                 WHERE whale_score IS NOT NULL
                 ORDER BY whale_score DESC
                 LIMIT 1
               `
             );
-            return rows.length > 0 ? rows[0].whale_score : null;
+            return rows.length > 0 ? Number(rows[0].whale_score) : null;
           } catch {
             return null;
           }

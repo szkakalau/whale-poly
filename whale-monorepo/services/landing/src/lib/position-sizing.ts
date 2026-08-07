@@ -7,6 +7,8 @@
  * Elite-tier feature — gated via plans.ts.
  */
 
+import { clamp } from '@/lib/utils';
+
 // ── Types ──────────────────────────────────────────────
 
 export type KellyResult = {
@@ -107,13 +109,6 @@ export function computeKelly(
     confidence,
     suggestion,
   };
-}
-
-/** Clamp to [lo, hi]. */
-function clamp(v: number, lo: number, hi: number): number {
-  if (v < lo) return lo;
-  if (v > hi) return hi;
-  return v;
 }
 
 // ── Convenience: compute from tier summary ─────────────

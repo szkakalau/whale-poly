@@ -21,15 +21,6 @@ export type BacktestMetrics = {
   avgHoldingDays: number;    // average days from entry to settlement
 };
 
-// ── Helpers ────────────────────────────────────────────
-
-/** Clamp to [lo, hi]. */
-function clamp(v: number, lo: number, hi: number): number {
-  if (v < lo) return lo;
-  if (v > hi) return hi;
-  return v;
-}
-
 // ── Metric functions ───────────────────────────────────
 
 /**
@@ -165,8 +156,12 @@ export function computeAllMetrics(
   pnls: number[],
   holdingDays: number[],
 ): BacktestMetrics {
+  // Direction is correct when the whale profited — regardless of BUY/SELL.
+  // A SELL trade that earns positive PnL means the bearish bet was right.
+  // Single allocation: `correct` and `actuallyPositive` are semantically identical
+  // (positive ROI = direction was correct).
   const actuallyPositive = returns.map(r => r > 0);
-  const correct = returns.map((_r, i) => predictedBullish[i] === actuallyPositive[i]);
+  const correct = actuallyPositive;
 
   const cumulative = pnls.reduce<number[]>((acc, p) => {
     const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
@@ -297,8 +292,9 @@ export function createWalkForwardFolds(
     const testIndices: number[] = [];
 
     for (let i = 0; i < timestamps.length; i++) {
-      if (timestamps[i] < trainEnd) trainIndices.push(i);
-      else if (timestamps[i] < testEnd) testIndices.push(i);
+      // Lower bound prevents data leakage from prior folds
+      if (timestamps[i] >= foldStart && timestamps[i] < trainEnd) trainIndices.push(i);
+      else if (timestamps[i] >= trainEnd && timestamps[i] < testEnd) testIndices.push(i);
     }
 
     if (testIndices.length >= minTestTrades && trainIndices.length >= minTestTrades) {

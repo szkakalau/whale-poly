@@ -100,12 +100,13 @@ describe('predictProbability', () => {
 // ── extractFeaturesAndLabels ────────────────────────────
 
 describe('extractFeaturesAndLabels', () => {
-  it('BUY + positive PnL → label 1', () => {
+  it('BUY + positive PnL → label 1 (2-feature)', () => {
     const rows: TrainingRow[] = [
       { whaleScore: 85, side: 'BUY', pnl: 500 },
     ];
     const { features, labels } = extractFeaturesAndLabels(rows);
-    expect(features[0]).toEqual([0.85, 1, 0]);
+    // 2-element features: [score/100, isBullish] — isBearish removed (dummy variable trap)
+    expect(features[0]).toEqual([0.85, 1]);
     expect(labels[0]).toBe(1);
   });
 
@@ -117,12 +118,13 @@ describe('extractFeaturesAndLabels', () => {
     expect(labels[0]).toBe(0);
   });
 
-  it('SELL + positive PnL → label 1', () => {
+  it('SELL + positive PnL → label 1 (2-feature)', () => {
     const rows: TrainingRow[] = [
       { whaleScore: 80, side: 'SELL', pnl: 300 },
     ];
     const { features, labels } = extractFeaturesAndLabels(rows);
-    expect(features[0]).toEqual([0.8, 0, 1]);
+    // SELL → isBullish=0 (bearish implied by absence of bullish)
+    expect(features[0]).toEqual([0.8, 0]);
     expect(labels[0]).toBe(1);
   });
 

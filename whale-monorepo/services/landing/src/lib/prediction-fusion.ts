@@ -14,6 +14,7 @@
 import type { AnalysisResult, Direction, ConfidenceLevel } from '@/lib/analysis-engine';
 export type { AnalysisResult };
 import { classifyConfidence } from '@/lib/analysis-engine';
+import { clamp } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -91,13 +92,6 @@ export type VwAnalysisInput = {
 
 // ── Helpers ────────────────────────────────────────────
 
-/** Clamp a number to [lo, hi]. */
-export function clamp(value: number, lo: number, hi: number): number {
-  if (value < lo) return lo;
-  if (value > hi) return hi;
-  return value;
-}
-
 /** Convert direction + confidence to a signed value (-100 to +100). */
 export function directionToSigned(direction: Direction, confidence: number): number {
   const c = clamp(confidence, 0, 100);
@@ -138,7 +132,7 @@ export function vwDivergenceToScore(divergence: number): number {
  *
  * Uses normalised standard deviation of signed weighted values:
  *   agreement = 1 - σ(signed_weights) / σ_max
- * where σ_max = 50 (max possible stddev when 4 signals are at extremes ±100).
+ * where σ_max = 100 (theoretical max stddev when 4 signals are at extremes ±100).
  */
 export function computeAgreement(signals: SignalComponent[]): number {
   if (signals.length <= 1) return 1.0;
@@ -157,7 +151,7 @@ export function computeAgreement(signals: SignalComponent[]): number {
     : 0;
 
   const stddev = Math.sqrt(variance);
-  const sigmaMax = 50; // theoretical max stddev for 4 signals at ±100
+  const sigmaMax = 100; // theoretical max stddev for 4 signals at ±100
 
   return clamp(1 - stddev / sigmaMax, 0, 1);
 }
@@ -255,7 +249,7 @@ export function fuseSignals(
 
   // ── Re-normalise weights when some signals are missing ──
   let totalWeight = components.reduce((sum, s) => sum + s.weight, 0);
-  if (totalWeight > 0 && totalWeight !== 1.0) {
+  if (totalWeight > 0 && Math.abs(totalWeight - 1.0) > 1e-9) {
     for (const c of components) {
       c.weight = c.weight / totalWeight;
     }

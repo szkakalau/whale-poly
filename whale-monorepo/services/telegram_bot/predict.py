@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlencode
@@ -256,8 +257,12 @@ async def predict_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     url = f"{_landing_base_url()}/api/prediction?{urlencode(params)}"
 
     try:
+        headers = {}
+        secret = getattr(settings, "internal_gateway_secret", None) or os.environ.get("INTERNAL_GATEWAY_SECRET", "")
+        if secret:
+            headers["x-internal-secret"] = secret
         async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
-            resp = await client.get(url)
+            resp = await client.get(url, headers=headers if headers else None)
             resp.raise_for_status()
             data: dict[str, Any] = resp.json()
     except httpx.HTTPStatusError as e:

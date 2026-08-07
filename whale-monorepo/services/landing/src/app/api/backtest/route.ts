@@ -49,9 +49,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => null);
 
-    if (!body || !body.startDate || !body.endDate) {
+    const isoDateRe = /^\d{4}-\d{2}-\d{2}$/;
+    const isValidDate = (s: string) => {
+      if (!isoDateRe.test(s)) return false;
+      const d = new Date(s + 'T00:00:00Z');
+      return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+    };
+    if (!body || !body.startDate || !body.endDate
+        || !isValidDate(body.startDate) || !isValidDate(body.endDate)) {
       return cached(
-        { error: 'startDate and endDate are required (ISO date strings)' },
+        { error: 'startDate and endDate are required (ISO date strings, e.g. 2026-01-15)' },
         { status: 400 },
       );
     }
