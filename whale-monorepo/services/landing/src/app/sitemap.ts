@@ -38,15 +38,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BLOG_LAUNCH = new Date('2026-07-15');     // blog listing pages (updated when new posts publish)
 
   const staticRoutes = [
+    // High-value marketing + product pages
     { route: '',              lastmod: SITE_LAUNCH, priority: 1.0, freq: 'weekly' as const },
-    { route: '/about',        lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
-    { route: '/history',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
-    { route: '/methodology',  lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
     { route: '/pricing',      lastmod: SITE_LAUNCH, priority: 0.9, freq: 'weekly' as const },
-    { route: '/polymarket-alerts-tl', lastmod: SITE_LAUNCH, priority: 0.8, freq: 'monthly' as const },
+    { route: '/subscribe',    lastmod: SITE_LAUNCH, priority: 0.9, freq: 'weekly' as const },
+    // Feature pages — updated as data refreshes
+    { route: '/history',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
     { route: '/volume-analysis', lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
+    { route: '/analyze',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'weekly' as const },
+    // Informational pages
+    { route: '/about',        lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
+    { route: '/methodology',  lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
+    { route: '/polymarket-alerts-tl', lastmod: SITE_LAUNCH, priority: 0.7, freq: 'monthly' as const },
+    // Legal — rarely changes
     { route: '/terms',        lastmod: SITE_LAUNCH, priority: 0.3, freq: 'yearly' as const },
     { route: '/privacy',      lastmod: SITE_LAUNCH, priority: 0.3, freq: 'yearly' as const },
+    // Blog listing — updated whenever new posts are published
     { route: '/blog/en',      lastmod: BLOG_LAUNCH, priority: 0.9, freq: 'daily' as const },
     { route: '/blog/zh',      lastmod: BLOG_LAUNCH, priority: 0.9, freq: 'daily' as const },
   ].map(
