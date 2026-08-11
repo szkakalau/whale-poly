@@ -11,6 +11,7 @@ import {
 } from '@/components/HomeDataComponents';
 import { WhaleLogo } from '@/components/WhaleLogo';
 import LatestBlogPosts from '@/components/LatestBlogPosts';
+import TrackPageEvent from '@/components/TrackPageEvent';
 import {
   ArrowRight, TrendingUp, Zap,
 } from 'lucide-react';
@@ -54,6 +55,7 @@ const homeJsonLd = {
 export default function Home() {
   return (
     <div className="min-h-screen selection:bg-accent selection:text-white">
+      <TrackPageEvent name="page_type_view" payload={{ page_type: 'home' }} />
       {/* JSON-LD structured data — FAQPage */}
       <script
         type="application/ld+json"

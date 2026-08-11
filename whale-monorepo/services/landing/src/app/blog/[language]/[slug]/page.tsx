@@ -8,6 +8,9 @@ import TableOfContents from '@/components/blog/TableOfContents';
 import BackToTop from '@/components/blog/BackToTop';
 import ReadingProgress from '@/components/blog/ReadingProgress';
 import ShareButtons from '@/components/blog/ShareButtons';
+import BlogCta from '@/components/blog/BlogCta';
+import ScrollDepthTracker from '@/components/blog/ScrollDepthTracker';
+import TrackPageEvent from '@/components/TrackPageEvent';
 import { safeJsonLd } from '@/components/BreadcrumbListScript';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -214,6 +217,11 @@ export default async function BlogPostPage({ params }: Props) {
     <div className="relative">
       {/* Reading progress bar */}
       <ReadingProgress />
+      <ScrollDepthTracker pageKey={post.slug} language={post.language} />
+      <TrackPageEvent
+        name="page_type_view"
+        payload={{ page_type: 'blog_post', language: post.language, slug: post.slug }}
+      />
 
       <div className="flex gap-8 lg:gap-12">
         {/* ── Main content column ── */}
@@ -361,6 +369,9 @@ export default async function BlogPostPage({ params }: Props) {
               {post.content}
             </ReactMarkdown>
           </div>
+
+          {/* ── Inline CTA (after content, before footer meta) ── */}
+          <BlogCta language={post.language as 'en' | 'zh'} />
 
           {/* Footer meta */}
           <div className="mt-16 pt-8 border-t border-border">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PRICING_PLAN_CARDS } from '@/lib/pricing-plans';
 import { Check, Shield, Sparkles } from 'lucide-react';
 import { BreadcrumbListScript } from '@/components/BreadcrumbListScript';
+import TrackPageEvent from '@/components/TrackPageEvent';
 
 const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrender.com';
 
@@ -135,6 +136,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen text-foreground selection:bg-accent selection:text-white overflow-hidden">
+      <TrackPageEvent name="page_type_view" payload={{ page_type: 'pricing' }} />
       {/* JSON-LD structured data — Product + Offer + FAQPage */}
       <script
         type="application/ld+json"

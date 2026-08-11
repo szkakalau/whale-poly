@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import TagFilter from './TagFilter';
+import BlogCta from '@/components/blog/BlogCta';
+import ScrollDepthTracker from '@/components/blog/ScrollDepthTracker';
+import TrackPageEvent from '@/components/TrackPageEvent';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600; // ISR at runtime, no build-time DB access needed (PF-H7)
@@ -181,6 +184,11 @@ export default async function BlogListPage({ params, searchParams }: Props) {
 
   return (
     <div className="py-12 sm:py-20">
+      <ScrollDepthTracker pageKey={`blog-list-${language}`} language={language} />
+      <TrackPageEvent
+        name="page_type_view"
+        payload={{ page_type: 'blog_list', language }}
+      />
       {/* JSON-LD structured data — BreadcrumbList */}
       <script
         type="application/ld+json"
@@ -260,6 +268,13 @@ export default async function BlogListPage({ params, searchParams }: Props) {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* ── Inline CTA (between posts grid and pagination) ── */}
+      {posts.length > 0 && (
+        <div className="mt-10">
+          <BlogCta language={language as 'en' | 'zh'} />
         </div>
       )}
 
