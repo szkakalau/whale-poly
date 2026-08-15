@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import httpx
 from redis.asyncio import Redis
@@ -183,40 +183,6 @@ async def generate_code_callback(update: Update, _: ContextTypes.DEFAULT_TYPE) -
     "The code will be auto-filled for you."
   )
   await update.callback_query.edit_message_text(msg, reply_markup=_continue_keyboard(code=code))
-
-
-async def promote(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-  if not await _ensure_private(update):
-    if update.effective_message:
-      await update.effective_message.reply_text("This bot only works in private chats.")
-    return
-
-  telegram_id = str(update.effective_user.id)
-  now = datetime.now(timezone.utc)
-  end_date = now + timedelta(days=7)
-
-  async with SessionLocal() as session:
-    sub_id = f"manual_promo_{telegram_id}"
-
-    sub = await session.get(Subscription, sub_id)
-    if sub:
-      sub.status = "active"
-      sub.current_period_end = end_date
-      sub.telegram_id = telegram_id
-    else:
-      sub = Subscription(
-        id=sub_id,
-        telegram_id=telegram_id,
-        stripe_customer_id=f"promo_{telegram_id}",
-        stripe_subscription_id=f"promo_sub_{telegram_id}",
-        status="active",
-        current_period_end=end_date,
-      )
-      session.add(sub)
-
-    await session.commit()
-
-  await update.effective_message.reply_text(f"✅ Access granted for 7 days.\nExpires: {end_date.isoformat()}")
 
 
 async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
