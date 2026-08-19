@@ -189,10 +189,13 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
   now = datetime.now(timezone.utc)
   since = now - timedelta(days=30)
 
-  # 30d realized PnL + resolved win rate from whale_trade_history.
+  # Single aggregation over whale_trade_history (indexed by timestamp via
+  # migration 0019). The previous version joined whale_trades × trades_raw
+  # and grouped by 6 columns — a multi-second full scan on production data.
   wth_agg = (
     select(
       WhaleTradeHistory.wallet_address.label("w_addr"),
+      func.coalesce(func.sum(WhaleTradeHistory.trade_usd), 0).label("volume_30d"),
       func.coalesce(func.sum(WhaleTradeHistory.pnl), 0).label("pnl_30d"),
       func.coalesce(
         func.sum(
@@ -223,17 +226,14 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
       select(
         WhaleScore.wallet_address,
         WhaleScore.final_score.label("whale_score"),
-        func.coalesce(func.sum(TradeRaw.amount * TradeRaw.price), 0).label("volume_30d"),
+        wth_agg.c.volume_30d,
         wth_agg.c.pnl_30d,
         wth_agg.c.wins_30d,
         wth_agg.c.resolved_30d,
       )
-      .join(WhaleTrade, WhaleTrade.wallet_address == WhaleScore.wallet_address)
-      .join(TradeRaw, TradeRaw.trade_id == WhaleTrade.trade_id)
-      .outerjoin(wth_agg, wth_agg.c.w_addr == WhaleScore.wallet_address)
-      .where(TradeRaw.timestamp >= since)
-      .group_by(WhaleScore.wallet_address, WhaleScore.final_score, wth_agg.c.pnl_30d, wth_agg.c.wins_30d, wth_agg.c.resolved_30d)
-      .order_by(WhaleScore.final_score.desc(), func.sum(TradeRaw.amount * TradeRaw.price).desc())
+      .join(wth_agg, wth_agg.c.w_addr == WhaleScore.wallet_address)
+      .where(wth_agg.c.volume_30d > 0)
+      .order_by(WhaleScore.final_score.desc(), wth_agg.c.volume_30d.desc())
       .limit(limit)
     )
   ).all()
