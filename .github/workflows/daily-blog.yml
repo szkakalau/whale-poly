@@ -28,7 +28,7 @@ jobs:
     - name: Retrain prediction probability model
       run: |
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-          "https://www.sightwhale.com/api/prediction/train?days=30" \
+          "https://www.sightwhale.com/api/prediction/train?days=90" \
           -H "x-admin-token: ${{ secrets.ADMIN_TOKEN }}")
         HTTP_CODE=$(echo "$RESPONSE" | tail -1)
         BODY=$(echo "$RESPONSE" | sed '$d')
