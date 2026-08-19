@@ -3,6 +3,12 @@ import { Plan } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import {
+  PRICING_PRO_MONTHLY,
+  PRICING_PRO_YEARLY,
+  PRICING_ELITE_MONTHLY,
+  PRICING_ELITE_YEARLY,
+} from '@/lib/pricing-plans';
+import {
   hasGooglePlayVerificationConfig,
   isProductionEnvironment,
   verifyPlaySubscription,
@@ -17,11 +23,11 @@ type BillingSyncBody = {
   isAutoRenewing?: unknown;
 };
 
-const PRODUCT_PLAN_MAP: Record<string, { plan: Plan; price: number }> = {
-  pro_monthly: { plan: Plan.PRO, price: 20 },
-  pro_yearly: { plan: Plan.PRO, price: 200 },
-  elite_monthly: { plan: Plan.ELITE, price: 99 },
-  elite_yearly: { plan: Plan.ELITE, price: 999 },
+export const PRODUCT_PLAN_MAP: Record<string, { plan: Plan; price: number }> = {
+  pro_monthly: { plan: Plan.PRO, price: PRICING_PRO_MONTHLY },
+  pro_yearly: { plan: Plan.PRO, price: PRICING_PRO_YEARLY },
+  elite_monthly: { plan: Plan.ELITE, price: PRICING_ELITE_MONTHLY },
+  elite_yearly: { plan: Plan.ELITE, price: PRICING_ELITE_YEARLY },
 };
 
 function toSafeString(value: unknown): string {

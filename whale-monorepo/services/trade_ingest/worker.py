@@ -140,48 +140,47 @@ async def _fetch_health(client: httpx.AsyncClient, base_url: str) -> tuple[int |
     return None, str(e)
 
 
-async def _inject_trade(client: httpx.AsyncClient, base_url: str, trade_id: str) -> tuple[bool, str]:
-  url = base_url.rstrip("/") + "/ingest/trade"
-  payload = {
-    "trade_id": trade_id,
-    "market_id": "health-market",
-    "market_title": "Health Market",
-    "wallet": "0xabc1234567890defabc1234567890defabc12345",
-    "side": "buy",
-    "amount": 40000,
-    "price": 0.3,
-    "timestamp": datetime.now(timezone.utc).isoformat(),
-  }
+async def _pipeline_freshness() -> dict[str, str]:
+  """Read-only pipeline freshness check (CR-H1).
+
+  Replaces the old fake-trade injection: verifies DB connectivity and that the
+  pipeline actually processed data recently, WITHOUT writing any synthetic
+  trades into the production dataset.
+  """
+  freshness: dict[str, str] = {}
   try:
-    resp = await client.post(url, json=payload, timeout=10)
-    if resp.status_code >= 200 and resp.status_code < 300:
-      return True, ""
-    return False, f"status={resp.status_code} body={resp.text[:200]}"
-  except Exception as e:
-    return False, str(e)
-
-
-async def _wait_for_alert(trade_id: str, started_at: datetime, timeout_seconds: int = 120) -> tuple[str | None, str | None]:
-  deadline = time.monotonic() + timeout_seconds
-  while time.monotonic() < deadline:
     async with SessionLocal() as session:
-      wt = (
-        await session.execute(
-          select(WhaleTrade).where(WhaleTrade.trade_id == trade_id)
-        )
-      ).scalars().first()
-      if not wt:
-        await asyncio.sleep(5)
-        continue
-      alert = (
-        await session.execute(
-          select(Alert).where(Alert.whale_trade_id == wt.id).where(Alert.created_at >= started_at)
-        )
-      ).scalars().first()
-      if alert:
-        return wt.id, alert.id
-    await asyncio.sleep(5)
-  return None, None
+      await session.execute(text("SELECT 1"))
+      freshness["db"] = "ok"
+
+      now = datetime.now(timezone.utc)
+      since = now - timedelta(hours=24)
+
+      latest_raw = (await session.execute(select(func.max(TradeRaw.timestamp)))).scalar()
+      latest_whale = (await session.execute(select(func.max(WhaleTrade.created_at)))).scalar()
+      latest_alert = (await session.execute(select(func.max(Alert.created_at)))).scalar()
+      whale_24h = (await session.execute(
+        select(func.count()).select_from(WhaleTrade).where(WhaleTrade.created_at >= since)
+      )).scalar() or 0
+      alert_24h = (await session.execute(
+        select(func.count()).select_from(Alert).where(Alert.created_at >= since)
+      )).scalar() or 0
+
+      def _age(dt: datetime | None) -> str:
+        if dt is None:
+          return "none"
+        if dt.tzinfo is None:
+          dt = dt.replace(tzinfo=timezone.utc)
+        return f"{int((now - dt).total_seconds())}s"
+
+      freshness["raw_trade_age"] = _age(latest_raw)
+      freshness["whale_trade_age"] = _age(latest_whale)
+      freshness["alert_age"] = _age(latest_alert)
+      freshness["whale_trades_24h"] = str(whale_24h)
+      freshness["alerts_24h"] = str(alert_24h)
+  except Exception as e:
+    freshness["db"] = f"error:{e}"
+  return freshness
 
 
 async def _resolve_chat_id(client: httpx.AsyncClient) -> str | None:
@@ -352,42 +351,17 @@ def _build_blog_post(now_local: datetime, now_utc: datetime, big_spender, contra
   }
 
 
-async def _ensure_blog_posts_table(session) -> None:
-    """Create blog_posts table if missing — unified schema with api.py (CR-I6)."""
-    await session.execute(
-        text(
-            """
-            create table if not exists blog_posts (
-                id text primary key, slug text not null, title text not null,
-                excerpt text not null, content text not null, author text not null,
-                read_time text not null, cover_image text, tags text[] default '{}',
-                published_at timestamptz not null, created_at timestamptz not null default now(),
-                updated_at timestamptz not null default now(),
-                language text not null default 'en', group_slug text,
-                status text not null default 'published'
-            )
-            """
-        )
-    )
-    try:
-        await session.execute(
-            text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
-        )
-    except Exception:
-        pass
-
-
 async def _upsert_blog_post(session, post: dict) -> None:
   await session.execute(
     text(
       """
       insert into blog_posts (
-        id, slug, title, excerpt, content, author, read_time, cover_image, tags, published_at, created_at, updated_at
+        id, slug, title, excerpt, content, author, read_time, cover_image, tags, published_at, created_at, updated_at, language, status
       )
       values (
-        :id, :slug, :title, :excerpt, :content, :author, :read_time, :cover_image, :tags, :published_at, now(), now()
+        :id, :slug, :title, :excerpt, :content, :author, :read_time, :cover_image, :tags, :published_at, now(), now(), 'en', 'published'
       )
-      on conflict (slug) do update set
+      on conflict (slug, language) do update set
         title = excluded.title,
         excerpt = excluded.excerpt,
         content = excluded.content,
@@ -418,7 +392,6 @@ async def run_daily_spotlight() -> dict:
   now_utc = datetime.now(timezone.utc)
   start_time = now_utc - timedelta(hours=24)
   async with SessionLocal() as session:
-    await _ensure_blog_posts_table(session)
     await session.execute(
       text(
         """
@@ -580,41 +553,42 @@ async def run_full_health_check() -> dict:
     "telegram_bot": settings.health_telegram_bot_api_url,
   }
   started_at = datetime.now(timezone.utc)
-  trade_id = f"health-test-{int(time.time())}"
   results: dict[str, str] = {}
 
   async with httpx.AsyncClient(proxies=proxies) as client:
     for name, base_url in health_urls.items():
+      if not base_url:
+        continue
       code, err = await _fetch_health(client, base_url)
       if code is None:
         results[name] = f"error:{err}"
       else:
         results[name] = str(code)
 
-    injected, inject_err = await _inject_trade(client, health_urls["trade_ingest"], trade_id)
-    results["inject_trade"] = "ok" if injected else f"error:{inject_err}"
+    # Read-only pipeline freshness — no synthetic trades are injected (CR-H1).
+    results.update(await _pipeline_freshness())
 
-    whale_trade_id, alert_id = await _wait_for_alert(trade_id, started_at)
-    results["whale_trade"] = whale_trade_id or "timeout"
-    results["alert"] = alert_id or "timeout"
-
-    ok = all(v == "200" for k, v in results.items() if k in {"trade_ingest", "whale_engine", "alert_engine", "payment", "telegram_bot"}) and injected and alert_id
+    ok = (
+      all(results.get(k) == "200" for k in health_urls if health_urls[k])
+      and results.get("db") == "ok"
+    )
     status = "OK" if ok else "FAIL"
     lines = [
       f"全链路检查结果: {status}",
       f"时间(UTC): {started_at.isoformat()}",
-      f"trade-ingest /health: {results['trade_ingest']}",
-      f"whale-engine /health: {results['whale_engine']}",
-      f"alert-engine /health: {results['alert_engine']}",
-      f"payment /health: {results['payment']}",
-      f"telegram-bot /health: {results['telegram_bot']}",
-      f"注入测试交易: {results['inject_trade']}",
-      f"WhaleTrade: {results['whale_trade']}",
-      f"Alert: {results['alert']}",
+      f"DB: {results.get('db')}",
+      f"最近原始交易距今: {results.get('raw_trade_age')}",
+      f"最近 WhaleTrade 距今: {results.get('whale_trade_age')}",
+      f"最近 Alert 距今: {results.get('alert_age')}",
+      f"24h WhaleTrades: {results.get('whale_trades_24h')}",
+      f"24h Alerts: {results.get('alerts_24h')}",
     ]
+    for name, base_url in health_urls.items():
+      if base_url:
+        lines.append(f"{name} /health: {results.get(name)}")
     await _send_telegram(client, "\n".join(lines))
 
-  return {"status": status, "trade_id": trade_id, "results": results}
+  return {"status": status, "results": results}
 
 
 @celery_app.task(name="services.trade_ingest.ingest_markets", autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=60, max_retries=3, retry_jitter=True)

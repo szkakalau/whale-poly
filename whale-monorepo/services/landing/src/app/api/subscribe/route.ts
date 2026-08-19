@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
     }
 
-    const validPlans = new Set(['pro', 'elite', 'pro_yearly', 'elite_yearly', 'free']);
+    const validPlans = new Set(['pro', 'elite', 'pro_yearly', 'elite_yearly']);
     if (!validPlans.has(plan)) {
       return NextResponse.json({ detail: 'invalid plan', allowed: Array.from(validPlans) }, { status: 400 });
     }

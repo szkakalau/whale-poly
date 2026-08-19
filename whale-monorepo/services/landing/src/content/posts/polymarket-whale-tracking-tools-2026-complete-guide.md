@@ -80,7 +80,7 @@ The scoring model isn't just "big trade = alert." A $5,000 bet from a wallet wit
 **The wallet clustering problem:**
 One thing SightWhale does that most tools don't is attempt to cluster wallets. A single trader often controls 10-50+ Polymarket wallets. If you don't cluster them, that trader's $500k position split across 30 wallets looks like 30 small traders — and you miss the signal entirely.
 
-**Pricing:** Free tier (limited), Pro ($49/mo), Elite ($99/mo). The free tier shows you the concept. The paid tiers make it actionable.
+**Pricing:** Free tier (limited), Pro ($29/mo), Elite ($59/mo). The free tier shows you the concept. The paid tiers make it actionable.
 
 **Best for:** Traders who want scored, filtered signals they can act on in under 60 seconds.
 

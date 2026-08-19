@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimitByIp } from '@/lib/rate-limiter';
 import { mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -35,6 +36,18 @@ async function persistFallback(payload: {
 }
 
 export async function POST(req: Request) {
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  const realIp = req.headers.get('x-real-ip');
+  const ip = forwardedFor?.split(',')[0]?.trim() || realIp?.trim() || 'unknown';
+
+  const rateLimit = checkRateLimitByIp(ip);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'rate_limited', message: rateLimit.message },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSec) } },
+    );
+  }
+
   let body: WhaleWaitlistPayload = {};
   try {
     body = (await req.json()) as WhaleWaitlistPayload;

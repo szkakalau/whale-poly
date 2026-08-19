@@ -44,31 +44,9 @@ async def lifespan(app: FastAPI):
     _async_utils._redis = memory_redis  # type: ignore[attr-defined]
     logger.info("inmemory_redis_initialized")
 
-    # ── Ensure blog_posts table exists ──────────────────────
-    from shared.db import SessionLocal
-    from sqlalchemy import text
-    try:
-        async with SessionLocal() as session:
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS blog_posts (
-                    id text primary key, slug text not null, title text not null,
-                    excerpt text not null, content text not null, author text not null,
-                    read_time text not null, cover_image text, tags text[] default '{}',
-                    published_at timestamptz not null, created_at timestamptz not null default now(),
-                    updated_at timestamptz not null default now(),
-                    language text not null default 'en', group_slug text,
-                    status text not null default 'published'
-                )
-            """))
-            try:
-                await session.execute(text(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_slug_language_idx ON blog_posts (slug, language)"
-                ))
-            except Exception:
-                pass
-            await session.commit()
-    except Exception:
-        logger.exception("blog_posts_table_init_failed")
+    # NOTE: blog_posts schema is owned by Alembic (migration 0018). The
+    # entrypoint runs `alembic upgrade head` before uvicorn, so no runtime
+    # DDL here (CR-S1).
 
     # ── Initialize Telegram bot ─────────────────────────────
     stop = asyncio.Event()
@@ -91,6 +69,15 @@ async def lifespan(app: FastAPI):
         application=application if telegram_ready else None,
         stop=stop if telegram_ready else None,
     )
+
+    # ── Reconcile lost in-memory queue events after restart (CR-R1) ──
+    # The in-memory queues die with the previous process; re-enqueue whatever
+    # the DB proves is still outstanding. Idempotent by unique constraints.
+    try:
+        from services.unified.reconcile import reconcile_pipeline_on_startup
+        await reconcile_pipeline_on_startup(memory_redis)
+    except Exception:
+        logger.exception("pipeline_reconciliation_failed")
 
     # Store references for access in request handlers
     app.state.memory_redis = memory_redis

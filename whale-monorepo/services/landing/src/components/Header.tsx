@@ -15,6 +15,7 @@ const navLinks = [
   { href: '/analyze', label: 'Analyze', badge: 'NEW' },
   { href: '/volume-analysis', label: 'VW', badge: 'FREE' },
   { href: '/history', label: 'History' },
+  { href: '/whales', label: 'Whales' },
   { href: '/blog', label: 'Blog' },
   { href: '/pricing', label: 'Pricing' },
 ];

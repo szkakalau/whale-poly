@@ -24,41 +24,18 @@ async def _get_redis() -> Redis:
     return await _get_shared_redis()
 
 
-async def _ensure_blog_posts_table(session) -> None:
-    """Create blog_posts table and index at startup — NOT in the request path (CR-C6)."""
-    await session.execute(
-        text(
-            """create table if not exists blog_posts (
-                id text primary key, slug text not null, title text not null,
-                excerpt text not null, content text not null, author text not null,
-                read_time text not null, cover_image text, tags text[] default '{}',
-                published_at timestamptz not null, created_at timestamptz not null default now(),
-                updated_at timestamptz not null default now(),
-                language text not null default 'en', group_slug text,
-                status text not null default 'published'
-            )"""
-        )
-    )
-    try:
-        await session.execute(
-            text("create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)")
-        )
-    except Exception:
-        pass  # index may already exist from parallel startup
-    await session.commit()
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ensure blog_posts table + connect Redis (CR-C1, CR-C6).
+    """Startup: connect Redis (CR-C1, CR-C6).
+
+    blog_posts schema is owned by Alembic (migration 0018) — no runtime DDL
+    here (CR-S1).
 
     In unified mode, this lifespan does NOT run (FastAPI mounted apps
     don't execute their lifespans). The unified app handles initialization.
     """
     from shared.async_utils import get_redis as _get_shared_redis
     redis = await _get_shared_redis()
-    async with SessionLocal() as session:
-        await _ensure_blog_posts_table(session)
     try:
         yield
     finally:

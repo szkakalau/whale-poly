@@ -62,7 +62,45 @@ This repo includes a Render Blueprint file at [render.yaml](file:///Users/castro
    - `POLYMARKET_DATA_API_MARKETS_URL` (optional; defaults exist in `.env.example`)
 5) Run migrations once:
    - Render → Shell (any python web service) → `cd /app && alembic upgrade head`
-6) Seed plans (monthly/yearly) in Postgres
+   - Unified deployments run `alembic upgrade head` automatically at startup
+     (`docker/entrypoint-unified.sh`); migration `0018` consolidates the
+     `blog_posts` schema (no runtime DDL in app code).
+6) Seed plans (monthly/yearly/elite_monthly/elite_yearly) in Postgres
+
+### Landing (Vercel) migrations
+
+The landing app owns its own Prisma schema. After deploying schema changes
+(e.g. the `prediction_models` table added in `20260810_add_prediction_models`),
+apply them from any environment with `DATABASE_URL`:
+
+```bash
+cd services/landing
+npx prisma migrate deploy
+```
+
+### Prediction model retraining
+
+The logistic-regression probability model (used by `/api/prediction`) is
+trained automatically on demand and persisted to `prediction_models`
+(versioned). A daily GitHub Action (`daily-blog.yml`) also retrains it via:
+
+```
+POST https://www.sightwhale.com/api/prediction/train?days=30
+Header: x-admin-token: <ADMIN_TOKEN>
+```
+
+Coefficients are public: `GET https://www.sightwhale.com/api/prediction/model`.
+
+### Health checks (no synthetic trades)
+
+Health checks are read-only: they verify each service's `/health` endpoint,
+DB connectivity, and pipeline freshness (recent raw trades / whale_trades /
+alerts). They no longer inject fake `health-market` trades. If the legacy
+injector ever polluted your database, clean it with:
+
+```bash
+python scripts/cleanup_health_trades.py --apply
+```
 
 ### No Stripe yet (mock mode)
 

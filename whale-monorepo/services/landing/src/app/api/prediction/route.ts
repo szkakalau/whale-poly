@@ -28,6 +28,12 @@ import {
   type ProbabilityModel,
   type TrainingRow,
 } from '@/lib/prediction-model';
+import {
+  loadPersistedModel,
+  savePersistedModel,
+  fetchTierWinRates,
+  type TierWinRates,
+} from '@/lib/prediction-model-store';
 import { loadBacktestData } from '@/lib/backtesting/engine';
 
 const CACHE_HEADERS = {
@@ -47,8 +53,21 @@ let _cachedModel: ProbabilityModel | null = null;
 let _modelTrainedAt = 0; // epoch ms
 let _trainingPromise: Promise<ProbabilityModel | null> | null = null; // dedup concurrent training
 let _cacheRetryAfter = 0; // epoch ms — independent retry backoff (fixes backoff when cachedModel is null)
-const MODEL_TTL_MS = 60 * 60 * 1000; // 60 minutes
+const MODEL_TTL_MS = 24 * 60 * 60 * 1000; // persisted models are valid for 24h
 const MODEL_RETRY_MS = 5 * 60 * 1000;  // 5 minutes (when data too sparse or training fails)
+
+let _tierRatesCache: { rates: TierWinRates; at: number } | null = null;
+
+/** Live calibration win rates, cached 5 minutes. */
+async function getTierWinRates(): Promise<TierWinRates> {
+  const now = Date.now();
+  if (_tierRatesCache && now - _tierRatesCache.at < 5 * 60 * 1000) {
+    return _tierRatesCache.rates;
+  }
+  const rates = await fetchTierWinRates();
+  _tierRatesCache = { rates, at: now };
+  return rates;
+}
 
 async function getModel(): Promise<ProbabilityModel | null> {
   const now = Date.now();
@@ -67,8 +86,22 @@ async function getModel(): Promise<ProbabilityModel | null> {
   if (_trainingPromise) return _trainingPromise;
 
   _trainingPromise = (async (): Promise<ProbabilityModel | null> => {
+    // 1) Try the persisted model first (survives cold starts, auditable).
     try {
-      // Train on last 30 days of backtest data
+      const persisted = await loadPersistedModel();
+      if (persisted) {
+        _cachedModel = persisted;
+        _modelTrainedAt = new Date(persisted.trainedAt).getTime();
+        if (persisted.sampleSize > 0 && now - _modelTrainedAt < MODEL_TTL_MS) {
+          return _cachedModel; // fresh enough — no retraining needed
+        }
+      }
+    } catch (err) {
+      console.error('getModel: loadPersistedModel failed', err);
+    }
+
+    try {
+      // 2) Train on last 30 days of backtest data and persist the result.
       const endDate = new Date().toISOString().slice(0, 10);
       const startDate = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
 
@@ -87,17 +120,21 @@ async function getModel(): Promise<ProbabilityModel | null> {
       }));
 
       if (trainingRows.length >= 20) {
-        const completedAt = Date.now();
-        _cachedModel = trainModel(trainingRows);
-        _modelTrainedAt = completedAt;
+        const trained = trainModel(trainingRows);
+        _cachedModel = trained;
+        _modelTrainedAt = Date.now();
+        try {
+          const version = await savePersistedModel(trained);
+          console.log(`[prediction] model v${version} persisted (n=${trained.sampleSize}, acc=${trained.accuracy.toFixed(3)})`);
+        } catch (err) {
+          console.error('getModel: savePersistedModel failed', err);
+        }
       } else {
-        _cachedModel = null;
-        // Short retry window — data may arrive soon
+        // Keep whatever persisted model we loaded; retry later.
         _cacheRetryAfter = Date.now() + MODEL_RETRY_MS;
       }
     } catch (err) {
       console.error('getModel: training failed', err);
-      // Keep old model if one exists; enforce retry cooldown to prevent storm
       _cacheRetryAfter = Date.now() + MODEL_RETRY_MS;
     }
 
@@ -112,11 +149,12 @@ async function getModel(): Promise<ProbabilityModel | null> {
 }
 
 /** Attach calibrated probability to a fusion result. */
-function attachProbability(
+async function attachProbability(
   prediction: FusionResult,
   model: ProbabilityModel | null,
   plan: string,
-): FusionResult {
+): Promise<void> {
+  const tierRates = await getTierWinRates();
   if (model && (plan === 'PRO' || plan === 'ELITE')) {
     prediction.probability = predictProbability(
       prediction.compositeScore,
@@ -124,13 +162,13 @@ function attachProbability(
       model,
     );
   } else {
-    // Free tier or model not ready: use tier lookup
+    // Free tier or model not ready: live-calibration tier lookup
     prediction.probability = tierProbability(
       prediction.compositeScore,
       prediction.direction,
+      tierRates,
     );
   }
-  return prediction;
 }
 
 export async function GET(request: NextRequest) {
@@ -219,14 +257,14 @@ export async function GET(request: NextRequest) {
 
       // Attach calibrated probability (logistic regression for Pro/Elite)
       const model = await getModel();
-      attachProbability(prediction, model, plan);
+      await attachProbability(prediction, model, plan);
 
       return cached({ prediction, tier: plan });
     }
 
     // Free tier: basic fusion
     const prediction = fuseBasicSignals(marketSlug, analysis);
-    attachProbability(prediction, null, 'free');
+    await attachProbability(prediction, null, 'free');
     return cached({
       prediction,
       tier: 'free',

@@ -235,3 +235,18 @@ model MarketVwSnapshot {
   @@unique([marketId, snapshotAt])
   @@map("market_vw_snapshots")
 }
+
+model PredictionModel {
+  id          Int      @id @default(autoincrement())
+  version     Int      @default(1)
+  intercept   Float
+  scoreCoef   Float    @map("score_coef")
+  bullishCoef Float    @map("bullish_coef")
+  sampleSize  Int      @map("sample_size")
+  accuracy    Float
+  trainedAt   DateTime @map("trained_at") @db.Timestamptz()
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([trainedAt])
+  @@map("prediction_models")
+}

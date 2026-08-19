@@ -44,6 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { route: '/subscribe',    lastmod: SITE_LAUNCH, priority: 0.9, freq: 'weekly' as const },
     // Feature pages — updated as data refreshes
     { route: '/history',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
+    { route: '/whales',       lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
+    { route: '/calibration',  lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
     { route: '/volume-analysis', lastmod: SITE_LAUNCH, priority: 0.8, freq: 'daily' as const },
     { route: '/analyze',      lastmod: SITE_LAUNCH, priority: 0.8, freq: 'weekly' as const },
     // Informational pages
