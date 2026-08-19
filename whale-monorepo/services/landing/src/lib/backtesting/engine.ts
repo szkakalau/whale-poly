@@ -94,7 +94,8 @@ export async function loadBacktestData(
           wth.trade_usd::float AS trade_usd,
           wth.timestamp AS settled_at
         FROM alerts a
-        JOIN whale_trade_history wth ON wth.trade_id = a.whale_trade_id
+        JOIN whale_trades wt2 ON wt2.id = a.whale_trade_id
+        JOIN whale_trade_history wth ON wth.trade_id = wt2.trade_id
         LEFT JOIN markets m ON m.id = a.market_id
         WHERE a.created_at >= ${startDate}
           AND a.created_at < ${endDate}
@@ -253,8 +254,8 @@ export async function runBasicBacktest(
         wth.pnl::float8 AS "computedPnlUsd",
         CASE WHEN wth.trade_usd > 0 THEN wth.pnl::float8 / wth.trade_usd::float8 ELSE NULL END AS "roiPct"
       FROM alerts a
-      JOIN whale_trade_history wth ON wth.trade_id = a.whale_trade_id
-      LEFT JOIN whale_trades wt ON wt.trade_id = wth.trade_id
+      JOIN whale_trades wt ON wt.id = a.whale_trade_id
+      JOIN whale_trade_history wth ON wth.trade_id = wt.trade_id
       LEFT JOIN trades_raw tr ON tr.trade_id = wth.trade_id
       LEFT JOIN markets m ON m.id = a.market_id
       WHERE a.created_at >= ${new Date(startDate)}
