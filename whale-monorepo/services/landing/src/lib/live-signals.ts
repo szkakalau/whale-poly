@@ -66,6 +66,20 @@ async function fetchJsonWithTimeout<T>(url: string, init: RequestInit, timeoutMs
   }
 }
 
+/**
+ * Reject a promise after `ms` — used to bound direct-DB queries that can
+ * stall page renders (build-time prerender or a loaded DB) (PF-B1).
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 /** Public Polymarket leaderboard — used when DB has no whales or whale-engine returns no trades for profile wallets. */
 async function fetchPolymarketVolumeLeaderWallets(limit: number): Promise<string[]> {
   const url = `https://data-api.polymarket.com/v1/leaderboard?category=OVERALL&timePeriod=MONTH&orderBy=VOL&limit=${limit}`;
@@ -280,17 +294,20 @@ async function loadLiveSignalsUncached(): Promise<LiveSignal[]> {
   try {
     // Primary: direct DB query with a 2-hour window — LIVE PREVIEW should surface
     // recent signals. Falls back to unlimited lookback if the window is too sparse.
-    let signals = await loadSignalsFromWhaleTradesJoin(2, 5);
+    // Hard timeout: the DB is reachable from Vercel now, but under load (0.1-CPU
+    // instance) or during build-time prerender the query can stall the page —
+    // fail fast and fall back instead (PF-B1).
+    let signals = await withTimeout(loadSignalsFromWhaleTradesJoin(2, 5), 8_000);
 
     // Fallback: whale-engine API by top wallets (works when DB isn't populated yet).
     if (signals.length === 0) {
-      const primary = await getWalletAddressesFromProfiles();
+      const primary = await withTimeout(getWalletAddressesFromProfiles(), 5_000);
       signals = await buildSignalsFromWallets(primary);
     }
 
     if (signals.length === 0) {
       const fallback = await fetchPolymarketVolumeLeaderWallets(20);
-      const merged = [...new Set([...(await getWalletAddressesFromProfiles()), ...fallback])];
+      const merged = [...new Set([...(await withTimeout(getWalletAddressesFromProfiles(), 5_000)), ...fallback])];
       signals = await buildSignalsFromWallets(merged.slice(0, 24));
     }
 

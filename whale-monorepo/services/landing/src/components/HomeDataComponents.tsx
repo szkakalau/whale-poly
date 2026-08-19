@@ -16,7 +16,13 @@ const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrende
 
 const loadHomeStats = unstable_cache(
   async () => {
-    const res = await fetch(`${API_BASE}/stats/home`);
+    // Hard 10s timeout: /stats/home runs a heavy aggregate on the 0.1-CPU
+    // Postgres. Without a bound, build-time prerender (or a loaded DB) can
+    // stall the homepage past Next's 60s page budget (PF-B1). Callers catch
+    // and render fallbacks.
+    const res = await fetch(`${API_BASE}/stats/home`, {
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) throw new Error(`Stats API ${res.status}`);
     return res.json() as Promise<{
       historyTotal: number;

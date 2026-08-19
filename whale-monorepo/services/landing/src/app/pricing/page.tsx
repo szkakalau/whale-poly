@@ -10,7 +10,9 @@ const API_BASE = process.env.TRADE_INGEST_API_URL || 'https://sightwhale.onrende
 
 const loadCachedPricingStats = unstable_cache(
   async () => {
-    const res = await fetch(`${API_BASE}/stats/pricing`);
+    const res = await fetch(`${API_BASE}/stats/pricing`, {
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) throw new Error(`Pricing stats API ${res.status}`);
     return res.json() as Promise<{ total: number; avgSize: number | null }>;
   },
