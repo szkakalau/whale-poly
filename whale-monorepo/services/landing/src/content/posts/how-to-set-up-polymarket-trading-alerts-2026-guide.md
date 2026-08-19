@@ -137,7 +137,7 @@ Polymarket API → Trade Ingestion → Whale Engine (scoring)
 |---|---|---|---|
 | **Free** | Smart Money alerts on top-50 whale wallets, daily summary | ~60s | $0 |
 | **Pro** | All whale tiers, category-filtered (politics/crypto/sports/etc.), 5-min cooldown control | ~30s | $29/mo |
-| **Elite** | Raw feed with <5s latency, wallet-level customization, custom alert logic, priority queue | <5s | $99/mo |
+| **Elite** | Raw feed with <5s latency, wallet-level customization, custom alert logic, priority queue | <5s | $59/mo |
 
 ### How to Set It Up (Takes 3 Minutes)
 
@@ -146,7 +146,7 @@ Polymarket API → Trade Ingestion → Whale Engine (scoring)
 3. Choose your alert preferences — which whale tiers, which market categories, what minimum notional
 4. You'll receive a welcome alert within 60 seconds. Done.
 
-No code. No VPS. No API keys to manage. The pipeline runs on SightWhale's infrastructure, and you get alerts delivered to Telegram with the same formatting traders pay $99/month for — the Free tier just has fewer alerts and a slight delay.
+No code. No VPS. No API keys to manage. The pipeline runs on SightWhale's infrastructure, and you get alerts delivered to Telegram with the same formatting traders pay $59/month for — the Free tier just has fewer alerts and a slight delay.
 
 ---
 
@@ -216,7 +216,7 @@ asyncio.run(watch_events())
 
 | Criterion | DIY Script | SightWhale | Webhooks | On-Chain RPC |
 |---|---|---|---|---|
-| **Cost** | $0 + hosting | Free–$99/mo | $0 + hosting | $0–$50/mo |
+| **Cost** | $0 + hosting | Free–$59/mo | $0 + hosting | $0–$50/mo |
 | **Setup time** | 2–4 hours | 3 minutes | 4–8 hours | 8–20 hours |
 | **Latency** | 30–60s | 5–60s | 2–10s | <2s |
 | **Wallet scoring** | ❌ Build it yourself | ✅ Built-in | ❌ Build it yourself | ❌ Build it yourself |

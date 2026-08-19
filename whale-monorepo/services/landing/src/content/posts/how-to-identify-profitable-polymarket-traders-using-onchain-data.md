@@ -180,7 +180,7 @@ SightWhale runs this pipeline as a managed service:
 - **Alert cooldown** system that prevents notification spam while ensuring no signal is lost
 - **Plan tiers** (Free/Pro/Elite) with increasing signal volume and delivery speed
 
-The trade-off is cost vs. time. Building this yourself takes weeks or months. Using a service costs $29–$99/month depending on the plan tier.
+The trade-off is cost vs. time. Building this yourself takes weeks or months. Using a service costs $29–$59/month depending on the plan tier.
 
 ---
 

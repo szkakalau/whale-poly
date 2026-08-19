@@ -24,6 +24,8 @@ export const PRICING_PLAN_CARDS: PricingPlanCard[] = [
     features: [
       'All real-time signals (in-app)',
       'All 70+ Whale Score signals',
+      'Fusion prediction score (whale + flow + VW)',
+      'Per-signal breakdown',
       'Optional Telegram (~30s)',
       'Higher follow & collection limits vs Free',
     ],
@@ -40,6 +42,9 @@ export const PRICING_PLAN_CARDS: PricingPlanCard[] = [
     features: [
       'Everything in Pro',
       '80+ high-conviction signals where applicable',
+      'Full backtesting reports',
+      'Market correlation analysis',
+      'Kelly position sizing',
       'Optional Telegram (~10s priority)',
       'Largest follow & collection limits',
     ],
@@ -49,4 +54,6 @@ export const PRICING_PLAN_CARDS: PricingPlanCard[] = [
 ];
 
 export const PRICING_PRO_MONTHLY = PRICING_PLAN_CARDS[0].monthly;
+export const PRICING_PRO_YEARLY = PRICING_PLAN_CARDS[0].yearly;
 export const PRICING_ELITE_MONTHLY = PRICING_PLAN_CARDS[1].monthly;
+export const PRICING_ELITE_YEARLY = PRICING_PLAN_CARDS[1].yearly;
