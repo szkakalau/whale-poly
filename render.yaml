@@ -7,7 +7,12 @@ databases:
     plan: starter          # Downgraded from basic-1gb — saves $13/month
     databaseName: whale
     user: whale
-    ipAllowList: []
+    # External access is required by the Vercel landing app (direct Prisma
+    # queries: live signals primary source, backtesting, prediction model
+    # training). Protected by the DB password — keep it strong.
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
 
 services:
   - type: web
