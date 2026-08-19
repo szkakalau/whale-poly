@@ -362,8 +362,15 @@ def validate_article(article: dict, language: str) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def generate_article(context: dict, language: str) -> tuple[dict | None, str]:
-    """Generate a single article via DeepSeek. Returns (parsed_json, topic) or (None, topic) on failure."""
+async def generate_article(context: dict, language: str) -> tuple[dict | None, str, bool]:
+    """Generate a single article via DeepSeek.
+
+    Returns (article, topic, is_draft):
+      - (article, topic, False) — passed validation, ready to publish.
+      - (article, topic, True)  — failed validation after all retries, but
+        retained as a draft for human review instead of being discarded.
+      - (None, topic, False)    — LLM failure (no usable article at all).
+    """
     topic = pick_topic()
     logger.info("generating %s article, topic=%s", language, topic)
 
@@ -374,6 +381,7 @@ async def generate_article(context: dict, language: str) -> tuple[dict | None, s
     ]
 
     import random
+    best_failed: dict | None = None
     for attempt in range(1, 4):
         try:
             response = await client.chat.completions.create(
@@ -394,9 +402,10 @@ async def generate_article(context: dict, language: str) -> tuple[dict | None, s
             passed, reason = validate_article(article, language)
             if passed:
                 logger.info("%s article generated: %d words, topic=%s", language, len(article["content"].split()), topic)
-                return article, topic
+                return article, topic, False
 
             logger.warning("validation failed (attempt %d): %s", attempt, reason)
+            best_failed = article
             # Retry with stricter prompt
             messages.append({
                 "role": "user",
@@ -406,10 +415,16 @@ async def generate_article(context: dict, language: str) -> tuple[dict | None, s
         except Exception:
             logger.exception("LLM call failed (attempt %d)", attempt)
             if attempt >= 3:
-                return None, topic
+                break
             await asyncio.sleep(2 ** attempt + random.random())
 
-    return None, topic
+    if best_failed is not None:
+        logger.warning(
+            "article failed validation after retries — saving as draft for review: language=%s topic=%s",
+            language, topic,
+        )
+        return best_failed, topic, True
+    return None, topic, False
 
 
 # ---------------------------------------------------------------------------
@@ -425,21 +440,15 @@ async def generate_daily_article() -> dict:
     if not settings.blog_daily_enabled:
         return {"status": "disabled"}
 
-    # Self-healing: publish any previously stuck drafts before generating new articles.
-    async with SessionLocal() as session:
-        await _ensure_blog_posts_table(session)
-        result = await session.execute(
-            text("update blog_posts set status = 'published' where status = 'draft'")
-        )
-        if result.rowcount:
-            logger.info("published_legacy_drafts count=%d", result.rowcount)
-        await session.commit()
+    # NOTE: no self-healing "publish all drafts" here anymore (CR-B1). Drafts
+    # are the human-review queue for articles that failed validation — they
+    # must be reviewed and published explicitly via the blog admin API.
 
     context = await fetch_context()
 
     # Generate both languages
-    en_article, en_topic = await generate_article(context, "en")
-    zh_article, zh_topic = await generate_article(context, "zh")
+    en_article, en_topic, en_draft = await generate_article(context, "en")
+    zh_article, zh_topic, zh_draft = await generate_article(context, "zh")
 
     if not en_article and not zh_article:
         return {"status": "failed", "reason": "both languages failed generation"}
@@ -462,8 +471,6 @@ async def generate_daily_article() -> dict:
     )
 
     async with SessionLocal() as session:
-        await _ensure_blog_posts_table(session)
-
         if en_article:
             en_article["content"] = en_article.get("content", "") + EN_DISCLAIMER
             en_meta = {
@@ -473,8 +480,11 @@ async def generate_daily_article() -> dict:
                 "language": "en",
                 "generated_at": now_utc.isoformat(),
             }
-            await _insert_blog_post(session, en_article, "en", group_slug, now_utc, meta=en_meta)
-            inserted.append("en")
+            await _insert_blog_post(
+                session, en_article, "en", group_slug, now_utc, meta=en_meta,
+                status="draft" if en_draft else "published",
+            )
+            inserted.append("en" if not en_draft else "en(draft)")
 
         if zh_article:
             zh_article["content"] = zh_article.get("content", "") + ZH_DISCLAIMER
@@ -485,8 +495,11 @@ async def generate_daily_article() -> dict:
                 "language": "zh",
                 "generated_at": now_utc.isoformat(),
             }
-            await _insert_blog_post(session, zh_article, "zh", group_slug, now_utc, meta=zh_meta)
-            inserted.append("zh")
+            await _insert_blog_post(
+                session, zh_article, "zh", group_slug, now_utc, meta=zh_meta,
+                status="draft" if zh_draft else "published",
+            )
+            inserted.append("zh" if not zh_draft else "zh(draft)")
 
         await session.commit()
 
@@ -529,60 +542,9 @@ def _make_slug(article: dict) -> str:
     return f"{date_str}-{slug}"
 
 
-async def _ensure_blog_posts_table(session) -> None:
-    """Create or migrate the blog_posts table."""
-    await session.execute(
-        text(
-            """
-            create table if not exists blog_posts (
-                id text primary key,
-                slug text not null,
-                title text not null,
-                excerpt text not null,
-                content text not null,
-                author text not null,
-                read_time text not null,
-                cover_image text,
-                tags text[] default '{}',
-                published_at timestamptz not null,
-                created_at timestamptz not null default now(),
-                updated_at timestamptz not null default now()
-            )
-            """
-        )
-    )
-    # Idempotent migration: add columns that may not exist yet
-    for col, col_def in [
-        ("language", "text not null default 'en'"),
-        ("group_slug", "text"),
-        ("status", "text not null default 'published'"),
-        ("generation_prompt", "text"),
-    ]:
-        try:
-            await session.execute(
-                text(f"alter table blog_posts add column if not exists {col} {col_def}")
-            )
-        except Exception:
-            logger.warning("blog_posts_ddl_skipped col=%s", col, exc_info=True)
-    # Make slug+language unique instead of just slug
-    try:
-        await session.execute(
-            text(
-                "alter table blog_posts drop constraint if exists blog_posts_slug_key"
-            )
-        )
-        await session.execute(
-            text(
-                "create unique index if not exists blog_posts_slug_language_idx on blog_posts (slug, language)"
-            )
-        )
-    except Exception:
-        logger.warning("blog_posts_index_migration_failed", exc_info=True)
-
-
 async def _insert_blog_post(
     session, article: dict, language: str, group_slug: str, now_utc: datetime,
-    meta: dict | None = None,
+    meta: dict | None = None, status: str = "published",
 ) -> None:
     """Insert a single article row, with optional generation metadata."""
     post_id = str(uuid.uuid4())
@@ -592,9 +554,12 @@ async def _insert_blog_post(
 
     generation_prompt = json.dumps(meta) if meta else None
 
-    # AI-generated articles are published immediately.
-    # Quality validation (validate_article) acts as the gate before insert.
-    status = "published"
+    # Fully validated articles publish immediately; borderline articles fall
+    # back to draft for human review (see generate_article).
+    logger.info(
+        "inserting blog post: slug=%s language=%s group=%s status=%s",
+        lang_slug, language, group_slug, status,
+    )
 
     await session.execute(
         text(
@@ -638,4 +603,3 @@ async def _insert_blog_post(
             "generation_prompt": generation_prompt,
         },
     )
-    logger.info("inserted blog post: slug=%s language=%s group=%s meta=%s", lang_slug, language, group_slug, meta)

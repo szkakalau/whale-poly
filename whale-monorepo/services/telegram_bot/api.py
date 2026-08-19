@@ -308,7 +308,8 @@ async def _send_via_bot(token: str, chat_id: str, text: str):
       resp = await client.post(url, json=payload, timeout=10)
       resp.raise_for_status()
     except Exception:
-      logger.exception("send_via_bot_failed token_prefix=%s chat_id=%s", token[:10], chat_id)
+      # Never log the token (or a usable prefix of it) — bot tokens are credentials.
+      logger.exception("send_via_bot_failed chat_id=%s", chat_id)
 
 
 async def _log_subscriber_stats_forever(stop: asyncio.Event) -> None:

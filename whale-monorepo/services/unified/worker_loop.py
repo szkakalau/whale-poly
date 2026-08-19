@@ -370,7 +370,7 @@ async def health_check_loop() -> None:
     while True:
         try:
             started_at = datetime.now(timezone.utc)
-            trade_id = f"health-test-{int(time.time())}"
+            check_id = f"health-check-{int(time.time())}"
             status = "OK"
 
             # In unified mode, all services are in-process — no HTTP calls needed
@@ -382,11 +382,11 @@ async def health_check_loop() -> None:
             except Exception as e:
                 status = f"FAIL:db={e}"
 
-            logger.info("health_check_done status=%s trade_id=%s", status, trade_id)
+            logger.info("health_check_done status=%s check_id=%s", status, check_id)
 
             # Send Telegram notification if configured
             if settings.telegram_health_bot_token and settings.telegram_health_chat_id:
-                await _send_health_telegram(trade_id, started_at, status)
+                await _send_health_telegram(check_id, started_at, status)
         except Exception:
             logger.exception("health_check_failed")
         await asyncio.sleep(interval)

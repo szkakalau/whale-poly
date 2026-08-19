@@ -19,7 +19,7 @@ from celery.utils.log import get_task_logger
 
 configure_logging(settings.log_level)
 logger = get_task_logger(__name__)
-logger.info(f"DEBUG: Worker configured to listen on queue: {settings.trade_created_queue}")
+logger.info("worker_configured queue=%s", settings.trade_created_queue)
 
 celery_app = Celery("whale_engine", broker=settings.redis_url, backend=settings.redis_url)
 if settings.redis_url.startswith("rediss://"):
@@ -40,16 +40,14 @@ celery_app.conf.beat_schedule = {
 
 
 async def _consume_once() -> int:
-  logger.info(f"DEBUG: _consume_once started, redis={settings.redis_url}, queue={settings.trade_created_queue}")
+  # NOTE: redis URL is deliberately not logged — it may contain credentials.
+  logger.debug("consume_once_started queue=%s", settings.trade_created_queue)
   redis = await get_redis()
-  logger.info(f"DEBUG: Worker blpop from queue: {settings.trade_created_queue}")
   batch_size = int(os.getenv("TRADE_CONSUME_BATCH", "50"))
   item = await redis.blpop(settings.trade_created_queue, timeout=1)
-  logger.info(f"DEBUG: blpop result: {item}")
   if not item:
     return 0
   _, raw = item
-  logger.info(f"DEBUG: popped item: {raw}")
   raws = [raw]
   for _ in range(batch_size - 1):
     nxt = await redis.lpop(settings.trade_created_queue)
@@ -64,11 +62,10 @@ async def _consume_once() -> int:
   events: list[dict] = []
   async with SessionLocal() as session:
     for payload in raws:
-      logger.info(f"DEBUG: processing payload: {payload}")
       try:
         msg = json.loads(payload)
         trade_id = str(msg.get("trade_id") or "")
-        logger.info(f"DEBUG: extracted trade_id: {trade_id}")
+        logger.debug("processing_trade trade_id=%s", trade_id)
         if not trade_id:
           continue
         created, event = await process_trade_id(session, redis, trade_id)
@@ -76,7 +73,7 @@ async def _consume_once() -> int:
           created_count += 1
           events.append(event)
       except Exception:
-        logger.exception(f"failed_to_process_trade payload={payload}")
+        logger.exception("failed_to_process_trade payload=%s", payload)
     await session.commit()
 
   # Push to Redis only AFTER the DB transaction committed successfully.

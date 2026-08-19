@@ -429,17 +429,50 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
   now = datetime.now(timezone.utc)
   since = now - timedelta(days=30)
 
+  # 30d realized PnL + resolved win rate from whale_trade_history.
+  wth_agg = (
+    select(
+      WhaleTradeHistory.wallet_address.label("w_addr"),
+      func.coalesce(func.sum(WhaleTradeHistory.pnl), 0).label("pnl_30d"),
+      func.coalesce(
+        func.sum(
+          case(
+            (WhaleTradeHistory.pnl > 0.01, 1),
+            else_=0,
+          )
+        ),
+        0,
+      ).label("wins_30d"),
+      func.coalesce(
+        func.sum(
+          case(
+            ((WhaleTradeHistory.pnl > 0.01) | (WhaleTradeHistory.pnl < -0.01), 1),
+            else_=0,
+          )
+        ),
+        0,
+      ).label("resolved_30d"),
+    )
+    .where(WhaleTradeHistory.timestamp >= since)
+    .group_by(WhaleTradeHistory.wallet_address)
+    .subquery()
+  )
+
   rows = (
     await session.execute(
       select(
         WhaleScore.wallet_address,
         WhaleScore.final_score.label("whale_score"),
         func.coalesce(func.sum(TradeRaw.amount * TradeRaw.price), 0).label("volume_30d"),
+        wth_agg.c.pnl_30d,
+        wth_agg.c.wins_30d,
+        wth_agg.c.resolved_30d,
       )
       .join(WhaleTrade, WhaleTrade.wallet_address == WhaleScore.wallet_address)
       .join(TradeRaw, TradeRaw.trade_id == WhaleTrade.trade_id)
+      .outerjoin(wth_agg, wth_agg.c.w_addr == WhaleScore.wallet_address)
       .where(TradeRaw.timestamp >= since)
-      .group_by(WhaleScore.wallet_address, WhaleScore.final_score)
+      .group_by(WhaleScore.wallet_address, WhaleScore.final_score, wth_agg.c.pnl_30d, wth_agg.c.wins_30d, wth_agg.c.resolved_30d)
       .order_by(WhaleScore.final_score.desc(), func.sum(TradeRaw.amount * TradeRaw.price).desc())
       .limit(limit)
     )
@@ -458,6 +491,10 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
     addr = r.wallet_address
     score = int(r.whale_score or 0)
     vol_30d = float(r.volume_30d or 0.0)
+    pnl_30d = float(r.pnl_30d or 0.0)
+    resolved_30d = int(r.resolved_30d or 0)
+    wins_30d = int(r.wins_30d or 0)
+    win_rate_30d = round(wins_30d / resolved_30d, 4) if resolved_30d > 0 else None
     name_row = name_map.get(addr)
     if name_row and (name_row.polymarket_username or name_row.ens_name):
       display_name = name_row.polymarket_username or name_row.ens_name
@@ -470,8 +507,8 @@ async def whales_leaderboard(limit: int = 50, session: AsyncSession = Depends(ge
         "display_name": display_name,
         "whale_score": score,
         "volume_30d": vol_30d,
-        "pnl_30d": 0.0,
-        "win_rate_30d": 0.0,
+        "pnl_30d": pnl_30d,
+        "win_rate_30d": win_rate_30d,
       }
     )
 
