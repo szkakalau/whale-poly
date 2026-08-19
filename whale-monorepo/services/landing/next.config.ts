@@ -19,7 +19,6 @@ const LEGACY_REDIRECTS: { source: string; destination: string }[] = [
   { source: "/smart-collections/:path*", destination: "/" },
   { source: "/collections", destination: "/" },
   { source: "/collections/:path*", destination: "/" },
-  { source: "/whales/:path*", destination: "/" },
   // Removed info pages → home
   { source: "/editorial-policy", destination: "/" },
   { source: "/disclosures", destination: "/" },
