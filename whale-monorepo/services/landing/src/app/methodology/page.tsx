@@ -178,7 +178,9 @@ export default function MethodologyPage() {
               All performance statistics cited on the site — including win rates, average ROI,
               and total PnL — are calculated from resolved markets only and reflect the
               complete public history available on the{' '}
-              <Link href="/history" className="text-accent font-semibold hover:text-accent-hover transition-colors">History page</Link>.
+              <Link href="/history" className="text-accent font-semibold hover:text-accent-hover transition-colors">History page</Link>,
+              with per-score-band performance on the{' '}
+              <Link href="/calibration" className="text-accent font-semibold hover:text-accent-hover transition-colors">Calibration page</Link>.
               Key definitions:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-muted">

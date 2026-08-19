@@ -90,7 +90,9 @@ export default function Home() {
           from top-quintile wallets with proper position sizing shows positive expected value.&rdquo;
           <span className="block mt-1 text-xs text-subtle not-italic">
             — Based on historical backtests. Read our{' '}
-            <Link href="/methodology" className="text-accent font-medium hover:text-accent-hover transition-colors underline decoration-accent/30 underline-offset-2">full methodology</Link>.
+            <Link href="/methodology" className="text-accent font-medium hover:text-accent-hover transition-colors underline decoration-accent/30 underline-offset-2">full methodology</Link>{' '}
+            and the live{' '}
+            <Link href="/calibration" className="text-accent font-medium hover:text-accent-hover transition-colors underline decoration-accent/30 underline-offset-2">score calibration report</Link>.
           </span>
         </blockquote>
 
