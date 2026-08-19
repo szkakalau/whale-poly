@@ -19,7 +19,7 @@ from sqlalchemy import text
 from shared.db import SessionLocal
 
 
-DDL = """
+DDL_TABLE = """
 CREATE TABLE IF NOT EXISTS prediction_models (
     "id" SERIAL NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
@@ -31,15 +31,21 @@ CREATE TABLE IF NOT EXISTS prediction_models (
     "trained_at" TIMESTAMPTZ NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "prediction_models_pkey" PRIMARY KEY ("id")
-);
+)
+"""
+
+DDL_INDEX = """
 CREATE INDEX IF NOT EXISTS "prediction_models_trained_at_idx"
-    ON "prediction_models" ("trained_at");
+    ON "prediction_models" ("trained_at")
 """
 
 
 async def main() -> None:
     async with SessionLocal() as session:
-        await session.execute(text(DDL))
+        # asyncpg cannot prepare multiple commands in one execute — run each
+        # statement separately.
+        await session.execute(text(DDL_TABLE))
+        await session.execute(text(DDL_INDEX))
         await session.commit()
     print("prediction_models table + index ensured (idempotent).")
 
