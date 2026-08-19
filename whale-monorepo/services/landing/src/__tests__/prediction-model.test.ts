@@ -196,27 +196,42 @@ describe('trainModel', () => {
 });
 
 // ── tierProbability ─────────────────────────────────────
+// Contract: tierProbability no longer hardcodes win rates. Without an
+// explicit win-rate map it returns the neutral 0.5 prior; with a map (live
+// calibration data from /stats/home) it returns that band's win rate ±3%.
 
 describe('tierProbability', () => {
-  it('high score bullish → > 0.7', () => {
+  const liveRates: Record<string, number> = {
+    '90–100': 0.72,
+    '80–89': 0.65,
+    '70–79': 0.58,
+    '<70': 0.52,
+  };
+
+  it('neutral default without calibration data', () => {
     const p = tierProbability(92, 'bullish');
+    expect(p).toBeCloseTo(0.53, 2); // 0.5 + 3% directional adjustment
+  });
+
+  it('high score bullish with live rates → > 0.7', () => {
+    const p = tierProbability(92, 'bullish', liveRates);
     expect(p).toBeGreaterThan(0.7);
   });
 
   it('high score bearish → adjusted down', () => {
-    const pBull = tierProbability(92, 'bullish');
-    const pBear = tierProbability(92, 'bearish');
+    const pBull = tierProbability(92, 'bullish', liveRates);
+    const pBear = tierProbability(92, 'bearish', liveRates);
     expect(pBear).toBeLessThan(pBull);
   });
 
-  it('low score → near 0.5', () => {
-    const p = tierProbability(60, 'neutral');
-    expect(p).toBeCloseTo(0.52, 1);
+  it('low score → near 0.5 with live rates', () => {
+    const p = tierProbability(60, 'neutral', liveRates);
+    expect(p).toBeCloseTo(0.52, 2);
   });
 
-  it('mid score → proportional', () => {
-    const pHigh = tierProbability(95, 'bullish');
-    const pMid = tierProbability(75, 'bullish');
+  it('mid score → proportional with live rates', () => {
+    const pHigh = tierProbability(95, 'bullish', liveRates);
+    const pMid = tierProbability(75, 'bullish', liveRates);
     expect(pHigh).toBeGreaterThan(pMid);
   });
 });

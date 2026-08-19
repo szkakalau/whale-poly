@@ -208,21 +208,31 @@ function createFallbackModel(): ProbabilityModel {
 
 // ── Tier-based probability (Free plan / no training data) ──
 
-/** Pre-computed win rates by score tier (from SightWhale backtest aggregates). */
-const TIER_WIN_RATES: Record<string, number> = {
-  '90–100': 0.72,
-  '80–89':  0.65,
-  '70–79':  0.58,
-  '<70':    0.52,
+/**
+ * Conservative neutral prior — real win rates come from the live calibration
+ * data (/stats/home) via fetchTierWinRates() in prediction-model-store.ts.
+ * Hardcoding win rates here would silently drift from reality; the neutral
+ * prior is only used when live calibration data is unavailable.
+ */
+export const NEUTRAL_TIER_WIN_RATES: Record<string, number> = {
+  '90–100': 0.5,
+  '80–89': 0.5,
+  '70–79': 0.5,
+  '<70': 0.5,
 };
 
 /**
- * Rough probability estimate from score tier alone.
- * Used as fallback when the logistic model has insufficient training data.
+ * Probability estimate from score tier alone, using live calibration win
+ * rates when provided. Used as fallback when the logistic model has
+ * insufficient training data.
  */
-export function tierProbability(score: number, direction: Direction): number {
+export function tierProbability(
+  score: number,
+  direction: Direction,
+  tierWinRates: Record<string, number> = NEUTRAL_TIER_WIN_RATES,
+): number {
   const tierKey = scoreToTier(score);
-  const baseProb = TIER_WIN_RATES[tierKey] ?? 0.5;
+  const baseProb = tierWinRates[tierKey] ?? 0.5;
 
   // Small directional adjustment (±3%)
   if (direction === 'bearish') return baseProb - 0.03;

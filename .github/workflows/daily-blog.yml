@@ -24,3 +24,17 @@ jobs:
           exit 1
         fi
         echo "✅ Blog generation triggered: $BODY"
+
+    - name: Retrain prediction probability model
+      run: |
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          "https://www.sightwhale.com/api/prediction/train?days=30" \
+          -H "x-admin-token: ${{ secrets.ADMIN_TOKEN }}")
+        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
+        echo "HTTP $HTTP_CODE: $BODY"
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "❌ Prediction retrain failed (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        echo "✅ Prediction model retrained: $BODY"
