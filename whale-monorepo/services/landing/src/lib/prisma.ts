@@ -7,9 +7,18 @@ const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
 const rawDatabaseUrl = (process.env.DATABASE_URL ?? '').trim();
 const shouldRequireSsl = rawDatabaseUrl.includes('render.com') && !rawDatabaseUrl.includes('sslmode=');
-const databaseUrl = shouldRequireSsl
-  ? `${rawDatabaseUrl}${rawDatabaseUrl.includes('?') ? '&' : '?'}sslmode=require`
-  : rawDatabaseUrl;
+// Cap the per-instance pool: production Postgres is a 20-connection instance
+// and Vercel serverless scales horizontally — default per-lambda pools
+// (num_cpus × 2 + 1) exhaust all DB slots and starve the Render backend
+// workers (CR-DB1).
+const shouldCapConnections = rawDatabaseUrl.includes('postgres') && !rawDatabaseUrl.includes('connection_limit=');
+let databaseUrl = rawDatabaseUrl;
+if (shouldRequireSsl) {
+  databaseUrl = `${databaseUrl}${databaseUrl.includes('?') ? '&' : '?'}sslmode=require`;
+}
+if (shouldCapConnections) {
+  databaseUrl = `${databaseUrl}${databaseUrl.includes('?') ? '&' : '?'}connection_limit=3`;
+}
 
 const prismaInstance =
   rawDatabaseUrl.length > 0
