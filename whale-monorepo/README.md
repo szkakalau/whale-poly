@@ -1,4 +1,10 @@
-# Whale Monorepo (Trade → Whale → Alert → Telegram + Payment)
+# SightWhale (whale-monorepo) — Trade → Whale → Alert → Telegram + Payment
+
+> **What this is**: decision infrastructure for prediction-market traders —
+> auditable smart-money intelligence (whale detection + calibrated scoring)
+> plus research tools (backtesting, market correlation, position sizing).
+> Signals are the hook; the audited dataset is the product. Not a hedge fund,
+> not a data API vendor — a subscription tool with a compounding data asset.
 
 ## Structure
 
@@ -8,27 +14,44 @@
   - `alert_engine` consumes `whale_trade_created` and publishes `alert_created`
   - `telegram_bot` consumes `alert_created` and sends to active subscribers
   - `payment` manages plans/subscriptions and Stripe webhooks
+  - `unified` — **production mode**: a single FastAPI process replacing the
+    services above (in-memory queues, 16 asyncio workers, no Redis/Celery).
+    Selected by leaving `REDIS_URL` empty; `REDIS_URL` set → legacy
+    multi-service mode.
 - `shared/` common config, db, models, logging
-- `alembic/` shared migrations for the single Postgres
+- `alembic/` shared migrations for the single Postgres (head = `0018`; owns
+  ALL pipeline + blog schema — no runtime `CREATE TABLE` in app code)
 - `docker/` docker-compose and Dockerfile
+- `services/landing/` Next.js 16 marketing site + dashboard + blog + payment
+  proxy (Prisma owns user-side tables; see `prisma/schema.prisma`)
 
 ## Quickstart
 
 ```bash
 cd whale-monorepo
 cp .env.example .env
-make up
-make migrate
+make unified        # unified single-process mode: postgres + one app on :8000
+make migrate        # legacy mode only; unified runs alembic on startup
 ```
+
+## Blog schema
+
+`blog_posts` is owned by Alembic migration `0018` (single source of truth).
+`services/landing/src/content/posts/` is only an offline editing workspace —
+see its README; live content lives in Postgres.
 
 ## Seed plans
 
-Insert two plan rows so `/checkout` can create Stripe sessions:
+Insert plan rows so `/checkout` can create Stripe sessions. Pro is the
+`monthly`/`yearly` pair; Elite adds two more rows (Elite monthly $59, Elite
+yearly $590):
 
 ```sql
 INSERT INTO plans (id, name, price_usd, stripe_price_id) VALUES
-  ('monthly', 'monthly', 20, 'price_xxx_monthly'),
-  ('yearly', 'yearly', 200, 'price_xxx_yearly')
+  ('monthly', 'monthly', 29, 'price_xxx_monthly'),
+  ('yearly', 'yearly', 290, 'price_xxx_yearly'),
+  ('elite_monthly', 'elite_monthly', 59, 'price_xxx_elite_monthly'),
+  ('elite_yearly', 'elite_yearly', 590, 'price_xxx_elite_yearly')
 ON CONFLICT (name) DO UPDATE SET price_usd = EXCLUDED.price_usd, stripe_price_id = EXCLUDED.stripe_price_id;
 ```
 
