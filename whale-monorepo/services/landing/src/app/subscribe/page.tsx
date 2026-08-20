@@ -212,7 +212,6 @@ function SubscribeForm() {
           onFocus={() => trackEvent('code_input_focus', { page: 'subscribe' })}
           placeholder={isLoggedIn ? 'Not needed — leave empty' : 'ABCD1234'}
           className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg uppercase tracking-[0.15em] text-foreground placeholder:text-subtle outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-          required={!isLoggedIn}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
