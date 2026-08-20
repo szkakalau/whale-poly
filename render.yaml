@@ -19,10 +19,9 @@ services:
     name: sightwhale
     runtime: docker
     rootDir: whale-monorepo
-    dockerfilePath: docker/Dockerfile
+    dockerfilePath: docker/Dockerfile.unified
     healthCheckPath: /health
     plan: starter
-    dockerCommand: bash /app/docker/entrypoint-unified.sh
     envVars:
       # ── Database ──────────────────────────────────────────
       - key: DATABASE_URL
