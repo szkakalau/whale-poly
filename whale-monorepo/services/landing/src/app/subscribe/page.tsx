@@ -38,22 +38,18 @@ function planFromParam(raw: string | null): Plan {
 
 function useSubscribeParams() {
   const searchParams = useSearchParams();
-  const [plan, setPlan] = useState<Plan>('pro');
-  const [period, setPeriod] = useState<Period>('monthly');
   const [code, setCode] = useState('');
 
-  useEffect(() => {
-    const p = (searchParams.get('plan') || '').toLowerCase();
-    const periodParam = (searchParams.get('period') || '').toLowerCase();
-    const codeParam = (searchParams.get('code') || '').trim();
+  // Derive plan/period directly from the URL (no state, no effect).
+  const plan = planFromParam(searchParams.get('plan'));
+  const periodParam = (searchParams.get('period') || '').toLowerCase();
+  const period: Period =
+    periodParam === 'yearly' || periodParam === 'annual' ? 'yearly' : 'monthly';
 
-    setPlan(planFromParam(searchParams.get('plan')));
-
-    if (periodParam === 'yearly' || periodParam === 'annual') setPeriod('yearly');
-    else if (periodParam === 'monthly') setPeriod('monthly');
-
-    if (codeParam && !code) setCode(codeParam.toUpperCase());
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Render-phase state adjustment (React's documented pattern for syncing
+  // state from props/URL params) — pre-fills the code from ?code= deep links.
+  const codeParam = (searchParams.get('code') || '').trim();
+  if (codeParam && !code) setCode(codeParam.toUpperCase());
 
   return { plan, period, code, setCode };
 }
@@ -87,7 +83,6 @@ function SubscribeForm() {
   const isLoggedIn = Boolean(authUser);
   const sanitized = code.replace(/\s+/g, '').toUpperCase();
   const hasCode = sanitized.length >= 6;
-  const canCheckout = hasCode || isLoggedIn;
   const amount = getAmount(plan, period);
   const planLabel = PLANS[plan].label;
 
@@ -103,6 +98,25 @@ function SubscribeForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Never silently block checkout: give anonymous users without a code a
+    // clear, actionable message instead of a dead disabled button.
+    if (authLoading) {
+      setError({ message: 'Checking sign-in status…', actions: ['Wait a moment and click again.'] });
+      return;
+    }
+    if (!hasCode && !isLoggedIn) {
+      trackEvent('checkout_error', { page: 'subscribe', stage: 'validation', plan, period });
+      setError({
+        message: 'Add your activation code to continue.',
+        actions: [
+          'Open @sightwhale_bot on Telegram and tap Generate Code.',
+          'Paste the code above and click Start Secure Checkout again.',
+        ],
+      });
+      return;
+    }
+
     setLoading(true);
 
     const planName = period === 'yearly' ? `${plan}_yearly` : plan;
@@ -248,7 +262,7 @@ function SubscribeForm() {
       <button
         ref={checkoutBtnRef}
         type="submit"
-        disabled={loading || !canCheckout}
+        disabled={loading}
         className="btn-primary w-full py-4 text-base"
       >
         {loading ? 'Redirecting to Stripe…' : authLoading ? 'Checking sign-in…' : isLoggedIn && !hasCode ? 'Start Secure Checkout (no code needed)' : 'Start Secure Checkout'}
