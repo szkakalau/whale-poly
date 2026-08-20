@@ -134,16 +134,23 @@ async def root_health():
                         if hasattr(t, 'get_name') and not t.get_name().startswith('Task-')])
 
     # ── Pipeline health: check if alerts were created recently ──
+    # Bounded to 3s so the health endpoint can never hang the deploy
+    # (Render health-check timeouts leave zombie instances that then
+    # double-poll Telegram) (CR-H2).
     pipeline_status = "unknown"
     last_alert_age_min = None
-    try:
+
+    async def _query_latest_alert():
         from shared.db import SessionLocal
         from shared.models import Alert
         from sqlalchemy import select, func
         async with SessionLocal() as session:
-            latest = (await session.execute(
+            return (await session.execute(
                 select(func.max(Alert.created_at))
             )).scalar()
+
+    try:
+        latest = await asyncio.wait_for(_query_latest_alert(), timeout=3)
         if latest:
             age_min = (datetime.now(timezone.utc) - latest).total_seconds() / 60
             last_alert_age_min = round(age_min, 1)
