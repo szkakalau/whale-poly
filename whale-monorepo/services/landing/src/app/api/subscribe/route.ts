@@ -10,7 +10,7 @@ import { requireUser } from '@/lib/auth';
  */
 export async function POST(req: Request) {
   try {
-    await requireUser();
+    const user = await requireUser();
 
     const base = process.env.PAYMENT_API_BASE_URL;
     if (!base) {
@@ -29,7 +29,11 @@ export async function POST(req: Request) {
     const activationCode = String(data.telegram_activation_code ?? '').trim();
     const plan = String(data.plan ?? '').trim().toLowerCase().replace('-', '_');
 
-    if (!activationCode || !plan) {
+    // Logged-in users may skip the activation code — the payment service
+    // mints one bound to their telegram id.
+    const hasTelegramId = Boolean(user.telegramId);
+
+    if ((!activationCode && !hasTelegramId) || !plan) {
       return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
     }
 
@@ -44,6 +48,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         telegram_activation_code: activationCode.toUpperCase(),
         plan,
+        user_id: user.id,
+        customer_email: user.email,
+        telegram_id: hasTelegramId ? user.telegramId : null,
       }),
       cache: 'no-store',
     });

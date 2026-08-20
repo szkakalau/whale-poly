@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { trackEvent } from '@/lib/analytics';
+import { useAuth } from '@/lib/use-auth';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/sightwhale_bot';
 const SUBSCRIBE_START_PARAM = 'subscribe_pro';
@@ -67,7 +68,7 @@ function SubscribeHero() {
       <p className="eyebrow mb-4">Subscribe</p>
       <h1 className="text-balance mb-3">Start {label}</h1>
       <p className="text-base text-muted leading-relaxed mb-8">
-        Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
+        Secure checkout with Stripe. Signed-in users can pay right away — no activation code needed. New to Telegram? Grab a code from the bot and paste it below.
       </p>
     </>
   );
@@ -77,11 +78,16 @@ function SubscribeForm() {
   const checkoutBtnRef = useRef<HTMLButtonElement>(null);
 
   const { plan, period, code, setCode } = useSubscribeParams();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; actions: string[] } | null>(null);
 
+  // Logged-in users (Telegram Mini App session) don't need the activation
+  // code — the server mints one bound to their telegram id.
+  const isLoggedIn = Boolean(authUser);
   const sanitized = code.replace(/\s+/g, '').toUpperCase();
   const hasCode = sanitized.length >= 6;
+  const canCheckout = hasCode || isLoggedIn;
   const amount = getAmount(plan, period);
   const planLabel = PLANS[plan].label;
 
@@ -91,7 +97,8 @@ function SubscribeForm() {
 
   useEffect(() => {
     if (hasCode) trackEvent('activation_code_detected', { page: 'subscribe' });
-  }, [hasCode]);
+    if (isLoggedIn && !hasCode) trackEvent('checkout_skip_code_logged_in', { page: 'subscribe' });
+  }, [hasCode, isLoggedIn]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,7 +106,7 @@ function SubscribeForm() {
     setLoading(true);
 
     const planName = period === 'yearly' ? `${plan}_yearly` : plan;
-    trackEvent('checkout_start', { page: 'subscribe', plan, period, amount });
+    trackEvent('checkout_start', { page: 'subscribe', plan, period, amount, logged_in: isLoggedIn });
 
     try {
       const res = await fetch('/api/checkout', {
@@ -145,44 +152,53 @@ function SubscribeForm() {
 
   return (
     <form onSubmit={onSubmit} className="rounded-lg border border-border bg-surface p-6 sm:p-8 space-y-6">
-      {/* ── Telegram steps ── */}
-      <div>
-        <h2 className="text-sm font-semibold text-foreground mb-3">Before checkout — get your activation code</h2>
-        <div className="space-y-2 text-sm text-muted">
-          <div className="flex gap-3">
-            <span className="text-accent font-semibold shrink-0">1.</span>
-            <p>
-              Open{' '}
-              <a href={botHref} target="_blank" rel="noopener noreferrer" className="text-accent font-medium hover:text-accent-hover underline underline-offset-2">
-                @sightwhale_bot
-              </a>{' '}
-              on Telegram and tap <span className="font-medium text-foreground">/start</span>.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <span className="text-accent font-semibold shrink-0">2.</span>
-            <p>Tap <span className="font-medium text-foreground">Generate Code</span>.</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="text-accent font-semibold shrink-0">3.</span>
-            <p>Paste the code here:</p>
+      {/* ── Signed-in banner (no activation code needed) ── */}
+      {isLoggedIn ? (
+        <div className="rounded-lg border border-accent/25 bg-accent/5 px-5 py-4">
+          <p className="text-sm text-foreground font-medium">You&apos;re signed in — no activation code needed.</p>
+          <p className="text-xs text-muted mt-1">
+            Checkout will link this subscription to your Telegram account automatically.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3">Before checkout — get your activation code</h2>
+          <div className="space-y-2 text-sm text-muted">
+            <div className="flex gap-3">
+              <span className="text-accent font-semibold shrink-0">1.</span>
+              <p>
+                Open{' '}
+                <a href={botHref} target="_blank" rel="noopener noreferrer" className="text-accent font-medium hover:text-accent-hover underline underline-offset-2">
+                  @sightwhale_bot
+                </a>{' '}
+                on Telegram and tap <span className="font-medium text-foreground">/start</span>.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-accent font-semibold shrink-0">2.</span>
+              <p>Tap <span className="font-medium text-foreground">Generate Code</span>.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-accent font-semibold shrink-0">3.</span>
+              <p>Paste the code here:</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Activation code input ── */}
+      {/* ── Activation code input (optional when signed in) ── */}
       <div>
         <label htmlFor="activation-code" className="block text-sm font-medium text-foreground mb-1.5">
-          Activation Code
+          Activation Code {isLoggedIn && <span className="text-subtle font-normal">(optional — you&apos;re signed in)</span>}
         </label>
         <input
           id="activation-code"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           onFocus={() => trackEvent('code_input_focus', { page: 'subscribe' })}
-          placeholder="ABCD1234"
+          placeholder={isLoggedIn ? 'Not needed — leave empty' : 'ABCD1234'}
           className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg uppercase tracking-[0.15em] text-foreground placeholder:text-subtle outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-          required
+          required={!isLoggedIn}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
@@ -232,10 +248,10 @@ function SubscribeForm() {
       <button
         ref={checkoutBtnRef}
         type="submit"
-        disabled={loading || !hasCode}
+        disabled={loading || !canCheckout}
         className="btn-primary w-full py-4 text-base"
       >
-        {loading ? 'Redirecting to Stripe…' : 'Start Secure Checkout'}
+        {loading ? 'Redirecting to Stripe…' : authLoading ? 'Checking sign-in…' : isLoggedIn && !hasCode ? 'Start Secure Checkout (no code needed)' : 'Start Secure Checkout'}
       </button>
 
       <p className="text-center text-xs text-subtle">
@@ -256,7 +272,7 @@ export default function SubscribePage() {
             <p className="eyebrow mb-4">Subscribe</p>
             <h1 className="text-balance mb-3">Start Pro</h1>
             <p className="text-base text-muted leading-relaxed mb-8">
-              Open the Telegram bot, generate an activation code, and complete secure checkout. Alerts start in about 2 minutes.
+              Secure checkout with Stripe. Signed-in users can pay right away — no activation code needed.
             </p>
           </>
         }>

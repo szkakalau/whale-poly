@@ -2,6 +2,9 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
+import secrets
+import string
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -28,6 +31,7 @@ class CheckoutIn(BaseModel):
   plan: str
   user_id: str | None = None
   customer_email: str | None = None
+  telegram_id: str | None = None
   
 class PlanUpsertItem(BaseModel):
   name: str
@@ -48,6 +52,49 @@ def _period_end(plan_name: str) -> datetime:
   if "yearly" in p:
     return now + timedelta(days=365)
   return now + timedelta(days=30)
+
+
+def _new_activation_code() -> str:
+  """Same format as the Telegram bot (8 chars, A-Z0-9)."""
+  alphabet = string.ascii_uppercase + string.digits
+  return "".join(secrets.choice(alphabet) for _ in range(8))
+
+
+async def _mint_activation_code(session: AsyncSession, telegram_id: str) -> str:
+  """Create a fresh activation code bound to a telegram id (web checkout)."""
+  for _ in range(3):
+    code = _new_activation_code()
+    exists = (
+      await session.execute(select(ActivationCode).where(ActivationCode.code == code))
+    ).scalars().first()
+    if exists:
+      continue
+    session.add(ActivationCode(code=code, telegram_id=telegram_id, used=False))
+    await session.commit()
+    return code
+  raise HTTPException(status_code=500, detail="could not generate activation code")
+
+
+def _payment_config_status() -> str:
+  if settings.payment_mode == "mock":
+    return "mock"
+  if settings.stripe_secret_key:
+    return "stripe_ok"
+  return "stripe_key_missing"
+
+
+# Startup validation: never let the unified service boot with a silently
+# broken payment configuration. A missing STRIPE_SECRET_KEY in stripe mode
+# used to fall through to the mock branch and hand out free subscriptions
+# (production incident, 2026-08-20). Fail loud at startup, not silently.
+if settings.payment_mode == "stripe" and not settings.stripe_secret_key:
+  logger.critical(
+    "payment_config_invalid: PAYMENT_MODE=stripe but STRIPE_SECRET_KEY is empty — checkout will be refused"
+  )
+if settings.payment_mode == "mock" and "render.com" in (settings.database_url or ""):
+  logger.critical(
+    "payment_config_invalid: PAYMENT_MODE=mock against a production database — mock activation will be refused"
+  )
 
 
 async def _activate_subscription(session: AsyncSession, *, code: str, plan: Plan, user_id: str | None) -> str:
@@ -168,13 +215,14 @@ async def root():
 
 @app.get("/health")
 async def health():
+  cfg = _payment_config_status()
   try:
     async with SessionLocal() as session:
       await session.execute(text("select 1"))
-    return {"status": "ok", "db": "ok"}
+    return {"status": "ok", "db": "ok", "payment_config": cfg}
   except Exception:
     return JSONResponse(
-      {"status": "degraded", "db": "unavailable"},
+      {"status": "degraded", "db": "unavailable", "payment_config": cfg},
       status_code=503,
     )
 
@@ -346,7 +394,7 @@ async def current_plan(telegram_id: str, x_admin_token: str | None = Header(defa
 async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_session)):
   code = payload.telegram_activation_code.strip().upper()
   plan_name = payload.plan.strip().lower()
-  
+
   # Normalize institutional to elite
   if "institutional" in plan_name:
     plan_name = plan_name.replace("institutional", "elite")
@@ -355,9 +403,41 @@ async def checkout(payload: CheckoutIn, session: AsyncSession = Depends(get_sess
   if not plan:
     raise HTTPException(status_code=404, detail=f"plan '{plan_name}' not found")
 
-  if settings.payment_mode == "mock" or not settings.stripe_secret_key:
+  # P2: logged-in web users may skip the Telegram bot flow — mint a code
+  # bound to their telegram id so the webhook can activate their
+  # subscription (the activation code is the bridge to telegram_id).
+  telegram_id = (payload.telegram_id or "").strip() or None
+  if telegram_id and not re.fullmatch(r"-?\d{5,20}", telegram_id):
+    raise HTTPException(status_code=400, detail="invalid telegram_id")
+  if not code and telegram_id:
+    logger.info("minting_activation_code_for_web_checkout telegram_hash=%s", hashlib.sha1(f"admin:{telegram_id}".encode()).hexdigest()[:10])
+    code = await _mint_activation_code(session, telegram_id)
+
+  if settings.payment_mode == "mock":
+    # P3 guard: mock activation writes real subscriptions — never allow it
+    # against the production database (accidental local runs with a prod
+    # DATABASE_URL polluted prod data, 2026-07).
+    if "render.com" in (settings.database_url or ""):
+      logger.critical("mock_activation_blocked_production_db")
+      raise HTTPException(
+        status_code=500,
+        detail="payment service misconfigured: mock mode cannot activate subscriptions against the production database",
+      )
+    if not code:
+      raise HTTPException(status_code=400, detail="telegram_activation_code or telegram_id required")
     url = await _activate_subscription(session, code=code, plan=plan, user_id=payload.user_id)
     return {"checkout_url": url, "mode": "mock"}
+
+  # P1: fail fast. A missing key must never silently fall back to free
+  # activation (the old behaviour lost ~2 months of revenue).
+  if not settings.stripe_secret_key:
+    logger.critical("stripe_secret_key_missing_checkout_refused")
+    raise HTTPException(
+      status_code=500,
+      detail="payment service misconfigured: STRIPE_SECRET_KEY is required in stripe mode",
+    )
+  if not code:
+    raise HTTPException(status_code=400, detail="telegram_activation_code or telegram_id required")
 
   url = await create_checkout_session(
     stripe_price_id=plan.stripe_price_id,

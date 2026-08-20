@@ -20,17 +20,23 @@ export async function POST(req: Request) {
 
   const telegram_activation_code = String(data.telegram_activation_code ?? '').trim();
   const rawPlan = String(data.plan ?? '').trim().toLowerCase().replace('-', '_');
-  
-  if (!telegram_activation_code || !rawPlan) {
+
+  // Logged-in web users (Telegram Mini App session) may skip the activation
+  // code: the payment service mints one bound to their telegram id.
+  const hasTelegramId = Boolean(user?.telegramId);
+
+  if ((!telegram_activation_code && !hasTelegramId) || !rawPlan) {
     return NextResponse.json({ detail: 'telegram_activation_code and plan are required' }, { status: 400 });
   }
 
-  // Accept both legacy short codes (e.g. ABCD1234) and UUIDs.
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const shortCodeRegex = /^[A-Z0-9]{6,16}$/;
-  const codeUpper = telegram_activation_code.toUpperCase();
-  if (!uuidRegex.test(telegram_activation_code) && !shortCodeRegex.test(codeUpper)) {
-    return NextResponse.json({ detail: 'invalid telegram_activation_code format' }, { status: 400 });
+  // Validate code format only when a code is provided.
+  if (telegram_activation_code) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const shortCodeRegex = /^[A-Z0-9]{6,16}$/;
+    const codeUpper = telegram_activation_code.toUpperCase();
+    if (!uuidRegex.test(telegram_activation_code) && !shortCodeRegex.test(codeUpper)) {
+      return NextResponse.json({ detail: 'invalid telegram_activation_code format' }, { status: 400 });
+    }
   }
 
   let plan = rawPlan;
@@ -50,10 +56,11 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        telegram_activation_code: codeUpper,
+        telegram_activation_code: telegram_activation_code.toUpperCase(),
         plan,
         user_id: user?.id ?? null,
         customer_email: user?.email ?? null,
+        telegram_id: hasTelegramId ? user!.telegramId : null,
       }),
       cache: 'no-store'
     });

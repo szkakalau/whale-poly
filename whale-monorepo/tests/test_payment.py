@@ -4,9 +4,14 @@ Tests for Payment module — Stripe checkout, webhook verification, subscription
 TC-C1, TC-H5: Payment module and Stripe webhook tests.
 Uses unittest.mock to patch the synchronous Stripe internals.
 All Stripe calls use async wrappers with functools.partial (PF-C2 + keyword-arg fix).
+P1/P2: checkout fail-fast guards (missing Stripe key, mock against prod DB)
+and activation-code minting for logged-in web users.
 """
+import re
+
 import pytest
-from unittest.mock import patch, MagicMock
+from fastapi import HTTPException
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from services.payment.stripe_service import (
     create_checkout_session,
@@ -14,6 +19,7 @@ from services.payment.stripe_service import (
     retrieve_subscription,
     cancel_subscription,
 )
+from services.payment.api import CheckoutIn, checkout as checkout_endpoint, health as health_endpoint
 
 
 def _mock_stripe_module():
@@ -21,6 +27,53 @@ def _mock_stripe_module():
     stripe = MagicMock()
     stripe.api_key = None
     return stripe
+
+
+class _FakeExec:
+    """Fake session.execute result with .scalars().first()."""
+
+    def __init__(self, item):
+        self._item = item
+
+    def scalars(self):
+        return self
+
+
+    def first(self):
+        return self._item
+
+
+class _FakeSessionCtx:
+    """Fake async context manager for SessionLocal()."""
+
+    def __init__(self, session):
+        self._session = session
+
+    async def __aenter__(self):
+        return self._session
+
+    async def __aexit__(self, *args):
+        return False
+
+
+def _checkout_payload(**overrides):
+    defaults = {
+        "telegram_activation_code": "ABCD1234",
+        "plan": "pro",
+        "user_id": None,
+        "customer_email": None,
+        "telegram_id": None,
+    }
+    defaults.update(overrides)
+    return CheckoutIn(**defaults)
+
+
+def _mock_settings(mode="stripe", secret_key="sk_test", database_url="postgresql://localhost/db"):
+    s = MagicMock()
+    s.payment_mode = mode
+    s.stripe_secret_key = secret_key
+    s.database_url = database_url
+    return s
 
 
 # ── create_checkout_session ────────────────────────────────
@@ -224,3 +277,141 @@ async def test_cancel_subscription_stripe_error():
 
         with pytest.raises(Exception, match="Stripe API error"):
             await cancel_subscription("sub_error")
+
+
+# ═══════════════════════════════════════════════════════════
+# P1: checkout fail-fast guards
+# ═══════════════════════════════════════════════════════════
+
+
+def _plan_exec():
+    plan = MagicMock()
+    plan.name = "pro"
+    plan.stripe_price_id = "price_x"
+    return _FakeExec(plan)
+
+
+@pytest.mark.asyncio
+async def test_checkout_stripe_mode_missing_key_raises_500():
+    """P1: stripe mode without a secret key must fail loud, never free-activate."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with (
+        patch("services.payment.api.settings", _mock_settings(mode="stripe", secret_key="")),
+        patch("services.payment.api._activate_subscription", new=AsyncMock()) as mock_activate,
+        patch("services.payment.api.create_checkout_session", new=AsyncMock()) as mock_create,
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await checkout_endpoint(_checkout_payload(), session)
+        assert exc.value.status_code == 500
+        assert "STRIPE_SECRET_KEY" in exc.value.detail
+        mock_activate.assert_not_called()
+        mock_create.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_checkout_stripe_mode_with_key_creates_session():
+    """stripe mode with a key → real Stripe session."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with (
+        patch("services.payment.api.settings", _mock_settings()),
+        patch("services.payment.api.create_checkout_session", new=AsyncMock(return_value="https://checkout.stripe.com/c/t")) as mock_create,
+    ):
+        result = await checkout_endpoint(_checkout_payload(), session)
+        assert result == {"checkout_url": "https://checkout.stripe.com/c/t", "mode": "stripe"}
+        assert mock_create.call_args.kwargs["activation_code"] == "ABCD1234"
+        assert mock_create.call_args.kwargs["stripe_price_id"] == "price_x"
+
+
+@pytest.mark.asyncio
+async def test_checkout_mock_mode_against_prod_db_raises_500():
+    """P3: mock activation against a production database must be refused."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with (
+        patch("services.payment.api.settings", _mock_settings(
+            mode="mock",
+            secret_key="",
+            database_url="postgresql+asyncpg://whale:xxx@dpg-test.oregon-postgres.render.com/whale",
+        )),
+        patch("services.payment.api._activate_subscription", new=AsyncMock()) as mock_activate,
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await checkout_endpoint(_checkout_payload(), session)
+        assert exc.value.status_code == 500
+        assert "production database" in exc.value.detail
+        mock_activate.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_checkout_mock_mode_local_activates():
+    """mock mode against a local DB still activates (legit dev flow)."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with (
+        patch("services.payment.api.settings", _mock_settings(mode="mock", secret_key="")),
+        patch("services.payment.api._activate_subscription", new=AsyncMock(return_value="http://ok")) as mock_activate,
+    ):
+        result = await checkout_endpoint(_checkout_payload(), session)
+        assert result == {"checkout_url": "http://ok", "mode": "mock"}
+        mock_activate.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_checkout_invalid_telegram_id_raises_400():
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with patch("services.payment.api.settings", _mock_settings()):
+        with pytest.raises(HTTPException) as exc:
+            await checkout_endpoint(_checkout_payload(telegram_activation_code="", telegram_id="not-a-tg-id"), session)
+        assert exc.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_checkout_no_code_no_telegram_id_raises_400():
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec()])
+    with patch("services.payment.api.settings", _mock_settings()):
+        with pytest.raises(HTTPException) as exc:
+            await checkout_endpoint(_checkout_payload(telegram_activation_code=""), session)
+        assert exc.value.status_code == 400
+
+
+# ═══════════════════════════════════════════════════════════
+# P2: activation-code minting for logged-in web users
+# ═══════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+async def test_checkout_mints_activation_code_for_telegram_id():
+    """No code + valid telegram_id → an 8-char code is minted and used."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=[_plan_exec(), _FakeExec(None)])  # plan, code collision lookup
+    session.add = MagicMock()
+    session.commit = AsyncMock()
+    with (
+        patch("services.payment.api.settings", _mock_settings()),
+        patch("services.payment.api.create_checkout_session", new=AsyncMock(return_value="https://checkout.stripe.com/c/m")) as mock_create,
+    ):
+        result = await checkout_endpoint(
+            _checkout_payload(telegram_activation_code="", telegram_id="8124447699"), session
+        )
+        assert result["mode"] == "stripe"
+        minted = mock_create.call_args.kwargs["activation_code"]
+        assert re.fullmatch(r"[A-Z0-9]{8}", minted), f"expected 8-char code, got {minted!r}"
+        session.add.assert_called_once()
+        session.commit.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_health_reports_payment_config():
+    session = MagicMock()
+    session.execute = AsyncMock()
+    with (
+        patch("services.payment.api.settings", _mock_settings()),
+        patch("services.payment.api.SessionLocal", return_value=_FakeSessionCtx(session)),
+    ):
+        result = await health_endpoint()
+        assert result["status"] == "ok"
+        assert result["payment_config"] == "stripe_ok"

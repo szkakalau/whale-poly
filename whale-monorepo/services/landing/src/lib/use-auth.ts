@@ -21,16 +21,20 @@ export function useAuth() {
   useEffect(() => {
     fetch('/api/me/plan')
       .then((r) => r.json())
-      .then((data: { plan: Plan; planExpireAt: string | null; isPaid: boolean }) => {
+      .then((data: { plan: Plan; planExpireAt: string | null; isPaid: boolean; authenticated?: boolean }) => {
         setPlan(data.plan);
         setIsPaid(data.isPaid ?? false);
-        setUser({
-          id: '',
-          email: '',
-          telegramId: null,
-          plan: data.plan,
-          planExpireAt: data.planExpireAt ? new Date(data.planExpireAt) : null,
-        });
+        if (data.authenticated) {
+          setUser({
+            id: '',
+            email: '',
+            telegramId: null,
+            plan: data.plan,
+            planExpireAt: data.planExpireAt ? new Date(data.planExpireAt) : null,
+          });
+        } else {
+          setUser(null);
+        }
       })
       .catch(() => {
         setPlan('FREE');
