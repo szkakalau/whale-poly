@@ -157,3 +157,18 @@ Stripe redirect URLs:
 
 - Set Render `LANDING_SUCCESS_URL` to `https://<vercel-domain>/success`
 - Set Render `LANDING_CANCEL_URL` to `https://<vercel-domain>/cancel`
+
+## Payment P0 fix — 2026-08-20
+
+The unified `sightwhale` service was running with `PAYMENT_MODE=stripe` but no
+`STRIPE_SECRET_KEY`, which made `/checkout` silently fall back to the mock
+(free activation) branch — nobody was charged. Fixed by copying
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` from the legacy `payment-api`
+service env and setting:
+
+- `LANDING_SUCCESS_URL=https://www.sightwhale.com/success`
+- `LANDING_CANCEL_URL=https://www.sightwhale.com/cancel`
+
+Note: on this service, env-var-triggered "update" deploys fail; changes only
+go live on a `new_commit` deploy (git push).
+
