@@ -596,6 +596,64 @@ async def prune_vw_snapshots_loop() -> None:
 
 
 # ═══════════════════════════════════════════════════════════════
+# Raw trades retention
+# ═══════════════════════════════════════════════════════════════
+
+
+async def prune_trades_raw_loop() -> None:
+    """Periodically delete trades_raw rows older than the retention window.
+
+    trades_raw grows ~30k rows/day with no other retention mechanism. In
+    2026-08 it hit 9M rows / 7GB: every market_id lookup seq-scanned the
+    table for 15+ minutes and startup reconciliation hung the deploy.
+    Batched deletes use the timestamp index; each statement is bounded
+    server-side so a slow plan fails fast instead of stalling the worker.
+    """
+    from sqlalchemy import delete, select, text
+
+    from shared.models import TradeRaw
+
+    interval = float(os.getenv("TRADES_RAW_PRUNE_SECONDS", "86400"))
+    retention_days = float(os.getenv("TRADES_RAW_RETENTION_DAYS", "90"))
+    batch_size = int(os.getenv("TRADES_RAW_PRUNE_BATCH", "20000"))
+    max_batches_per_cycle = int(os.getenv("TRADES_RAW_PRUNE_MAX_BATCHES", "10"))
+    logger.info(
+        "prune_trades_raw_loop_started interval=%ss retention=%sd batch=%s",
+        interval, retention_days, batch_size,
+    )
+
+    while True:
+        try:
+            total = 0
+            for _ in range(max_batches_per_cycle):
+                async with SessionLocal() as session:
+                    await session.execute(text("SET LOCAL statement_timeout = 30000"))
+                    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+                    ids = (
+                        await session.execute(
+                            select(TradeRaw.trade_id)
+                            .where(TradeRaw.timestamp < cutoff)
+                            .order_by(TradeRaw.timestamp)
+                            .limit(batch_size)
+                        )
+                    ).scalars().all()
+                    if not ids:
+                        await session.rollback()
+                        break
+                    await session.execute(
+                        delete(TradeRaw).where(TradeRaw.trade_id.in_(ids))
+                    )
+                    await session.commit()
+                    total += len(ids)
+                    await asyncio.sleep(0.2)
+            if total:
+                logger.info("prune_trades_raw_done count=%s", total)
+        except Exception:
+            logger.exception("prune_trades_raw_failed")
+        await asyncio.sleep(interval)
+
+
+# ═══════════════════════════════════════════════════════════════
 # Alert Engine Worker
 # ═══════════════════════════════════════════════════════════════
 
@@ -747,6 +805,7 @@ async def start_all_workers(application=None, stop: asyncio.Event | None = None)
     tasks.append(asyncio.create_task(recompute_whale_stats_loop(), name="whale_stats"))
     tasks.append(asyncio.create_task(compute_vw_metrics_loop(), name="vw_metrics"))
     tasks.append(asyncio.create_task(prune_vw_snapshots_loop(), name="vw_prune"))
+    tasks.append(asyncio.create_task(prune_trades_raw_loop(), name="trades_raw_prune"))
 
     # Alert Engine
     tasks.append(asyncio.create_task(alert_consume_whale_trade_loop(), name="alert_consume"))
