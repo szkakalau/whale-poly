@@ -24,13 +24,21 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from shared.config import settings
 from shared.db import SessionLocal
 from shared.models import Alert, TradeRaw, WhaleTrade
 
 logger = logging.getLogger("unified.reconcile")
+
+# Startup reconciliation runs BEFORE uvicorn binds its port. On large prod
+# tables these anti-join queries can run for tens of minutes, blocking the
+# port from ever opening, so Render's port scan times out and the deploy
+# fails (observed 2026-08-20: 5+ orphan queries, 50 min each). Bound each
+# statement server-side; if it is cancelled, the caller catches the error
+# and startup proceeds without reconciliation.
+RECONCILE_STATEMENT_TIMEOUT_MS = int(os.getenv("RECONCILE_STATEMENT_TIMEOUT_MS", "20000"))
 
 
 async def reconcile_pipeline_on_startup(redis) -> dict[str, int]:
@@ -40,6 +48,9 @@ async def reconcile_pipeline_on_startup(redis) -> dict[str, int]:
     summary = {"reconciled_raw_trades": 0, "reconciled_whale_trades": 0}
 
     async with SessionLocal() as session:
+        await session.execute(
+            text(f"SET LOCAL statement_timeout = {RECONCILE_STATEMENT_TIMEOUT_MS}")
+        )
         # Stage 1: raw trades that never produced a whale_trade.
         raw_ids = (
             await session.execute(
