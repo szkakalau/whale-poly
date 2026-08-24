@@ -32,7 +32,7 @@ const getCachedPosts = unstable_cache(
 export const metadata: Metadata = {
   title: 'Site Map — SightWhale',
   description: 'Complete list of all pages on SightWhale.com',
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
 };
 
 export default async function SiteMapPage() {

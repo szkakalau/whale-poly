@@ -89,7 +89,6 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://www.sightwhale.com"),
   alternates: {
-    canonical: "/",
     types: {
       'application/rss+xml': '/blog/feed.xml',
     },
