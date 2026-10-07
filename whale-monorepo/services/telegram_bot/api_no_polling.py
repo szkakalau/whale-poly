@@ -26,7 +26,7 @@ from services.telegram_bot.rate_limit import allow_send, check_daily_alert_limit
 from services.telegram_bot.recipients import AlertRecipient, dedupe_recipients, group_recipients_by_telegram
 from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
-from shared.logging import configure_logging
+from shared.logging import configure_logging, redact_secrets
 from shared.models import (
   Delivery,
   Subscription,
@@ -259,11 +259,14 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
           )
           await try_increment_daily_alert_count(redis, tid, limits["max_alerts_per_day"])
           await record_after_digest_flush(redis, tid, matched_group, cd.flushed_raws or [])
-        except Exception:
-          logger.exception(
-            "telegram_digest_flush_failed telegram_id=%s whale_trade_id=%s",
+        except Exception as exc:
+          # Wraps application.bot.send_message — redact, the exception text can
+          # carry the bot URL.
+          logger.error(
+            "telegram_digest_flush_failed telegram_id=%s whale_trade_id=%s err=%s",
             tid,
             whale_trade_id,
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
           )
         return True
 
@@ -301,8 +304,12 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             await record_push_for_group(redis, tid, matched_group, compute_effective_score(p_json))
             if plan_name == "ELITE" and market_id and wallet_value:
               await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
-          except Exception:
-            logger.exception("delayed_telegram_send_failed telegram_id=%s", tid)
+          except Exception as exc:
+            logger.error(
+              "delayed_telegram_send_failed telegram_id=%s err=%s",
+              tid,
+              redact_secrets(f"{type(exc).__name__}: {exc}"),
+            )
         
         task = asyncio.create_task(_delayed_send())
         _pending_sends.add(task)
@@ -322,8 +329,13 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         if plan_name == "ELITE" and market_id and wallet_value:
           await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
         return True
-      except Exception:
-        logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+      except Exception as exc:
+        logger.error(
+          "telegram_send_failed telegram_id=%s whale_trade_id=%s err=%s",
+          tid,
+          whale_trade_id,
+          redact_secrets(f"{type(exc).__name__}: {exc}"),
+        )
         return False
 
     try:
@@ -491,8 +503,13 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             parse_mode="HTML",
             disable_web_page_preview=True,
           )
-        except Exception:
-          logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+        except Exception as exc:
+          logger.error(
+            "telegram_send_failed telegram_id=%s whale_trade_id=%s err=%s",
+            tid,
+            whale_trade_id,
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+          )
       continue
 
     try:
@@ -517,8 +534,13 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             logger.exception("delivery_record_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
         await session.commit()
       logger.info("alert_dispatched whale_trade_id=%s recipients=%s", whale_trade_id, len(grouped_recipients))
-    except Exception:
-      logger.exception("delivery_dispatch_failed whale_trade_id=%s", whale_trade_id)
+    except Exception as exc:
+      # Wraps _send_with_rules (Telegram sends) — redact.
+      logger.error(
+        "delivery_dispatch_failed whale_trade_id=%s err=%s",
+        whale_trade_id,
+        redact_secrets(f"{type(exc).__name__}: {exc}"),
+      )
 
 
 @asynccontextmanager

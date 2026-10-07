@@ -23,6 +23,7 @@ from telegram.error import TelegramError
 
 from shared.config import settings
 from shared.db import SessionLocal
+from shared.logging import redact_secrets
 from shared.models import Subscription
 from services.telegram_bot.recipients import get_active_subscribers
 
@@ -221,6 +222,7 @@ async def run_backtest_report(stop: asyncio.Event, bot: Bot) -> None:
 
             logger.info(f"backtest_report_sent elite_recipients={sent}")
 
-        except Exception:
-            logger.exception("backtest_report_failed")
+        except Exception as exc:
+            # Covers bot.send_message above — redact the token-bearing URL.
+            logger.error("backtest_report_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
             await asyncio.sleep(60)
