@@ -10,6 +10,7 @@ from telegram.error import TelegramError
 
 from shared.config import settings, get_alert_config
 from shared.db import SessionLocal
+from shared.logging import redact_secrets
 from services.telegram_bot.recipients import get_active_subscribers
 
 logger = logging.getLogger(__name__)
@@ -101,8 +102,10 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
                             await bot.send_message(tg_id, message, disable_web_page_preview=True)
                             return (tg_id, None)
                         except TelegramError as e:
-                            err_msg = str(e)[:100]
-                            logger.debug("vw_pusher_send_failed tg_id=%s market=%s error=%s", tg_id, market_id, err_msg)
+                            # WARNING (was debug -> invisible in prod) and
+                            # redacted, matching the _send_via_bot principle.
+                            err_msg = redact_secrets(str(e))[:100]
+                            logger.warning("vw_pusher_send_failed tg_id=%s market=%s error=%s", tg_id, market_id, err_msg)
                             return (tg_id, err_msg)
 
                 results = await asyncio.gather(*[_send_one(tid) for tid in subscribers])
@@ -113,8 +116,9 @@ async def run_vw_pusher(stop: asyncio.Event, bot: Bot) -> None:
 
             except asyncio.CancelledError:
                 break
-            except Exception:
-                logger.exception("vw_pusher_error")
+            except Exception as exc:
+                # Covers bot.send_message below — redact the token-bearing URL.
+                logger.error("vw_pusher_error err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
                 await asyncio.sleep(1)
     finally:
         await redis.aclose()

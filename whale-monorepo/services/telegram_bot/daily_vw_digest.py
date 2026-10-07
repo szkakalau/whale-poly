@@ -8,6 +8,7 @@ from telegram.error import TelegramError
 
 from shared.config import settings, get_alert_config
 from shared.db import SessionLocal
+from shared.logging import redact_secrets
 from services.telegram_bot.recipients import get_active_subscribers
 
 logger = logging.getLogger(__name__)
@@ -136,12 +137,23 @@ async def run_daily_digest(stop: asyncio.Event, bot: Bot) -> None:
                 try:
                     await bot.send_message(tg_id, message, disable_web_page_preview=True)
                     sent += 1
-                except TelegramError:
+                except TelegramError as exc:
+                    # Previously silent: a 403 (user blocked the bot / never
+                    # pressed START) left no trace at all — this path writes no
+                    # deliveries row, so the log was the only possible evidence.
+                    # Log it ERROR with the redacted reason and the tg_id.
+                    logger.error(
+                        "daily_vw_digest_send_failed tg_id=%s err=%s",
+                        tg_id,
+                        redact_secrets(f"{type(exc).__name__}: {exc}"),
+                    )
                     await asyncio.sleep(0.05)
                     continue
 
-            logger.info(f"daily_vw_digest_sent recipients={sent}")
+            logger.info(f"daily_vw_digest_sent recipients={sent}/{len(subscribers)}")
 
-        except Exception:
-            logger.exception("daily_vw_digest_failed")
+        except Exception as exc:
+            # Covers bot.send_message to paid subscribers — redact: the
+            # underlying httpx/PTB exception text can embed the bot URL.
+            logger.error("daily_vw_digest_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
             await asyncio.sleep(60)

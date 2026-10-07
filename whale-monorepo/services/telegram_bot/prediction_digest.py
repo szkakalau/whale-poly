@@ -17,6 +17,7 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 from shared.config import settings
+from shared.logging import redact_secrets
 from services.telegram_bot.recipients import get_active_subscribers
 
 logger = logging.getLogger(__name__)
@@ -178,12 +179,21 @@ async def run_prediction_digest(stop: asyncio.Event, bot: Bot) -> None:
                         tg_id, message, parse_mode="HTML", disable_web_page_preview=True
                     )
                     sent += 1
-                except TelegramError:
+                except TelegramError as exc:
+                    # Previously silent (same shape as daily_vw_digest): the only
+                    # evidence of a failed digest send is this log line — record
+                    # it with the tg_id and the redacted reason.
+                    logger.error(
+                        "prediction_digest_send_failed tg_id=%s err=%s",
+                        tg_id,
+                        redact_secrets(f"{type(exc).__name__}: {exc}"),
+                    )
                     await asyncio.sleep(0.05)
                     continue
 
-            logger.info(f"prediction_digest_sent recipients={sent} markets={len(valid)}")
+            logger.info(f"prediction_digest_sent recipients={sent}/{len(subscribers)} markets={len(valid)}")
 
-        except Exception:
-            logger.exception("prediction_digest_failed")
+        except Exception as exc:
+            # Covers bot.send_message above — redact the token-bearing URL.
+            logger.error("prediction_digest_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
             await asyncio.sleep(60)
