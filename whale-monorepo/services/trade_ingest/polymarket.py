@@ -15,6 +15,32 @@ from shared.models import Market, TradeRaw, WhaleProfile, WhaleStats
 logger = logging.getLogger("trade_ingest.polymarket")
 
 
+# ── Column-width guards ──────────────────────────────────────────────
+# These mirror the VARCHAR limits declared on TradeRaw / Market in
+# shared.models. Polymarket "grouped" markets concatenate every sub-question
+# into one title with " AND " (e.g. "Will A win on X? AND Will B win on Y? AND
+# ..."), which regularly exceeds 512 chars. Postgres raises
+# StringDataRightTruncationError while forming the tuple — ON CONFLICT DO
+# NOTHING does NOT rescue it — and because the markets upsert shares a
+# transaction with the trades_raw insert, ONE over-long title discarded the
+# ENTIRE batch (~100 trades) and the ingest loop kept failing every 31s until
+# that trade scrolled out of the fetch window.
+_MAX_TRADE_ID = 128
+_MAX_MARKET_ID = 512
+_MAX_MARKET_TITLE = 512
+_MAX_OUTCOME = 128
+_MAX_WALLET = 128
+_MAX_SIDE = 16
+
+
+def _clip(value: Any, limit: int) -> Any:
+  """Trim a value to the destination column width (None passes through)."""
+  if value is None:
+    return None
+  s = value if isinstance(value, str) else str(value)
+  return s if len(s) <= limit else s[:limit]
+
+
 def normalize_key(value: str) -> str:
   v = value.strip()
   return v.lower() if v.startswith("0x") else v
@@ -155,16 +181,17 @@ def parse_trade(t: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
   title = t.get("title") or t.get("question")
+  outcome_str = str(outcome) if outcome is not None and str(outcome).strip() else None
   return {
-    "trade_id": str(trade_id), 
-    "market_id": market_id, 
-    "wallet": wallet, 
-    "side": side, 
-    "outcome": str(outcome) if outcome is not None and str(outcome).strip() else None,
+    "trade_id": _clip(str(trade_id), _MAX_TRADE_ID), 
+    "market_id": _clip(market_id, _MAX_MARKET_ID), 
+    "wallet": _clip(wallet, _MAX_WALLET), 
+    "side": _clip(side, _MAX_SIDE), 
+    "outcome": _clip(outcome_str, _MAX_OUTCOME),
     "amount": amount, 
     "price": price, 
     "timestamp": ts,
-    "market_title": title
+    "market_title": _clip(title, _MAX_MARKET_TITLE)
   }
 
 
@@ -257,16 +284,18 @@ async def ingest_trades(session: AsyncSession) -> list[str]:
     return []
 
   # Batch upsert markets in a single INSERT instead of N individual queries (PF-M1).
+  # NB: this statement is the one that used to raise StringDataRightTruncationError
+  # on grouped-market titles >512 chars; values are clipped defensively here too.
   market_rows: dict[str, str] = {}
   for r in rows:
-    title = r.get("market_title")
+    title = _clip(r.get("market_title"), _MAX_MARKET_TITLE)
     if title and r["market_id"] not in market_rows:
       market_rows[r["market_id"]] = title
   if market_rows:
     # Use pg_insert directly for proper ON CONFLICT DO UPDATE with bulk values.
     from sqlalchemy.dialects.postgresql import insert as pg_insert
     market_stmt = pg_insert(Market).values(
-      [{"id": mid, "title": t} for mid, t in market_rows.items()]
+      [{"id": _clip(mid, _MAX_MARKET_ID), "title": t} for mid, t in market_rows.items()]
     )
     market_stmt = market_stmt.on_conflict_do_nothing(index_elements=[Market.id])
     await session.execute(market_stmt)
