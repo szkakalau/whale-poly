@@ -1029,6 +1029,49 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
 
       if not claimed:
         # Already 'pending' or 'sent' for this pair — do not deliver twice.
+        #
+        # This branch used to be silent, which made the ledger unfalsifiable:
+        # losing the claim to a 'sent' row is the normal, healthy outcome
+        # (reconcile replaying an already-delivered alert), while losing it to
+        # a *stranded* 'pending' row means the alert is being dropped and will
+        # not be retried. Both looked identical — nothing logged either way.
+        # Read the current status back so the two are distinguishable.
+        existing: str | None
+        try:
+          async with SessionLocal() as session:
+            existing = await session.scalar(
+              select(Delivery.status).where(
+                Delivery.telegram_id == tid,
+                Delivery.whale_trade_id == whale_trade_id,
+              )
+            )
+        except Exception as exc:  # noqa: BLE001 — logging must never break delivery
+          existing = None
+          logger.warning(
+            "delivery_claim_lost_status_unknown telegram_id=%s whale_trade_id=%s err=%s",
+            tid,
+            whale_trade_id,
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+          )
+        if existing == _STATUS_PENDING:
+          # The dangerous case: nothing in this process is sending this pair
+          # (we just tried and lost), so the holder is either a concurrent
+          # process or a claim stranded by a crash. A stranded row is only
+          # released by reconcile at the next startup.
+          logger.warning(
+            "delivery_claim_lost_pending telegram_id=%s whale_trade_id=%s "
+            "(pair held elsewhere; if no send is in flight this alert is "
+            "stranded until reconcile releases it)",
+            tid,
+            whale_trade_id,
+          )
+        else:
+          logger.info(
+            "delivery_claim_lost status=%s telegram_id=%s whale_trade_id=%s",
+            existing,
+            tid,
+            whale_trade_id,
+          )
         return
 
       delay_seconds = limits["alert_delay_minutes"] * 60

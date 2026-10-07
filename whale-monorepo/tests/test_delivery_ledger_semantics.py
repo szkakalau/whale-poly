@@ -257,6 +257,166 @@ class TestClaimConsumption:
         )
 
 
+class TestClaimLossIsObservable:
+    """The not-claimed branch must say *why* it skipped, and how loudly.
+
+    It used to be a bare `return` with no log line, which made the ledger
+    unfalsifiable at the outcome level: losing the claim to a 'sent' row is the
+    healthy outcome (reconcile replaying an already-delivered alert), while
+    losing it to a *stranded* 'pending' row means the alert is dropped and never
+    retried. Nothing was logged either way, so a dropped alert looked exactly
+    like a quiet market. These tests pin the two apart.
+    """
+
+    def _branch(self) -> ast.If:
+        tree = ast.parse(_read(API))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.If):
+                continue
+            test = node.test
+            if (
+                isinstance(test, ast.UnaryOp)
+                and isinstance(test.op, ast.Not)
+                and isinstance(test.operand, ast.Name)
+                and test.operand.id == "claimed"
+            ):
+                return node
+        raise AssertionError("the `if not claimed:` guard is gone")
+
+    @staticmethod
+    def _strings(node: ast.AST) -> str:
+        return "\n".join(
+            n.value for n in ast.walk(node)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+        )
+
+    @staticmethod
+    def _log_calls(node) -> list[tuple[str, str]]:
+        """(level, message-literal) for every logger.<level>(...) in `node`.
+
+        Accepts a node or a statement list — `ast.walk()` silently yields
+        nothing for a bare list, which is a trap worth not tripping twice.
+        """
+        roots = node if isinstance(node, list) else [node]
+        out: list[tuple[str, str]] = []
+        for root in roots:
+            for n in ast.walk(root):
+                if not isinstance(n, ast.Call):
+                    continue
+                f = n.func
+                if not isinstance(f, ast.Attribute) or _dotted(f.value) != "logger":
+                    continue
+                if not n.args:
+                    continue
+                first = n.args[0]
+                if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                    out.append((f.attr, first.value))
+        return out
+
+    def test_losing_the_claim_is_logged(self):
+        assert "delivery_claim_lost" in self._strings(self._branch()), (
+            "the not-claimed branch is silent again; a dropped alert becomes "
+            "indistinguishable from a quiet period"
+        )
+
+    def test_the_stranded_pending_case_is_a_warning(self):
+        logs = self._log_calls(self._branch())
+        pending = [(lv, m) for lv, m in logs if "delivery_claim_lost_pending" in m]
+        assert pending, "a claim lost to a stranded 'pending' row must be logged"
+        assert pending[0][0] == "warning", (
+            "losing the claim to 'pending' can mean the alert is dropped forever; "
+            "it must not be logged at info level alongside the healthy case"
+        )
+
+    def test_the_healthy_sent_case_is_only_info(self):
+        logs = self._log_calls(self._branch())
+        sent = [
+            (lv, m)
+            for lv, m in logs
+            if m.startswith("delivery_claim_lost status=")
+        ]
+        assert sent, "the healthy 'already sent' case must still be logged"
+        assert sent[0][0] == "info", (
+            "reconcile replaying an already-delivered alert is routine; logging "
+            "it as a warning would train operators to ignore the real one"
+        )
+
+    def test_the_status_is_read_back_from_the_ledger_not_assumed(self):
+        branch = self._branch()
+        called = set()
+        for n in ast.walk(branch):
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
+                called.add(n.func.attr)
+        assert "scalar" in called, (
+            "the branch must read Delivery.status back so the log reports the "
+            "real reason instead of guessing"
+        )
+        reads_delivery_status = any(
+            isinstance(n, ast.Attribute)
+            and n.attr == "status"
+            and isinstance(n.value, ast.Name)
+            and n.value.id == "Delivery"
+            for n in ast.walk(branch)
+        )
+        assert reads_delivery_status, "the read-back must query Delivery.status"
+
+    def test_the_pending_test_is_a_real_comparison(self):
+        """A constant test would keep every log string in the source while
+        making the dangerous case unreachable — a mutation test caught exactly
+        that, so this asserts the comparison, not just the presence of text."""
+        branch = self._branch()
+        compares = [
+            n
+            for n in ast.walk(branch)
+            if isinstance(n, ast.Compare)
+            and isinstance(n.left, ast.Name)
+            and n.left.id == "existing"
+            and len(n.comparators) == 1
+            and isinstance(n.comparators[0], ast.Name)
+            and n.comparators[0].id == "_STATUS_PENDING"
+        ]
+        assert compares, (
+            "the branch must compare the read-back status against _STATUS_PENDING; "
+            "any other test makes 'stranded pending' unreachable while still "
+            "looking logged"
+        )
+
+    def test_both_outcomes_of_the_split_log(self):
+        branch = self._branch()
+        split = [
+            n
+            for n in ast.walk(branch)
+            if isinstance(n, ast.If)
+            and n.orelse
+            and self._log_calls(n.body)
+            and self._log_calls(n.orelse)
+        ]
+        assert split, (
+            "both the pending (dropped) and the sent (healthy) outcome must be "
+            "logged, so no path through the branch is silent"
+        )
+
+    def test_a_failed_read_back_cannot_break_delivery(self):
+        branch = self._branch()
+        handlers = [
+            h for n in ast.walk(branch) if isinstance(n, ast.Try) for h in n.handlers
+        ]
+        assert handlers, (
+            "the read-back is diagnostic only; if it raises, the send decision "
+            "must still stand, so it must be wrapped in try/except"
+        )
+        caught = [
+            "bare" if h.type is None else _dotted(h.type) for h in handlers
+        ]
+        assert any(c in ("Exception", "BaseException", "bare") for c in caught), (
+            f"the read-back can fail with any DB error, but only {caught} is caught"
+        )
+        assert "delivery_claim_lost_status_unknown" in self._strings(branch), (
+            "a failed read-back must still emit a log line, otherwise the "
+            "diagnostic becomes the new silent branch"
+        )
+
+
 # ── code-to-schema contract ─────────────────────────────────────────────────
 
 
