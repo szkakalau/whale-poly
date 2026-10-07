@@ -1,7 +1,23 @@
 import hashlib
 import json
+from html import escape as _html_escape
 
 from shared.config import settings
+
+
+def _esc(value) -> str:
+  """Escape untrusted text before it is interpolated into an HTML message.
+
+  Alerts are sent with ``parse_mode="HTML"``, so a market title containing ``&``
+  or ``<`` — e.g. "Will A & B happen?" — makes Telegram reject the whole message
+  with `400 Bad Request: can't parse entities`. Previously such an alert was
+  lost silently. Escaping every interpolated value is what keeps one awkward
+  market title from killing the delivery.
+
+  ``quote=False``: these values never land in an HTML attribute, so escaping
+  quotes would only add noise to the rendered message.
+  """
+  return _html_escape(str(value), quote=False)
 
 
 def user_hash(telegram_id: str) -> str:
@@ -82,21 +98,24 @@ def format_alert(payload: dict, telegram_id: str) -> str:
   type_label = "Entry" if alert_type == "whale_entry" else "Exit" if alert_type == "whale_exit" else alert_type.capitalize()
   confidence_line = "⚠️ <b>Confidence:</b> <b>Low</b>\n" if signal_level == "low" else ""
   outcome_value = str(outcome).strip().upper() if outcome else ""
-  outcome_line = f"🏁 <b>Outcome:</b> <b>{outcome_value}</b>\n" if outcome_value else ""
+  outcome_line = f"🏁 <b>Outcome:</b> <b>{_esc(outcome_value)}</b>\n" if outcome_value else ""
   
   wm = user_hash(telegram_id)
-  
+
+  # Everything interpolated below is attacker-influenced (Polymarket market
+  # titles, wallet-provided names) and the message is parsed as HTML — so every
+  # value goes through _esc(). See the _esc docstring for the failure it prevents.
   return (
     "🐋 <b>Whale Trade Detected</b>\n\n"
-    f"📊 <b>Market:</b>\n{market}\n\n"
-    f"🏷 <b>Type:</b> {type_label}\n"
+    f"📊 <b>Market:</b>\n{_esc(market)}\n\n"
+    f"🏷 <b>Type:</b> {_esc(type_label)}\n"
     f"{outcome_line}"
-    f"{side_emoji} <b>Side:</b> <b>{side}</b>\n"
-    f"💰 <b>Size:</b> <b>${_fmt_usd(size)}</b>\n"
-    f"💵 <b>Price:</b> <code>{_fmt_price(price)}</code>\n"
-    f"🎯 <b>Whale Score:</b> <code>{int(float(score))}</code>\n"
+    f"{side_emoji} <b>Side:</b> <b>{_esc(side)}</b>\n"
+    f"💰 <b>Size:</b> <b>${_esc(_fmt_usd(size))}</b>\n"
+    f"💵 <b>Price:</b> <code>{_esc(_fmt_price(price))}</code>\n"
+    f"🎯 <b>Whale Score:</b> <code>{_esc(int(float(score)))}</code>\n"
     f"{confidence_line}"
-    f"👛 <b>Wallet:</b> <code>{wallet_display}</code>\n\n"
+    f"👛 <b>Wallet:</b> <code>{_esc(wallet_display)}</code>\n\n"
     f"<code>#{wm}</code>"
   )
 
@@ -115,7 +134,7 @@ def format_digest_lines(raw_json_strings: list[str], telegram_id: str) -> str:
       sc = int(float(p.get("whale_score") or p.get("score") or 0))
     except (TypeError, ValueError):
       sc = 0
-    return f"<code>{w}</code> score <b>{sc}</b> — {title}"
+    return f"<code>{_esc(w)}</code> score <b>{_esc(sc)}</b> — {_esc(title)}"
 
   lines = [f"📋 <b>Alert digest</b> <code>#{user_hash(telegram_id)}</code>", ""]
   for raw in raw_json_strings:

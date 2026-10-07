@@ -33,7 +33,7 @@ from services.telegram_bot.recipients import (
 )
 from shared.config import settings, get_alert_config, parse_duration
 from shared.db import SessionLocal
-from shared.logging import configure_logging
+from shared.logging import configure_logging, redact_secrets
 from shared.models import (
   Collection,
   CollectionWhale,
@@ -241,8 +241,9 @@ async def _run_bot_runtime_forever(stop: asyncio.Event, redis: Redis, applicatio
               await application.updater.start_polling(allowed_updates=["message", "callback_query"])
               polling = True
               logger.info("bot_polling_started")
-            except Exception:
-              logger.exception("bot_polling_start_failed")
+            except Exception as exc:
+              # start_polling hits api.telegram.org — redact the URL/token.
+              logger.error("bot_polling_start_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
               try:
                 cur = await redis.get(lock_key)
                 if cur == lock_value:
@@ -253,8 +254,8 @@ async def _run_bot_runtime_forever(stop: asyncio.Event, redis: Redis, applicatio
               lock_value = None
           else:
             lock_value = None
-      except Exception:
-        logger.exception("bot_runtime_loop_failed")
+      except Exception as exc:
+        logger.error("bot_runtime_loop_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
 
       try:
         await asyncio.wait_for(stop.wait(), timeout=30)
@@ -295,7 +296,184 @@ def _is_health_market(payload: dict) -> bool:
   return "health" in title or "health" in m_id
 
 
-async def _send_via_bot(token: str, chat_id: str, text: str):
+_NO_SESSION_MARKERS = (
+  "can't initiate conversation",
+  "cannot initiate conversation",
+  "bot was blocked by the user",
+  "user is deactivated",
+  "chat not found",
+)
+
+
+def _is_no_session_error(exc: BaseException) -> bool:
+  """
+  Telegram hard limit: a bot cannot message a user who never opened a chat
+  with it (or who blocked / deleted it). Detect it so we can alert on it.
+  """
+  text = str(exc).lower()
+  return any(marker in text for marker in _NO_SESSION_MARKERS)
+
+
+def _log_send_failure(tid: str, whale_trade_id: str, exc: BaseException) -> None:
+  if _is_no_session_error(exc):
+    # Distinct, greppable marker — this user will NEVER receive an alert
+    # until they press START on a deep link.
+    logger.error(
+      "DELIVERY_BLOCKED_NO_SESSION telegram_id=%s whale_trade_id=%s reason=%s",
+      tid,
+      whale_trade_id,
+      redact_secrets(str(exc))[:160],
+    )
+    return
+  # Deliberately NOT logger.exception(): the exception text can embed the
+  # Telegram bot URL (token included). Redact before it reaches the sink.
+  logger.error(
+    "telegram_send_failed telegram_id=%s whale_trade_id=%s err=%s",
+    tid,
+    whale_trade_id,
+    redact_secrets(f"{type(exc).__name__}: {exc}"),
+  )
+
+
+# ── Delivery outcome ledger (F1) ─────────────────────────────────────────
+# The `deliveries` row is both the idempotency claim and the outcome record:
+#   * claim  — insert (or re-claim a previously 'failed' row) as 'pending';
+#   * finish — update the claimed row to 'sent' (success) or 'failed' (failure).
+# A pair is "already handled" iff its row is 'pending' or 'sent'. A 'failed'
+# row stays re-claimable, so a transient send failure retries on the next
+# round instead of being permanently blocked by its own claim row.
+_STATUS_PENDING = "pending"
+_STATUS_SENT = "sent"
+_STATUS_FAILED = "failed"
+
+
+def _delivery_error_text(exc: BaseException) -> str:
+  """Short, credential-redacted failure reason, capped to the 200-char column."""
+  return redact_secrets(f"{type(exc).__name__}: {exc}")[:200]
+
+
+# The unique index the two upserts below conflict on. Kept in one place so the
+# claim and the finish can never disagree about the identity of a delivery.
+_DELIVERY_CONFLICT_COLUMNS = ["telegram_id", "whale_trade_id"]
+
+
+def _delivery_claim_stmt(telegram_id: str, whale_trade_id: str):
+  """Build the claim upsert: take the delivery slot for this pair as 'pending'.
+
+  The `where` is the whole point of the state machine — it decides who is
+  allowed to win the conflict:
+
+    * a 'failed' row passes, so a transient send failure is retried later;
+    * a 'pending' row fails it (another task is already sending);
+    * a 'sent' row fails it, so a delivered alert is NEVER sent twice.
+
+  A single atomic statement makes the claim concurrency-safe: a racing claim
+  blocks on `uq_deliveries`, then re-evaluates this WHERE against the committed
+  row, so exactly one claimant ever gets a returned id.
+  """
+  return (
+    insert(Delivery)
+    .values(
+      telegram_id=telegram_id,
+      whale_trade_id=whale_trade_id,
+      status=_STATUS_PENDING,
+      updated_at=func.now(),
+    )
+    .on_conflict_do_update(
+      index_elements=_DELIVERY_CONFLICT_COLUMNS,
+      set_={"status": _STATUS_PENDING, "error": None, "updated_at": func.now()},
+      where=(Delivery.status == _STATUS_FAILED),
+    )
+    .returning(Delivery.id)
+  )
+
+
+def _delivery_finish_stmt(
+  telegram_id: str,
+  whale_trade_id: str,
+  status: str,
+  error: str | None = None,
+):
+  """Build the outcome upsert (the single writer of a terminal delivery state).
+
+  Upsert rather than UPDATE because the digest-flush path delivers an alert
+  *before* any claim row exists. The conflict guards keep the machine
+  monotonic in both directions:
+
+    * marking 'sent' carries ``status != 'sent'`` — re-marking a success is a
+      no-op, never a second write;
+    * marking 'failed' carries ``status == 'pending'`` — it can only move a row
+      this task claimed, so a failure can never downgrade a successful send,
+      nor clear a claim that belongs to another task.
+  """
+  if status == _STATUS_SENT:
+    conflict_where = Delivery.status != _STATUS_SENT
+  else:
+    conflict_where = Delivery.status == _STATUS_PENDING
+  return (
+    insert(Delivery)
+    .values(
+      telegram_id=telegram_id,
+      whale_trade_id=whale_trade_id,
+      status=status,
+      error=error,
+      updated_at=func.now(),
+    )
+    .on_conflict_do_update(
+      index_elements=_DELIVERY_CONFLICT_COLUMNS,
+      set_={"status": status, "error": error, "updated_at": func.now()},
+      where=conflict_where,
+    )
+  )
+
+
+async def _finish_delivery(
+  telegram_id: str,
+  whale_trade_id: str,
+  status: str,
+  error: str | None = None,
+) -> None:
+  """Write the terminal delivery outcome for a (telegram_id, whale_trade_id) pair.
+
+  Upserting covers the digest-flush path too, which delivers the alert as part
+  of a combined digest *before* any claim row exists. The conflict guards keep
+  the state machine monotonic:
+    * marking 'sent' never overwrites an existing 'sent';
+    * marking 'failed' only moves a row this task claimed ('pending'), so it
+      can never downgrade a successful send or clear a foreign claim.
+
+  The statement itself lives in ``_delivery_finish_stmt`` so its guards can be
+  asserted directly in tests (a compiled-SQL check, no database required).
+  """
+  try:
+    async with SessionLocal() as session:
+      await session.execute(
+        _delivery_finish_stmt(telegram_id, whale_trade_id, status, error)
+      )
+      await session.commit()
+  except Exception as exc:
+    # Bookkeeping must never break the delivery path. Redact — an httpx error
+    # can carry the full Telegram bot URL.
+    logger.error(
+      "delivery_result_write_failed telegram_id=%s whale_trade_id=%s status=%s err=%s",
+      telegram_id,
+      whale_trade_id,
+      status,
+      redact_secrets(f"{type(exc).__name__}: {exc}"),
+    )
+
+
+async def _send_via_bot(token: str, chat_id: str, text: str) -> bool:
+  """Send one message using an explicit health-bot token.
+
+  Returns True on a 2xx response, False on any failure.
+
+  Failures are logged here (redacted) and deliberately NOT re-raised: the raw
+  httpx exception embeds the request URL — `.../bot<TOKEN>/sendMessage` — so it
+  is contained inside this function, the single redaction sink, instead of
+  propagating to callers. Callers must treat a False return as a send failure
+  (D2: previously the swallowed failure let them record a fake 'sent').
+  """
   url = f"https://api.telegram.org/bot{token}/sendMessage"
   payload = {
     "chat_id": chat_id,
@@ -307,9 +485,26 @@ async def _send_via_bot(token: str, chat_id: str, text: str):
     try:
       resp = await client.post(url, json=payload, timeout=10)
       resp.raise_for_status()
-    except Exception:
-      # Never log the token (or a usable prefix of it) — bot tokens are credentials.
-      logger.exception("send_via_bot_failed chat_id=%s", chat_id)
+      return True
+    except httpx.HTTPStatusError as exc:
+      # httpx embeds the full request URL — bot token included — in the
+      # HTTPStatusError message. logger.exception() would render it verbatim,
+      # so log a redacted message instead (no traceback) and drop the token.
+      logger.error(
+        "send_via_bot_failed chat_id=%s status=%s err=%s",
+        chat_id,
+        getattr(exc.response, "status_code", None),
+        redact_secrets(str(exc)),
+      )
+      return False
+    except Exception as exc:
+      # Same hazard: some transport errors carry the request URL too.
+      logger.error(
+        "send_via_bot_failed chat_id=%s err=%s",
+        chat_id,
+        redact_secrets(f"{type(exc).__name__}: {exc}"),
+      )
+      return False
 
 
 async def _log_subscriber_stats_forever(stop: asyncio.Event) -> None:
@@ -395,7 +590,9 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       return {"max_alerts_per_day": max_alerts, "alert_delay_minutes": delay_minutes, "min_whale_score": int(min_score)}
 
     PLAN_LIMITS_MAP = {
-      "FREE": _plan_limits("free", 10, 3, 0),
+      # Fallback defaults only (alert_engine_config.yaml wins). Kept in sync
+      # with the widened free tier: 10 alerts/day, 5m delay.
+      "FREE": _plan_limits("free", 5, 10, 0),
       "PRO": _plan_limits("pro", 0, "unlimited", 70),
       "ELITE": _plan_limits("elite", 0, "unlimited", 80),
     }
@@ -735,9 +932,14 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         # Cooldown queued the message for later delivery — keep the count.
         return
       if cd.action == CooldownAction.FLUSH_ONLY and cd.flush_combined_text:
+        sent_ok = False
         try:
           if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-            await _send_via_bot(settings.telegram_health_bot_token, tid, cd.flush_combined_text)
+            ok = await _send_via_bot(settings.telegram_health_bot_token, tid, cd.flush_combined_text)
+            if not ok:
+              # Fixed string on purpose — never interpolate the raw exception,
+              # which can embed .../bot<TOKEN>/sendMessage (D2).
+              raise RuntimeError("health_send_failed")
           else:
             await application.bot.send_message(
               chat_id=int(tid),
@@ -745,15 +947,43 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
               parse_mode="HTML",
               disable_web_page_preview=True,
             )
+          # The send call returned normally — from here on the ledger must end
+          # up 'sent' no matter what the following bookkeeping does (D1).
+          sent_ok = True
+          # Ledger first, bookkeeping second: the ledger is the source of truth
+          # for retry/idempotency, cooldown state is disposable. The current
+          # alert's raw was pushed to the digest buffer just before this flush,
+          # so it went out inside the digest — record it as sent (F1).
+          await _finish_delivery(tid, whale_trade_id, _STATUS_SENT)
           # Count was already incremented at the top — no need to call
           # try_increment_daily_alert_count again.
           await record_after_digest_flush(redis, tid, matched_group, cd.flushed_raws or [])
-        except Exception:
-          logger.exception(
-            "telegram_digest_flush_failed telegram_id=%s whale_trade_id=%s",
-            tid,
-            whale_trade_id,
-          )
+        except Exception as exc:
+          if sent_ok:
+            # Message already delivered — a post-send bookkeeping failure must
+            # never downgrade the ledger to a retryable state (D1: that would
+            # re-claim and double-send).
+            logger.error(
+              "telegram_post_send_bookkeeping_failed telegram_id=%s whale_trade_id=%s err=%s",
+              tid,
+              whale_trade_id,
+              redact_secrets(f"{type(exc).__name__}: {exc}"),
+            )
+          else:
+            # Wraps application.bot.send_message — redact, the exception text
+            # can carry the bot URL.
+            logger.error(
+              "telegram_digest_flush_failed telegram_id=%s whale_trade_id=%s err=%s",
+              tid,
+              whale_trade_id,
+              redact_secrets(f"{type(exc).__name__}: {exc}"),
+            )
+            if _is_no_session_error(exc):
+              # Also emit the greppable DELIVERY_BLOCKED_NO_SESSION marker so
+              # "this subscriber can never be reached" is searchable no matter
+              # which send path failed.
+              _log_send_failure(tid, whale_trade_id, exc)
+            await _finish_delivery(tid, whale_trade_id, _STATUS_FAILED, _delivery_error_text(exc))
         return
 
       backlog_raws = cd.backlog_raws or []
@@ -770,61 +1000,111 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
         last_focus = await redis.get(elite_priority_key)
         elite_same_focus = last_focus == f"{wallet_value}|{market_id}"
 
+      # Claim the delivery slot for this (telegram_id, whale_trade_id) pair.
+      # The row is upserted as 'pending'; only a previously *failed* row can be
+      # re-claimed (F1). This makes the three properties hold simultaneously:
+      #   * P2 failed → retryable: a 'failed' row passes the WHERE and is
+      #     re-claimed on the next round.
+      #   * P3 sent is never repeated: once 'sent', the WHERE is false, so the
+      #     pair can never be claimed (and thus never re-sent) again.
+      #   * P4 concurrency-safe: the upsert is a single atomic statement. A
+      #     racing claim of the same pair blocks on the unique index, then
+      #     re-evaluates the WHERE against the committed row — 'pending'/'sent'
+      #     both fail it, so exactly one claimant ever wins.
       try:
         async with SessionLocal() as session:
           result = await session.execute(
-            insert(Delivery)
-            .values(telegram_id=tid, whale_trade_id=whale_trade_id)
-            .on_conflict_do_nothing(index_elements=["telegram_id", "whale_trade_id"])
+            _delivery_claim_stmt(tid, whale_trade_id)
           )
-          rowcount = result.rowcount
+          claimed = result.scalar_one_or_none() is not None
           await session.commit()
+      except Exception as exc:
+        logger.error(
+          "delivery_claim_failed telegram_id=%s whale_trade_id=%s err=%s",
+          tid,
+          whale_trade_id,
+          redact_secrets(f"{type(exc).__name__}: {exc}"),
+        )
+        return
 
-        if rowcount != 1:
-          return
+      if not claimed:
+        # Already 'pending' or 'sent' for this pair — do not deliver twice.
+        return
 
-        delay_seconds = limits["alert_delay_minutes"] * 60
-        if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
-          delay_seconds = max(delay_seconds, 60)
+      delay_seconds = limits["alert_delay_minutes"] * 60
+      if plan_name == "ELITE" and signal_level == "low" and not elite_same_focus:
+        delay_seconds = max(delay_seconds, 60)
 
-        if delay_seconds > 0:
-          async def _delayed_send():
-            try:
-              await asyncio.sleep(delay_seconds)
-              body = _message_body()
-              # Add send timeout to prevent hanging tasks (CR-I2).
-              if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-                await asyncio.wait_for(
-                  _send_via_bot(settings.telegram_health_bot_token, tid, body),
-                  timeout=30,
-                )
-              else:
-                await asyncio.wait_for(
-                  application.bot.send_message(
-                    chat_id=int(tid),
-                    text=body,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True,
-                  ),
-                  timeout=30,
-                )
-              # Daily count already incremented at the top of _send_one.
-              await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
-              if plan_name == "ELITE" and market_id and wallet_value:
-                await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
-            except asyncio.TimeoutError:
-              logger.error("telegram_send_timeout telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
-            except Exception:
-              logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+      if delay_seconds > 0:
+        async def _delayed_send():
+          sent_ok = False
+          try:
+            await asyncio.sleep(delay_seconds)
+            body = _message_body()
+            # Add send timeout to prevent hanging tasks (CR-I2).
+            if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
+              ok = await asyncio.wait_for(
+                _send_via_bot(settings.telegram_health_bot_token, tid, body),
+                timeout=30,
+              )
+              if not ok:
+                # Fixed string on purpose — never interpolate the raw
+                # exception, which can embed .../bot<TOKEN>/sendMessage (D2).
+                raise RuntimeError("health_send_failed")
+            else:
+              await asyncio.wait_for(
+                application.bot.send_message(
+                  chat_id=int(tid),
+                  text=body,
+                  parse_mode="HTML",
+                  disable_web_page_preview=True,
+                ),
+                timeout=30,
+              )
+            # The send call returned normally — from here on the ledger must end
+            # up 'sent' no matter what the following bookkeeping does (D1).
+            sent_ok = True
+            # Ledger first, bookkeeping second: the ledger drives retry, the
+            # cooldown/priority state is disposable.
+            await _finish_delivery(tid, whale_trade_id, _STATUS_SENT)
+            # Daily count already incremented at the top of _send_one.
+            await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
+            if plan_name == "ELITE" and market_id and wallet_value:
+              await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
+          except asyncio.TimeoutError:
+            logger.error("telegram_send_timeout telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+            if not sent_ok:
+              await _finish_delivery(
+                tid, whale_trade_id, _STATUS_FAILED, "TimeoutError: send timed out after 30s"
+              )
+          except Exception as exc:
+            if sent_ok:
+              # Message already delivered — a post-send bookkeeping failure must
+              # never downgrade the ledger to a retryable state (D1).
+              logger.error(
+                "telegram_post_send_bookkeeping_failed telegram_id=%s whale_trade_id=%s err=%s",
+                tid,
+                whale_trade_id,
+                redact_secrets(f"{type(exc).__name__}: {exc}"),
+              )
+            else:
+              _log_send_failure(tid, whale_trade_id, exc)
+              await _finish_delivery(tid, whale_trade_id, _STATUS_FAILED, _delivery_error_text(exc))
 
-          task = asyncio.create_task(_delayed_send())
-          _pending_sends.add(task)
-          task.add_done_callback(_pending_sends.discard)
-          return
+        task = asyncio.create_task(_delayed_send())
+        _pending_sends.add(task)
+        task.add_done_callback(_pending_sends.discard)
+        return
 
-        body = _message_body()
+      body = _message_body()
+      sent_ok = False
+      try:
         if tid == settings.telegram_health_chat_id and is_health and settings.telegram_health_bot_token:
-          await _send_via_bot(settings.telegram_health_bot_token, tid, body)
+          ok = await _send_via_bot(settings.telegram_health_bot_token, tid, body)
+          if not ok:
+            # Fixed string on purpose — never interpolate the raw exception,
+            # which can embed .../bot<TOKEN>/sendMessage (D2).
+            raise RuntimeError("health_send_failed")
         else:
           await application.bot.send_message(
             chat_id=int(tid),
@@ -832,12 +1112,34 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
             parse_mode="HTML",
             disable_web_page_preview=True,
           )
+        # The send call returned normally — from here on the ledger must end up
+        # 'sent' no matter what the following bookkeeping does (D1).
+        sent_ok = True
+        # Ledger first, bookkeeping second (see _delayed_send above).
+        await _finish_delivery(tid, whale_trade_id, _STATUS_SENT)
         # Daily count already incremented at the top of _send_one.
         await record_push_for_group(redis, tid, matched_group, compute_effective_score(payload))
         if plan_name == "ELITE" and market_id and wallet_value:
           await redis.set(elite_priority_key, f"{wallet_value}|{market_id}", ex=12 * 3600)
-      except Exception:
-        logger.exception("telegram_send_failed telegram_id=%s whale_trade_id=%s", tid, whale_trade_id)
+      except Exception as exc:
+        if sent_ok:
+          # Message already delivered — a post-send bookkeeping failure must
+          # never downgrade the ledger to a retryable state (D1).
+          logger.error(
+            "telegram_post_send_bookkeeping_failed telegram_id=%s whale_trade_id=%s err=%s",
+            tid,
+            whale_trade_id,
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+          )
+        else:
+          # _log_send_failure emits the same redacted "telegram_send_failed" line
+          # for generic errors, plus the greppable DELIVERY_BLOCKED_NO_SESSION
+          # marker when the subscriber never opened a chat with the bot. Routing
+          # the immediately-sent path through it too means the marker fires on
+          # every send path (PRO/ELITE have a 0-minute delay, so this is the
+          # common path).
+          _log_send_failure(tid, whale_trade_id, exc)
+          await _finish_delivery(tid, whale_trade_id, _STATUS_FAILED, _delivery_error_text(exc))
 
     tasks = []
     for tid, plan, group in grouped_recipients:
@@ -870,10 +1172,14 @@ async def consume_alerts_forever(stop: asyncio.Event, redis: Redis, application)
       for raw_item in raws:
         try:
           await _process_raw(raw_item)
-        except Exception:
-          logger.exception("alert_consumer_single_failed — item skipped, continuing batch")
-    except Exception:
-      logger.exception("alert_consumer_error — reconnecting in 5s")
+        except Exception as exc:
+          # _process_raw dispatches Telegram sends — redact.
+          logger.error(
+            "alert_consumer_single_failed — item skipped, continuing batch err=%s",
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+          )
+    except Exception as exc:
+      logger.error("alert_consumer_error — reconnecting in 5s err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
       await asyncio.sleep(5)
       continue
 
@@ -978,14 +1284,20 @@ async def debug_build(x_admin_token: str | None = Header(None, alias="X-Admin-To
 @app.post("/alerts/test")
 async def test_alert(
   message: str = Query("Test alert from SightWhale"),
+  chat_id: str | None = Query(None, description="Target chat id; falls back to TELEGRAM_ALERT_CHAT_ID"),
   x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
 ):
   _require_admin(x_admin_token)
-  if not settings.telegram_bot_token or not settings.telegram_alert_chat_id:
+  # F3: allow an operator to point a live end-to-end send at their own
+  # telegram_id. Without this, an unset TELEGRAM_ALERT_CHAT_ID makes the
+  # endpoint useless ("telegram_alert_config_missing") even though the bot
+  # token is perfectly valid.
+  target = (chat_id or "").strip() or str(settings.telegram_alert_chat_id or "").strip()
+  if not settings.telegram_bot_token or not target:
     return {"ok": False, "error": "telegram_alert_config_missing"}
   url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
   payload = {
-    "chat_id": settings.telegram_alert_chat_id,
+    "chat_id": target,
     "text": message,
     "parse_mode": "HTML",
     "disable_web_page_preview": True,
@@ -993,8 +1305,37 @@ async def test_alert(
   async with httpx.AsyncClient() as client:
     resp = await client.post(url, json=payload, timeout=10)
   if resp.status_code < 200 or resp.status_code >= 300:
-    return {"ok": False, "status": resp.status_code, "body": resp.text[:200]}
+    return {"ok": False, "status": resp.status_code, "body": redact_secrets(resp.text)[:200]}
   return {"ok": True}
+
+
+@app.post("/admin/digest/now")
+async def admin_digest_now(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
+  """Manually push one public channel digest — pre-launch verification without
+  waiting for the 09:00 Beijing schedule."""
+  _require_admin(x_admin_token)
+
+  from telegram import Bot as _Bot
+  from services.telegram_bot.daily_vw_digest import send_channel_digest
+
+  if not settings.telegram_bot_token:
+    return {"ok": False, "error": "telegram_bot_token_missing"}
+  if not str(settings.telegram_channel_id or "").strip():
+    return {"ok": False, "skipped": True, "reason": "channel_not_configured"}
+
+  bot = _Bot(settings.telegram_bot_token)
+  try:
+    result = await send_channel_digest(bot)
+  except Exception as exc:
+    logger.error("admin_digest_now_failed err=%s", redact_secrets(f"{type(exc).__name__}: {exc}"))
+    return {"ok": False, "error": "digest_failed"}
+  finally:
+    try:
+      await bot.shutdown()
+    except Exception:
+      pass
+
+  return {"ok": bool(result.get("ok")), "result": result}
 
 
 @app.get("/admin/diag/config")

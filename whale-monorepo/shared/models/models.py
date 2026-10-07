@@ -17,6 +17,13 @@ class Delivery(Base):
     telegram_id = Column(String(64), index=True)
     whale_trade_id = Column(String(64), index=True)
     delivered_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Delivery outcome ledger (F1). The row is both the idempotency claim and
+    # the outcome record: 'pending' while a send is in flight, then 'sent' on
+    # success or 'failed' on failure. Default 'sent' keeps the historical
+    # semantics for pre-existing rows ("a row exists" == "was delivered").
+    status = Column(String(16), nullable=False, server_default="sent", default="sent")
+    error = Column(String(200), nullable=True)
+    updated_at = Column(DateTime(timezone=True), nullable=True)
 
 class Wallet(Base):
     __tablename__ = "wallets"
