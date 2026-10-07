@@ -23,6 +23,7 @@ def _start_arg(update: Update) -> str:
   - /start subscribe_pro
   - /start subscribe_elite
   - /start site_header
+  - /start activate          (post-payment activation, opens the chat session)
   """
   try:
     text = (update.effective_message.text or "").strip()
@@ -92,6 +93,57 @@ def _new_code() -> str:
   return "".join(secrets.choice(alphabet) for _ in range(8))
 
 
+async def _active_subscription(telegram_id: str):
+  """Return the user's currently active subscription row, or None."""
+  now = datetime.now(timezone.utc)
+  async with SessionLocal() as session:
+    return (
+      await session.execute(
+        select(Subscription)
+        .where(Subscription.telegram_id == telegram_id)
+        .where(Subscription.status.in_(["active", "trialing"]))
+        .where(Subscription.current_period_end > now)
+        .order_by(Subscription.current_period_end.desc())
+        .limit(1)
+      )
+    ).scalars().first()
+
+
+async def _handle_activate(update: Update, telegram_id: str) -> None:
+  """
+  Handle /start activate — the deep link used on the payment success page.
+
+  Telegram hard limit: a bot cannot message a user who has never started a
+  chat with it. Pressing this deep link is what creates that session, so this
+  handler is the ONLY moment we can guarantee delivery works.
+  """
+  sub = await _active_subscription(telegram_id)
+
+  if not sub:
+    code = await _create_activation_code(telegram_id=telegram_id)
+    await update.effective_message.reply_text(
+      "⚠️ No active subscription found for your Telegram account.\n\n"
+      "Your alerts cannot be delivered until a plan is active. "
+      "Tap a button below to start one — the code is pre-filled.",
+      reply_markup=_continue_keyboard(code=code),
+    )
+    return
+
+  plan_key = (sub.plan or "pro").lower()
+  plan_display = "Elite" if "elite" in plan_key else "Pro"
+  expire = sub.current_period_end.strftime("%Y-%m-%d") if sub.current_period_end else "unknown"
+
+  await update.effective_message.reply_text(
+    f"✅ Alerts activated — Plan: {plan_display}, valid until {expire} (UTC).\n\n"
+    "Your Telegram session is now open, so whale alerts will arrive here in real time.\n\n"
+    "Try it now:\n"
+    "• /status — check your plan\n"
+    "• /analyze <market> — whale read on any Polymarket market\n\n"
+    "If you receive nothing for 24h, reply here and I'll check your delivery.",
+    disable_web_page_preview=True,
+  )
+
+
 async def start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
   if not await _ensure_private(update):
     if update.effective_message:
@@ -106,6 +158,10 @@ async def start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
       await session.commit()
 
   arg = _start_arg(update).lower().strip()
+  if arg in ("activate", "activate_alerts", "paid", "paid_alerts"):
+    await _handle_activate(update, telegram_id)
+    return
+
   if arg in ("subscribe_pro", "subscribe_elite", "subscribe"):
     code = await _create_activation_code(telegram_id=telegram_id)
     tier = "Elite" if "elite" in arg else "Pro"
