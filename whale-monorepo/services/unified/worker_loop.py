@@ -21,9 +21,15 @@ import httpx
 
 from shared.config import get_alert_config, settings
 from shared.db import SessionLocal
-from shared.logging import configure_logging
+from shared.logging import configure_logging, redact_secrets
 
 logger = logging.getLogger("unified.worker_loop")
+
+
+def _chat_tail(chat_id: str) -> str:
+    """Last 4 digits of a chat id, for logs. The full id is not a secret but the
+    token is, and this keeps the two visually distinct."""
+    return chat_id[-4:] if len(chat_id) > 4 else "???"
 
 # ── Warm-up delays (seconds before first run of periodic tasks) ──
 _INITIAL_DELAY_SMART_COLLECTIONS = 60       # let system warm up before rebuilding collections
@@ -39,12 +45,20 @@ _worker_has_error: dict[str, bool] = {}
 
 
 def _beat(name: str) -> None:
-    """Record a heartbeat for a worker loop."""
+    """Record a heartbeat for a worker loop.
+
+    F4: a successful heartbeat also clears the worker's error latch. Without
+    this, `_err()` is permanent — a single transient failure keeps
+    `has_error: true` for the lifetime of the process, so /health becomes a
+    false-positive alarm that operators learn to ignore. The latch now means
+    "the *last* iteration failed", which is what the health check needs.
+    """
     _worker_heartbeats[name] = time.monotonic()
+    _worker_has_error[name] = False
 
 
 def _err(name: str) -> None:
-    """Record that a worker loop encountered an error."""
+    """Record that a worker loop encountered an error (cleared by the next _beat)."""
     _worker_has_error[name] = True
 
 
@@ -387,16 +401,39 @@ async def health_check_loop() -> None:
             # Send Telegram notification if configured
             if settings.telegram_health_bot_token and settings.telegram_health_chat_id:
                 await _send_health_telegram(check_id, started_at, status)
+            else:
+                # D6: the *absence* of the canary must itself be visible.
+                # Previously this branch was silent, so "the hourly check never
+                # arrived" left no trace in the logs at all — the one symptom
+                # an operator would notice was the one thing never recorded.
+                logger.warning(
+                    "health_telegram_not_configured has_token=%s has_chat_id=%s",
+                    bool(settings.telegram_health_bot_token),
+                    bool(settings.telegram_health_chat_id),
+                )
         except Exception:
             logger.exception("health_check_failed")
         await asyncio.sleep(interval)
 
 
 async def _send_health_telegram(trade_id: str, started_at: datetime, status: str) -> None:
-    """Send health check result to Telegram."""
+    """Send health check result to Telegram.
+
+    D6: the Telegram Bot API answers 4xx/5xx *without raising*, so a bare
+    ``httpx.post`` discards every rejection silently — 403 ("bot can't initiate
+    conversation with a user", i.e. nobody pressed /start for THIS bot), 401
+    (bad token) and 400 (bad chat_id) all look identical to success. This canary
+    is the operator's only signal that the chain is alive, so its own failures
+    must be loud, not merely non-silent.
+    """
     token = settings.telegram_health_bot_token
     chat_id = settings.telegram_health_chat_id
     if not token or not chat_id:
+        logger.warning(
+            "health_telegram_skipped reason=not_configured has_token=%s has_chat_id=%s",
+            bool(token),
+            bool(chat_id),
+        )
         return
 
     lines = [
@@ -409,10 +446,39 @@ async def _send_health_telegram(trade_id: str, started_at: datetime, status: str
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
         async with httpx.AsyncClient() as client:
-            await client.post(url, json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True}, timeout=10)
-    except Exception:
+            resp = await client.post(
+                url,
+                json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True},
+                timeout=10,
+            )
+    except Exception as exc:
         # Deliberately NOT logging the URL — it contains the Telegram bot token
-        logger.exception("health_telegram_failed chat_id=%s", chat_id[-4:] if len(chat_id) > 4 else "???")
+        logger.error(
+            "health_telegram_failed chat_id=***%s err=%s",
+            _chat_tail(chat_id),
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+        )
+        return
+
+    if resp.status_code == 200:
+        logger.info("health_telegram_sent chat_id=***%s status=%s", _chat_tail(chat_id), status)
+        return
+
+    # Telegram replies {"ok":false,"error_code":403,"description":"..."}.
+    # The description is what turns "没收到" into an actionable cause, so surface it.
+    description = ""
+    try:
+        payload = resp.json()
+        if isinstance(payload, dict):
+            description = str(payload.get("description") or "")
+    except Exception:
+        description = ""
+    logger.error(
+        "health_telegram_rejected http_status=%s chat_id=***%s desc=%s",
+        resp.status_code,
+        _chat_tail(chat_id),
+        redact_secrets(description)[:200] or "<no description>",
+    )
 
 
 async def daily_spotlight_loop() -> None:
@@ -617,12 +683,21 @@ async def prune_trades_raw_loop() -> None:
     retention_days = float(os.getenv("TRADES_RAW_RETENTION_DAYS", "90"))
     batch_size = int(os.getenv("TRADES_RAW_PRUNE_BATCH", "20000"))
     max_batches_per_cycle = int(os.getenv("TRADES_RAW_PRUNE_MAX_BATCHES", "10"))
+    # A failed cycle must not cost a whole day. The first cycle used to run the
+    # instant the loop started — i.e. exactly while every other worker was
+    # booting and the cache was cold — so the backlog DELETE could exceed its
+    # 30s statement_timeout. The exception then slept the full `interval`
+    # (24h), leaving the table un-pruned for a day.
+    startup_delay = float(os.getenv("TRADES_RAW_PRUNE_STARTUP_DELAY_SECONDS", "120"))
+    retry_interval = float(os.getenv("TRADES_RAW_PRUNE_RETRY_SECONDS", "300"))
     logger.info(
-        "prune_trades_raw_loop_started interval=%ss retention=%sd batch=%s",
-        interval, retention_days, batch_size,
+        "prune_trades_raw_loop_started interval=%ss retention=%sd batch=%s startup_delay=%ss retry=%ss",
+        interval, retention_days, batch_size, startup_delay, retry_interval,
     )
 
+    await asyncio.sleep(startup_delay)
     while True:
+        sleep_for = interval
         try:
             total = 0
             for _ in range(max_batches_per_cycle):
@@ -649,8 +724,9 @@ async def prune_trades_raw_loop() -> None:
             if total:
                 logger.info("prune_trades_raw_done count=%s", total)
         except Exception:
-            logger.exception("prune_trades_raw_failed")
-        await asyncio.sleep(interval)
+            logger.exception("prune_trades_raw_failed retry_in=%ss", retry_interval)
+            sleep_for = retry_interval
+        await asyncio.sleep(sleep_for)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -726,7 +802,18 @@ async def telegram_bot_runtime_loop(application, stop: asyncio.Event) -> None:
     """Manage Telegram bot polling lifecycle (distributed lock unnecessary in unified mode)."""
     from services.telegram_bot.bot import _COMMANDS
 
-    await application.initialize()
+    try:
+        # Bot.initialize() validates the token by calling getMe(). A rotated or
+        # revoked token therefore fails HERE — and without this guard the task
+        # would die silently: polling never starts, the stale tg_users rows stay
+        # behind, and the only symptom is "alerts stopped arriving".
+        await application.initialize()
+    except Exception as exc:
+        logger.error(
+            "telegram_bot_initialize_failed err=%s",
+            redact_secrets(f"{type(exc).__name__}: {exc}"),
+        )
+        raise
     await application.start()
     await application.bot.set_my_commands(_COMMANDS)
 
