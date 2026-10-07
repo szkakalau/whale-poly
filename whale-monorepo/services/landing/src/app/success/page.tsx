@@ -50,9 +50,10 @@ function SuccessFallback() {
       </p>
       <div className="glass space-y-4 rounded-2xl border border-white/10 p-6 text-gray-300">
         <p>
-          Open Telegram bot and run <span className="font-mono">/status</span> to confirm activation.
+          Next: open the Telegram bot and press <span className="font-mono">START</span> to activate
+          real-time whale alerts.
         </p>
-        <p>If it&apos;s not active yet, wait 1-2 minutes and try again.</p>
+        <p>If your plan is not active yet, wait 1-2 minutes and try again.</p>
       </div>
     </>
   );
