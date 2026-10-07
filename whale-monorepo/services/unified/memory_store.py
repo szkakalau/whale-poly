@@ -37,8 +37,17 @@ class _Pipeline:
             await self.execute()
 
     async def execute(self):
+        # Take the queue and clear it first: __aexit__ re-executes whenever
+        # _commands is non-empty, so without this, the
+        # `async with pipeline(...) as pipe:` + `await pipe.execute()` shape
+        # used across the codebase ran every command TWICE (redis-py's
+        # execute() also clears the stack). Doubling is not cosmetic here —
+        # it duplicated entries on the alert_created queue and on the
+        # recent_trades cache that whale detection reads.
+        commands = self._commands
+        self._commands = []
         results = []
-        for cmd, args, kwargs in self._commands:
+        for cmd, args, kwargs in commands:
             method = getattr(self._store, cmd, None)
             if method:
                 try:
@@ -60,6 +69,21 @@ class _Pipeline:
 
     def expire(self, key: str, seconds: int) -> "str":
         self._commands.append(("expire", (key, seconds), {}))
+        return "QUEUED"
+
+    def set(
+        self,
+        key: str,
+        value: str,
+        ex: int | None = None,
+        nx: bool = False,
+    ) -> "str":
+        # core-pipeline-set
+        # Missing before 2026-10-07: alert_engine/engine.py batches RPUSH + SET,
+        # and the resulting AttributeError aborted process_whale_trade_event
+        # before its cooldown block ever ran — on EVERY alert. Queue it here so
+        # execute() can dispatch to InMemoryRedis.set().
+        self._commands.append(("set", (key, value), {"ex": ex, "nx": nx}))
         return "QUEUED"
 
 
